@@ -16,6 +16,8 @@ import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId, setStoredActiveUserProfileId } from '~/utils/authStorage';
 import JobPostModal from '~/components/modals/JobPostModal';
+import { formatListingPlace } from '~/utils/place';
+import { listingHighlights } from '~/utils/listingFeatures';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
 import { ProfileRequirementsChecklist } from '~/components/profile/ProfileRequirementsChecklist';
@@ -193,12 +195,6 @@ const buildSelectedFeatureGroups = (featuresPayload: unknown, picksPayload: unkn
   });
 
   return Array.from(groups.values()).sort((a, b) => a.featureName.localeCompare(b.featureName));
-};
-
-const formatJobLocation = (location?: string | JobLocation): string => {
-  if (!location) return 'Location not specified';
-  if (typeof location === 'string') return location;
-  return location.name || location.place || 'Location not specified';
 };
 
 const MAX_PHOTOS = 5;
@@ -406,29 +402,6 @@ export default function HouseholdProfile() {
     } finally {
       setJobToDelete(null);
     }
-  };
-
-  const formatJobDate = (value?: string) => {
-    if (!value) return 'Flexible';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return 'Flexible';
-    return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const formatJobSalary = (range?: JobPosting['salary_range']) => {
-    if (!range) return 'Not specified';
-    const currencyCode = range.currency || 'KES';
-    const formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyCode,
-      maximumFractionDigits: 0,
-    });
-
-    const min = range.min != null ? formatter.format(range.min) : '';
-    const max = range.max != null ? formatter.format(range.max) : '';
-    const base = min && max ? `${min} - ${max}` : (min || max || 'Not specified');
-    const freqLabel = range.frequency ? ` / ${range.frequency}` : '';
-    return `${base}${freqLabel}`;
   };
 
   const handleCompleteFeaturePicks = () => {
@@ -860,7 +833,10 @@ export default function HouseholdProfile() {
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{job.title || 'Untitled role'}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatJobLocation(job.location)}</p>
+                    {/* Reads the ward and subcounty the service resolved onto the
+                        listing. Asking job.location alone meant a household saw
+                        "Location not specified" on a job it had placed. */}
+                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatListingPlace(job)}</p>
                   </div>
                   <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
                     ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
@@ -869,31 +845,39 @@ export default function HouseholdProfile() {
                   </span>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {(job.job_types || []).length > 0 ? (
-                    job.job_types?.map((type) => (
-                      <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
-                        {type.replace(/_/g, ' ')}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                      Flexible role
-                    </span>
-                  )}
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                    Start {formatJobDate(job.start_date)}
-                  </span>
-                  {job.max_applicants ? (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
-                      Max {job.max_applicants} applicants
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="mt-3 text-xs text-gray-600 dark:text-gray-300">
-                  Salary: {formatJobSalary(job.salary_range)}
-                </div>
+                {/* Salary and start timing are feature picks, not columns on the
+                    listing. Read from job.salary_range and job.start_date this
+                    card said "Not specified" and "Flexible" on every job, however
+                    much the household had filled in. */}
+                {(() => {
+                  const { salary, startTiming } = listingHighlights(job);
+                  return (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(job.job_types || []).length > 0 ? (
+                        job.job_types?.map((type) => (
+                          <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
+                            {type.replace(/_/g, ' ')}
+                          </span>
+                        ))
+                      ) : null}
+                      {salary ? (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                          {salary}
+                        </span>
+                      ) : null}
+                      {startTiming ? (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                          Start {startTiming}
+                        </span>
+                      ) : null}
+                      {job.max_applicants ? (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                          Max {job.max_applicants} applicants
+                        </span>
+                      ) : null}
+                    </div>
+                  );
+                })()}
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
+import { humanizeFeatureName } from '~/utils/listingFeatures';
 import { hireRequestService, hireContractService, employmentContractService, jobService, listingApplicationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -584,7 +585,7 @@ export default function HousehelpHiringHistory() {
     Array.isArray(listing.listing_feature_groups)
       ? listing.listing_feature_groups
           .map((group) => ({
-            name: String(group.feature_name || group.name || 'Feature'),
+            name: humanizeFeatureName(group.feature_name || group.name) || 'Feature',
             properties: Array.isArray(group.properties) ? group.properties.filter(Boolean) : [],
           }))
           .filter((group) => group.properties.length > 0)

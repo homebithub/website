@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
+import { humanizeFeatureName } from '~/utils/listingFeatures';
 import { hireRequestService, hireContractService, employmentContractService, shortlistService, jobService, listingApplicationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -79,7 +80,7 @@ const normalizeListingFeatureGroups = (job: JobPosting) => {
   if (Array.isArray(job.listing_feature_groups) && job.listing_feature_groups.length > 0) {
     return job.listing_feature_groups
       .map((group) => ({
-        featureName: group.feature_name || group.name || 'Feature',
+        featureName: humanizeFeatureName(group.feature_name || group.name) || 'Feature',
         properties: Array.isArray(group.properties) ? group.properties.filter(Boolean) : [],
       }))
       .filter((group) => group.properties.length > 0);
@@ -90,7 +91,7 @@ const normalizeListingFeatureGroups = (job: JobPosting) => {
     const feature = row.feature && typeof row.feature === 'object' ? row.feature as Record<string, any> : {};
     const property = row.property && typeof row.property === 'object' ? row.property as Record<string, any> : {};
     const featureId = String(row.feature_id || row.featureId || feature.id || 'feature');
-    const featureName = String(feature.name || feature.title || row.feature_name || `Feature #${featureId}`);
+    const featureName = humanizeFeatureName(feature.name || feature.title || row.feature_name) || `Feature #${featureId}`;
     const propertyName = String(
       row.value ||
       property.name ||

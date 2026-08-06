@@ -37,6 +37,7 @@ import { SubscriptionRequiredModal } from "~/components/subscriptions/Subscripti
 import { IdentityVerificationPrompt } from "~/components/verification/IdentityVerificationPrompt";
 import { useIdentityVerification } from "~/hooks/useIdentityVerification";
 import { formatListingPlace, formatPlaceOrFallback } from "~/utils/place";
+import { listingHighlights, remainingFeatureGroups } from "~/utils/listingFeatures";
 
 interface JobListing {
   id: string;
@@ -1222,6 +1223,7 @@ export default function HousehelpJobsHome() {
                   const hasApplied = appliedJobIds.has(job.id) || Boolean(job.has_applied);
                   const householdProfile = job.household_id ? householdProfiles[job.household_id] : null;
                   const responseBadge = deriveHouseholdResponsivenessBadge(householdProfile);
+                  const highlights = listingHighlights(job);
                   return (
                     <div
                       key={job.id}
@@ -1321,9 +1323,12 @@ export default function HousehelpJobsHome() {
                         </p>
                       )}
 
+                      {/* Salary and start timing live in the listing's feature
+                          picks. Read from salary_range and start_date, fields no
+                          listing carries, every card claimed "Not specified". */}
                       <div className="mt-4 flex flex-wrap gap-2">
-                        {(job.job_types || []).length > 0 ? (
-                          job.job_types?.map((type) => (
+                        {(job.job_types || []).length > 0
+                          ? job.job_types?.map((type) => (
                             <span
                               key={type}
                               className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
@@ -1331,14 +1336,17 @@ export default function HousehelpJobsHome() {
                               {type.replace(/_/g, " ")}
                             </span>
                           ))
-                        ) : (
-                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                            Flexible role
+                          : null}
+                        {highlights.salary ? (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                            {highlights.salary}
                           </span>
-                        )}
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                          Start {formatDate(job.start_date)}
-                        </span>
+                        ) : null}
+                        {highlights.startTiming ? (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                            Start {highlights.startTiming}
+                          </span>
+                        ) : null}
                         {job.max_applicants ? (
                           <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
                             Max {job.max_applicants} applicants
@@ -1358,10 +1366,6 @@ export default function HousehelpJobsHome() {
                           ))}
                         </div>
                       )}
-
-                      <div className="mt-4 text-xs text-gray-600 dark:text-gray-300">
-                        Salary: {formatSalaryRange(job.salary_range)}
-                      </div>
 
                       {hasApplied && (
                         <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200">
@@ -1529,6 +1533,10 @@ export default function HousehelpJobsHome() {
         ].filter(Boolean) as string[];
         const householdProfile = selectedJobDetail.household_id ? householdProfiles[selectedJobDetail.household_id] : null;
         const responseBadge = deriveHouseholdResponsivenessBadge(householdProfile);
+        const detailHighlights = listingHighlights(selectedJobDetail);
+        // Salary and start timing already have their own cells above, so they
+        // are left out here rather than repeated a few pixels lower.
+        const detailFeatureGroups = remainingFeatureGroups(selectedJobDetail);
 
         return (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -1569,11 +1577,11 @@ export default function HousehelpJobsHome() {
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Salary</p>
-                  <p className="mt-1">{formatSalaryRange(selectedJobDetail.salary_range)}</p>
+                  <p className="mt-1">{detailHighlights.salary || "Not specified"}</p>
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Start date</p>
-                  <p className="mt-1">{formatDate(selectedJobDetail.start_date)}</p>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Starts</p>
+                  <p className="mt-1">{detailHighlights.startTiming || "Flexible"}</p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Status</p>
@@ -1584,6 +1592,25 @@ export default function HousehelpJobsHome() {
                   <p className="mt-1">{formatTimeAgo(selectedJobDetail.created_at)}</p>
                 </div>
               </div>
+
+              {/* Everything the card had no room for. This is the whole point of
+                  opening the job: the household answered a dozen questions when
+                  posting it, and none of them were reaching anyone. */}
+              {detailFeatureGroups.length > 0 && (
+                <div className="mt-5 border-t border-purple-100 pt-5 dark:border-purple-500/20">
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">About this job</p>
+                  <dl className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                    {detailFeatureGroups.map((group) => (
+                      <div key={group.featureId || group.key}>
+                        <dt className="text-xs font-semibold text-purple-700 dark:text-purple-300">{group.name}</dt>
+                        <dd className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">
+                          {group.properties.join(", ")}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
 
               <div className="mt-5 flex flex-wrap gap-2">
                 {(selectedJobDetail.job_types || []).length > 0 ? (

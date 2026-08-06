@@ -16,6 +16,7 @@ import {
 import CustomSelect from "~/components/ui/CustomSelect";
 import LocationPicker, { type LocationSelection } from "~/components/ui/LocationPicker";
 import { MODAL_Z_INDEX } from "~/components/ui/layers";
+import { humanizeFeatureName } from "~/utils/listingFeatures";
 
 type JobPostModalProps = {
   isOpen: boolean;
@@ -85,8 +86,13 @@ function featureId(bundle: FeatureBundle): number {
   return numericId(bundle.feature_id || bundle.featureId || bundle.feature?.id);
 }
 
+// Humanised on the way out: the catalogue stores each feature as one PascalCase
+// token because the name is its join key, so a heading rendered verbatim read
+// "SalaryRange" and "EngagementFrequency" at the household.
 function featureName(bundle: FeatureBundle): string {
-  return String(bundle.feature?.name || bundle.feature?.title || bundle.name || bundle.title || "Feature");
+  return humanizeFeatureName(
+    bundle.feature?.name || bundle.feature?.title || bundle.name || bundle.title,
+  ) || "Feature";
 }
 
 function featureProperties(bundle: FeatureBundle): FeatureProperty[] {
@@ -160,6 +166,9 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
     setSuccess("");
   }, [isOpen, job]);
 
+  // Only the create form offers a choice of job type. On an edit it is fixed —
+  // the job type decides which features a listing can answer at all, so changing
+  // it would discard every answer the household has already given.
   useEffect(() => {
     if (!isOpen || editing) return;
 
@@ -182,8 +191,12 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
     };
   }, [isOpen, editing]);
 
+  // Both modes load the same bundles; they differ only in where the job type
+  // comes from. An edit that could not show the feature questions would offer
+  // the household a form narrower than the one they filled in, and saving it
+  // would clear everything the form had no field for.
   useEffect(() => {
-    if (!isOpen || editing || !selectedJobTypeId) {
+    if (!isOpen || !selectedJobTypeId) {
       setFeatureBundles([]);
       return;
     }
@@ -194,11 +207,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
 
     clientProfileService.getJobTypeFeatureBundles(selectedJobTypeId)
       .then((payload) => {
-        if (!cancelled) {
-          setFeatureBundles(asArray(payload.data ?? payload));
-          setSelectedProperties({});
-          setFreeFormValues({});
-        }
+        if (!cancelled) setFeatureBundles(asArray(payload.data ?? payload));
       })
       .catch((err: Error) => {
         if (!cancelled) setError(err.message || "Unable to load job type features");
@@ -210,7 +219,58 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
     return () => {
       cancelled = true;
     };
+  }, [isOpen, selectedJobTypeId]);
+
+  // Picking a different job type on the create form invalidates any answers
+  // already given, since they belong to the previous type's questions. Keyed on
+  // the id rather than folded into the fetch above so that reloading the same
+  // bundles while editing does not wipe the picks being restored below.
+  useEffect(() => {
+    if (!isOpen || editing) return;
+    setSelectedProperties({});
+    setFreeFormValues({});
   }, [isOpen, editing, selectedJobTypeId]);
+
+  // Restore what the household previously answered, so the form opens showing
+  // the listing as it stands rather than blank. Without this an edit would read
+  // as "nothing was ever filled in", and saving would make that true.
+  useEffect(() => {
+    if (!isOpen || !editing || !job?.id) return;
+
+    let cancelled = false;
+
+    clientProfileService.getListingFeatureProperties(job.id)
+      .then((payload) => {
+        if (cancelled) return;
+
+        const picks: Record<number, number[]> = {};
+        const values: Record<string, string> = {};
+
+        for (const row of asArray(payload.data ?? payload)) {
+          const fId = numericId(row?.feature_id ?? row?.featureId);
+          const pId = numericId(row?.feature_property_id ?? row?.featurePropertyId ?? row?.property_id);
+          if (!fId) continue;
+
+          // A row carries either a chosen property or typed text, matching the
+          // feature's has_options flag.
+          const typed = String(row?.value ?? "").trim();
+          if (typed) values[freeFormKey(fId, pId)] = typed;
+          if (pId) picks[fId] = [...(picks[fId] || []), pId];
+        }
+
+        setSelectedProperties(picks);
+        setFreeFormValues(values);
+      })
+      .catch(() => {
+        // Leaving the form blank here would invite the household to save it and
+        // wipe answers that are still on the listing, so say so instead.
+        if (!cancelled) setError("We couldn't load this listing's details. Try again before saving.");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, editing, job?.id]);
 
   const selectedFeatureCount = useMemo(() => {
     const optionFeatures = Object.values(selectedProperties).filter((ids) => ids.length > 0).length;
@@ -301,8 +361,16 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
 
     // A job with no location cannot be found by the househelps near it, so this
     // is a hard requirement rather than something to fill in later.
-    if (!editing && !location?.wardId) {
-      setError("Choose where the job is, down to the ward.");
+    //
+    // Editing splits two cases that look identical here. A listing that already
+    // has a ward is mid-load, and saving the empty selection would unplace a
+    // live job; a listing predating the location requirement has none to load,
+    // and the household does have to choose one.
+    if (!location?.wardId) {
+      const listingHasWard = Boolean(numericId(job?.ward_id ?? job?.wardId));
+      setError(editing && listingHasWard
+        ? "Give the location a moment to load, then save again."
+        : "Choose where the job is, down to the ward.");
       return;
     }
 
@@ -318,6 +386,12 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
         await jobService.updateJob(String(job?.id), "", {
           title: trimmedTitle,
           description: trimmedDescription,
+          ward_id: location?.wardId,
+          features: buildFeaturePayload(),
+          // The form now shows every feature the listing can hold, so what it
+          // submits is the complete answer: a feature the household cleared has
+          // to be removed rather than left behind from the previous save.
+          replace_features: true,
         });
       } else {
         await jobService.createListing("", {
@@ -440,19 +514,28 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
               </label>
             )}
 
-            {!editing && (
-              <section className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 dark:border-purple-500/25 dark:bg-purple-950/15">
-                <div className="mb-3">
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">Where is the job?</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    Househelps search by area, so this is how the right people find your listing.
-                  </p>
-                </div>
-                <LocationPicker onChange={setLocation} required />
-              </section>
-            )}
+            <section className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 dark:border-purple-500/25 dark:bg-purple-950/15">
+              <div className="mb-3">
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">Where is the job?</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Househelps search by area, so this is how the right people find your listing.
+                </p>
+              </div>
+              <LocationPicker
+                onChange={setLocation}
+                required
+                // Seeded from the listing so an edit starts where the job
+                // already is. The key remounts the picker when the modal is
+                // reopened on a different listing, which otherwise keeps the
+                // previous job's selection.
+                key={String(job?.id || "new")}
+                initialWardId={numericId(job?.ward_id ?? job?.wardId) || null}
+                initialSubcountyId={numericId(job?.subcounty_id ?? job?.subcountyId) || null}
+                initialCountyId={numericId(job?.county_id ?? job?.countyId) || null}
+              />
+            </section>
 
-            {!editing && selectedJobTypeId && (
+            {selectedJobTypeId && (
               <section className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 dark:border-purple-500/25 dark:bg-purple-950/15">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>

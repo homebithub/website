@@ -21,6 +21,7 @@ import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
 import { Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
+import { humanizeFeatureName } from "~/utils/listingFeatures";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 
@@ -490,7 +491,9 @@ const listingFeatureGroups = (listing: OpenForWorkListing) => (
   Array.isArray(listing.listing_feature_groups)
     ? listing.listing_feature_groups
         .map((group) => ({
-          name: formatTextValue(group.feature_name || group.name, "Feature"),
+          // Humanised, since the catalogue stores each feature as one
+          // PascalCase token — the raw name reads "SalaryRange" on the card.
+          name: humanizeFeatureName(formatTextValue(group.feature_name || group.name)) || "Feature",
           properties: Array.isArray(group.properties) ? group.properties.map((property) => formatTextValue(property)).filter(Boolean) : [],
         }))
         .filter((group) => group.properties.length > 0)

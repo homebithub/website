@@ -19,6 +19,11 @@ function encodeMessageField(fieldNo: number, value: Uint8Array): Uint8Array {
   return concatBytes([encodeVarint((fieldNo << 3) | 2), encodeVarint(value.length), value]);
 }
 
+function encodeBoolField(fieldNo: number, value: boolean): Uint8Array {
+  if (!value) return new Uint8Array();
+  return concatBytes([encodeVarint((fieldNo << 3) | 0), encodeVarint(1)]);
+}
+
 function concatBytes(parts: Uint8Array[]): Uint8Array {
   const length = parts.reduce((sum, part) => sum + part.length, 0);
   const out = new Uint8Array(length);
@@ -125,10 +130,20 @@ function encodeApplicationAction(body: Record<string, unknown>) {
 }
 
 function encodeUpdateJobReq(body: Record<string, unknown>) {
+  const features = Array.isArray(body.features) ? body.features : [];
+  // Sent explicitly rather than inferred from a non-empty list: clearing every
+  // feature and not editing features at all both arrive as an empty list, and
+  // the service must be able to tell them apart.
+  const replaceFeatures = Boolean(body.replace_features ?? body.replaceFeatures);
+
   return concatBytes([
     encodeStringField(1, String(body.id || '')),
     encodeStringField(2, String(body.title || '')),
     encodeStringField(3, String(body.description || '')),
+    // Omitted when zero, which the service reads as "leave the location alone".
+    encodeInt32Field(4, Number(body.ward_id || body.wardId || 0)),
+    ...features.map((feature) => encodeMessageField(5, encodeFeaturePick(feature as Record<string, unknown>))),
+    encodeBoolField(6, replaceFeatures),
   ]);
 }
 
@@ -401,6 +416,24 @@ export async function action({ request }: { request: Request }) {
         '/auth.ListingService/UpdateJob',
         encodeUpdateJobReq({ ...body, id, title, description }),
       );
+
+      // The listing is re-read rather than returned from the update, so the
+      // caller gets the resolved place names and the feature picks it just
+      // saved. UpdateJob answers with the row alone, which would leave an
+      // edited card showing the values it held before the edit.
+      const listingId = Number(id);
+      if (Number.isFinite(listingId) && listingId > 0) {
+        const refreshed = await getJobListing(resolveAuthGrpcBaseUrl(request), listingId, callUnaryGrpc)
+          .catch(() => null);
+        if (refreshed) {
+          const enriched = await enrichListingsWithFeatures(
+            resolveAuthGrpcBaseUrl(request),
+            [refreshed],
+            callUnaryGrpc,
+          );
+          return Response.json({ data: enriched[0] ?? refreshed });
+        }
+      }
 
       return Response.json({ data: responseBody.data ?? responseBody });
     }
