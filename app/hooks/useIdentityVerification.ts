@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { kycService } from "~/services/grpc/authServices";
+import { createIdentityHandoff, handoffLink, type HandoffCode } from "~/services/identityHandoff";
+import { launchSmileSession, loadSmileScript, type SmileSession } from "~/services/smileIdentity";
 import { getStoredUserId } from "~/utils/authStorage";
 
-const SMILE_SCRIPT_URL = "https://cdn.smileidentity.com/inline/v11/js/script.min.js";
 const DISMISSAL_KEY_PREFIX = "homebit_identity_verification_prompt_dismissed";
 
 export type IdentityVerificationStatus =
@@ -25,53 +26,15 @@ export interface IdentityVerificationState {
   dismissModal: () => void;
   startVerification: () => Promise<void>;
   refresh: () => Promise<void>;
+
+  /** The link behind the QR code, empty until a handoff is requested. */
+  handoffLink: string;
+  handoffExpiresAt: Date | null;
+  handoffLoading: boolean;
+  handoffError: string;
+  requestHandoff: () => Promise<void>;
+  clearHandoff: () => void;
 }
-interface SmileTokenResponse {
-  token: string;
-  job_id: string;
-  user_id: string;
-  product: string;
-  callback_url: string;
-  environment: string;
-  partner_id: string;
-}
-
-declare global {
-  interface Window {
-    SmileIdentity?: (config: Record<string, unknown>) => void;
-  }
-}
-
-let smileScriptPromise: Promise<void> | null = null;
-
-const loadSmileScript = (): Promise<void> => {
-  if (typeof window === "undefined") return Promise.reject(new Error("Smile ID is only available in the browser."));
-  if (window.SmileIdentity) return Promise.resolve();
-  if (smileScriptPromise) return smileScriptPromise;
-
-  smileScriptPromise = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>("script[data-smileid-sdk='web']");
-    const script = existing ?? document.createElement("script");
-    const handleLoad = () => {
-      if (window.SmileIdentity) resolve();
-      else reject(new Error("Smile ID loaded without its verification client."));
-    };
-    const handleError = () => {
-      smileScriptPromise = null;
-      reject(new Error("We could not load Smile ID. Check your connection and try again."));
-    };
-
-    script.addEventListener("load", handleLoad, { once: true });
-    script.addEventListener("error", handleError, { once: true });
-    if (!existing) {
-      script.src = SMILE_SCRIPT_URL;
-      script.async = true;
-      script.dataset.smileidSdk = "web";
-      document.body.appendChild(script);
-    }
-  });
-  return smileScriptPromise;
-};
 
 const normalizeResponse = (response: any) => response?.data?.data ?? response?.data ?? response ?? {};
 
@@ -132,6 +95,9 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
   const [launching, setLaunching] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState("");
+  const [handoff, setHandoff] = useState<HandoffCode | null>(null);
+  const [handoffLoading, setHandoffLoading] = useState(false);
+  const [handoffError, setHandoffError] = useState("");
 
   const refresh = useCallback(async () => {
     if (!userId) {
@@ -197,8 +163,8 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
         loadSmileScript(),
         kycService.getSmileIDToken(userId, {}),
       ]);
-      const token = normalizeResponse(rawToken) as SmileTokenResponse;
-      if (!token?.token || !window.SmileIdentity) {
+      const session = normalizeResponse(rawToken) as SmileSession;
+      if (!session?.token) {
         throw new Error("Smile ID did not return a valid verification session.");
       }
 
@@ -206,27 +172,7 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
       setInternalStatus("session_created");
       setCanRetry(false);
 
-      window.SmileIdentity({
-        token: token.token,
-        product: token.product,
-        callback_url: token.callback_url,
-        environment: token.environment,
-        id_selection: {
-          KE: ["IDENTITY_CARD", "RESIDENT_ID", "PASSPORT"],
-        },
-        document_capture_modes: ["camera", "upload"],
-        use_new_component: true,
-        partner_details: {
-          partner_id: token.partner_id,
-          name: "Homebit",
-          logo_url: "https://homebit.co.ke/logos/logo-dark.png",
-          policy_url: "https://homebit.co.ke/privacy",
-          theme_color: "#9333ea",
-        },
-        partner_params: {
-          user_id: token.user_id,
-          job_id: token.job_id,
-        },
+      launchSmileSession(session, {
         onSuccess: () => {
           setModalOpen(false);
           setInternalStatus("submitted");
@@ -237,9 +183,7 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
           setModalOpen(false);
           window.setTimeout(() => void refresh(), 500);
         },
-        onError: (smileError: { message?: string }) => {
-          setError(smileError?.message || "Smile ID could not complete verification.");
-        },
+        onError: (message: string) => setError(message),
       });
     } catch (launchError: any) {
       setError(launchError?.message || "We could not start identity verification.");
@@ -248,6 +192,42 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
       setLaunching(false);
     }
   }, [refresh, userId]);
+
+  // Handing the capture to a phone.
+  //
+  // The code expires in ten minutes, so the panel discards it on time rather
+  // than leaving a QR on screen that silently stopped working. Scanning it is
+  // what tells us the phone picked it up; until then the desktop just waits, and
+  // the status poll above notices the verification arriving on its own.
+  const requestHandoff = useCallback(async () => {
+    setHandoffError("");
+    setHandoffLoading(true);
+    try {
+      const code = await createIdentityHandoff();
+      setHandoff(code);
+    } catch (handoffFailure: any) {
+      setHandoff(null);
+      setHandoffError(handoffFailure?.message || "We could not create a code for your phone.");
+    } finally {
+      setHandoffLoading(false);
+    }
+  }, []);
+
+  const clearHandoff = useCallback(() => {
+    setHandoff(null);
+    setHandoffError("");
+  }, []);
+
+  useEffect(() => {
+    if (!handoff) return;
+    const remaining = handoff.expiresAt.getTime() - Date.now();
+    if (remaining <= 0) {
+      setHandoff(null);
+      return;
+    }
+    const timer = window.setTimeout(() => setHandoff(null), remaining);
+    return () => window.clearTimeout(timer);
+  }, [handoff]);
 
   return {
     status,
@@ -262,5 +242,11 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
     dismissModal,
     startVerification,
     refresh,
+    handoffLink: handoff ? handoffLink(handoff.token) : "",
+    handoffExpiresAt: handoff?.expiresAt ?? null,
+    handoffLoading,
+    handoffError,
+    requestHandoff,
+    clearHandoff,
   };
 }

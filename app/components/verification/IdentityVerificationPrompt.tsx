@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { QRCodeSVG } from "qrcode.react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -8,8 +9,10 @@ import {
   Fingerprint,
   IdCard,
   LockKeyhole,
+  QrCode,
   RefreshCw,
   ShieldCheck,
+  Smartphone,
   X,
 } from "lucide-react";
 import type { IdentityVerificationState } from "~/hooks/useIdentityVerification";
@@ -167,12 +170,12 @@ export function IdentityVerificationPrompt({
               <DocumentCard
                 icon={IdCard}
                 title="National ID"
-                description="Front, back and a live selfie"
+                description="Front of the card and a live selfie"
               />
               <DocumentCard
                 icon={IdCard}
                 title="Alien Card"
-                description="Front, back and a live selfie"
+                description="Front of the card and a live selfie"
               />
               <DocumentCard
                 icon={FileCheck2}
@@ -181,13 +184,15 @@ export function IdentityVerificationPrompt({
               />
             </div>
 
+            <PhoneHandoffPanel verification={verification} />
+
             <div className="mt-5 rounded-2xl border border-purple-100 bg-purple-50/60 p-4 dark:border-white/10 dark:bg-white/[0.04]">
               <h3 className="text-xs font-semibold text-gray-900 dark:text-white">Before you begin</h3>
               <ul className="mt-3 grid gap-2 text-xs leading-5 text-gray-600 sm:grid-cols-2 dark:text-white/65">
-                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />Use a valid, unexpired document.</li>
+                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />Have the original document with you — photos of a copy or a screen are rejected.</li>
                 <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />Find a bright place without glare.</li>
                 <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />Make sure every document edge is visible.</li>
-                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />Allow camera access for the live selfie.</li>
+                <li className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-purple-600 dark:text-purple-400" />Allow camera access for the photo and the selfie.</li>
               </ul>
             </div>
 
@@ -229,6 +234,97 @@ export function IdentityVerificationPrompt({
         document.body,
       )}
     </>
+  );
+}
+
+/**
+ * Continuing on a phone.
+ *
+ * The document is photographed, never uploaded — an upload lets a photocopy or a
+ * picture of a screen through, and those fail the document check. A phone camera
+ * does this well and a webcam does it badly, so on a desktop this is the
+ * recommended path rather than a fallback, and on a machine with no camera it is
+ * the only one.
+ */
+function PhoneHandoffPanel({ verification }: { verification: IdentityVerificationState }) {
+  const { handoffLink, handoffExpiresAt, handoffLoading, handoffError, requestHandoff } = verification;
+  const [secondsLeft, setSecondsLeft] = useState(0);
+
+  // Touch pointers are phones and tablets, which already have the right camera.
+  // Offering to hand the session to a phone from a phone is just noise.
+  const [onTouchDevice, setOnTouchDevice] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    setOnTouchDevice(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
+
+  useEffect(() => {
+    if (!handoffExpiresAt) {
+      setSecondsLeft(0);
+      return;
+    }
+    const tick = () =>
+      setSecondsLeft(Math.max(0, Math.round((handoffExpiresAt.getTime() - Date.now()) / 1000)));
+    tick();
+    const timer = window.setInterval(tick, 1_000);
+    return () => window.clearInterval(timer);
+  }, [handoffExpiresAt]);
+
+  if (onTouchDevice) return null;
+
+  const minutes = Math.floor(secondsLeft / 60);
+  const seconds = String(secondsLeft % 60).padStart(2, "0");
+
+  return (
+    <div className="mt-5 rounded-2xl border border-purple-100 bg-purple-50/60 p-4 dark:border-white/10 dark:bg-white/[0.04]">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="flex items-center gap-2 text-xs font-semibold text-gray-900 dark:text-white">
+            <Smartphone className="h-4 w-4 text-purple-600 dark:text-purple-300" aria-hidden="true" />
+            Finish on your phone
+          </h3>
+          <p className="mt-2 max-w-md text-xs leading-5 text-gray-600 dark:text-white/65">
+            Phone cameras photograph ID documents far better than most laptop webcams. Scan the code
+            with your phone to carry on there — this page will update by itself when you are done.
+          </p>
+          {handoffError && (
+            <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-300">{handoffError}</p>
+          )}
+        </div>
+
+        <div className="flex shrink-0 flex-col items-center gap-2">
+          {handoffLink ? (
+            <>
+              <div className="rounded-xl bg-white p-3 shadow-sm">
+                <QRCodeSVG value={handoffLink} size={132} aria-label="Code to continue on your phone" />
+              </div>
+              <p className="text-[11px] text-gray-500 dark:text-white/55">
+                {secondsLeft > 0 ? `Expires in ${minutes}:${seconds}` : "This code has expired."}
+              </p>
+              {secondsLeft === 0 && (
+                <button
+                  type="button"
+                  onClick={() => void requestHandoff()}
+                  className="text-[11px] font-semibold text-purple-700 underline underline-offset-2 dark:text-purple-300"
+                >
+                  Show a new code
+                </button>
+              )}
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void requestHandoff()}
+              disabled={handoffLoading}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-purple-200 px-4 text-xs font-semibold text-purple-700 transition hover:bg-purple-100 disabled:opacity-50 dark:border-purple-400/25 dark:text-purple-200 dark:hover:bg-purple-500/10"
+            >
+              {handoffLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
+              {handoffLoading ? "Preparing…" : "Show QR code"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
