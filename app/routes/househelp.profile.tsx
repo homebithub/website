@@ -10,6 +10,7 @@ import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Eye } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { ReferralCodeCard } from '~/components/referrals/ReferralCodeCard';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import ProfileReviews from '~/components/ProfileReviews';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
@@ -606,6 +607,8 @@ export default function HousehelpProfile() {
           />
         </section>
       )}
+
+      <ReferralCodeCard className="rounded-2xl border border-purple-200/40 dark:border-purple-500/30" />
 
       <EditSectionModal
         isOpen={editingLocation}

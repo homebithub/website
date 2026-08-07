@@ -10,6 +10,7 @@ import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { ClipboardCheck, Eye } from 'lucide-react';
+import { ReferralCodeCard } from '~/components/referrals/ReferralCodeCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
@@ -702,13 +703,17 @@ export default function HouseholdProfile() {
         fallbackProfileType="household"
       />
 
+      <ReferralCodeCard distinguishFrom="household code" />
+
       {/* Household Invitation Code */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-start mb-4">
           <div>
             <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🔑 Household Code</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Share this code with your partner to give them access to this household profile
+              Share this code with your partner or family member to give them access to this
+              household profile. It is not a referral code — it adds someone to this household
+              rather than inviting them to Homebit.
             </p>
           </div>
           <button
