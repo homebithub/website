@@ -419,9 +419,22 @@ export async function loader({ request }: { request: Request }) {
       return Response.json({ data: enriched[0] ?? listing });
     }
 
+    // Which side of the market is being browsed.
+    //
+    // ListJobs returns every listing regardless of who posted it, because
+    // households' job posts and househelps' open-for-work posts share one
+    // table. A household browsing with ListJobs was therefore shown job posts —
+    // including its own, rendered as though they were people, with the job's
+    // title where the househelp's skills belong. ListOpenForWork is the same
+    // query joined to the owner's profile and restricted to househelps, which
+    // is what "who is available" actually means.
+    const ownerIsHousehelp = String(url.searchParams.get('owner') || '') === 'househelp';
+
     const { body: responseBody } = await callUnaryGrpc(
       baseUrl,
-      '/auth.ListingService/ListJobs',
+      ownerIsHousehelp
+        ? '/auth.OpenForWorkService/ListOpenForWork'
+        : '/auth.ListingService/ListJobs',
       encodeListRequest(url.searchParams),
     );
 

@@ -357,14 +357,25 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
   // which is the usual case: the search endpoint returns listings, not people.
   // Without this the card had nobody attached — hence a placeholder name and a
   // Message button with no one to message.
-  const ownerUserId = formatTextValue(owner?.owner_user_id) || undefined;
-  const ownerFirstName = formatTextValue(owner?.owner_first_name) || undefined;
-  const ownerLastName = formatTextValue(owner?.owner_last_name) || undefined;
+  //
+  // Two endpoints name these differently. ListJobs resolves the poster into
+  // owner_* fields; ListOpenForWork joins the househelp's own user row and
+  // returns first_name / househelp_user_id. Reading only one shape left the
+  // other with a placeholder name and a Message button with nobody behind it,
+  // so both are accepted.
+  const ownerUserId = formatTextValue(owner?.owner_user_id)
+    || formatTextValue(owner?.househelp_user_id) || undefined;
+  const ownerFirstName = formatTextValue(owner?.owner_first_name)
+    || formatTextValue(owner?.first_name) || undefined;
+  const ownerLastName = formatTextValue(owner?.owner_last_name)
+    || formatTextValue(owner?.last_name) || undefined;
+  const ownerProfileId = formatTextValue(owner?.user_profile_id)
+    || formatTextValue(owner?.househelp_profile_id) || undefined;
 
   if (!househelp) {
     if (!ownerUserId && !ownerFirstName) return undefined;
     return {
-      id: formatTextValue(owner?.user_profile_id) || undefined,
+      id: ownerProfileId,
       user_id: ownerUserId,
       first_name: ownerFirstName,
       last_name: ownerLastName,
@@ -375,7 +386,7 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
 
   return {
     ...househelp,
-    id: formatTextValue(househelp.id) || formatTextValue(owner?.user_profile_id) || undefined,
+    id: formatTextValue(househelp.id) || ownerProfileId || undefined,
     // The nested profile wins when present; the listing's own owner fields are
     // the fallback rather than the other way round.
     user_id: formatTextValue(househelp.user_id) || ownerUserId || undefined,
@@ -754,10 +765,26 @@ export default function HouseholdJobsHome() {
         });
         params.set("status", "active");
 
-        // Scored against this household's own job, so the people who suit what
-        // they are actually hiring for come first. The score arrives as
-        // fit_score, which the card already renders as a Match badge.
-        const raw = await jobService.listJobs(limit, offset, "", "active", getStoredUserProfileId() || "");
+        // People, not job posts.
+        //
+        // This asked for listings without saying whose, and households' job
+        // posts share a table with househelps' open-for-work posts — so a
+        // household browsing "who is available" was shown job posts, its own
+        // among them, with the job's title sitting where a househelp's skills
+        // belong. owner: househelp restricts it to the people actually offering
+        // to work.
+        //
+        // Scored against this household's own job, so whoever suits what they
+        // are hiring for comes first. The score arrives as fit_score, which the
+        // card already renders as a Match badge.
+        const raw = await jobService.listJobs(
+          limit,
+          offset,
+          "",
+          "active",
+          getStoredUserProfileId() || "",
+          true,
+        );
         const data = raw?.data || raw || [];
         const items = Array.isArray(data) ? data : [];
         const normalizedItems = items.map((item: unknown, index: number) => (

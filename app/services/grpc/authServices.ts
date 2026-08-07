@@ -1507,7 +1507,7 @@ export const jobService = {
     return payload.data ?? payload;
   },
 
-  async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId(), status = '', matchCandidatesForProfile = ''): Promise<any> {
+  async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId(), status = '', matchCandidatesForProfile = '', ownerIsHousehelp = false): Promise<any> {
     const params = new URLSearchParams({
       limit: String(limit),
       offset: String(offset),
@@ -1516,6 +1516,9 @@ export const jobService = {
     if (status) params.set('status', status);
     // A household browsing househelps scores them against its own job.
     if (matchCandidatesForProfile) params.set('match_candidates_for_profile', matchCandidatesForProfile);
+    // Households browse people, not job posts. Without this the list comes back
+    // as every listing in the table, their own job posts among them.
+    if (ownerIsHousehelp) params.set('owner', 'househelp');
     const payload = await jobListingsApi(`?${params.toString()}`);
     return { data: normalizeArray(payload.data ?? payload) };
   },
