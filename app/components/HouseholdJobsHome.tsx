@@ -1375,7 +1375,7 @@ export default function HouseholdJobsHome() {
                                     ? "border-pink-400 bg-pink-500 text-white"
                                     : "border-purple-200/70 bg-white text-purple-700 hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
                                 } disabled:opacity-60`}
-                                aria-label={shortlisted ? "Remove listing from shortlist" : "Shortlist listing"}
+                                aria-label={shortlisted ? "Remove listing from saved" : "Save listing"}
                                 title={shortlisted ? "Remove from shortlist" : "Add to shortlist"}
                               >
                                 {shortlistLoadingId === listing.id ? (
@@ -1720,8 +1720,8 @@ export default function HouseholdJobsHome() {
                       {shortlistLoadingId === selectedListing.id
                         ? "Updating..."
                         : shortlisted
-                          ? "Shortlisted"
-                          : "Shortlist"}
+                          ? "Saved"
+                          : "Save"}
                     </button>
                   </>
                 )}

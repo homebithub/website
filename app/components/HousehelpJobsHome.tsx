@@ -1295,7 +1295,7 @@ export default function HousehelpJobsHome() {
                               className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition ${shortlisted
                                 ? "border-pink-400 bg-pink-500 text-white"
                                 : "border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10"} disabled:opacity-60`}
-                              aria-label={shortlisted ? "Remove job from shortlist" : "Shortlist job"}
+                              aria-label={shortlisted ? "Remove job from saved" : "Save job"}
                             >
                               {shortlistLoadingId === job.id ? (
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -1391,8 +1391,8 @@ export default function HousehelpJobsHome() {
                             {shortlistLoadingId === job.id
                               ? "Updating..."
                               : shortlisted
-                                ? "Shortlisted"
-                                : "Shortlist"}
+                                ? "Saved"
+                                : "Save"}
                           </button>
                           <button
                             onClick={(event) => {
@@ -1662,8 +1662,8 @@ export default function HousehelpJobsHome() {
                   {shortlistLoadingId === selectedJobDetail.id
                     ? "Updating..."
                     : shortlisted
-                      ? "Shortlisted"
-                      : "Shortlist"}
+                      ? "Saved"
+                      : "Save"}
                 </button>
                 <button
                   onClick={() => {

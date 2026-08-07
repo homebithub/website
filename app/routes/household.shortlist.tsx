@@ -311,12 +311,12 @@ export default function HouseholdShortlistPage() {
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className={`flex-1 py-8 ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
+            <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">Saved</h1>
 
             {(items || []).length === 0 && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-300 text-base">No shortlisted househelps yet.</p>
+                <p className="text-gray-600 dark:text-gray-300 text-base">No saved househelps yet.</p>
               </div>
             )}
 

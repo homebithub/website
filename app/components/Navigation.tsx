@@ -77,7 +77,10 @@ export function Navigation() {
         const hiringHistoryHref = isClient ? '/household/hiring' : '/househelp/hiring';
         const hiringLabel = isServiceProvider ? 'Job Openings' : 'Hiring';
         return [
-            { name: 'Shortlist', href: shortlistHref, count: shortlistCount },
+            // "Saved" rather than "Shortlist": this holds what someone bookmarked
+            // while browsing. A household shortlisting a candidate who applied to
+            // its job is a different act, and lives on the hiring page.
+            { name: 'Saved', href: shortlistHref, count: shortlistCount },
             { name: 'Inbox', href: '/inbox', count: inboxCount },
             { name: hiringLabel, href: hiringHistoryHref, count: hireRequestCount },
             { name: 'Blog', href: '/blog', count: 0 },
@@ -258,7 +261,7 @@ export function Navigation() {
                                 className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
                             >
                                 {item.name}
-                                {'count' in item && item.name === 'Shortlist' && renderBadge((item as any).count)}
+                                {'count' in item && item.name === 'Saved' && renderBadge((item as any).count)}
                                 {'count' in item && item.name === 'Inbox' && renderBadge((item as any).count)}
                                 {'count' in item && (item.href === '/household/hiring' || item.href === '/househelp/hiring') && renderBadge((item as any).count)}
                             </Link>
@@ -278,10 +281,10 @@ export function Navigation() {
                                 to={item.href}
                                 prefetch="intent"
                                 className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
-                                id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
+                                id={item.name === 'Saved' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
-                                {item.name === 'Shortlist' && renderBadge(shortlistCount)}
+                                {item.name === 'Saved' && renderBadge(shortlistCount)}
                                 {item.name === 'Inbox' && renderBadge(inboxCount)}
                                 {(item.href === '/household/hiring' || item.href === '/househelp/hiring') && renderBadge(hireRequestCount)}
                             </Link>
@@ -517,7 +520,7 @@ export function Navigation() {
                                                         <Menu.Item key={item.name}>{({ active }) => (
                                                             <Link to={item.href} className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-1 text-xs relative`}>
                                                                 <span>{item.name}</span>
-                                                                {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                                                {item.name === 'Saved' && shortlistCount > 0 && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
                                                                         {shortlistCount > 9 ? '9+' : shortlistCount}
                                                                     </span>
