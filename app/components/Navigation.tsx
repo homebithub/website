@@ -9,9 +9,10 @@ import { useAccountChoiceStatus } from "~/hooks/useAccountChoiceStatus";
 import { useNotifications } from "~/hooks/useNotifications";
 import NotificationsModal from "~/components/notifications/NotificationsModal";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { hireRequestService } from '~/services/grpc/authServices';
+import { hireRequestService, listingApplicationService } from '~/services/grpc/authServices';
+import notificationsService from '~/services/grpc/notifications.service';
 import authService from '~/services/grpc/auth.service';
-import { getStoredUser } from '~/utils/authStorage';
+import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
 
 const navigation = [
@@ -42,7 +43,6 @@ export function Navigation() {
     const currentUser = authUser ?? storedUser ?? null;
     const [profileType, setProfileType] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
-    const [shortlistCount, setShortlistCount] = useState<number>(0);
     const [inboxCount, setInboxCount] = useState<number>(0);
     const [hireRequestCount, setHireRequestCount] = useState<number>(0);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -83,12 +83,15 @@ export function Navigation() {
             // "Saved" rather than "Shortlist": this holds what someone bookmarked
             // while browsing. A household shortlisting a candidate who applied to
             // its job is a different act, and lives on the hiring page.
-            { name: 'Saved', href: shortlistHref, count: shortlistCount },
+            // No badge on Saved. It holds what someone chose to keep, not work
+            // waiting on them, and a number that never reaches zero teaches
+            // people to stop reading the badges that do mean something.
+            { name: 'Saved', href: shortlistHref, count: 0 },
             { name: 'Inbox', href: '/inbox', count: inboxCount },
             { name: hiringLabel, href: hiringHistoryHref, count: hireRequestCount },
             { name: 'Blog', href: '/blog', count: 0 },
         ];
-    }, [profileType, shortlistCount, inboxCount, hireRequestCount]);
+    }, [profileType, inboxCount, hireRequestCount]);
 
     const profileRole = normalizeProfileRole(profileType);
     const accountProfileHref = profileRole === 'client'
@@ -103,20 +106,33 @@ export function Navigation() {
             : 'Profile';
 
     // Fetch hiring badge count: pending items the user has NOT acted upon
+    // A badge is a claim that something is waiting on *you*. Each side is waiting
+    // on something different, and counting the same thing for both got it wrong
+    // for households: a hire request they sent is waiting on the househelp, not
+    // on them, so it was a number they could not act on and could not clear.
+    //
+    //   household  → applicants to review ('initiated'), plus candidates who
+    //                accepted and now need their approval ('accepted')
+    //   househelp  → hire requests received and unanswered
     const fetchHireRequestCount = async (overrideProfileType?: string | null) => {
         try {
             if (!getAccessTokenFromCookies()) return;
             const pt = overrideProfileType ?? profileType;
+            const role = normalizeProfileRole(pt);
             let total = 0;
 
-            const role = normalizeProfileRole(pt);
-
             if (role === 'client') {
-                // Count pending hire requests without calling interest ListByHousehold.
-                const hData = await hireRequestService.listHireRequests('', '', 'pending');
-                total += hData?.total || (Array.isArray(hData?.data) ? hData.data.length : 0);
+                const ownerProfileId = getStoredUserProfileId() || '';
+                if (ownerProfileId) {
+                    const raw = await listingApplicationService.listApplications({
+                        ownerProfileId,
+                        statuses: ['initiated', 'accepted'],
+                        limit: 200,
+                    });
+                    const rows = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
+                    total = raw?.total ?? rows.length;
+                }
             } else if (role === 'service-provider') {
-                // Count pending hire requests received from households
                 const data = await hireRequestService.listHireRequests('', '', 'pending');
                 total = data?.total || (Array.isArray(data?.data) ? data.data.length : 0);
             }
@@ -126,6 +142,28 @@ export function Navigation() {
             setHireRequestCount(0);
             if (!shouldSilenceGatewayError(error)) {
                 console.error("Failed to fetch hire request count:", error);
+            }
+        }
+    };
+
+    // Unread messages. inboxCount existed and was never once populated, so the
+    // badge could not appear however many messages were waiting.
+    const fetchInboxCount = async () => {
+        try {
+            if (!getAccessTokenFromCookies()) return;
+            const userId = getStoredUserId() || '';
+            if (!userId) return;
+            const raw = await notificationsService.listConversations(userId, 0, 100);
+            const rows = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
+            const unread = rows.reduce(
+                (sum: number, conversation: any) => sum + Number(conversation?.unread_count || 0),
+                0,
+            );
+            setInboxCount(unread);
+        } catch (error) {
+            setInboxCount(0);
+            if (!shouldSilenceGatewayError(error)) {
+                console.error("Failed to fetch inbox count:", error);
             }
         }
     };
@@ -163,6 +201,7 @@ export function Navigation() {
                 // Fetch counts only for authenticated users who finished onboarding
                 if (!isInSetupMode && allowAuxiliaryAccountCalls) {
                     fetchHireRequestCount(resolvedProfileType);
+                    fetchInboxCount();
                 }
             } catch {
                 setProfileType(null);
@@ -171,7 +210,6 @@ export function Navigation() {
         } else {
             setProfileType(null);
             setUserName(null);
-            setShortlistCount(0);
             setInboxCount(0);
         }
     }, [user, currentUser, isInSetupMode, allowAuxiliaryAccountCalls]);
@@ -183,10 +221,17 @@ export function Navigation() {
         const handleHiringUpdate = () => {
             if (getAccessTokenFromCookies()) fetchHireRequestCount();
         };
+        // The inbox page has dispatched this on every read since it was written;
+        // nothing was listening, so the badge stayed put until the next poll.
+        const handleInboxUpdate = () => {
+            if (getAccessTokenFromCookies()) fetchInboxCount();
+        };
 
         window.addEventListener('hiring-updated', handleHiringUpdate);
+        window.addEventListener('inbox-updated', handleInboxUpdate);
         return () => {
             window.removeEventListener('hiring-updated', handleHiringUpdate);
+            window.removeEventListener('inbox-updated', handleInboxUpdate);
         };
     }, [isInSetupMode, allowAuxiliaryAccountCalls]);
 
@@ -196,6 +241,7 @@ export function Navigation() {
 
         const pollCounts = () => {
             fetchHireRequestCount();
+            fetchInboxCount();
         };
 
         const intervalId = setInterval(pollCounts, 60_000);
@@ -264,7 +310,6 @@ export function Navigation() {
                                 className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
                             >
                                 {item.name}
-                                {'count' in item && item.name === 'Saved' && renderBadge((item as any).count)}
                                 {'count' in item && item.name === 'Inbox' && renderBadge((item as any).count)}
                                 {'count' in item && (item.href === '/household/hiring' || item.href === '/househelp/hiring') && renderBadge((item as any).count)}
                             </Link>
@@ -287,7 +332,6 @@ export function Navigation() {
                                 id={item.name === 'Saved' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
-                                {item.name === 'Saved' && renderBadge(shortlistCount)}
                                 {item.name === 'Inbox' && renderBadge(inboxCount)}
                                 {(item.href === '/household/hiring' || item.href === '/househelp/hiring') && renderBadge(hireRequestCount)}
                             </Link>
@@ -523,11 +567,6 @@ export function Navigation() {
                                                         <Menu.Item key={item.name}>{({ active }) => (
                                                             <Link to={item.href} className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-1 text-xs relative`}>
                                                                 <span>{item.name}</span>
-                                                                {item.name === 'Saved' && shortlistCount > 0 && (
-                                                                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
-                                                                        {shortlistCount > 9 ? '9+' : shortlistCount}
-                                                                    </span>
-                                                                )}
                                                                 {item.name === 'Inbox' && inboxCount > 0 && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
                                                                         {inboxCount > 9 ? '9+' : inboxCount}
