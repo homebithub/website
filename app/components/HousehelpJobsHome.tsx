@@ -803,16 +803,25 @@ export default function HousehelpJobsHome() {
           next.delete(job.id);
           return next;
         });
-        setSuccess("Job removed from your shortlist.");
+        setSuccess("Job removed from saved.");
       } else {
         if (!househelpProfileId) {
           throw new Error("User profile information is missing. Please sign in again.");
         }
 
-        await listingApplicationService.shortlistListing(job.id, househelpProfileId);
+        // A bookmark, through the same service the household side already uses.
+        // This used to call shortlistListing, which files a formal application
+        // against the household's listing — so saving a job for later put the
+        // househelp into that household's hiring funnel, listed among the
+        // candidates it had shortlisted. Removing it already went through
+        // shortlistService, so the pair was mismatched either way.
+        await shortlistService.createShortlist('', 'househelp', {
+          profile_id: job.id,
+          profile_type: 'job',
+        });
 
         setShortlistedJobIds((prev) => new Set(prev).add(job.id));
-        setSuccess("Job added to your shortlist.");
+        setSuccess("Job saved.");
       }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (err: any) {

@@ -5,7 +5,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { listingApplicationService } from "~/services/grpc/authServices";
+import { jobService, shortlistService } from "~/services/grpc/authServices";
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { formatTimeAgo } from "~/utils/timeAgo";
@@ -121,13 +121,36 @@ export default function ShortlistPage() {
       try {
         setLoading(true);
         setError(null);
-        const raw = await listingApplicationService.listApplications({
-          limit,
-          offset,
-          statuses: ["shortlisted"],
-          applicantProfileId: currentUserProfileId,
-        });
-        const data = Array.isArray(raw?.data) ? raw.data : [];
+        // Saved jobs are bookmarks now, not applications. Reading them from
+        // applications with status 'shortlisted' meant a saved job was also a
+        // formal application on the household's listing, which is exactly the
+        // conflation this page existed on the wrong side of.
+        //
+        // A bookmark stores only which listing it points at, so each one is
+        // fetched to build its card — the same shape the household's saved page
+        // uses for the listings it has kept.
+        const raw = await shortlistService.listByProfile('');
+        const saved = Array.isArray(raw?.data?.data)
+          ? raw.data.data
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : [];
+        const jobs = await Promise.all(
+          saved
+            .filter((item: any) => (item?.profile_type ?? 'job') === 'job')
+            .map(async (item: any) => {
+              const listingId = String(item.profile_id ?? item.listing_id ?? '');
+              if (!listingId) return null;
+              try {
+                return await jobService.getJob(listingId);
+              } catch {
+                // A listing deleted since it was saved should drop out of the
+                // list rather than take the whole page down with it.
+                return null;
+              }
+            }),
+        );
+        const data = jobs.filter(Boolean);
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
         setHasMore(data.length === limit);
