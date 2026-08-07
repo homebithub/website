@@ -530,7 +530,6 @@ export default function HouseholdJobsHome() {
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
-  const [openOnly, setOpenOnly] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(() => ({ ...DEFAULT_OPEN_FOR_WORK_FILTERS }));
   const [sortBy, setSortBy] = useState("best_match");
@@ -604,7 +603,8 @@ export default function HouseholdJobsHome() {
     const choreFilter = filters.choreId ? Number(filters.choreId) : null;
     const petFilter = filters.petTypeId ? Number(filters.petTypeId) : null;
     return listings.filter((listing) => {
-      if (!isServiceProvider && openOnly && !isOpenForWorkListingActive(listing)) return false;
+      // Only listings that are actually open. A closed one is not a result.
+      if (!isServiceProvider && !isOpenForWorkListingActive(listing)) return false;
       if (filters.jobType && !toStringArray(listing.job_types).some((type) => normalizeToken(type) === filters.jobType)) {
         return false;
       }
@@ -625,7 +625,7 @@ export default function HouseholdJobsHome() {
       if (!matchesOpenForWorkSalary(listing, selectedSalaryRange)) return false;
       return true;
     });
-  }, [listings, openOnly, filters, selectedSalaryRange, isServiceProvider]);
+  }, [listings, filters, selectedSalaryRange, isServiceProvider]);
 
   useEffect(() => {
     let cancelled = false;
@@ -683,8 +683,8 @@ export default function HouseholdJobsHome() {
   }, [filteredListings, sortBy]);
 
   const searchKey = useMemo(
-    () => JSON.stringify({ filters, openOnly, sortBy, salaryRangeId: filters.salaryRangeId, isServiceProvider }),
-    [filters, openOnly, sortBy, isServiceProvider]
+    () => JSON.stringify({ filters, sortBy, salaryRangeId: filters.salaryRangeId, isServiceProvider }),
+    [filters, sortBy, isServiceProvider]
   );
 
   useEffect(() => {
@@ -742,9 +742,9 @@ export default function HouseholdJobsHome() {
           offset: String(offset),
           hydrate: "get",
         });
-        if (isServiceProvider || openOnly) params.set("status", "active");
+        params.set("status", "active");
 
-        const raw = await jobService.listJobs(limit, offset, "", isServiceProvider || openOnly ? "active" : "");
+        const raw = await jobService.listJobs(limit, offset, "", "active");
         const data = raw?.data || raw || [];
         const items = Array.isArray(data) ? data : [];
         const normalizedItems = items.map((item: unknown, index: number) => (
@@ -970,38 +970,6 @@ export default function HouseholdJobsHome() {
                 </p>
               </div>
 
-              {!isServiceProvider && (
-                <div className="hidden items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 shadow-inner dark:border-purple-500/40 dark:bg-white/10 lg:flex">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setOpenOnly(true);
-                      }}
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
-                        openOnly
-                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
-                          : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
-                      }`}
-                    >
-                      Open to work
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setOpenOnly(false);
-                      }}
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
-                        !openOnly
-                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
-                          : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
-                      }`}
-                    >
-                      All listings
-                    </button>
-                </div>
-              )}
 
               <label className="min-w-0 flex-1 sm:flex-none">
                 <span className="sr-only">Sort listings</span>
@@ -1045,31 +1013,6 @@ export default function HouseholdJobsHome() {
                 id="household-listing-filters"
                 className="absolute left-0 right-0 top-full max-h-[calc(100vh-136px)] overflow-y-auto border-b border-purple-200/60 bg-white/95 pb-5 shadow-2xl backdrop-blur-xl dark:border-purple-500/30 dark:bg-[#141020]/95 px-8 sm:px-16 lg:px-32"
               >
-                {!isServiceProvider && (
-                  <div className="mt-4 flex items-center justify-between gap-3 lg:hidden">
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Listing status</span>
-                    <div className="flex items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 dark:border-purple-500/40 dark:bg-white/10">
-                      <button
-                        type="button"
-                        onClick={() => setOpenOnly(true)}
-                        className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
-                          openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
-                        }`}
-                      >
-                        Open to work
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setOpenOnly(false)}
-                        className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
-                          !openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
-                        }`}
-                      >
-                        All listings
-                      </button>
-                    </div>
-                  </div>
-                )}
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Job type
@@ -1272,9 +1215,7 @@ export default function HouseholdJobsHome() {
                     ? "No listings match your filters"
                     : isServiceProvider
                       ? "No job listings yet"
-                      : openOnly
-                        ? "No open listings yet"
-                        : "No listings yet"}
+                      : "No open listings yet"}
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
                   {hasActiveFilters
@@ -1283,9 +1224,7 @@ export default function HouseholdJobsHome() {
                       : "Try adjusting your filters or clear them to see more househelps."
                     : isServiceProvider
                       ? "When households create active job listings, they will appear here."
-                      : openOnly
-                      ? "When househelps mark themselves as open to work, their listings will appear here."
-                      : "When househelps create listings, they will appear here."}
+                      : "When househelps mark themselves as open to work, their listings will appear here."}
                 </p>
               </div>
             ) : (

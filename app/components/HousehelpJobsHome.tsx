@@ -353,7 +353,6 @@ export default function HousehelpJobsHome() {
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(() => new Set());
   const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
-  const [openOnly, setOpenOnly] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(() => ({ ...DEFAULT_JOB_FILTERS }));
   const [locationPickerKey, setLocationPickerKey] = useState(0);
@@ -422,8 +421,9 @@ export default function HousehelpJobsHome() {
   // Open-only stays local: it reads status, which the response does carry, and
   // the toggle is meant to feel instant.
   const filteredJobs = useMemo(
-    () => (openOnly ? jobs.filter(isJobOpen) : jobs),
-    [jobs, openOnly],
+    // Only open roles. A closed job is not a result anyone wants.
+    () => jobs.filter(isJobOpen),
+    [jobs],
   );
   const sortedJobs = useMemo(() => {
     if (!sortBy) return filteredJobs;
@@ -474,8 +474,8 @@ export default function HousehelpJobsHome() {
   }, []);
 
   const searchKey = useMemo(
-    () => JSON.stringify({ filters, openOnly, sortBy, salaryRangeId: filters.salaryRangeId }),
-    [filters, openOnly, sortBy]
+    () => JSON.stringify({ filters, sortBy, salaryRangeId: filters.salaryRangeId }),
+    [filters, sortBy]
   );
 
   useEffect(() => {
@@ -549,7 +549,7 @@ export default function HousehelpJobsHome() {
           limit,
           offset,
         };
-        if (openOnly) payload.status = "open";
+        payload.status = "open";
         if (filters.jobType) payload.job_type_id = Number(filters.jobType);
         if (filters.wardId) payload.ward_id = Number(filters.wardId);
         else if (filters.subcountyId) payload.subcounty_id = Number(filters.subcountyId);
@@ -866,36 +866,6 @@ export default function HousehelpJobsHome() {
                 </p>
               </div>
 
-              <div className="hidden items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 shadow-inner dark:border-purple-500/40 dark:bg-white/10 lg:flex">
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setOpenOnly(true);
-                    }}
-                    className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
-                      openOnly
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
-                        : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
-                    }`}
-                  >
-                    Open roles
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setOpenOnly(false);
-                    }}
-                    className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
-                      !openOnly
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
-                        : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
-                    }`}
-                  >
-                    All jobs
-                  </button>
-              </div>
 
               <label className="min-w-0 flex-1 sm:flex-none">
                 <span className="sr-only">Sort job openings</span>
@@ -939,29 +909,6 @@ export default function HousehelpJobsHome() {
                 id="househelp-job-filters"
                 className="absolute left-0 right-0 top-full max-h-[calc(100vh-136px)] overflow-y-auto border-b border-purple-200/60 bg-white/95 pb-5 shadow-2xl backdrop-blur-xl dark:border-purple-500/30 dark:bg-[#141020]/95 px-8 sm:px-16 lg:px-32"
               >
-                <div className="mt-4 flex items-center justify-between gap-3 lg:hidden">
-                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Listing status</span>
-                  <div className="flex items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 dark:border-purple-500/40 dark:bg-white/10">
-                    <button
-                      type="button"
-                      onClick={() => setOpenOnly(true)}
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
-                        openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
-                      }`}
-                    >
-                      Open roles
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOpenOnly(false)}
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
-                        !openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
-                      }`}
-                    >
-                      All jobs
-                    </button>
-                  </div>
-                </div>
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Job type
@@ -1214,14 +1161,12 @@ export default function HousehelpJobsHome() {
             ) : sortedJobs.length === 0 ? (
               <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                  {hasActiveFilters ? "No jobs match your filters" : openOnly ? "No open jobs right now" : "No jobs available yet"}
+                  {hasActiveFilters ? "No jobs match your filters" : "No open jobs right now"}
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
                   {hasActiveFilters
                     ? "Try adjusting your filters or clear them to see more openings."
-                    : openOnly
-                      ? "Households will post new open roles soon. Check back shortly or broaden your filters."
-                      : "New openings from households will appear here. Check back soon or update your profile to get matched faster."}
+                    : "Households will post new open roles soon. Check back shortly or broaden your filters."}
                 </p>
               </div>
             ) : (
