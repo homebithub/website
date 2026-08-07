@@ -744,7 +744,10 @@ export default function HouseholdJobsHome() {
         });
         params.set("status", "active");
 
-        const raw = await jobService.listJobs(limit, offset, "", "active");
+        // Scored against this household's own job, so the people who suit what
+        // they are actually hiring for come first. The score arrives as
+        // fit_score, which the card already renders as a Match badge.
+        const raw = await jobService.listJobs(limit, offset, "", "active", getStoredUserProfileId() || "");
         const data = raw?.data || raw || [];
         const items = Array.isArray(data) ? data : [];
         const normalizedItems = items.map((item: unknown, index: number) => (

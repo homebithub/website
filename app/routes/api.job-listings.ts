@@ -291,6 +291,76 @@ async function getJobListing(baseUrl: string, id: number, callUnaryGrpc: any) {
     : {};
 }
 
+// ─── Relevance ───────────────────────────────────────────────────────────────
+
+// Scores every open listing for one service provider — how much of what they
+// asked for each job offers.
+async function matchListingsFor(baseUrl: string, userProfileId: string, callUnaryGrpc: any) {
+  const { body } = await callUnaryGrpc(
+    baseUrl,
+    '/client_profile.ClientProfileService/MatchListings',
+    encodeStringField(1, userProfileId),
+  );
+  return normalizeArray(body.data ?? body);
+}
+
+// Scores service providers against one of the household's own listings.
+async function matchCandidatesForListing(baseUrl: string, listingId: number, callUnaryGrpc: any) {
+  const { body } = await callUnaryGrpc(
+    baseUrl,
+    '/client_profile.ClientProfileService/MatchCandidates',
+    encodeInt64Field(1, listingId),
+  );
+  return normalizeArray(body.data ?? body);
+}
+
+// The household's own job to rank candidates against — the newest active one.
+//
+// A household with several open jobs is ranked against its most recent, which
+// is the one it is most likely to be filling. Ranking against all of them and
+// taking the best score would read better but costs a query per listing on
+// every page load, and this can be revisited when anyone has enough jobs for
+// the difference to show.
+async function newestListingFor(baseUrl: string, userProfileId: string, callUnaryGrpc: any): Promise<number> {
+  const params = new URLSearchParams({ limit: '1', offset: '0', user_profile_id: userProfileId, status: 'active' });
+  const { body } = await callUnaryGrpc(baseUrl, '/auth.ListingService/ListJobs', encodeListRequest(params));
+  const rows = normalizeArray(body.data ?? body);
+  return rows.length > 0 ? extractListingId(rows[0]) : 0;
+}
+
+/**
+ * Annotates listings with how well they match, keyed by whichever id the
+ * direction produces.
+ *
+ * A listing with no score keeps fit_score undefined rather than zero. The two
+ * are different: zero is "scored and irrelevant", undefined is "not scored" —
+ * which is the normal state early on, when a person has answered little and the
+ * catalogue is thin. The caller ranks scored listings first and leaves the rest
+ * in their existing order beneath, so a sparse match widens the net instead of
+ * emptying the page.
+ */
+function annotateWithScores(
+  listings: Record<string, unknown>[],
+  scores: Map<string, number>,
+  keyOf: (listing: Record<string, unknown>) => string,
+) {
+  if (scores.size === 0) return listings;
+  return listings.map((listing) => {
+    const score = scores.get(keyOf(listing));
+    return score === undefined ? listing : { ...listing, fit_score: score };
+  });
+}
+
+function scoreMap(rows: Record<string, unknown>[], idKey: string) {
+  const scores = new Map<string, number>();
+  for (const row of rows) {
+    const id = String(row[idKey] ?? '');
+    const score = Number(row.match_score ?? 0);
+    if (id && Number.isFinite(score) && score > 0) scores.set(id, score);
+  }
+  return scores;
+}
+
 async function enrichListingsWithFeatures(baseUrl: string, listings: Record<string, unknown>[], callUnaryGrpc: any) {
   return Promise.all(listings.map(async (listing) => {
     const listingId = extractListingId(listing);
@@ -356,7 +426,41 @@ export async function loader({ request }: { request: Request }) {
       : listings;
     const enriched = await enrichListingsWithFeatures(baseUrl, hydratedListings, callUnaryGrpc);
 
-    return Response.json({ data: enriched });
+    // Relevance, when the caller says who is looking.
+    //
+    // Scored here rather than in the browser so the page makes one request
+    // instead of two, and so a match failure degrades to an unranked list
+    // rather than an empty one — the engine is an improvement on the ordering,
+    // never a precondition for having any.
+    const matchFor = String(url.searchParams.get('match_for') || '');
+    const matchCandidatesForProfile = String(url.searchParams.get('match_candidates_for_profile') || '');
+
+    let scored = enriched;
+    try {
+      if (matchFor) {
+        // A service provider looking at jobs.
+        const rows = await matchListingsFor(baseUrl, matchFor, callUnaryGrpc);
+        scored = annotateWithScores(scored, scoreMap(rows, 'listing_id'), (listing) =>
+          String(listing.id ?? ''));
+      } else if (matchCandidatesForProfile) {
+        // A household looking at people, scored against its own job.
+        //
+        // The listing is resolved here rather than passed in: the browse page
+        // has no reason to know which of the household's jobs it is being
+        // ranked against, and asking it to fetch one first would make the page
+        // wait on a request whose only purpose is to feed another.
+        const listingId = await newestListingFor(baseUrl, matchCandidatesForProfile, callUnaryGrpc);
+        const rows = listingId
+          ? await matchCandidatesForListing(baseUrl, listingId, callUnaryGrpc)
+          : [];
+        scored = annotateWithScores(scored, scoreMap(rows, 'user_profile_id'), (listing) =>
+          String(listing.user_profile_id ?? listing.userProfileId ?? ''));
+      }
+    } catch (err: unknown) {
+      console.warn('Unable to score listings; returning them unranked:', err);
+    }
+
+    return Response.json({ data: scored });
   } catch (err: unknown) {
     console.warn('Unable to list job listings:', err);
     return Response.json({ data: [] });

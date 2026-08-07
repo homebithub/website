@@ -1507,13 +1507,15 @@ export const jobService = {
     return payload.data ?? payload;
   },
 
-  async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId(), status = ''): Promise<any> {
+  async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId(), status = '', matchCandidatesForProfile = ''): Promise<any> {
     const params = new URLSearchParams({
       limit: String(limit),
       offset: String(offset),
     });
     if (userProfileId) params.set('user_profile_id', userProfileId);
     if (status) params.set('status', status);
+    // A household browsing househelps scores them against its own job.
+    if (matchCandidatesForProfile) params.set('match_candidates_for_profile', matchCandidatesForProfile);
     const payload = await jobListingsApi(`?${params.toString()}`);
     return { data: normalizeArray(payload.data ?? payload) };
   },
@@ -1542,6 +1544,10 @@ export const jobService = {
       ? filters.property_ids.map(Number).filter((id: number) => Number.isFinite(id) && id > 0)
       : [];
     if (propertyIds.length > 0) params.set('property_ids', propertyIds.join(','));
+
+    // Who is looking, so the service can score how well each job answers what
+    // they asked for. Absent, the list comes back unranked rather than empty.
+    if (filters?.match_for) params.set('match_for', String(filters.match_for));
 
     const payload = await jobListingsApi(`?${params.toString()}`);
     return { data: normalizeArray(payload.data ?? payload) };

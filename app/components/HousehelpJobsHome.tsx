@@ -571,6 +571,12 @@ export default function HousehelpJobsHome() {
 
         if (sortBy === "best_match") payload.sort = "best_match";
 
+        // Who is looking. The service scores each job against what this person
+        // asked for during onboarding, and the score arrives as fit_score. Sent
+        // regardless of the sort, so switching to Best match does not need a
+        // second trip, and harmless without it — an unread field.
+        if (househelpProfileId) payload.match_for = househelpProfileId;
+
         const raw = await jobService.searchJobs(payload, currentUserId);
         const data = raw?.data || raw || {};
         const items = Array.isArray(data?.data)
