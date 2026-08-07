@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { rememberPendingCode } from '~/services/referrals';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
@@ -199,6 +200,11 @@ export default function SignupPage() {
     const googleLastName = searchParams.get('last_name') || '';
     const googleId = searchParams.get('google_id') || '';
     const googlePicture = searchParams.get('picture') || '';
+    // A referral link still lands here, but the code is no longer asked for on
+    // this form. It waits in session storage and prefills the prompt shown once
+    // the account exists — a code cannot be spent before there is somebody to
+    // attach it to, and asking for one before the person has seen what they
+    // joined got it ignored.
     const referralCodeParam = searchParams.get('referral_code') || searchParams.get('ref') || searchParams.get('referral') || '';
     
     const [form, setForm] = useState<SignupRequest>({
@@ -212,7 +218,6 @@ export default function SignupPage() {
         first_name: googleFirstName,
         last_name: googleLastName,
         phone: '',
-        referral_code: referralCodeParam,
     });
     
     const [googleData, setGoogleData] = useState<{
@@ -239,6 +244,12 @@ export default function SignupPage() {
     const [formLoading, setFormLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<SignupResponse | null>(null);
+
+    // Hold the code from the invite link until there is an account to spend it
+    // on. It survives the Google round trip, which leaves the site and returns.
+    useEffect(() => {
+        rememberPendingCode(referralCodeParam);
+    }, [referralCodeParam]);
 
     useEffect(() => {
         // If user is already authenticated, redirect them
@@ -408,7 +419,6 @@ export default function SignupPage() {
                         signupPhone,
                         form.profile_id || form.profile_type,
                         form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
-                        form.referral_code
                     );
 
                     const userId = signupResponse.getUserId();
@@ -504,7 +514,6 @@ export default function SignupPage() {
                     form.last_name,
                     form.profile_id || form.profile_type,
                     form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
-                    form.referral_code,
                 );
 
                 const responseBody = genericResponseBodyToJs(signupResponse);
@@ -633,7 +642,6 @@ export default function SignupPage() {
                 profile_type: form.profile_type,
                 profile_id: form.profile_id,
                 bureau_id: bureauId || undefined,
-                referral_code: form.referral_code?.trim() || undefined
             };
             const state = encodeURIComponent(JSON.stringify(statePayload));
             const { default: authService } = await import('~/services/grpc/auth.service');
@@ -932,29 +940,6 @@ export default function SignupPage() {
     />
     {getFieldError('phone') && (
         <p className="text-red-600 text-xs mt-1">{getFieldError('phone')}</p>
-    )}
-</div>
-
-<div>
-    <label htmlFor="referral_code" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Referral code (optional)</label>
-    <input
-        id="referral_code"
-        type="text"
-        name="referral_code"
-        value={form.referral_code || ''}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
-            getFieldError('referral_code') 
-                ? 'border-red-300' 
-                : isFieldValid('referral_code')
-                ? 'border-green-300'
-                : 'border-purple-200'
-        }`}
-        placeholder="AB12CD"
-    />
-    {getFieldError('referral_code') && (
-        <p className="text-red-600 text-xs mt-1">{getFieldError('referral_code')}</p>
     )}
 </div>
 

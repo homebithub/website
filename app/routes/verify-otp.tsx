@@ -97,6 +97,20 @@ function genericResponseBodyToJs(response: any) {
   return body || response || {};
 }
 
+/**
+ * Where a newly verified person goes next.
+ *
+ * Through the referral prompt first, carrying their real destination. Asking
+ * "were you invited?" belongs here — after the account exists and before they
+ * get on with setting it up — rather than as an optional field at the bottom of
+ * the signup form, where it was ignored and, until recently, went nowhere at
+ * all. The prompt sends itself on to `next` whether the person enters a code,
+ * skips, or no campaign is running.
+ */
+function afterSignupDestination(destination: string): string {
+  return `/welcome/referral?next=${encodeURIComponent(destination)}`;
+}
+
 export default function VerifyOtpPage() {
   // UI state for changing phone
   const [showChangePhone, setShowChangePhone] = React.useState(false);
@@ -416,11 +430,11 @@ export default function VerifyOtpPage() {
         // If they have email already, continue to the requested destination.
         const redirectTo = verificationState.redirectTo || '/';
         if (isNewSignup && pt === 'household') {
-          navigate('/household-choice', { replace: true });
+          navigate(afterSignupDestination('/household-choice'), { replace: true });
           return;
         }
         if (isNewSignup && pt === 'househelp') {
-          navigate('/househelp/profile', { replace: true });
+          navigate(afterSignupDestination('/househelp/profile'), { replace: true });
           return;
         }
         navigate(redirectTo, { replace: true });
@@ -451,11 +465,11 @@ export default function VerifyOtpPage() {
         // New households choose whether to create or join. New househelps
         // complete their information directly on the profile page.
         if (isNewSignup && profileType === 'household') {
-          navigate('/household-choice', { replace: true });
+          navigate(afterSignupDestination('/household-choice'), { replace: true });
           return;
         }
         if (isNewSignup && profileType === 'househelp') {
-          navigate('/househelp/profile', { replace: true });
+          navigate(afterSignupDestination('/househelp/profile'), { replace: true });
           return;
         }
         navigate(verificationState.redirectTo || '/', { replace: true });
