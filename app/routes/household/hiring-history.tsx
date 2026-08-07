@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { humanizeFeatureName } from '~/utils/listingFeatures';
+import { formatListingPlace } from '~/utils/place';
 import { hireRequestService, hireContractService, employmentContractService, shortlistService, jobService, listingApplicationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -59,6 +60,10 @@ interface JobPosting {
   title?: string;
   description?: string;
   location?: string | JobLocation;
+  /** Resolved from the listing's ward by the auth service, alongside location. */
+  ward?: string;
+  subcounty?: string;
+  county?: string;
   job_types?: string[];
   start_date?: string;
   max_applicants?: number;
@@ -1079,6 +1084,13 @@ export default function HiringHistory() {
                       <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
                         {job.title || 'Untitled role'}
                       </h3>
+                      {/* Where the job is. This is now the only place a
+                          household sees its own listings, so the location has to
+                          be here rather than only on the profile page it used
+                          to share the job with. */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        📍 {formatListingPlace(job)}
+                      </p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
                       ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { PHOTO_ACCEPT_ATTRIBUTE, selectPhotosForUpload, uploadDocuments } from '~/utils/documentUploads';
-import { profileService as grpcProfileService, documentService, householdMemberService, jobService, profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
+import { profileService as grpcProfileService, documentService, householdMemberService, profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -15,9 +15,6 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId, setStoredActiveUserProfileId } from '~/utils/authStorage';
-import JobPostModal from '~/components/modals/JobPostModal';
-import { formatListingPlace } from '~/utils/place';
-import { listingHighlights } from '~/utils/listingFeatures';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
 import { ProfileRequirementsChecklist } from '~/components/profile/ProfileRequirementsChecklist';
@@ -48,35 +45,6 @@ interface HouseholdData {
   location_ref?: any;
   town?: string;
   photos?: string[];
-}
-
-interface JobSalaryRange {
-  min?: number;
-  max?: number;
-  currency?: string;
-  frequency?: string;
-}
-
-interface JobLocation {
-  place_type?: string;
-  latitude?: number;
-  longitude?: number;
-  mapbox_id?: string;
-  name?: string;
-  place?: string;
-}
-
-interface JobPosting {
-  id: string;
-  title?: string;
-  description?: string;
-  location?: string | JobLocation;
-  job_types?: string[];
-  start_date?: string;
-  max_applicants?: number;
-  status?: string;
-  created_at?: string;
-  salary_range?: JobSalaryRange;
 }
 
 type UnknownRecord = Record<string, any>;
@@ -222,13 +190,6 @@ export default function HouseholdProfile() {
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [jobs, setJobs] = useState<JobPosting[]>([]);
-  const [jobsLoading, setJobsLoading] = useState(false);
-  const [jobsError, setJobsError] = useState<string | null>(null);
-  const [jobsSuccess, setJobsSuccess] = useState<string | null>(null);
-  const [showJobModal, setShowJobModal] = useState(false);
-  const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
-  const [jobToDelete, setJobToDelete] = useState<JobPosting | null>(null);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const [selectedFeatureGroups, setSelectedFeatureGroups] = useState<SelectedFeatureGroup[]>([]);
   const [selectedFeaturesLoading, setSelectedFeaturesLoading] = useState(false);
@@ -343,66 +304,6 @@ export default function HouseholdProfile() {
       fetchMembers();
     }
   }, [profile]);
-
-  const fetchJobs = async () => {
-    setJobsLoading(true);
-    setJobsError(null);
-    try {
-      const raw = await jobService.listJobs(20, 0, getStoredUserProfileId());
-      const payload = raw?.data || raw || [];
-      const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
-      setJobs(items as JobPosting[]);
-    } catch (err: any) {
-      setJobsError(err.message || 'Failed to load job postings');
-    } finally {
-      setJobsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!getStoredUserProfileId()) return;
-    fetchJobs();
-  }, [profile?.user_id]);
-
-  const handleJobSaved = () => {
-    if (getStoredUserProfileId()) {
-      fetchJobs();
-    }
-    setJobsSuccess('Job posting updated.');
-  };
-
-  const handleToggleJobStatus = async (job: JobPosting) => {
-    if (!job?.id) return;
-    setJobsError(null);
-    setJobsSuccess(null);
-    try {
-      if (job.status === 'closed') {
-        await jobService.reopenJob(job.id, '');
-        setJobsSuccess('Job reopened.');
-      } else {
-        await jobService.closeJob(job.id, '');
-        setJobsSuccess('Job closed.');
-      }
-      if (getStoredUserProfileId()) await fetchJobs();
-    } catch (err: any) {
-      setJobsError(err.message || 'Failed to update job status');
-    }
-  };
-
-  const handleDeleteJob = async () => {
-    if (!jobToDelete?.id) return;
-    setJobsError(null);
-    setJobsSuccess(null);
-    try {
-      await jobService.deleteJob(jobToDelete.id, '');
-      setJobsSuccess('Job deleted.');
-      if (getStoredUserProfileId()) await fetchJobs();
-    } catch (err: any) {
-      setJobsError(err.message || 'Failed to delete job');
-    } finally {
-      setJobToDelete(null);
-    }
-  };
 
   const handleCompleteFeaturePicks = () => {
     const storedProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('profile_id') || '' : '';
@@ -800,114 +701,6 @@ export default function HouseholdProfile() {
         fallbackProfileId="11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1"
         fallbackProfileType="household"
       />
-
-      {/* Job Postings */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-          <div>
-            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📋 Job Postings</h2>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Manage the roles you are hiring for and keep them updated.
-            </p>
-          </div>
-          <button
-            onClick={() => { setEditingJob(null); setShowJobModal(true); }}
-            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
-          >
-            New Job
-          </button>
-        </div>
-
-        {jobsSuccess ? <SuccessAlert message={jobsSuccess ?? ""} className="mb-3" /> : null}
-        {jobsError ? <ErrorAlert message={jobsError ?? ""} className="mb-3" /> : null}
-
-        {jobsLoading ? (
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
-            Loading job postings...
-          </div>
-        ) : jobs.length > 0 ? (
-          <div className="space-y-3">
-            {jobs.map((job) => (
-              <div key={job.id} className="rounded-xl border border-gray-200 dark:border-purple-500/30 p-4">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{job.title || 'Untitled role'}</h3>
-                    {/* Reads the ward and subcounty the service resolved onto the
-                        listing. Asking job.location alone meant a household saw
-                        "Location not specified" on a job it had placed. */}
-                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatListingPlace(job)}</p>
-                  </div>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
-                    ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
-                    : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'}`}>
-                    {job.status || 'open'}
-                  </span>
-                </div>
-
-                {/* Salary and start timing are feature picks, not columns on the
-                    listing. Read from job.salary_range and job.start_date this
-                    card said "Not specified" and "Flexible" on every job, however
-                    much the household had filled in. */}
-                {(() => {
-                  const { salary, startTiming } = listingHighlights(job);
-                  return (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {(job.job_types || []).length > 0 ? (
-                        job.job_types?.map((type) => (
-                          <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
-                            {type.replace(/_/g, ' ')}
-                          </span>
-                        ))
-                      ) : null}
-                      {salary ? (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
-                          {salary}
-                        </span>
-                      ) : null}
-                      {startTiming ? (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                          Start {startTiming}
-                        </span>
-                      ) : null}
-                      {job.max_applicants ? (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
-                          Max {job.max_applicants} applicants
-                        </span>
-                      ) : null}
-                    </div>
-                  );
-                })()}
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => { setEditingJob(job); setShowJobModal(true); }}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleToggleJobStatus(job)}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-white/5"
-                  >
-                    {job.status === 'closed' ? 'Reopen' : 'Close'}
-                  </button>
-                  <button
-                    onClick={() => setJobToDelete(job)}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-red-300 text-red-600 dark:text-red-300 dark:border-red-500/40 hover:bg-red-50 dark:hover:bg-red-500/10"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed border-purple-200 dark:border-purple-500/30 p-4 text-xs text-gray-600 dark:text-gray-400">
-            You have not published any job postings yet.
-          </div>
-        )}
-      </div>
 
       {/* Household Invitation Code */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
@@ -1319,17 +1112,6 @@ export default function HouseholdProfile() {
         onCancel={() => setMemberToRemove(null)}
       />
 
-      <ConfirmDialog
-        isOpen={jobToDelete !== null}
-        title="Delete Job Posting"
-        message="Are you sure you want to delete this job posting?"
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-        onConfirm={handleDeleteJob}
-        onCancel={() => setJobToDelete(null)}
-      />
-
       {/* Profile Views Modal */}
       {profile?.id && (
         <ProfileViewsAnalytics
@@ -1339,16 +1121,6 @@ export default function HouseholdProfile() {
           onClose={() => setShowViewsModal(false)}
         />
       )}
-
-      <JobPostModal
-        isOpen={showJobModal}
-        onClose={() => {
-          setShowJobModal(false);
-          setEditingJob(null);
-        }}
-        job={editingJob}
-        onSaved={handleJobSaved}
-      />
     </div>
   );
 }
