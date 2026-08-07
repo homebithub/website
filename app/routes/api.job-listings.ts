@@ -341,22 +341,32 @@ async function newestListingFor(baseUrl: string, userProfileId: string, callUnar
  */
 function annotateWithScores(
   listings: Record<string, unknown>[],
-  scores: Map<string, number>,
+  scores: Map<string, { score: number; reasons: string[] }>,
   keyOf: (listing: Record<string, unknown>) => string,
 ) {
   if (scores.size === 0) return listings;
   return listings.map((listing) => {
-    const score = scores.get(keyOf(listing));
-    return score === undefined ? listing : { ...listing, fit_score: score };
+    const match = scores.get(keyOf(listing));
+    if (!match) return listing;
+    return {
+      ...listing,
+      fit_score: match.score,
+      // Why it matched, so the card can say more than a percentage. Feature
+      // names arrive as the catalogue stores them and are humanised on render,
+      // the same as everywhere else a feature name is shown.
+      match_reasons: match.reasons,
+    };
   });
 }
 
 function scoreMap(rows: Record<string, unknown>[], idKey: string) {
-  const scores = new Map<string, number>();
+  const scores = new Map<string, { score: number; reasons: string[] }>();
   for (const row of rows) {
     const id = String(row[idKey] ?? '');
     const score = Number(row.match_score ?? 0);
-    if (id && Number.isFinite(score) && score > 0) scores.set(id, score);
+    if (!id || !Number.isFinite(score) || score <= 0) continue;
+    const reasons = Array.isArray(row.reasons) ? row.reasons.map(String).filter(Boolean) : [];
+    scores.set(id, { score, reasons });
   }
   return scores;
 }

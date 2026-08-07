@@ -161,7 +161,6 @@ const DEFAULT_OPEN_FOR_WORK_FILTERS = {
   canWorkWithPets: "",
 };
 
-const HOUSEHOLD_FILTERS_STORAGE_KEY = "homebit_household_filters_open";
 
 const SAVED_INVITE_STORAGE_KEY = "homebit_household_invite_message";
 
@@ -693,17 +692,28 @@ export default function HouseholdJobsHome() {
     setListings([]);
   }, [searchKey]);
 
+  // The panel closes on a click outside it, and starts closed on every visit.
+  //
+  // Its open state used to be remembered across reloads, so a panel opened once
+  // reappeared on every subsequent visit covering the results underneath — and
+  // the only way to shut it was to find the toggle again. A filter sheet is a
+  // transient thing: the filters themselves persist, whether the drawer happens
+  // to be open does not.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(HOUSEHOLD_FILTERS_STORAGE_KEY);
-    if (stored !== null) {
-      setFiltersOpen(stored === "true");
-    }
-  }, []);
+    if (!filtersOpen) return;
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(HOUSEHOLD_FILTERS_STORAGE_KEY, String(filtersOpen));
+    const dismiss = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const panel = document.getElementById("household-listing-filters");
+      // The toggle is excluded so its own click is not counted twice: it would
+      // close the panel here and immediately reopen it in the button's handler.
+      const toggle = document.getElementById("household-listing-filters-toggle");
+      if (panel?.contains(target) || toggle?.contains(target)) return;
+      setFiltersOpen(false);
+    };
+
+    document.addEventListener("mousedown", dismiss);
+    return () => document.removeEventListener("mousedown", dismiss);
   }, [filtersOpen]);
 
   useEffect(() => {
@@ -995,6 +1005,7 @@ export default function HouseholdJobsHome() {
               <button
                 type="button"
                 onClick={() => setFiltersOpen((prev) => !prev)}
+                id="household-listing-filters-toggle"
                 aria-label={filtersOpen ? "Hide listing filters" : "Show listing filters"}
                 aria-expanded={filtersOpen}
                 aria-controls="household-listing-filters"
@@ -1374,7 +1385,7 @@ export default function HouseholdJobsHome() {
                                   key={reason}
                                   className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] dark:bg-emerald-500/10 dark:text-emerald-200"
                                 >
-                                  {reason}
+                                  {humanizeFeatureName(reason)}
                                 </span>
                               ))}
                             </div>

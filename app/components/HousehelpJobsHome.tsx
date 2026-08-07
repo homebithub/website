@@ -37,7 +37,7 @@ import { SubscriptionRequiredModal } from "~/components/subscriptions/Subscripti
 import { IdentityVerificationPrompt } from "~/components/verification/IdentityVerificationPrompt";
 import { useIdentityVerification } from "~/hooks/useIdentityVerification";
 import { formatListingPlace, formatPlaceOrFallback } from "~/utils/place";
-import { listingHighlights, remainingFeatureGroups } from "~/utils/listingFeatures";
+import { humanizeFeatureName, listingHighlights, remainingFeatureGroups } from "~/utils/listingFeatures";
 
 interface JobListing {
   id: string;
@@ -120,7 +120,6 @@ const DEFAULT_JOB_FILTERS = {
   childrenCapacityId: "",
 };
 
-const HOUSEHELP_FILTERS_STORAGE_KEY = "homebit_househelp_filters_open";
 
 const normalizeToken = (value?: string) => (value || "").trim().toLowerCase();
 
@@ -137,7 +136,16 @@ const formatSalaryRange = (range?: JobListing["salary_range"]) => {
   if (min && max) return `${min} - ${max}`;
   return min || max || "Not specified";
 };
-const isJobOpen = (job: JobListing) => (job.status || "open").toLowerCase() === "open";
+const isJobOpen = (job: { status?: string }) => {
+  // A listing's status is "active" — the value the service writes and the one
+  // the API returns. This compared against "open" alone, so every open job read
+  // as closed: the househelp home page showed "0 roles available" beside a
+  // filter chip saying "2 total roles". It went unnoticed because the page had
+  // an All jobs toggle that skipped the check, and removing that toggle turned
+  // a wrong count into an empty page.
+  const status = (job.status || "active").toLowerCase();
+  return ["active", "open", "available"].includes(status);
+};
 
 const hasScheduleSlot = (
   schedule: JobListing["work_schedule"],
@@ -484,17 +492,28 @@ export default function HousehelpJobsHome() {
     setJobs([]);
   }, [searchKey]);
 
+  // The panel closes on a click outside it, and starts closed on every visit.
+  //
+  // Its open state used to be remembered across reloads, so a panel opened once
+  // reappeared on every subsequent visit covering the results underneath — and
+  // the only way to shut it was to find the toggle again. A filter sheet is a
+  // transient thing: the filters themselves persist, whether the drawer happens
+  // to be open does not.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(HOUSEHELP_FILTERS_STORAGE_KEY);
-    if (stored !== null) {
-      setFiltersOpen(stored === "true");
-    }
-  }, []);
+    if (!filtersOpen) return;
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(HOUSEHELP_FILTERS_STORAGE_KEY, String(filtersOpen));
+    const dismiss = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const panel = document.getElementById("househelp-job-filters");
+      // The toggle is excluded so its own click is not counted twice: it would
+      // close the panel here and immediately reopen it in the button's handler.
+      const toggle = document.getElementById("househelp-job-filters-toggle");
+      if (panel?.contains(target) || toggle?.contains(target)) return;
+      setFiltersOpen(false);
+    };
+
+    document.addEventListener("mousedown", dismiss);
+    return () => document.removeEventListener("mousedown", dismiss);
   }, [filtersOpen]);
 
   useEffect(() => {
@@ -894,6 +913,7 @@ export default function HousehelpJobsHome() {
               <button
                 type="button"
                 onClick={() => setFiltersOpen((prev) => !prev)}
+                id="househelp-job-filters-toggle"
                 aria-label={filtersOpen ? "Hide job filters" : "Show job filters"}
                 aria-expanded={filtersOpen}
                 aria-controls="househelp-job-filters"
@@ -1120,7 +1140,7 @@ export default function HousehelpJobsHome() {
                                 key={reason}
                                 className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] dark:bg-emerald-500/10 dark:text-emerald-200"
                               >
-                                {reason}
+                                {humanizeFeatureName(reason)}
                               </span>
                             ))}
                           </div>
