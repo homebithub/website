@@ -258,6 +258,19 @@ function PhoneHandoffPanel({ verification }: { verification: IdentityVerificatio
     setOnTouchDevice(window.matchMedia("(pointer: coarse)").matches);
   }, []);
 
+  // Show the code straight away rather than behind a button.
+  //
+  // On a desktop this is the recommended path, not a fallback — a phone camera
+  // photographs an ID far better than a webcam, and since capture is camera-only
+  // a machine without one has no other route. A collapsed "Show QR code" button
+  // sitting above a large "Continue with Smile ID" is a button nobody presses,
+  // which is exactly what happened: the panel shipped and the first person
+  // through it reported there was no way to scan anything.
+  useEffect(() => {
+    if (onTouchDevice || handoffLink || handoffLoading || handoffError) return;
+    void requestHandoff();
+  }, [onTouchDevice, handoffLink, handoffLoading, handoffError, requestHandoff]);
+
   useEffect(() => {
     if (!handoffExpiresAt) {
       setSecondsLeft(0);
