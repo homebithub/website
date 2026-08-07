@@ -72,10 +72,13 @@ export function Navigation() {
     const authLinks = React.useMemo(() => {
         const role = normalizeProfileRole(profileType);
         const isClient = role === 'client';
-        const isServiceProvider = role === 'service-provider';
         const shortlistHref = isClient ? '/household/shortlist' : '/shortlist';
         const hiringHistoryHref = isClient ? '/household/hiring' : '/househelp/hiring';
-        const hiringLabel = isServiceProvider ? 'Job Openings' : 'Hiring';
+        // One word for both sides. The page is where a person manages their own
+        // hiring over time — requests, contracts, work history — and that is the
+        // same activity whether you are filling a job or taking one. Browsing
+        // what is on offer happens on the home page.
+        const hiringLabel = 'Hiring';
         return [
             // "Saved" rather than "Shortlist": this holds what someone bookmarked
             // while browsing. A household shortlisting a candidate who applied to

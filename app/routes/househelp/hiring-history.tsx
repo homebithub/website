@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { humanizeFeatureName } from '~/utils/listingFeatures';
 import { hireRequestService, hireContractService, employmentContractService, jobService, listingApplicationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -110,23 +109,7 @@ interface EmploymentContract {
   };
 }
 
-interface JobListing {
-  id: string;
-  title?: string;
-  description?: string;
-  job_type_id?: number | string;
-  job_type_name?: string;
-  status?: string;
-  created_at?: string;
-  listing_feature_groups?: Array<{
-    feature_id?: number | string;
-    feature_name?: string;
-    name?: string;
-    properties?: string[];
-  }>;
-}
-
-type TabType = 'job-listings' | 'requests' | 'work-history' | 'employment-contracts' | 'interests';
+type TabType = 'requests' | 'work-history' | 'employment-contracts' | 'interests';
 type HiringProfileRole = 'service-provider' | 'client';
 
 function normalizeHiringProfileRole(profileType?: string | null): HiringProfileRole {
@@ -227,12 +210,12 @@ export default function HousehelpHiringHistory() {
   const currentProfileType = (getStoredUser() as any)?.profile_type || getStoredProfileType();
   const profileRole = normalizeHiringProfileRole(currentProfileType);
   const isClientProfile = profileRole === 'client';
-  const defaultTab: TabType = isClientProfile ? 'requests' : 'job-listings';
+  // Both roles land on their own requests. What is on offer in the market is
+  // the home page's job; this page is about one person's hiring over time.
+  const defaultTab: TabType = 'requests';
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = isClientProfile
-      ? ['requests', 'work-history', 'employment-contracts', 'interests']
-      : ['job-listings', 'requests', 'work-history', 'employment-contracts', 'interests'];
+    const validTabs: TabType[] = ['requests', 'work-history', 'employment-contracts', 'interests'];
     return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : defaultTab;
   });
   
@@ -263,9 +246,6 @@ export default function HousehelpHiringHistory() {
   const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [jobListings, setJobListings] = useState<JobListing[]>([]);
-  const [jobListingsTotal, setJobListingsTotal] = useState(0);
-  const [jobListingsLoading, setJobListingsLoading] = useState(true);
   
   // Confirmation dialog states
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
@@ -275,7 +255,6 @@ export default function HousehelpHiringHistory() {
   const backToPath = `${location.pathname}${location.search || ''}`;
 
   const handleTabChange = (tab: TabType) => {
-    if (isClientProfile && tab === 'job-listings') return;
 
     setActiveTab(tab);
     setOffset(0);
@@ -299,15 +278,8 @@ export default function HousehelpHiringHistory() {
   }, []);
 
   useEffect(() => {
-    if (isClientProfile && activeTab === 'job-listings') {
-      handleTabChange(defaultTab);
-      return;
-    }
-
     if (activeTab === 'requests') {
       fetchHireRequests();
-    } else if (activeTab === 'job-listings') {
-      fetchJobListings();
     } else if (activeTab === 'work-history') {
       fetchContracts();
     } else if (activeTab === 'employment-contracts') {
@@ -319,37 +291,13 @@ export default function HousehelpHiringHistory() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = isClientProfile
-      ? ['requests', 'work-history', 'employment-contracts', 'interests']
-      : ['job-listings', 'requests', 'work-history', 'employment-contracts', 'interests'];
-
-    if (isClientProfile && activeTab === 'job-listings') {
-      setActiveTab(defaultTab);
-      setOffset(0);
-      return;
-    }
+    const validTabs: TabType[] = ['requests', 'work-history', 'employment-contracts', 'interests'];
 
     if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
       setActiveTab(tabParam as TabType);
       setOffset(0);
     }
   }, [activeTab, defaultTab, isClientProfile, searchParams]);
-
-  const fetchJobListings = async () => {
-    setJobListingsLoading(true);
-    setError(null);
-    try {
-      const payload = await jobService.listJobs(limit, offset, '');
-      const rawItems = payload?.data || payload || [];
-      const items = Array.isArray(rawItems) ? rawItems : [];
-      setJobListings(items as JobListing[]);
-      setJobListingsTotal(Number(payload?.total || items.length));
-    } catch (err: any) {
-      setError(err.message || 'Failed to load job listings');
-    } finally {
-      setJobListingsLoading(false);
-    }
-  };
 
   const fetchHireRequests = async () => {
     setRequestsLoading(true);
@@ -581,17 +529,6 @@ export default function HousehelpHiringHistory() {
   const formatSalary = (amount?: number | null, frequency?: string) =>
     formatOnboardingAmountWithFrequency(amount, frequency, 'Not specified');
 
-  const getListingFeatureGroups = (listing: JobListing) => (
-    Array.isArray(listing.listing_feature_groups)
-      ? listing.listing_feature_groups
-          .map((group) => ({
-            name: humanizeFeatureName(group.feature_name || group.name) || 'Feature',
-            properties: Array.isArray(group.properties) ? group.properties.filter(Boolean) : [],
-          }))
-          .filter((group) => group.properties.length > 0)
-      : []
-  );
-
   const getStatusColor = (status?: string | null) => {
     switch (normalizeStatus(status)) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
@@ -617,20 +554,19 @@ export default function HousehelpHiringHistory() {
   };
 
   const tabs: { key: TabType; label: string; count?: number }[] = [
-    ...(!isClientProfile ? [{ key: 'job-listings' as TabType, label: 'Job Listings', count: jobListingsTotal > 0 ? jobListingsTotal : undefined }] : []),
     { key: 'requests', label: 'Requests Received', count: pendingCount > 0 ? pendingCount : undefined },
     { key: 'employment-contracts', label: 'Contracts' },
     { key: 'work-history', label: 'Work History' },
     { key: 'interests', label: 'My Applications' },
   ];
 
-  const pageTitle = isClientProfile ? 'Hiring' : 'Job Openings';
-  const pageEyebrow = isClientProfile ? 'Client • Hiring' : 'Service Provider • Job Openings';
+  const pageTitle = 'Hiring';
+  const pageEyebrow = isClientProfile ? 'Client • Hiring' : 'Service Provider • Hiring';
   const pageDescription = isClientProfile
     ? 'Manage your hiring activity and view its status'
-    : 'Manage your job openings, requests, contracts, and interests';
+    : 'Manage your requests, contracts, work history and applications';
 
-  const loading = !isClientProfile && activeTab === 'job-listings' ? jobListingsLoading : activeTab === 'requests' ? requestsLoading : activeTab === 'work-history' ? contractsLoading : activeTab === 'employment-contracts' ? employmentContractsLoading : interestsLoading;
+  const loading = activeTab === 'requests' ? requestsLoading : activeTab === 'work-history' ? contractsLoading : activeTab === 'employment-contracts' ? employmentContractsLoading : interestsLoading;
 
   return (
     <div>
@@ -662,7 +598,6 @@ export default function HousehelpHiringHistory() {
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
-                {tab.key === 'job-listings' && <Briefcase className="w-4 h-4" />}
                 {tab.key === 'requests' && <MessageCircle className="w-4 h-4" />}
                 {tab.key === 'employment-contracts' && <FileText className="w-4 h-4" />}
                 {tab.key === 'work-history' && <Briefcase className="w-4 h-4" />}
@@ -691,8 +626,7 @@ export default function HousehelpHiringHistory() {
               onClick={() => {
                 if (activeTab === 'requests') {
                   fetchHireRequests();
-                } else if (!isClientProfile && activeTab === 'job-listings') {
-                  fetchJobListings();
+
                 } else if (activeTab === 'work-history') {
                   fetchContracts();
                 } else if (activeTab === 'employment-contracts') {
@@ -716,74 +650,6 @@ export default function HousehelpHiringHistory() {
         )}
 
         {/* Job Listings Tab Content */}
-        {!isClientProfile && activeTab === 'job-listings' && !loading && (
-          <>
-            {jobListings.length > 0 ? (
-              <div className="divide-y divide-gray-200 dark:divide-purple-800/40">
-                {jobListings.map((listing) => {
-                  const featureGroups = getListingFeatureGroups(listing);
-                  return (
-                    <div key={listing.id} className="p-6 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors">
-                      <div className="flex flex-col gap-4">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                                {listing.title || listing.job_type_name || 'Job listing'}
-                              </h3>
-                              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(listing.status || 'active')}`}>
-                                {getStatusIcon(listing.status || 'active')}
-                                {listing.status || 'active'}
-                              </span>
-                            </div>
-                            {listing.description && (
-                              <p className="mt-2 max-w-3xl text-xs text-gray-600 dark:text-gray-300">
-                                {listing.description}
-                              </p>
-                            )}
-                          </div>
-                          {listing.created_at && (
-                            <div className="text-xs text-gray-500 dark:text-purple-300">
-                              <span>Published</span>
-                              <p className="font-medium text-gray-900 dark:text-white">{formatDate(listing.created_at)}</p>
-                            </div>
-                          )}
-                        </div>
-
-                        {featureGroups.length > 0 && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {featureGroups.map((group) => (
-                              <div key={group.name} className="rounded-xl border border-purple-500/20 bg-purple-950/20 p-3">
-                                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-purple-300">
-                                  {group.name}
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                  {group.properties.map((property) => (
-                                    <span key={property} className="rounded-full bg-purple-500/20 px-2.5 py-1 text-xs font-semibold text-purple-50 ring-1 ring-purple-400/30">
-                                      {property}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="p-12 text-center">
-                <Briefcase className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">No job listings yet</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">When households publish active job listings, they will appear here.</p>
-              </div>
-            )}
-          </>
-        )}
-
-        {/* Requests Tab Content */}
         {activeTab === 'requests' && !loading && (
           <>
             {!Array.isArray(hireRequests) || hireRequests.length === 0 ? (
