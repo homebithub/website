@@ -118,3 +118,14 @@ export function useWebSocketContext() {
   }
   return context;
 }
+
+/**
+ * Same, but tolerates the provider being absent.
+ *
+ * Live message events are an enhancement over polling, so anything rendered on
+ * every page — the navigation bar — should lose the live updates rather than
+ * bring the page down when it happens to render outside the provider.
+ */
+export function useWebSocketContextSafe() {
+  return useContext(WebSocketContext);
+}

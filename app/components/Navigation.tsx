@@ -7,6 +7,8 @@ import ThemeToggle from "~/components/ui/ThemeToggle";
 import { API_BASE_URL } from "~/config/api";
 import { useAccountChoiceStatus } from "~/hooks/useAccountChoiceStatus";
 import { useNotifications } from "~/hooks/useNotifications";
+import { useSSESubscriptionSafe } from "~/hooks/useSSESubscription";
+import { useWebSocketContextSafe } from "~/contexts/WebSocketContext";
 import NotificationsModal from "~/components/notifications/NotificationsModal";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { hireRequestService, listingApplicationService } from '~/services/grpc/authServices';
@@ -114,7 +116,7 @@ export function Navigation() {
     //   household  → applicants to review ('initiated'), plus candidates who
     //                accepted and now need their approval ('accepted')
     //   househelp  → hire requests received and unanswered
-    const fetchHireRequestCount = async (overrideProfileType?: string | null) => {
+    const fetchHireRequestCount = React.useCallback(async (overrideProfileType?: string | null) => {
         try {
             if (!getAccessTokenFromCookies()) return;
             const pt = overrideProfileType ?? profileType;
@@ -144,11 +146,11 @@ export function Navigation() {
                 console.error("Failed to fetch hire request count:", error);
             }
         }
-    };
+    }, [profileType]);
 
     // Unread messages. inboxCount existed and was never once populated, so the
     // badge could not appear however many messages were waiting.
-    const fetchInboxCount = async () => {
+    const fetchInboxCount = React.useCallback(async () => {
         try {
             if (!getAccessTokenFromCookies()) return;
             const userId = getStoredUserId() || '';
@@ -166,7 +168,42 @@ export function Navigation() {
                 console.error("Failed to fetch inbox count:", error);
             }
         }
-    };
+    }, []);
+
+    // One place that refreshes both badges, called by everything below.
+    //
+    // The counts used to move only on a 60-second timer, so a badge could be a
+    // minute behind what the person was looking at — which reads as "the number
+    // is wrong" and is why refreshing the page appeared to be the only way to
+    // update it.
+    //
+    // Bursts are collapsed: a conversation delivering six messages should cost
+    // one refresh, not six. The floor keeps a busy stretch from turning into a
+    // stream of requests, and the trailing edge is what makes the badge settle
+    // on the right number rather than the number as of the first event.
+    const refreshDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastRefreshRef = React.useRef<number>(0);
+    const minRefreshGapMs = 4000;
+
+    const refreshCounts = React.useCallback(() => {
+        if (!getAccessTokenFromCookies()) return;
+
+        if (refreshDebounceRef.current) clearTimeout(refreshDebounceRef.current);
+
+        const sinceLast = Date.now() - lastRefreshRef.current;
+        const wait = Math.max(400, minRefreshGapMs - sinceLast);
+
+        refreshDebounceRef.current = setTimeout(() => {
+            refreshDebounceRef.current = null;
+            lastRefreshRef.current = Date.now();
+            fetchHireRequestCount();
+            fetchInboxCount();
+        }, wait);
+    }, [fetchHireRequestCount, fetchInboxCount]);
+
+    useEffect(() => () => {
+        if (refreshDebounceRef.current) clearTimeout(refreshDebounceRef.current);
+    }, []);
 
     // Parse user profile type and name from localStorage
     useEffect(() => {
@@ -233,9 +270,65 @@ export function Navigation() {
             window.removeEventListener('hiring-updated', handleHiringUpdate);
             window.removeEventListener('inbox-updated', handleInboxUpdate);
         };
-    }, [isInSetupMode, allowAuxiliaryAccountCalls]);
+    }, [isInSetupMode, allowAuxiliaryAccountCalls, fetchHireRequestCount, fetchInboxCount]);
 
-    // Poll hiring count every 60 seconds (skip during onboarding)
+    const badgesAreLive = Boolean(user) && !isInSetupMode && allowAuxiliaryAccountCalls;
+
+    // Live updates.
+    //
+    // Anything that changes a badge also produces a notification for the same
+    // person — an application to review, a hire request answered, a message
+    // arriving — and that notification is already pushed over SSE, which is how
+    // the bell updates the moment something happens. Listening to the same
+    // signal puts Inbox and Hiring on equal footing with it.
+    //
+    // The snapshot arrives on connect, including after a reconnect, so a badge
+    // that went stale while the laptop was asleep corrects itself as soon as
+    // the stream is back rather than at the next poll.
+    useSSESubscriptionSafe('notifications.created', refreshCounts, badgesAreLive);
+    useSSESubscriptionSafe('notifications.snapshot', refreshCounts, badgesAreLive);
+
+    // Messages come over the WebSocket rather than SSE, so the inbox badge
+    // needs its own subscription: 'new_message' for one arriving, 'message_read'
+    // for one read on another device or in another tab.
+    const webSocket = useWebSocketContextSafe();
+    useEffect(() => {
+        if (!badgesAreLive || !webSocket) return;
+
+        const unsubscribers = ['new_message', 'message_read'].map((type) =>
+            webSocket.addEventListener(type, () => refreshCounts()),
+        );
+        return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+    }, [badgesAreLive, webSocket, refreshCounts]);
+
+    // Coming back to the tab, and moving between pages.
+    //
+    // A background tab is where staleness is most obvious: the timer is
+    // throttled by the browser and the SSE connection may have been dropped
+    // entirely, so what is on screen when someone returns can be minutes old.
+    // Route changes cover acting on something and navigating away — the badge
+    // should have dropped by the time the next page renders.
+    useEffect(() => {
+        if (!badgesAreLive) return;
+
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') refreshCounts();
+        };
+
+        document.addEventListener('visibilitychange', onVisible);
+        window.addEventListener('focus', refreshCounts);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisible);
+            window.removeEventListener('focus', refreshCounts);
+        };
+    }, [badgesAreLive, refreshCounts]);
+
+    useEffect(() => {
+        if (!badgesAreLive || !profileType) return;
+        refreshCounts();
+    }, [location.pathname, badgesAreLive, profileType, refreshCounts]);
+
+    // A slow backstop, for a session that loses its stream without noticing.
     useEffect(() => {
         if (!user || !profileType || isInSetupMode || !allowAuxiliaryAccountCalls) return;
 
@@ -246,7 +339,7 @@ export function Navigation() {
 
         const intervalId = setInterval(pollCounts, 60_000);
         return () => clearInterval(intervalId);
-    }, [user, profileType, isInSetupMode, allowAuxiliaryAccountCalls]);
+    }, [user, profileType, isInSetupMode, allowAuxiliaryAccountCalls, fetchHireRequestCount, fetchInboxCount]);
 
     // Badge helper: 0 = null (hidden), 1-9 = number, >9 = "9+"
     const renderBadge = (count: number, gradient = 'from-purple-600 to-pink-600', shadow = 'shadow-purple-500/50') => {
