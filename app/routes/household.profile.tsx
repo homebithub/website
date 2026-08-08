@@ -16,7 +16,7 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId, setStoredActiveUserProfileId } from '~/utils/authStorage';
-import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
+import { ProfilePageSkeleton, ShimmerLine, ShimmerListPlaceholder } from "~/components/ShimmerLoader";
 import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
 import { ProfileRequirementsChecklist } from '~/components/profile/ProfileRequirementsChecklist';
 import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
@@ -812,9 +812,10 @@ export default function HouseholdProfile() {
         </div>
 
         {membersLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <span className="hb-shimmer-piece h-8 w-8 rounded-full" />
-          </div>
+          // Members arrive after the profile does, so this section shimmers on
+          // its own rather than holding the whole page back. Shaped like the
+          // rows it is standing in for, so nothing jumps when they land.
+          <ShimmerListPlaceholder items={2} />
         ) : members.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500 dark:text-gray-400">No members yet. Share your household code to invite members!</p>
@@ -1029,9 +1030,10 @@ export default function HouseholdProfile() {
         </div>
 
         {selectedFeaturesLoading ? (
-          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-            <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
-            Loading profile choices...
+          <div className="space-y-3 py-2">
+            <ShimmerLine width="42%" height={14} className="rounded-xl" />
+            <ShimmerLine width="68%" height={12} className="rounded-xl" />
+            <ShimmerLine width="55%" height={12} className="rounded-xl" />
           </div>
         ) : selectedFeaturesError ? (
           <ErrorAlert message={selectedFeaturesError} />

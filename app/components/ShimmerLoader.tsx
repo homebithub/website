@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigation } from "react-router";
 
 const WIDTH_PRESETS = ["96%", "82%", "74%", "88%", "68%"];
 const SHIMMER_SURFACE =
@@ -235,105 +234,6 @@ export function ShimmerHeroPanel({ className = "" }: { className?: string }) {
           </div>
         </div>
         <div className="hb-shimmer-piece h-24 rounded-xl" />
-      </div>
-    </div>
-  );
-}
-
-const STATUS_COPY: Record<"loading" | "submitting", string> = {
-  loading: "Loading the next experience…",
-  submitting: "Saving your update securely…",
-};
-
-export function GlobalLoaderOverlay() {
-  const navigation = useNavigation();
-  const isTransitioning = navigation.state === "loading" || navigation.state === "submitting";
-  const [shouldRender, setShouldRender] = React.useState(false);
-  const [isVisible, setIsVisible] = React.useState(false);
-  const [progress, setProgress] = React.useState(0);
-
-  React.useEffect(() => {
-    let showTimer: ReturnType<typeof setTimeout>;
-    let hideTimer: ReturnType<typeof setTimeout>;
-
-    if (isTransitioning) {
-      setShouldRender(true);
-      showTimer = setTimeout(() => setIsVisible(true), 120);
-    } else {
-      setIsVisible(false);
-      hideTimer = setTimeout(() => setShouldRender(false), 260);
-    }
-
-    return () => {
-      if (showTimer) clearTimeout(showTimer);
-      if (hideTimer) clearTimeout(hideTimer);
-    };
-  }, [isTransitioning]);
-
-  React.useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    if (isTransitioning) {
-      setProgress(12);
-      timers.push(
-        setTimeout(() => setProgress(32), 120),
-        setTimeout(() => setProgress(58), 260),
-        setTimeout(() => setProgress(76), 520),
-        setTimeout(() => setProgress(92), 900)
-      );
-    } else {
-      setProgress(100);
-      timers.push(setTimeout(() => setProgress(0), 360));
-    }
-
-    return () => {
-      timers.forEach(clearTimeout);
-    };
-  }, [isTransitioning]);
-
-  if (!shouldRender) {
-    return null;
-  }
-
-  const state = navigation.state === "idle" ? "loading" : navigation.state;
-  const statusCopy = STATUS_COPY[state as "loading" | "submitting"];
-
-  return (
-    <div
-      className={`hb-loader-overlay ${isVisible ? "hb-loader-overlay--visible" : ""}`}
-      aria-live="assertive"
-      aria-busy={isTransitioning}
-      role="status"
-    >
-      <div className="hb-loader-shell">
-        <div
-          className="hb-loader-progress"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(progress)}
-        >
-          <div
-            className={`hb-loader-progress-bar ${isTransitioning ? "" : "hb-loader-progress-bar--complete"}`}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-white/45">
-              HomeBit
-            </p>
-            <p className="mt-1 text-sm font-medium text-white/85">{statusCopy}</p>
-          </div>
-          <span className="rounded-full bg-purple-500/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-purple-200">
-            {state}
-          </span>
-        </div>
-        <div className="mt-5 space-y-2.5">
-          <ShimmerLine width="92%" height={10} />
-          <ShimmerLine width="72%" height={10} />
-          <ShimmerLine width="48%" height={10} />
-        </div>
       </div>
     </div>
   );
