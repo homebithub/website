@@ -288,6 +288,15 @@ export function Navigation() {
     useSSESubscriptionSafe('notifications.created', refreshCounts, badgesAreLive);
     useSSESubscriptionSafe('notifications.snapshot', refreshCounts, badgesAreLive);
 
+    // The hiring events themselves, which arrive a moment before the
+    // notification written from them. Both paths end in the same debounced
+    // refresh, so listening to both costs one request and means the badge does
+    // not depend on the notification having been written yet.
+    useSSESubscriptionSafe('hiring.application.submitted', refreshCounts, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.accepted', refreshCounts, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.declined', refreshCounts, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.approved', refreshCounts, badgesAreLive);
+
     // Messages come over the WebSocket rather than SSE, so the inbox badge
     // needs its own subscription: 'new_message' for one arriving, 'message_read'
     // for one read on another device or in another tab.
