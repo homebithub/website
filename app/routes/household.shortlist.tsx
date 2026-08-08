@@ -219,6 +219,17 @@ export default function HouseholdShortlistPage() {
     };
   }, [offset]);
 
+  // The rows this page can actually draw a card for.
+  //
+  // The empty state keys off this rather than off `items`, because saved rows
+  // that are not open-for-work posts render nothing: the list came back
+  // non-empty, every row was filtered out, and the page showed a heading over
+  // blank space with no indication anything was wrong.
+  const savedHousehelps = useMemo(
+    () => (items || []).filter((s) => s.profile_type === 'open_for_work'),
+    [items],
+  );
+
   // Load open-for-work records for shortlisted househelp listings.
   useEffect(() => {
     const missingIds = (items || [])
@@ -313,10 +324,22 @@ export default function HouseholdShortlistPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">Saved</h1>
 
-            {(items || []).length === 0 && !loading && !error && (
-              <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
+            {savedHousehelps.length === 0 && !loading && !error && (
+              <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-300 text-base">No saved househelps yet.</p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  Nothing saved yet
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                  Tap the heart on a househelp you like and they will be kept here, so you can
+                  compare them later without searching again.
+                </p>
+                <button
+                  onClick={() => navigate('/household')}
+                  className="mt-6 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                >
+                  Browse househelps
+                </button>
               </div>
             )}
 
@@ -324,8 +347,7 @@ export default function HouseholdShortlistPage() {
             {error && <ErrorAlert message={error} className="mb-4" />}
 	
             <div className="flex flex-col gap-4">
-              {(items || [])
-                .filter((s) => s.profile_type === "open_for_work")
+              {savedHousehelps
                 .map((s) => {
                   const listing = profilesById[s.profile_id] || {};
                   const househelp = listing?.househelp || {};
