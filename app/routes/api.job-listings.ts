@@ -1,3 +1,5 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+
 function encodeStringField(fieldNo: number, value: string): Uint8Array {
   if (!value) return new Uint8Array();
   const encoded = new TextEncoder().encode(value);
@@ -295,21 +297,43 @@ async function getJobListing(baseUrl: string, id: number, callUnaryGrpc: any) {
 
 // Scores every open listing for one service provider — how much of what they
 // asked for each job offers.
-async function matchListingsFor(baseUrl: string, userProfileId: string, callUnaryGrpc: any) {
+// authMetadata forwards the caller's access token to auth as gRPC metadata.
+//
+// Returns an empty object when there is no token rather than throwing: the
+// match calls already degrade to an unranked list, and a signed-out visitor
+// browsing listings should still get listings.
+function authMetadata(request: Request): Record<string, string> {
+  const token = getAccessTokenFromCookies(request.headers.get('cookie'));
+  return token ? { authorization: `Bearer ${token}` } : {};
+}
+
+async function matchListingsFor(
+  baseUrl: string,
+  userProfileId: string,
+  callUnaryGrpc: any,
+  metadata: Record<string, string>,
+) {
   const { body } = await callUnaryGrpc(
     baseUrl,
     '/client_profile.ClientProfileService/MatchListings',
     encodeStringField(1, userProfileId),
+    metadata,
   );
   return normalizeArray(body.data ?? body);
 }
 
 // Scores service providers against one of the household's own listings.
-async function matchCandidatesForListing(baseUrl: string, listingId: number, callUnaryGrpc: any) {
+async function matchCandidatesForListing(
+  baseUrl: string,
+  listingId: number,
+  callUnaryGrpc: any,
+  metadata: Record<string, string>,
+) {
   const { body } = await callUnaryGrpc(
     baseUrl,
     '/client_profile.ClientProfileService/MatchCandidates',
     encodeInt64Field(1, listingId),
+    metadata,
   );
   return normalizeArray(body.data ?? body);
 }
@@ -458,11 +482,18 @@ export async function loader({ request }: { request: Request }) {
     const matchFor = String(url.searchParams.get('match_for') || '');
     const matchCandidatesForProfile = String(url.searchParams.get('match_candidates_for_profile') || '');
 
+    // Both match calls name whose results to return, so auth checks that the
+    // caller is that person before answering. It reads the caller from this
+    // token, not from the id in the request. The browser sends the cookie on
+    // its own — in production it is httpOnly, so here is the only place it can
+    // be read at all.
+    const matchAuth = authMetadata(request);
+
     let scored = enriched;
     try {
       if (matchFor) {
         // A service provider looking at jobs.
-        const rows = await matchListingsFor(baseUrl, matchFor, callUnaryGrpc);
+        const rows = await matchListingsFor(baseUrl, matchFor, callUnaryGrpc, matchAuth);
         scored = annotateWithScores(scored, scoreMap(rows, 'listing_id'), (listing) =>
           String(listing.id ?? ''));
       } else if (matchCandidatesForProfile) {
@@ -474,7 +505,7 @@ export async function loader({ request }: { request: Request }) {
         // wait on a request whose only purpose is to feed another.
         const listingId = await newestListingFor(baseUrl, matchCandidatesForProfile, callUnaryGrpc);
         const rows = listingId
-          ? await matchCandidatesForListing(baseUrl, listingId, callUnaryGrpc)
+          ? await matchCandidatesForListing(baseUrl, listingId, callUnaryGrpc, matchAuth)
           : [];
         scored = annotateWithScores(scored, scoreMap(rows, 'user_profile_id'), (listing) =>
           String(listing.user_profile_id ?? listing.userProfileId ?? ''));
