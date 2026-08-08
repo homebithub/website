@@ -15,6 +15,15 @@ span several repositories.
 | 2a | "Loading the next experience…" overlay appeared on every navigation. | website | ✅ | ⬜ |
 | 2b | Footer floated mid-screen instead of sitting at the bottom, at a different height on each route. | website | ✅ | ⬜ |
 | 2c | Whole page waits for every request before anything renders, instead of each section clearing as its own data arrives. | website | 🟡 partial | ⬜ |
+| 3a | Settings shows a permanent "We couldn't load your app preferences" error on load. | auth | ✅ | ⬜ |
+| 3b | Admin settings shows a permanent "Platform settings are not available" error. | admin | ❓ needs decision | ⬜ |
+| 3c | App preferences do not work (same root cause as 3a). | auth | ✅ | ⬜ |
+| 3d | Password change should redirect to login, and must reject reusing the current password. | website + auth | ⬜ | ⬜ |
+| 3e | Remove the Account card from settings, leaving three. | website | ⬜ | ⬜ |
+| 3f | "Revoke other devices" uses the browser's confirm dialog; should be our own, styled, explaining what happens. | website | ⬜ | ⬜ |
+| 3g | Revoking a device does not sign it out — live sessions continue, and offline devices are not checked on return. | auth + website | ⬜ | ⬜ |
+| 3h | Device activity is never logged, so "Recent activity" is always empty. | auth + admin | ⬜ | ⬜ |
+| 3i | Preference toggles need a Save button; should persist on toggle and revert visibly on failure. Same for admin. | website + admin | ⬜ | ⬜ |
 
 ---
 
@@ -96,3 +105,106 @@ after.
 **To retest:** navigate between pages and confirm no overlay panel appears. Check the
 footer sits at the bottom on a short page — the household profile mid-load is the
 case that started this. Confirm nothing looks squashed on long pages.
+
+---
+
+## 3. Settings (website and admin)
+
+**Reported:** 2026-08-09 — `preprod.homebit.co.ke/settings`, admin `/settings`
+
+### 3a — "We couldn't load your app preferences" ✅ and 3c — app preferences do not work ✅
+
+One bug, two symptoms. `GetPreferences` read the JSON column with
+`query.Scan(&encoded)` into a `datatypes.JSON`, which is a `[]byte`. GORM takes the
+destination of `Scan` to be the result set, so it tried to fill each row into a single
+`uint8` and failed:
+
+```
+Scan error on column index 0, name "data": converting driver.Value type []uint8 to a uint8
+```
+
+It only failed once a row existed — preferences appeared to work until the first save
+and were unreadable from then on, which is why the banner looked permanent and why
+nothing you toggled ever came back. Preprod auth logged this on every settings load.
+
+Fixed by scanning into a struct and treating "no row" as empty rather than an error.
+`MigrateAnonymousToUser` had the identical defect and is fixed with it — that path
+mattered for exactly one case, an anonymous visitor who had set something, and failed
+on exactly that case.
+
+`auth/grpc/preferences.go` — **needs an auth deploy to take effect.**
+
+### 3b — admin "Platform settings are not available" ❓ needs a decision
+
+Not the same bug, and not strictly a malfunction: `getPlatformSettings` throws on
+purpose because no service implements platform settings, and the code argues that
+failing loudly beats a stub that looks like it saves and silently does nothing. That
+reasoning is sound.
+
+What is wrong is the result: a red error sits on **My Profile**, a tab that has
+nothing to do with platform settings and whose own save works. Options, in increasing
+order of work:
+
+1. Only show the notice on tabs that actually read platform settings, and as
+   information rather than an error. Smallest change; the tabs still do nothing.
+2. Remove the tabs that have no backend, keeping the ones that work. Honest, and
+   removes dead controls.
+3. Build the platform-settings backend. Most work; only worth it if those settings
+   are actually wanted.
+
+I did not pick one — the right answer depends on whether those settings are planned
+or abandoned.
+
+### 3d — password change ⬜
+
+Two parts: redirect to the login page after a successful change, and reject a new
+password equal to the current one. The rejection belongs in auth, so it holds however
+the request arrives, not only in the form.
+
+### 3e — remove the Account card ⬜
+
+Leaves Password, Trusted devices, My reviews.
+
+### 3f — our own revoke confirmation ⬜
+
+Replace `window.confirm` with a styled dialog that says what actually happens: which
+devices end, that this browser stays signed in, and that a revoked device is signed
+out rather than merely delisted. Worth doing *after* 3g, so the copy describes real
+behaviour.
+
+### 3g — revoking a device does not actually sign it out ⬜
+
+The substantial one. Needed:
+
+- a status on the devices table (`active`, `revoked`, …) so a device has a state
+  rather than being inferred from presence
+- **every login checks device status before issuing tokens** — for all users
+- live sessions: push a revocation over SSE and have the client sign out
+- returning offline devices: check status on load, not only at login
+
+The gap you already identified — an online device that misses the SSE message keeps
+working — is real and cannot be closed by SSE alone, because a client that missed one
+message is exactly the client that cannot be told. The usual fix is to stop trusting
+the token: have the revoked state checked server-side on request, so a revoked device
+fails on its next call regardless of what it did or did not receive. That means either
+short token lifetimes with a refresh that checks status, or a status check on
+authenticated requests, which costs a lookup per request and needs caching to stay off
+the hot path. **This needs a design decision before implementation.**
+
+### 3h — device activity logging ⬜
+
+"Recent activity" is empty because nothing writes to it. You framed this as part of a
+wider audit-logging engine for the website and admin, and that is the right framing —
+a gateway audit middleware already exists (`pkg/audit`) and writes `audit_logs`, so
+the engine partly exists and the question is what feeds it, who may read what, and how
+to keep it off the request path. Worth its own conversation rather than a bug fix.
+
+### 3i — toggles should save themselves ⬜
+
+Drop the Save buttons on both website and admin. Toggle writes immediately, confirms
+on success, and on failure animates back to its previous position slowly enough to be
+seen, with the reason. Note this needs 3a deployed first — until then every write
+fails, and the revert animation would be all anyone ever saw.
+
+**To retest 3a/3c:** after auth deploys, open Settings — no error banner, and toggles
+survive a reload.
