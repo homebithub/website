@@ -573,6 +573,7 @@ export async function action({ request }: { request: Request }) {
         resolveAuthGrpcBaseUrl(request),
         '/auth.ListingService/UpdateJob',
         encodeUpdateJobReq({ ...body, id, title, description }),
+        authMetadata(request),
       );
 
       // The listing is re-read rather than returned from the update, so the
@@ -611,6 +612,7 @@ export async function action({ request }: { request: Request }) {
         resolveAuthGrpcBaseUrl(request),
         rpcPath,
         encodeIdRequest(id),
+        authMetadata(request),
       );
 
       return Response.json({ data: responseBody.data ?? responseBody });
@@ -632,6 +634,7 @@ export async function action({ request }: { request: Request }) {
         resolveAuthGrpcBaseUrl(request),
         '/auth.ListingService/RenewListing',
         encodeIdRequest(listingId, actorProfileId),
+        authMetadata(request),
       );
 
       return Response.json({ data: responseBody.data ?? responseBody });
@@ -661,6 +664,7 @@ export async function action({ request }: { request: Request }) {
         resolveAuthGrpcBaseUrl(request),
         actionPath,
         encodeApplicationAction({ application_id: applicationId, actor_profile_id: actorProfileId }),
+        authMetadata(request),
       );
 
       return Response.json({ data: responseBody.data ?? responseBody });
