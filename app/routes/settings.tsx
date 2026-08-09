@@ -47,21 +47,38 @@ function Toggle({
   checked,
   onChange,
   label,
+  reverting = false,
+  busy = false,
 }: {
   checked: boolean;
   onChange: (value: boolean) => void;
   label: string;
+  /** Slides back slowly, so a refused change is seen rather than guessed at. */
+  reverting?: boolean;
+  busy?: boolean;
 }) {
   return (
-    <label className="inline-flex items-center cursor-pointer" aria-label={label}>
+    <label
+      className={`inline-flex items-center ${busy ? "cursor-progress" : "cursor-pointer"}`}
+      aria-label={label}
+    >
       <input
         type="checkbox"
         className="sr-only peer"
         checked={checked}
+        disabled={busy}
         onChange={(event) => onChange(event.target.checked)}
       />
-      <span className="relative h-6 w-11 rounded-full bg-gray-300 transition-colors peer-checked:bg-gradient-to-r peer-checked:from-purple-600 peer-checked:to-pink-600 dark:bg-gray-700">
-        <span className="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+      <span
+        className={`relative h-6 w-11 rounded-full bg-gray-300 transition-colors peer-checked:bg-gradient-to-r peer-checked:from-purple-600 peer-checked:to-pink-600 dark:bg-gray-700 ${
+          reverting ? "duration-700" : "duration-200"
+        }`}
+      >
+        <span
+          className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5 ${
+            reverting ? "duration-700 ease-in-out" : "duration-200"
+          }`}
+        />
       </span>
     </label>
   );
@@ -104,8 +121,8 @@ export default function SettingsPage() {
   const [notifications, setNotifications] =
     useState<NotificationPreferences>(defaultNotifications);
   const [prefsLoading, setPrefsLoading] = useState(true);
-  const [savingApp, setSavingApp] = useState(false);
-  const [savingNotifications, setSavingNotifications] = useState(false);
+  const [busyKeys, setBusyKeys] = useState<Set<string>>(new Set());
+  const [revertingKeys, setRevertingKeys] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(
     null,
   );
@@ -167,43 +184,77 @@ export default function SettingsPage() {
   if (loading) return <Loading text="Checking authentication..." />;
   if (!user) return <Loading text="Redirecting to login..." />;
 
-  const saveApplicationPreferences = async () => {
-    setSavingApp(true);
+  // A toggle writes itself.
+  //
+  // The Save buttons were a second step for a single boolean, and they made a
+  // failure ambiguous: nothing distinguished "not saved yet" from "saved" from
+  // "the save failed". The switch now IS the state — it moves, the write
+  // happens, and if the write is refused it moves back slowly enough to be
+  // seen, with the reason.
+  //
+  // Optimistic on purpose: waiting for the round trip before moving the switch
+  // makes every toggle feel broken on a slow connection, and the revert is the
+  // honest correction when it is needed.
+  const commit = async (
+    key: string,
+    apply: () => void,
+    undo: () => void,
+    write: () => Promise<unknown>,
+    label: string,
+  ) => {
+    apply();
     setMessage(null);
+    setBusyKeys((current) => new Set(current).add(key));
+
     try {
-      const response = await updatePreferences(preferences);
-      setPreferences(response?.settings || preferences);
-      setMessage({ type: "success", text: "App preferences saved." });
+      await write();
+      setMessage({ type: "success", text: `${label} saved.` });
     } catch (error) {
+      undo();
+      // Marked reverting only after the value is back, so the slow slide is
+      // the correction itself rather than a delay before it.
+      setRevertingKeys((current) => new Set(current).add(key));
+      window.setTimeout(() => {
+        setRevertingKeys((current) => {
+          const next = new Set(current);
+          next.delete(key);
+          return next;
+        });
+      }, 800);
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Could not save app preferences.",
+        text: error instanceof Error ? error.message : `Could not save ${label.toLowerCase()}.`,
       });
     } finally {
-      setSavingApp(false);
+      setBusyKeys((current) => {
+        const next = new Set(current);
+        next.delete(key);
+        return next;
+      });
     }
   };
 
-  const saveNotificationPreferences = async () => {
-    setSavingNotifications(true);
-    setMessage(null);
-    try {
-      const response = await notificationsService.updateUserPreferences(
-        userId,
-        notifications,
-      );
-      setNotifications({ ...defaultNotifications, ...(response || notifications) });
-      setMessage({ type: "success", text: "Notification preferences saved." });
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: error instanceof Error ? error.message : "Could not save notifications.",
-      });
-    } finally {
-      setSavingNotifications(false);
-    }
+  const commitPreference = (key: keyof UserPreferences, value: boolean, label: string) => {
+    const previous = preferences[key];
+    return commit(
+      String(key),
+      () => setPreferences((current) => ({ ...current, [key]: value })),
+      () => setPreferences((current) => ({ ...current, [key]: previous })),
+      () => updatePreferences({ [key]: value }),
+      label,
+    );
   };
 
+  const commitNotification = (key: keyof NotificationPreferences, value: boolean, label: string) => {
+    const previous = notifications[key];
+    return commit(
+      String(key),
+      () => setNotifications((current) => ({ ...current, [key]: value })),
+      () => setNotifications((current) => ({ ...current, [key]: previous })),
+      () => notificationsService.updateUserPreferences(userId, { ...notifications, [key]: value }),
+      label,
+    );
+  };
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -311,22 +362,12 @@ export default function SettingsPage() {
                     <Toggle
                       label={`${item.label} notifications`}
                       checked={notifications[item.key]}
-                      onChange={(value) =>
-                        setNotifications((current) => ({ ...current, [item.key]: value }))
-                      }
+                      busy={busyKeys.has(String(item.key))}
+                      reverting={revertingKeys.has(String(item.key))}
+                      onChange={(value) => void commitNotification(item.key, value, item.label)}
                     />
                   </div>
                 ))}
-              </div>
-              <div className="mt-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={saveNotificationPreferences}
-                  disabled={prefsLoading || savingNotifications}
-                  className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow transition hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
-                >
-                  {savingNotifications ? "Saving..." : "Save notifications"}
-                </button>
               </div>
             </Section>
 
@@ -369,22 +410,12 @@ export default function SettingsPage() {
                     <Toggle
                       label={item.label}
                       checked={Boolean(preferences[item.key])}
-                      onChange={(value) =>
-                        setPreferences((current) => ({ ...current, [item.key]: value }))
-                      }
+                      busy={busyKeys.has(String(item.key))}
+                      reverting={revertingKeys.has(String(item.key))}
+                      onChange={(value) => void commitPreference(item.key, value, item.label)}
                     />
                   </div>
                 ))}
-              </div>
-              <div className="mt-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={saveApplicationPreferences}
-                  disabled={prefsLoading || savingApp}
-                  className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow transition hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
-                >
-                  {savingApp ? "Saving..." : "Save app preferences"}
-                </button>
               </div>
             </Section>
           </div>
