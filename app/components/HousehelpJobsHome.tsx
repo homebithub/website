@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSavedFilters } from '~/hooks/useSavedFilters';
+import { SavedFilterBar } from '~/components/SavedFilterBar';
 import { useNavigate, useLocation } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -367,10 +368,15 @@ export default function HousehelpJobsHome() {
   // tab closed, so anyone returning daily redid the same work every day — and
   // the people who return daily are the ones actually looking.
   const viewerProfileId = useMemo(() => getStoredUserProfileId() || "", []);
-  const { filters, setFilters, restored: filtersRestored } = useSavedFilters(
-    viewerProfileId,
-    DEFAULT_JOB_FILTERS,
-  );
+  const {
+    filters,
+    setFilters,
+    saved: savedFilters,
+    saveNamed,
+    applySaved,
+    deleteSaved,
+    restored: filtersRestored,
+  } = useSavedFilters(viewerProfileId, DEFAULT_JOB_FILTERS);
   const [locationPickerKey, setLocationPickerKey] = useState(0);
   const [sortBy, setSortBy] = useState("best_match");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -1068,6 +1074,15 @@ export default function HousehelpJobsHome() {
                     </button>
                   )}
                 </div>
+
+                <SavedFilterBar
+                  saved={savedFilters}
+                  hasActiveFilters={hasActiveFilters}
+                  onSave={saveNamed}
+                  onApply={applySaved}
+                  onDelete={deleteSaved}
+                  notifySubject="new jobs"
+                />
               </div>
             )}
           </section>

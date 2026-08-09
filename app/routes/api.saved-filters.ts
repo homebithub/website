@@ -37,12 +37,23 @@ function encodeStringField(fieldNo: number, value: string): Uint8Array {
   return concatBytes([encodeVarint((fieldNo << 3) | 2), encodeVarint(encoded.length), encoded]);
 }
 
-// SaveFilterRequest: user_profile_id = 1, name = 2, filters = 3
-function encodeSaveFilter(userProfileId: string, name: string, filters: string): Uint8Array {
+function encodeBoolField(fieldNo: number, value: boolean): Uint8Array {
+  if (!value) return new Uint8Array();
+  return concatBytes([encodeVarint((fieldNo << 3) | 0), encodeVarint(1)]);
+}
+
+// SaveFilterRequest: user_profile_id = 1, name = 2, filters = 3, notify = 4
+function encodeSaveFilter(
+  userProfileId: string,
+  name: string,
+  filters: string,
+  notify: boolean,
+): Uint8Array {
   return concatBytes([
     encodeStringField(1, userProfileId),
     encodeStringField(2, name),
     encodeStringField(3, filters),
+    encodeBoolField(4, notify),
   ]);
 }
 
@@ -112,7 +123,7 @@ export async function action({ request }: { request: Request }) {
     await callUnaryGrpc(
       resolveAuthGrpcBaseUrl(request),
       '/client_profile.ClientProfileService/SaveFilter',
-      encodeSaveFilter(userProfileId, name, filters),
+      encodeSaveFilter(userProfileId, name, filters, Boolean(body.notify)),
       authMetadata(request),
     );
     return Response.json({ ok: true });

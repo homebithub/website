@@ -16,7 +16,7 @@ export function useSavedFilters<T extends Record<string, unknown>>(
   defaults: T,
 ) {
   const [filters, setFilters] = useState<T>(defaults);
-  const [saved, setSaved] = useState<Array<{ name: string; filters: T }>>([]);
+  const [saved, setSaved] = useState<Array<{ name: string; filters: T; notify?: boolean }>>([]);
   const [restored, setRestored] = useState(false);
 
   // Nothing is written until the stored set has been read. Otherwise the empty
@@ -80,20 +80,20 @@ export function useSavedFilters<T extends Record<string, unknown>>(
   }, [filters, userProfileId]);
 
   const saveNamed = useCallback(
-    async (name: string) => {
+    async (name: string, notify = false) => {
       const trimmed = name.trim();
       if (!userProfileId || !trimmed) return;
       const response = await fetch('/api/saved-filters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_profile_id: userProfileId, name: trimmed, filters }),
+        body: JSON.stringify({ user_profile_id: userProfileId, name: trimmed, filters, notify }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data?.error || 'Could not save that filter');
       }
       setSaved((current) => [
-        { name: trimmed, filters },
+        { name: trimmed, filters, notify },
         ...current.filter((item) => item.name !== trimmed),
       ]);
     },
