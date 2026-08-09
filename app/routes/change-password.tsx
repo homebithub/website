@@ -35,7 +35,7 @@ export const loader = async () => {
 };
 
 export default function ChangePasswordPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -151,6 +151,22 @@ export default function ChangePasswordPage() {
       setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setFieldErrors({});
       setTouchedFields({});
+
+      // Sign out and send them to log in again with the new password.
+      //
+      // Staying signed in after changing a password is the wrong outcome when
+      // the reason for changing it is that someone else knows the old one:
+      // every other session keeps running on credentials the person has just
+      // tried to retire. Signing out here at least ends this one, and proves
+      // the new password works before they rely on it.
+      //
+      // The confirmation is left on screen briefly first, so the redirect reads
+      // as a consequence rather than something going wrong.
+      window.setTimeout(() => {
+        void logout().finally(() => {
+          navigate("/login?passwordChanged=1");
+        });
+      }, 1500);
     } catch (err: any) {
       setError(err.message || "Failed to change password");
     } finally {
@@ -229,9 +245,16 @@ export default function ChangePasswordPage() {
           
           {success && (
             <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-5 shadow-md transition-colors duration-300">
-              <div className="flex items-center justify-center">
-                <span className="text-xl mr-3">🎉</span>
-                <p className="text-sm font-bold text-green-800 dark:text-green-200">Password changed successfully! ✔️</p>
+              <div className="flex flex-col items-center justify-center text-center">
+                <div className="flex items-center">
+                  <span className="text-xl mr-3">🎉</span>
+                  <p className="text-sm font-bold text-green-800 dark:text-green-200">Password changed successfully! ✔️</p>
+                </div>
+                {/* Says what is about to happen, so being sent to a login screen
+                    a moment later reads as intended rather than as a fault. */}
+                <p className="mt-1 text-xs text-green-700 dark:text-green-300">
+                  Signing you out so you can sign in with your new password…
+                </p>
               </div>
             </div>
           )}

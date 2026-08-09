@@ -70,6 +70,9 @@ export default function LoginPage() {
   // Get redirect URL from query params
   const searchParams = new URLSearchParams(location.search);
   const redirectUrl = searchParams.get('redirect');
+  // Set when a password change signed them out. Without it, arriving at a login
+  // screen straight after a success message reads as the change having failed.
+  const passwordChanged = searchParams.get('passwordChanged') === '1';
 
   // Handle return from Google OAuth callback
   useEffect(() => {
@@ -274,6 +277,15 @@ export default function LoginPage() {
           <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
           <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 text-center">Welcome Back! 👋</h1>
           
+          {passwordChanged && !loginError && (
+            <div
+              role="status"
+              className="mb-4 rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200"
+            >
+              Your password was changed. Please sign in with your new password.
+            </div>
+          )}
+
           {/* Login Error Alert */}
           {loginError && (
             <ErrorAlert title="Login Failed" message={loginError} />

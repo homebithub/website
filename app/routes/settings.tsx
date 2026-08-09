@@ -9,7 +9,6 @@ import {
   MessageSquareText,
   Settings2,
   Smartphone,
-  UserRound,
   Star,
 } from "lucide-react";
 import { Navigation } from "~/components/Navigation";
@@ -205,10 +204,6 @@ export default function SettingsPage() {
     }
   };
 
-  const profilePath =
-    String(currentUser?.profile_type || currentUser?.profileType || "").toLowerCase() === "househelp"
-      ? "/househelp/profile"
-      : "/household/profile";
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -237,17 +232,9 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link
-              to={profilePath}
-              className="rounded-2xl border border-purple-200/50 bg-white p-5 transition hover:-translate-y-0.5 hover:border-purple-400 dark:border-purple-500/30 dark:bg-[#13131a]"
-            >
-              <UserRound className="mb-3 h-5 w-5 text-purple-600 dark:text-purple-300" />
-              <div className="text-xs font-semibold text-gray-900 dark:text-white">Account</div>
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Update your profile and public information.
-              </p>
-            </Link>
+          {/* Three cards, not four: Account led back to the profile page, which
+              the navigation already reaches directly. */}
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <Link
               to="/change-password"
               className="rounded-2xl border border-purple-200/50 bg-white p-5 transition hover:-translate-y-0.5 hover:border-purple-400 dark:border-purple-500/30 dark:bg-[#13131a]"
