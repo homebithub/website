@@ -137,14 +137,15 @@ type SalaryRangeOption = {
 // Every one of these is a catalogue id the server can filter on: a job type,
 // or a feature property.
 //
-// It previously also carried an availability window, a schedule slot and two
-// yes/no questions about kids and pets. Those were compared in the browser
-// against listing.available_from, listing.work_schedule and
-// listing.can_work_with_kids — fields no service has ever produced. Setting any
-// of them compared a value against undefined and removed every listing, so the
-// filter panel could only ever empty the board. They are gone until the
-// catalogue exposes the StartTiming and ShiftWindow features that hold the real
-// answers.
+// Availability and schedule used to be compared in the browser against
+// listing.available_from and listing.work_schedule — fields no service has ever
+// produced — so setting either removed every listing. They are back as what
+// they always were in the data: StartTiming and ShiftWindow properties, filtered
+// by the service like everything else here.
+//
+// The two yes/no questions about kids and pets are not back. There is no
+// feature that records them; the nearest real answers are the children age
+// range and pet type below, which ask the same thing of data that exists.
 const DEFAULT_OPEN_FOR_WORK_FILTERS = {
   jobType: "",
   salaryRangeId: "",
@@ -152,6 +153,8 @@ const DEFAULT_OPEN_FOR_WORK_FILTERS = {
   petTypeId: "",
   childrenAgeRangeId: "",
   childrenCapacityId: "",
+  startTimingId: "",
+  shiftWindowId: "",
 };
 
 
@@ -725,6 +728,8 @@ export default function HouseholdJobsHome() {
           filters.childrenAgeRangeId,
           filters.childrenCapacityId,
           filters.salaryRangeId,
+          filters.startTimingId,
+          filters.shiftWindowId,
         ]
           .map((value) => Number(value))
           .filter((value) => Number.isFinite(value) && value > 0);
@@ -1090,6 +1095,34 @@ export default function HouseholdJobsHome() {
                       className="w-full"
                       size="sm"
                       placeholder="Any capacity"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Can start
+                    <CustomSelect
+                      value={filters.startTimingId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, startTimingId: value }))}
+                      options={[
+                        { value: "", label: "Any time" },
+                        ...(onboardingOptions?.start_timing?.map((option) => ({ value: String(option.id), label: option.name })) ?? []),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any time"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Time of day
+                    <CustomSelect
+                      value={filters.shiftWindowId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, shiftWindowId: value }))}
+                      options={[
+                        { value: "", label: "Any time of day" },
+                        ...(onboardingOptions?.shift_window?.map((option) => ({ value: String(option.id), label: option.name })) ?? []),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any time of day"
                     />
                   </label>
                 </div>
