@@ -24,6 +24,9 @@ span several repositories.
 | 3g | Revoking a device does not sign it out — live sessions continue, and offline devices are not checked on return. | auth + website | ⬜ | ⬜ |
 | 3h | Device activity is never logged, so "Recent activity" is always empty. | auth + admin | ⬜ | ⬜ |
 | 3i | Preference toggles need a Save button; should persist on toggle and revert visibly on failure. Same for admin. | website + admin | ⬜ | ⬜ |
+| 4 | Admin settings has no backend — build one. | admin + a service | ⬜ | ⬜ |
+| 5 | Image uploads: audited, see notes. Admin settings has no upload to fix. | website + admin | ✅ audit | ⬜ |
+| 6 | New-device login approval: email + in-app notification, approve / reject / ban, SSE and refresh paths. | auth + notifications + website | ⬜ | ⬜ |
 
 ---
 
@@ -208,3 +211,86 @@ fails, and the revert animation would be all anyone ever saw.
 
 **To retest 3a/3c:** after auth deploys, open Settings — no error banner, and toggles
 survive a reload.
+
+---
+
+## 5. Image uploads — audit
+
+Asked for a check across both apps before the next upload bug surfaces.
+
+**Admin settings has no photo upload.** It is a "Profile picture URL" text field that
+takes a pasted URL (`app/(dashboard)/settings/page.tsx`). There is nothing there to
+fix — adding an upload is a feature, not a repair. Flagging because the request
+assumed one existed.
+
+**The paths that do exist, and what they do:**
+
+| Path | Encoding | Route |
+|---|---|---|
+| Website documents, KYC, profile photos | multipart `FormData` | gateway reverse-proxy → auth `/api/v1/documents/upload` |
+| Admin blog featured + inline images | multipart `FormData` | gateway → `/api/v1/blog/admin/images` |
+
+**Findings.**
+
+- Both are multipart, which matters: the gateway's audit middleware skips multipart
+  body capture, so the truncation bug fixed in homebit-pkg v1.48.1 never affected
+  uploads. Had any of these posted base64 inside JSON, every upload over 64KB would
+  have been silently corrupted. Worth keeping multipart for that reason alone.
+- Size limits line up rather than fight: 5MB per file in auth, 30MB request body at
+  the gateway, which is documented there as five files plus overhead.
+- `profile_id` on upload is **not** an IDOR. `resolveOwnedProfileID` checks
+  `id = ? AND user_id = ?`, with a separate path for household members. I went looking
+  for the same hole found in the match RPCs and it is not there.
+
+Nothing broken found. The most likely future failure is a limit mismatch — if the
+per-file 5MB in auth is ever raised without raising the gateway's 30MB, uploads fail
+at the gateway with no useful message.
+
+---
+
+## 6. New-device login approval
+
+A feature, not a bug, and a large one. Recorded so it is not mistaken for a small
+change. Roughly: device states (`pending`, `approved`, `rejected`, `banned`); an email
+and a real-time in-app notification on first sight of a device; a devices page with
+approve / reject / ban; SSE to admit or eject a live session, and the same decision
+applied on next page load or login; marking the in-app notification read when the
+email link is used instead.
+
+It depends on **3g**, which is the same underlying gap — right now a device state
+would be advisory, because nothing checks it on a request.
+
+### On "how do we stop a different browser on the same laptop"
+
+Short answer: you cannot, reliably, and it is worth deciding not to try.
+
+A browser is the only unit of identity available to a website. Cookies and
+localStorage are per-browser and per-profile by design, and a private window starts
+clean. Fingerprinting (canvas, fonts, screen, UA) identifies a *browser* imperfectly,
+degrades every year as browsers add protections, and carries real data-protection
+weight in Kenya's DPA and GDPR — it is consent-worthy, and unreliable enough that you
+would be blocking real users while a determined one walks around it.
+
+So treat each browser as a device. That is what every trusted-device system does in
+practice, and it is why signing in to Gmail from a new browser prompts you even on a
+laptop you have used for years. The user-visible cost is one approval; the fix is to
+make approving cheap, which the email and in-app flows already do.
+
+If you genuinely need "this physical device", it has to come from outside the browser:
+
+- **WebAuthn / passkeys** bind a key to a platform authenticator, in the secure
+  enclave. This is the real mechanism, and it also replaces the password. Note that
+  passkeys now sync across a user's devices through iCloud and Google Password
+  Manager, which deliberately reintroduces multi-device — but they sync to *that
+  person's* devices, which is usually what you actually wanted.
+- **A native app**, where the OS gives a per-vendor device id.
+
+One consequence worth being deliberate about: **`banned` cannot be enforced against a
+client-supplied device id**, because clearing storage produces a new one. A ban on a
+device record only stops that browser profile as it stands. If a ban needs to mean
+something stronger it has to attach to the account, and the real protection remains
+that any unknown browser needs approval regardless.
+
+**Recommendation:** build states and approval on the browser-as-device model, keep
+`banned` as a record-level state, and treat WebAuthn as the upgrade path if device
+binding ever needs to be genuine.
