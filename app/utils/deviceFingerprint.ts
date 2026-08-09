@@ -229,3 +229,22 @@ export const registerCurrentDevice = async (userId: string) => {
     '',
   );
 };
+
+/**
+ * The stored device id, or "" when this browser has never registered one.
+ *
+ * Synchronous on purpose. getDeviceId generates a fingerprint when none is
+ * stored, which is async and has side effects; callers that only want to say
+ * "I am this device, if you already know me" — request metadata, in
+ * particular — must not block or enrol a browser as a side effect of asking.
+ */
+export const storedDeviceId = (): string => {
+  if (typeof window === 'undefined') return '';
+  try {
+    return window.localStorage.getItem('device_id') || '';
+  } catch {
+    // Storage can be unavailable in a private window or under a strict policy.
+    // Saying nothing is correct here: the request proceeds unidentified.
+    return '';
+  }
+};

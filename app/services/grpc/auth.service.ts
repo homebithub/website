@@ -5,6 +5,7 @@
  */
 
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
+import { storedDeviceId } from '~/utils/deviceFingerprint';
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
 import * as shared_pb_module from '~/grpc/generated/shared/shared_pb';
 import * as grpcWeb from 'grpc-web';
@@ -124,6 +125,13 @@ function getMetadata(extra?: { [key: string]: string }): { [key: string]: string
   if (token) md['authorization'] = `Bearer ${token}`;
   const profileType = getStoredProfileType();
   if (profileType) md['x-profile-type'] = profileType;
+  // Says which device is asking, so auth can refuse one that has been revoked
+  // or banned. Read rather than generated: generating a fingerprint is async
+  // and this is not, and a device that has registered already has its id
+  // stored. A browser that has never registered simply sends nothing and is
+  // treated as before.
+  const deviceId = storedDeviceId();
+  if (deviceId) md['x-device-id'] = deviceId;
   if (extra) {
     Object.entries(extra).forEach(([key, value]) => {
       if (value) md[key] = value;
