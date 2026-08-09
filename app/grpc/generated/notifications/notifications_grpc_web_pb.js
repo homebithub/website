@@ -2700,6 +2700,250 @@ proto.notifications.NotificationsServicePromiseClient.prototype.listUserEventsSi
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.notifications.AdminListUserEventsRequest,
+ *   !proto.notifications.AdminListUserEventsResponse>}
+ */
+const methodDescriptor_NotificationsService_AdminListUserEvents = new grpc.web.MethodDescriptor(
+  '/notifications.NotificationsService/AdminListUserEvents',
+  grpc.web.MethodType.UNARY,
+  proto.notifications.AdminListUserEventsRequest,
+  proto.notifications.AdminListUserEventsResponse,
+  /**
+   * @param {!proto.notifications.AdminListUserEventsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.notifications.AdminListUserEventsResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.notifications.AdminListUserEventsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.notifications.AdminListUserEventsResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.notifications.AdminListUserEventsResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.notifications.NotificationsServiceClient.prototype.adminListUserEvents =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/notifications.NotificationsService/AdminListUserEvents',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_AdminListUserEvents,
+      callback);
+};
+
+
+/**
+ * @param {!proto.notifications.AdminListUserEventsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.notifications.AdminListUserEventsResponse>}
+ *     Promise that resolves to the response
+ */
+proto.notifications.NotificationsServicePromiseClient.prototype.adminListUserEvents =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/notifications.NotificationsService/AdminListUserEvents',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_AdminListUserEvents);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.notifications.ListFeatureFlagsRequest,
+ *   !proto.notifications.ListFeatureFlagsResponse>}
+ */
+const methodDescriptor_NotificationsService_ListFeatureFlags = new grpc.web.MethodDescriptor(
+  '/notifications.NotificationsService/ListFeatureFlags',
+  grpc.web.MethodType.UNARY,
+  proto.notifications.ListFeatureFlagsRequest,
+  proto.notifications.ListFeatureFlagsResponse,
+  /**
+   * @param {!proto.notifications.ListFeatureFlagsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.notifications.ListFeatureFlagsResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.notifications.ListFeatureFlagsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.notifications.ListFeatureFlagsResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.notifications.ListFeatureFlagsResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.notifications.NotificationsServiceClient.prototype.listFeatureFlags =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/notifications.NotificationsService/ListFeatureFlags',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_ListFeatureFlags,
+      callback);
+};
+
+
+/**
+ * @param {!proto.notifications.ListFeatureFlagsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.notifications.ListFeatureFlagsResponse>}
+ *     Promise that resolves to the response
+ */
+proto.notifications.NotificationsServicePromiseClient.prototype.listFeatureFlags =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/notifications.NotificationsService/ListFeatureFlags',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_ListFeatureFlags);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.notifications.SetFeatureFlagRequest,
+ *   !proto.notifications.SetFeatureFlagResponse>}
+ */
+const methodDescriptor_NotificationsService_SetFeatureFlag = new grpc.web.MethodDescriptor(
+  '/notifications.NotificationsService/SetFeatureFlag',
+  grpc.web.MethodType.UNARY,
+  proto.notifications.SetFeatureFlagRequest,
+  proto.notifications.SetFeatureFlagResponse,
+  /**
+   * @param {!proto.notifications.SetFeatureFlagRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.notifications.SetFeatureFlagResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.notifications.SetFeatureFlagRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.notifications.SetFeatureFlagResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.notifications.SetFeatureFlagResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.notifications.NotificationsServiceClient.prototype.setFeatureFlag =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/notifications.NotificationsService/SetFeatureFlag',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_SetFeatureFlag,
+      callback);
+};
+
+
+/**
+ * @param {!proto.notifications.SetFeatureFlagRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.notifications.SetFeatureFlagResponse>}
+ *     Promise that resolves to the response
+ */
+proto.notifications.NotificationsServicePromiseClient.prototype.setFeatureFlag =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/notifications.NotificationsService/SetFeatureFlag',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_SetFeatureFlag);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.notifications.GetFeatureFlagHistoryRequest,
+ *   !proto.notifications.GetFeatureFlagHistoryResponse>}
+ */
+const methodDescriptor_NotificationsService_GetFeatureFlagHistory = new grpc.web.MethodDescriptor(
+  '/notifications.NotificationsService/GetFeatureFlagHistory',
+  grpc.web.MethodType.UNARY,
+  proto.notifications.GetFeatureFlagHistoryRequest,
+  proto.notifications.GetFeatureFlagHistoryResponse,
+  /**
+   * @param {!proto.notifications.GetFeatureFlagHistoryRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.notifications.GetFeatureFlagHistoryResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.notifications.GetFeatureFlagHistoryRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.notifications.GetFeatureFlagHistoryResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.notifications.GetFeatureFlagHistoryResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.notifications.NotificationsServiceClient.prototype.getFeatureFlagHistory =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/notifications.NotificationsService/GetFeatureFlagHistory',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_GetFeatureFlagHistory,
+      callback);
+};
+
+
+/**
+ * @param {!proto.notifications.GetFeatureFlagHistoryRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.notifications.GetFeatureFlagHistoryResponse>}
+ *     Promise that resolves to the response
+ */
+proto.notifications.NotificationsServicePromiseClient.prototype.getFeatureFlagHistory =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/notifications.NotificationsService/GetFeatureFlagHistory',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_GetFeatureFlagHistory);
+};
+
+
 export default proto.notifications;
 export const {
   NotificationsServiceClient,

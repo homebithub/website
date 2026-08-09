@@ -201,6 +201,24 @@ export namespace FeaturePickInput {
   };
 }
 
+export class MatchListingsRequest extends jspb.Message {
+  getUserProfileId(): string;
+  setUserProfileId(value: string): MatchListingsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MatchListingsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: MatchListingsRequest): MatchListingsRequest.AsObject;
+  static serializeBinaryToWriter(message: MatchListingsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MatchListingsRequest;
+  static deserializeBinaryFromReader(message: MatchListingsRequest, reader: jspb.BinaryReader): MatchListingsRequest;
+}
+
+export namespace MatchListingsRequest {
+  export type AsObject = {
+    userProfileId: string;
+  };
+}
+
 export class ListingIdRequest extends jspb.Message {
   getListingId(): number;
   setListingId(value: number): ListingIdRequest;

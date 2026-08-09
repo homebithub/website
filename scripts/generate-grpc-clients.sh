@@ -14,14 +14,24 @@ NC='\033[0m' # No Color
 echo -e "${GREEN}Generating TypeScript gRPC-Web clients...${NC}"
 
 # Directories
-PROTO_DIR="../homebit-pkg/proto"
+# The shared package is checked out under either name depending on who cloned
+# it. Hardcoding one meant the script failed for anyone with the other, which is
+# a poor way to discover your generated clients are stale. PROTO_DIR overrides.
 OUT_DIR="app/grpc/generated"
+if [ -z "$PROTO_DIR" ]; then
+    for candidate in "../homebit-pkg/proto" "../pkg/proto"; do
+        if [ -d "$candidate" ]; then
+            PROTO_DIR="$candidate"
+            break
+        fi
+    done
+fi
 
-# Check if proto directory exists
-if [ ! -d "$PROTO_DIR" ]; then
-    echo -e "${RED}Error: Proto directory not found at $PROTO_DIR${NC}"
+if [ -z "$PROTO_DIR" ] || [ ! -d "$PROTO_DIR" ]; then
+    echo -e "${RED}Error: proto directory not found. Looked for ../homebit-pkg/proto and ../pkg/proto.${NC}"
     exit 1
 fi
+echo -e "${GREEN}Using protos from ${PROTO_DIR}${NC}"
 
 # Clean and create output directory
 rm -rf "$OUT_DIR"

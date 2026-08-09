@@ -129,6 +129,48 @@ export class AdminServiceClient {
                response: google_protobuf_empty_pb.Empty) => void
   ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
+  adminListEngagements(
+    request: auth_auth_pb.AdminListEngagementsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.AdminListEngagementsResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminListEngagementsResponse>;
+
+  adminGetOutcomeStats(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.AdminOutcomeStatsResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminOutcomeStatsResponse>;
+
+  adminGetHiringFunnel(
+    request: auth_auth_pb.AdminHiringFunnelRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.AdminHiringFunnelResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminHiringFunnelResponse>;
+
+  adminGetPlatformTrend(
+    request: auth_auth_pb.AdminPlatformTrendRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.AdminPlatformTrendResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminPlatformTrendResponse>;
+
+  adminGetPlatformSettings(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  adminUpdatePlatformSettings(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
 }
 
 export class AuthServiceClient {
@@ -780,6 +822,20 @@ export class EmploymentServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  getOutcomePrompt(
+    request: auth_auth_pb.OutcomeTokenRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  recordOutcome(
+    request: auth_auth_pb.RecordOutcomeRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   updateProfileStatus(
     request: auth_auth_pb.UpdateProfileStatusReq,
     metadata: grpcWeb.Metadata | undefined,
@@ -844,6 +900,13 @@ export class ListingServiceClient {
   ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
 
   reopenListing(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: shared_shared_pb.GenericResponse) => void
+  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+
+  renewListing(
     request: auth_auth_pb.IdRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
@@ -2180,6 +2243,20 @@ export class AdminAuthServiceClient {
                response: auth_auth_pb.AdminLoginResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminLoginResponse>;
 
+  adminVerifyOTP(
+    request: auth_auth_pb.AdminVerifyOTPRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.AdminVerifyOTPResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminVerifyOTPResponse>;
+
+  adminResendOTP(
+    request: auth_auth_pb.AdminResendOTPRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.AdminResendOTPResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminResendOTPResponse>;
+
   adminRefreshToken(
     request: auth_auth_pb.AdminRefreshTokenRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -2439,6 +2516,36 @@ export class AdminServicePromiseClient {
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<google_protobuf_empty_pb.Empty>;
+
+  adminListEngagements(
+    request: auth_auth_pb.AdminListEngagementsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.AdminListEngagementsResponse>;
+
+  adminGetOutcomeStats(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.AdminOutcomeStatsResponse>;
+
+  adminGetHiringFunnel(
+    request: auth_auth_pb.AdminHiringFunnelRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.AdminHiringFunnelResponse>;
+
+  adminGetPlatformTrend(
+    request: auth_auth_pb.AdminPlatformTrendRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.AdminPlatformTrendResponse>;
+
+  adminGetPlatformSettings(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  adminUpdatePlatformSettings(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
 
 }
 
@@ -2919,6 +3026,16 @@ export class EmploymentServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
+  getOutcomePrompt(
+    request: auth_auth_pb.OutcomeTokenRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  recordOutcome(
+    request: auth_auth_pb.RecordOutcomeRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
   updateProfileStatus(
     request: auth_auth_pb.UpdateProfileStatusReq,
     metadata?: grpcWeb.Metadata
@@ -2967,6 +3084,11 @@ export class ListingServicePromiseClient {
   ): Promise<shared_shared_pb.GenericResponse>;
 
   reopenListing(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<shared_shared_pb.GenericResponse>;
+
+  renewListing(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<shared_shared_pb.GenericResponse>;
@@ -3962,6 +4084,16 @@ export class AdminAuthServicePromiseClient {
     request: auth_auth_pb.AdminLoginRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.AdminLoginResponse>;
+
+  adminVerifyOTP(
+    request: auth_auth_pb.AdminVerifyOTPRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.AdminVerifyOTPResponse>;
+
+  adminResendOTP(
+    request: auth_auth_pb.AdminResendOTPRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.AdminResendOTPResponse>;
 
   adminRefreshToken(
     request: auth_auth_pb.AdminRefreshTokenRequest,

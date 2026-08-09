@@ -109,6 +109,26 @@ export default function DevicesPage() {
     }
   };
 
+  const decide = async (device: any, decision: "approve" | "reject" | "ban") => {
+    setBusyId(device.id || device.deviceId);
+    setError(null);
+    try {
+      await deviceService.decideDevice(
+        device.id || device.deviceId,
+        userId,
+        decision,
+        decision === "approve" ? "" : "Refused by account owner",
+      );
+      await loadDevices();
+    } catch (decideError) {
+      setError(
+        decideError instanceof Error ? decideError.message : "Could not update that device.",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const revokeOthers = async () => {
     setBusyId("all");
     setError(null);
@@ -230,7 +250,10 @@ export default function DevicesPage() {
               {devices.map((device) => {
                 const Icon = deviceIcon(device.deviceType || "");
                 const current = device.deviceId === currentDeviceId || device.isCurrentDevice;
-                const revoked = device.status === "revoked";
+                const revoked = device.status === "revoked" || device.status === "banned";
+                // A device that has never been answered. Its actions are a
+                // decision, not a revocation — it was never trusted to lose.
+                const pending = device.status === "pending";
                 const lastActive = timestampToDate(device.lastActivityAt);
                 return (
                   <PurpleCard
@@ -300,7 +323,40 @@ export default function DevicesPage() {
                           )}
                           {activityDeviceId === (device.id || device.deviceId) ? "Hide activity" : "View activity"}
                         </button>
-                        {!current && !revoked && (
+                        {pending && !current && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => void decide(device, "approve")}
+                              disabled={busyId !== null}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-2 text-xs font-semibold text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
+                            >
+                              {busyId === (device.id || device.deviceId) ? (
+                                <LoaderCircle className="h-4 w-4 animate-spin" />
+                              ) : null}
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void decide(device, "reject")}
+                              disabled={busyId !== null}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white/5"
+                              title="Refuses this device. It can ask again."
+                            >
+                              Reject
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void decide(device, "ban")}
+                              disabled={busyId !== null}
+                              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-400/40 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:text-red-300 dark:hover:bg-red-500/10"
+                              title="Refuses this device and stops it asking again."
+                            >
+                              Ban
+                            </button>
+                          </>
+                        )}
+                        {!current && !revoked && !pending && (
                           <button
                             type="button"
                             onClick={() => setPendingRevoke(device)}

@@ -100,6 +100,13 @@ export class ClientProfileServiceClient {
                response: shared_shared_pb.GenericResponse) => void
   ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
 
+  matchListings(
+    request: client_profile_client_profile_pb.MatchListingsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: shared_shared_pb.GenericResponse) => void
+  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+
 }
 
 export class ClientProfileServicePromiseClient {
@@ -169,6 +176,11 @@ export class ClientProfileServicePromiseClient {
 
   matchCandidates(
     request: client_profile_client_profile_pb.ListingIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<shared_shared_pb.GenericResponse>;
+
+  matchListings(
+    request: client_profile_client_profile_pb.MatchListingsRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<shared_shared_pb.GenericResponse>;
 

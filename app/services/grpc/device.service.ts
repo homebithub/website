@@ -102,6 +102,41 @@ export const deviceService = {
   /**
    * Get all devices for the authenticated user.
    */
+  /**
+   * Answers a device waiting for approval.
+   *
+   * reject and ban both refuse it; the difference is whether it may ask again.
+   */
+  async decideDevice(
+    deviceId: string,
+    userId: string,
+    decision: 'approve' | 'reject' | 'ban',
+    reason = ''
+  ): Promise<{ message: string; device?: any }> {
+    return new Promise((resolve, reject) => {
+      try {
+        const request = new device_pb.DecideDeviceRequest();
+        request.setUserId(resolveUserId(userId));
+        request.setDeviceId(deviceId);
+        request.setDecision(decision);
+        if (reason) request.setReason(reason);
+
+        deviceClient.decideDevice(request, getMetadata(), (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve({
+              message: response?.getMessage?.() || '',
+              device: response?.getDevice?.()?.toObject(),
+            });
+          }
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  },
+
   async getUserDevices(
     userId: string,
     currentDeviceId?: string

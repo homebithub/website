@@ -309,6 +309,34 @@ export class NotificationsServiceClient {
                response: notifications_notifications_pb.ListUserEventsSinceResponse) => void
   ): grpcWeb.ClientReadableStream<notifications_notifications_pb.ListUserEventsSinceResponse>;
 
+  adminListUserEvents(
+    request: notifications_notifications_pb.AdminListUserEventsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: notifications_notifications_pb.AdminListUserEventsResponse) => void
+  ): grpcWeb.ClientReadableStream<notifications_notifications_pb.AdminListUserEventsResponse>;
+
+  listFeatureFlags(
+    request: notifications_notifications_pb.ListFeatureFlagsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: notifications_notifications_pb.ListFeatureFlagsResponse) => void
+  ): grpcWeb.ClientReadableStream<notifications_notifications_pb.ListFeatureFlagsResponse>;
+
+  setFeatureFlag(
+    request: notifications_notifications_pb.SetFeatureFlagRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: notifications_notifications_pb.SetFeatureFlagResponse) => void
+  ): grpcWeb.ClientReadableStream<notifications_notifications_pb.SetFeatureFlagResponse>;
+
+  getFeatureFlagHistory(
+    request: notifications_notifications_pb.GetFeatureFlagHistoryRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: notifications_notifications_pb.GetFeatureFlagHistoryResponse) => void
+  ): grpcWeb.ClientReadableStream<notifications_notifications_pb.GetFeatureFlagHistoryResponse>;
+
 }
 
 export class NotificationsServicePromiseClient {
@@ -530,6 +558,26 @@ export class NotificationsServicePromiseClient {
     request: notifications_notifications_pb.ListUserEventsSinceRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<notifications_notifications_pb.ListUserEventsSinceResponse>;
+
+  adminListUserEvents(
+    request: notifications_notifications_pb.AdminListUserEventsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<notifications_notifications_pb.AdminListUserEventsResponse>;
+
+  listFeatureFlags(
+    request: notifications_notifications_pb.ListFeatureFlagsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<notifications_notifications_pb.ListFeatureFlagsResponse>;
+
+  setFeatureFlag(
+    request: notifications_notifications_pb.SetFeatureFlagRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<notifications_notifications_pb.SetFeatureFlagResponse>;
+
+  getFeatureFlagHistory(
+    request: notifications_notifications_pb.GetFeatureFlagHistoryRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<notifications_notifications_pb.GetFeatureFlagHistoryResponse>;
 
 }
 

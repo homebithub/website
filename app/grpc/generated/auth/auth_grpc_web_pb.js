@@ -1127,6 +1127,372 @@ proto.auth.AdminServicePromiseClient.prototype.adminMarkFraudResolved =
 
 
 /**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.AdminListEngagementsRequest,
+ *   !proto.auth.AdminListEngagementsResponse>}
+ */
+const methodDescriptor_AdminService_AdminListEngagements = new grpc.web.MethodDescriptor(
+  '/auth.AdminService/AdminListEngagements',
+  grpc.web.MethodType.UNARY,
+  proto.auth.AdminListEngagementsRequest,
+  proto.auth.AdminListEngagementsResponse,
+  /**
+   * @param {!proto.auth.AdminListEngagementsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.AdminListEngagementsResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.AdminListEngagementsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.AdminListEngagementsResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.AdminListEngagementsResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminServiceClient.prototype.adminListEngagements =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminService/AdminListEngagements',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminListEngagements,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.AdminListEngagementsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.AdminListEngagementsResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminServicePromiseClient.prototype.adminListEngagements =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminService/AdminListEngagements',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminListEngagements);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.google.protobuf.Empty,
+ *   !proto.auth.AdminOutcomeStatsResponse>}
+ */
+const methodDescriptor_AdminService_AdminGetOutcomeStats = new grpc.web.MethodDescriptor(
+  '/auth.AdminService/AdminGetOutcomeStats',
+  grpc.web.MethodType.UNARY,
+  google_protobuf_empty_pb.Empty,
+  proto.auth.AdminOutcomeStatsResponse,
+  /**
+   * @param {!proto.google.protobuf.Empty} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.AdminOutcomeStatsResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.AdminOutcomeStatsResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.AdminOutcomeStatsResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminServiceClient.prototype.adminGetOutcomeStats =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminService/AdminGetOutcomeStats',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetOutcomeStats,
+      callback);
+};
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.AdminOutcomeStatsResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminServicePromiseClient.prototype.adminGetOutcomeStats =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminService/AdminGetOutcomeStats',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetOutcomeStats);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.AdminHiringFunnelRequest,
+ *   !proto.auth.AdminHiringFunnelResponse>}
+ */
+const methodDescriptor_AdminService_AdminGetHiringFunnel = new grpc.web.MethodDescriptor(
+  '/auth.AdminService/AdminGetHiringFunnel',
+  grpc.web.MethodType.UNARY,
+  proto.auth.AdminHiringFunnelRequest,
+  proto.auth.AdminHiringFunnelResponse,
+  /**
+   * @param {!proto.auth.AdminHiringFunnelRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.AdminHiringFunnelResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.AdminHiringFunnelRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.AdminHiringFunnelResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.AdminHiringFunnelResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminServiceClient.prototype.adminGetHiringFunnel =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminService/AdminGetHiringFunnel',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetHiringFunnel,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.AdminHiringFunnelRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.AdminHiringFunnelResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminServicePromiseClient.prototype.adminGetHiringFunnel =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminService/AdminGetHiringFunnel',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetHiringFunnel);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.AdminPlatformTrendRequest,
+ *   !proto.auth.AdminPlatformTrendResponse>}
+ */
+const methodDescriptor_AdminService_AdminGetPlatformTrend = new grpc.web.MethodDescriptor(
+  '/auth.AdminService/AdminGetPlatformTrend',
+  grpc.web.MethodType.UNARY,
+  proto.auth.AdminPlatformTrendRequest,
+  proto.auth.AdminPlatformTrendResponse,
+  /**
+   * @param {!proto.auth.AdminPlatformTrendRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.AdminPlatformTrendResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.AdminPlatformTrendRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.AdminPlatformTrendResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.AdminPlatformTrendResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminServiceClient.prototype.adminGetPlatformTrend =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminService/AdminGetPlatformTrend',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetPlatformTrend,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.AdminPlatformTrendRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.AdminPlatformTrendResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminServicePromiseClient.prototype.adminGetPlatformTrend =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminService/AdminGetPlatformTrend',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetPlatformTrend);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.google.protobuf.Empty,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_AdminService_AdminGetPlatformSettings = new grpc.web.MethodDescriptor(
+  '/auth.AdminService/AdminGetPlatformSettings',
+  grpc.web.MethodType.UNARY,
+  google_protobuf_empty_pb.Empty,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.google.protobuf.Empty} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminServiceClient.prototype.adminGetPlatformSettings =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminService/AdminGetPlatformSettings',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetPlatformSettings,
+      callback);
+};
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminServicePromiseClient.prototype.adminGetPlatformSettings =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminService/AdminGetPlatformSettings',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetPlatformSettings);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_AdminService_AdminUpdatePlatformSettings = new grpc.web.MethodDescriptor(
+  '/auth.AdminService/AdminUpdatePlatformSettings',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminServiceClient.prototype.adminUpdatePlatformSettings =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminService/AdminUpdatePlatformSettings',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminUpdatePlatformSettings,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminServicePromiseClient.prototype.adminUpdatePlatformSettings =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminService/AdminUpdatePlatformSettings',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminUpdatePlatformSettings);
+};
+
+
+/**
  * @param {string} hostname
  * @param {?Object} credentials
  * @param {?grpc.web.ClientOptions} options
@@ -6739,6 +7105,128 @@ proto.auth.EmploymentServicePromiseClient.prototype.createProfileStatus =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.OutcomeTokenRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_EmploymentService_GetOutcomePrompt = new grpc.web.MethodDescriptor(
+  '/auth.EmploymentService/GetOutcomePrompt',
+  grpc.web.MethodType.UNARY,
+  proto.auth.OutcomeTokenRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.OutcomeTokenRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.OutcomeTokenRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.EmploymentServiceClient.prototype.getOutcomePrompt =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.EmploymentService/GetOutcomePrompt',
+      request,
+      metadata || {},
+      methodDescriptor_EmploymentService_GetOutcomePrompt,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.OutcomeTokenRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.EmploymentServicePromiseClient.prototype.getOutcomePrompt =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.EmploymentService/GetOutcomePrompt',
+      request,
+      metadata || {},
+      methodDescriptor_EmploymentService_GetOutcomePrompt);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.RecordOutcomeRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_EmploymentService_RecordOutcome = new grpc.web.MethodDescriptor(
+  '/auth.EmploymentService/RecordOutcome',
+  grpc.web.MethodType.UNARY,
+  proto.auth.RecordOutcomeRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.RecordOutcomeRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.RecordOutcomeRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.EmploymentServiceClient.prototype.recordOutcome =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.EmploymentService/RecordOutcome',
+      request,
+      metadata || {},
+      methodDescriptor_EmploymentService_RecordOutcome,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.RecordOutcomeRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.EmploymentServicePromiseClient.prototype.recordOutcome =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.EmploymentService/RecordOutcome',
+      request,
+      metadata || {},
+      methodDescriptor_EmploymentService_RecordOutcome);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.auth.UpdateProfileStatusReq,
  *   !proto.auth.JsonResponse>}
  */
@@ -7334,6 +7822,67 @@ proto.auth.ListingServicePromiseClient.prototype.reopenListing =
       request,
       metadata || {},
       methodDescriptor_ListingService_ReopenListing);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.shared.GenericResponse>}
+ */
+const methodDescriptor_ListingService_RenewListing = new grpc.web.MethodDescriptor(
+  '/auth.ListingService/RenewListing',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  shared_shared_pb.GenericResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  shared_shared_pb.GenericResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.shared.GenericResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.shared.GenericResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ListingServiceClient.prototype.renewListing =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ListingService/RenewListing',
+      request,
+      metadata || {},
+      methodDescriptor_ListingService_RenewListing,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.shared.GenericResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ListingServicePromiseClient.prototype.renewListing =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ListingService/RenewListing',
+      request,
+      metadata || {},
+      methodDescriptor_ListingService_RenewListing);
 };
 
 
@@ -18735,6 +19284,128 @@ proto.auth.AdminAuthServicePromiseClient.prototype.adminLogin =
       request,
       metadata || {},
       methodDescriptor_AdminAuthService_AdminLogin);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.AdminVerifyOTPRequest,
+ *   !proto.auth.AdminVerifyOTPResponse>}
+ */
+const methodDescriptor_AdminAuthService_AdminVerifyOTP = new grpc.web.MethodDescriptor(
+  '/auth.AdminAuthService/AdminVerifyOTP',
+  grpc.web.MethodType.UNARY,
+  proto.auth.AdminVerifyOTPRequest,
+  proto.auth.AdminVerifyOTPResponse,
+  /**
+   * @param {!proto.auth.AdminVerifyOTPRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.AdminVerifyOTPResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.AdminVerifyOTPRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.AdminVerifyOTPResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.AdminVerifyOTPResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminAuthServiceClient.prototype.adminVerifyOTP =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminAuthService/AdminVerifyOTP',
+      request,
+      metadata || {},
+      methodDescriptor_AdminAuthService_AdminVerifyOTP,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.AdminVerifyOTPRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.AdminVerifyOTPResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminAuthServicePromiseClient.prototype.adminVerifyOTP =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminAuthService/AdminVerifyOTP',
+      request,
+      metadata || {},
+      methodDescriptor_AdminAuthService_AdminVerifyOTP);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.AdminResendOTPRequest,
+ *   !proto.auth.AdminResendOTPResponse>}
+ */
+const methodDescriptor_AdminAuthService_AdminResendOTP = new grpc.web.MethodDescriptor(
+  '/auth.AdminAuthService/AdminResendOTP',
+  grpc.web.MethodType.UNARY,
+  proto.auth.AdminResendOTPRequest,
+  proto.auth.AdminResendOTPResponse,
+  /**
+   * @param {!proto.auth.AdminResendOTPRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.AdminResendOTPResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.AdminResendOTPRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.AdminResendOTPResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.AdminResendOTPResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminAuthServiceClient.prototype.adminResendOTP =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminAuthService/AdminResendOTP',
+      request,
+      metadata || {},
+      methodDescriptor_AdminAuthService_AdminResendOTP,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.AdminResendOTPRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.AdminResendOTPResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminAuthServicePromiseClient.prototype.adminResendOTP =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminAuthService/AdminResendOTP',
+      request,
+      metadata || {},
+      methodDescriptor_AdminAuthService_AdminResendOTP);
 };
 
 

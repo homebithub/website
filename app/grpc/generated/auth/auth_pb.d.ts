@@ -363,6 +363,14 @@ export class ListRequest extends jspb.Message {
   getWardId(): number;
   setWardId(value: number): ListRequest;
 
+  getJobTypeId(): number;
+  setJobTypeId(value: number): ListRequest;
+
+  getPropertyIdsList(): Array<number>;
+  setPropertyIdsList(value: Array<number>): ListRequest;
+  clearPropertyIdsList(): ListRequest;
+  addPropertyIds(value: number, index?: number): ListRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListRequest): ListRequest.AsObject;
@@ -380,6 +388,8 @@ export namespace ListRequest {
     countyId: number;
     subcountyId: number;
     wardId: number;
+    jobTypeId: number;
+    propertyIdsList: Array<number>;
   };
 }
 
@@ -2403,6 +2413,17 @@ export class UpdateJobReq extends jspb.Message {
   getDescription(): string;
   setDescription(value: string): UpdateJobReq;
 
+  getWardId(): number;
+  setWardId(value: number): UpdateJobReq;
+
+  getFeaturesList(): Array<client_profile_client_profile_pb.FeaturePickInput>;
+  setFeaturesList(value: Array<client_profile_client_profile_pb.FeaturePickInput>): UpdateJobReq;
+  clearFeaturesList(): UpdateJobReq;
+  addFeatures(value?: client_profile_client_profile_pb.FeaturePickInput, index?: number): client_profile_client_profile_pb.FeaturePickInput;
+
+  getReplaceFeatures(): boolean;
+  setReplaceFeatures(value: boolean): UpdateJobReq;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UpdateJobReq.AsObject;
   static toObject(includeInstance: boolean, msg: UpdateJobReq): UpdateJobReq.AsObject;
@@ -2416,6 +2437,9 @@ export namespace UpdateJobReq {
     id: string;
     title: string;
     description: string;
+    wardId: number;
+    featuresList: Array<client_profile_client_profile_pb.FeaturePickInput.AsObject>;
+    replaceFeatures: boolean;
   };
 }
 
@@ -2497,6 +2521,46 @@ export namespace RespondApplicationRequest {
   };
 }
 
+export class OutcomeTokenRequest extends jspb.Message {
+  getToken(): string;
+  setToken(value: string): OutcomeTokenRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): OutcomeTokenRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: OutcomeTokenRequest): OutcomeTokenRequest.AsObject;
+  static serializeBinaryToWriter(message: OutcomeTokenRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): OutcomeTokenRequest;
+  static deserializeBinaryFromReader(message: OutcomeTokenRequest, reader: jspb.BinaryReader): OutcomeTokenRequest;
+}
+
+export namespace OutcomeTokenRequest {
+  export type AsObject = {
+    token: string;
+  };
+}
+
+export class RecordOutcomeRequest extends jspb.Message {
+  getToken(): string;
+  setToken(value: string): RecordOutcomeRequest;
+
+  getResponse(): string;
+  setResponse(value: string): RecordOutcomeRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RecordOutcomeRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: RecordOutcomeRequest): RecordOutcomeRequest.AsObject;
+  static serializeBinaryToWriter(message: RecordOutcomeRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RecordOutcomeRequest;
+  static deserializeBinaryFromReader(message: RecordOutcomeRequest, reader: jspb.BinaryReader): RecordOutcomeRequest;
+}
+
+export namespace RecordOutcomeRequest {
+  export type AsObject = {
+    token: string;
+    response: string;
+  };
+}
+
 export class ListApplicationsRequest extends jspb.Message {
   getListingId(): string;
   setListingId(value: string): ListApplicationsRequest;
@@ -2515,6 +2579,9 @@ export class ListApplicationsRequest extends jspb.Message {
   getOffset(): number;
   setOffset(value: number): ListApplicationsRequest;
 
+  getOwnerProfileId(): string;
+  setOwnerProfileId(value: string): ListApplicationsRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListApplicationsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListApplicationsRequest): ListApplicationsRequest.AsObject;
@@ -2530,6 +2597,7 @@ export namespace ListApplicationsRequest {
     statusesList: Array<string>;
     limit: number;
     offset: number;
+    ownerProfileId: string;
   };
 }
 
@@ -3978,6 +4046,9 @@ export class AdminListKYCRequest extends jspb.Message {
   getProfileType(): string;
   setProfileType(value: string): AdminListKYCRequest;
 
+  getSearch(): string;
+  setSearch(value: string): AdminListKYCRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AdminListKYCRequest.AsObject;
   static toObject(includeInstance: boolean, msg: AdminListKYCRequest): AdminListKYCRequest.AsObject;
@@ -3992,6 +4063,7 @@ export namespace AdminListKYCRequest {
     pageSize: number;
     status: string;
     profileType: string;
+    search: string;
   };
 }
 
@@ -4192,6 +4264,9 @@ export class AdminListReviewsRequest extends jspb.Message {
   getReviewType(): string;
   setReviewType(value: string): AdminListReviewsRequest;
 
+  getSearch(): string;
+  setSearch(value: string): AdminListReviewsRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AdminListReviewsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: AdminListReviewsRequest): AdminListReviewsRequest.AsObject;
@@ -4206,6 +4281,7 @@ export namespace AdminListReviewsRequest {
     pageSize: number;
     status: string;
     reviewType: string;
+    search: string;
   };
 }
 
@@ -5770,6 +5846,356 @@ export namespace UpdateRolePermissionsRequest {
   export type AsObject = {
     roleId: string;
     permissionIdsList: Array<string>;
+  };
+}
+
+export class AdminEngagement extends jspb.Message {
+  getId(): string;
+  setId(value: string): AdminEngagement;
+
+  getApplicationId(): string;
+  setApplicationId(value: string): AdminEngagement;
+
+  getListingTitle(): string;
+  setListingTitle(value: string): AdminEngagement;
+
+  getHouseholdUserId(): string;
+  setHouseholdUserId(value: string): AdminEngagement;
+
+  getHouseholdName(): string;
+  setHouseholdName(value: string): AdminEngagement;
+
+  getHousehelpUserId(): string;
+  setHousehelpUserId(value: string): AdminEngagement;
+
+  getHousehelpName(): string;
+  setHousehelpName(value: string): AdminEngagement;
+
+  getStatus(): string;
+  setStatus(value: string): AdminEngagement;
+
+  getEngagementType(): string;
+  setEngagementType(value: string): AdminEngagement;
+
+  getCreatedAt(): string;
+  setCreatedAt(value: string): AdminEngagement;
+
+  getOutcomeResponse(): string;
+  setOutcomeResponse(value: string): AdminEngagement;
+
+  getOutcomeAskedAt(): string;
+  setOutcomeAskedAt(value: string): AdminEngagement;
+
+  getOutcomeRespondedAt(): string;
+  setOutcomeRespondedAt(value: string): AdminEngagement;
+
+  getOutcomeRespondedBy(): string;
+  setOutcomeRespondedBy(value: string): AdminEngagement;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminEngagement.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminEngagement): AdminEngagement.AsObject;
+  static serializeBinaryToWriter(message: AdminEngagement, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminEngagement;
+  static deserializeBinaryFromReader(message: AdminEngagement, reader: jspb.BinaryReader): AdminEngagement;
+}
+
+export namespace AdminEngagement {
+  export type AsObject = {
+    id: string;
+    applicationId: string;
+    listingTitle: string;
+    householdUserId: string;
+    householdName: string;
+    househelpUserId: string;
+    househelpName: string;
+    status: string;
+    engagementType: string;
+    createdAt: string;
+    outcomeResponse: string;
+    outcomeAskedAt: string;
+    outcomeRespondedAt: string;
+    outcomeRespondedBy: string;
+  };
+}
+
+export class AdminListEngagementsRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): AdminListEngagementsRequest;
+
+  getOutcome(): string;
+  setOutcome(value: string): AdminListEngagementsRequest;
+
+  getLimit(): number;
+  setLimit(value: number): AdminListEngagementsRequest;
+
+  getOffset(): number;
+  setOffset(value: number): AdminListEngagementsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListEngagementsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListEngagementsRequest): AdminListEngagementsRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminListEngagementsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListEngagementsRequest;
+  static deserializeBinaryFromReader(message: AdminListEngagementsRequest, reader: jspb.BinaryReader): AdminListEngagementsRequest;
+}
+
+export namespace AdminListEngagementsRequest {
+  export type AsObject = {
+    userId: string;
+    outcome: string;
+    limit: number;
+    offset: number;
+  };
+}
+
+export class AdminListEngagementsResponse extends jspb.Message {
+  getEngagementsList(): Array<AdminEngagement>;
+  setEngagementsList(value: Array<AdminEngagement>): AdminListEngagementsResponse;
+  clearEngagementsList(): AdminListEngagementsResponse;
+  addEngagements(value?: AdminEngagement, index?: number): AdminEngagement;
+
+  getTotal(): number;
+  setTotal(value: number): AdminListEngagementsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListEngagementsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListEngagementsResponse): AdminListEngagementsResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminListEngagementsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListEngagementsResponse;
+  static deserializeBinaryFromReader(message: AdminListEngagementsResponse, reader: jspb.BinaryReader): AdminListEngagementsResponse;
+}
+
+export namespace AdminListEngagementsResponse {
+  export type AsObject = {
+    engagementsList: Array<AdminEngagement.AsObject>;
+    total: number;
+  };
+}
+
+export class AdminOutcomeStatsResponse extends jspb.Message {
+  getTotalEngagements(): number;
+  setTotalEngagements(value: number): AdminOutcomeStatsResponse;
+
+  getAsked(): number;
+  setAsked(value: number): AdminOutcomeStatsResponse;
+
+  getAnswered(): number;
+  setAnswered(value: number): AdminOutcomeStatsResponse;
+
+  getStarted(): number;
+  setStarted(value: number): AdminOutcomeStatsResponse;
+
+  getDidNotStart(): number;
+  setDidNotStart(value: number): AdminOutcomeStatsResponse;
+
+  getNotYet(): number;
+  setNotYet(value: number): AdminOutcomeStatsResponse;
+
+  getUnanswered(): number;
+  setUnanswered(value: number): AdminOutcomeStatsResponse;
+
+  getUnasked(): number;
+  setUnasked(value: number): AdminOutcomeStatsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminOutcomeStatsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminOutcomeStatsResponse): AdminOutcomeStatsResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminOutcomeStatsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminOutcomeStatsResponse;
+  static deserializeBinaryFromReader(message: AdminOutcomeStatsResponse, reader: jspb.BinaryReader): AdminOutcomeStatsResponse;
+}
+
+export namespace AdminOutcomeStatsResponse {
+  export type AsObject = {
+    totalEngagements: number;
+    asked: number;
+    answered: number;
+    started: number;
+    didNotStart: number;
+    notYet: number;
+    unanswered: number;
+    unasked: number;
+  };
+}
+
+export class AdminHiringFunnelRequest extends jspb.Message {
+  getWindowDays(): number;
+  setWindowDays(value: number): AdminHiringFunnelRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminHiringFunnelRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminHiringFunnelRequest): AdminHiringFunnelRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminHiringFunnelRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminHiringFunnelRequest;
+  static deserializeBinaryFromReader(message: AdminHiringFunnelRequest, reader: jspb.BinaryReader): AdminHiringFunnelRequest;
+}
+
+export namespace AdminHiringFunnelRequest {
+  export type AsObject = {
+    windowDays: number;
+  };
+}
+
+export class AdminHiringFunnelResponse extends jspb.Message {
+  getPosted(): number;
+  setPosted(value: number): AdminHiringFunnelResponse;
+
+  getReceivedAnApplication(): number;
+  setReceivedAnApplication(value: number): AdminHiringFunnelResponse;
+
+  getReachedInitiated(): number;
+  setReachedInitiated(value: number): AdminHiringFunnelResponse;
+
+  getProviderAccepted(): number;
+  setProviderAccepted(value: number): AdminHiringFunnelResponse;
+
+  getHouseholdApproved(): number;
+  setHouseholdApproved(value: number): AdminHiringFunnelResponse;
+
+  getBecameAnEngagement(): number;
+  setBecameAnEngagement(value: number): AdminHiringFunnelResponse;
+
+  getConfirmedStarted(): number;
+  setConfirmedStarted(value: number): AdminHiringFunnelResponse;
+
+  getTotalApplications(): number;
+  setTotalApplications(value: number): AdminHiringFunnelResponse;
+
+  getStillMaturing(): number;
+  setStillMaturing(value: number): AdminHiringFunnelResponse;
+
+  getMaturityDays(): number;
+  setMaturityDays(value: number): AdminHiringFunnelResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminHiringFunnelResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminHiringFunnelResponse): AdminHiringFunnelResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminHiringFunnelResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminHiringFunnelResponse;
+  static deserializeBinaryFromReader(message: AdminHiringFunnelResponse, reader: jspb.BinaryReader): AdminHiringFunnelResponse;
+}
+
+export namespace AdminHiringFunnelResponse {
+  export type AsObject = {
+    posted: number;
+    receivedAnApplication: number;
+    reachedInitiated: number;
+    providerAccepted: number;
+    householdApproved: number;
+    becameAnEngagement: number;
+    confirmedStarted: number;
+    totalApplications: number;
+    stillMaturing: number;
+    maturityDays: number;
+  };
+}
+
+export class AdminPlatformDay extends jspb.Message {
+  getDay(): string;
+  setDay(value: string): AdminPlatformDay;
+
+  getUsersJoined(): number;
+  setUsersJoined(value: number): AdminPlatformDay;
+
+  getListingsPosted(): number;
+  setListingsPosted(value: number): AdminPlatformDay;
+
+  getApplicationsMade(): number;
+  setApplicationsMade(value: number): AdminPlatformDay;
+
+  getEngagementsCreated(): number;
+  setEngagementsCreated(value: number): AdminPlatformDay;
+
+  getReviewsLeft(): number;
+  setReviewsLeft(value: number): AdminPlatformDay;
+
+  getKycSubmitted(): number;
+  setKycSubmitted(value: number): AdminPlatformDay;
+
+  getKycDecided(): number;
+  setKycDecided(value: number): AdminPlatformDay;
+
+  getOutcomesRecorded(): number;
+  setOutcomesRecorded(value: number): AdminPlatformDay;
+
+  getOutcomesStarted(): number;
+  setOutcomesStarted(value: number): AdminPlatformDay;
+
+  getTotalUsers(): number;
+  setTotalUsers(value: number): AdminPlatformDay;
+
+  getTotalListings(): number;
+  setTotalListings(value: number): AdminPlatformDay;
+
+  getBackfilled(): boolean;
+  setBackfilled(value: boolean): AdminPlatformDay;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminPlatformDay.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminPlatformDay): AdminPlatformDay.AsObject;
+  static serializeBinaryToWriter(message: AdminPlatformDay, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminPlatformDay;
+  static deserializeBinaryFromReader(message: AdminPlatformDay, reader: jspb.BinaryReader): AdminPlatformDay;
+}
+
+export namespace AdminPlatformDay {
+  export type AsObject = {
+    day: string;
+    usersJoined: number;
+    listingsPosted: number;
+    applicationsMade: number;
+    engagementsCreated: number;
+    reviewsLeft: number;
+    kycSubmitted: number;
+    kycDecided: number;
+    outcomesRecorded: number;
+    outcomesStarted: number;
+    totalUsers: number;
+    totalListings: number;
+    backfilled: boolean;
+  };
+}
+
+export class AdminPlatformTrendRequest extends jspb.Message {
+  getDays(): number;
+  setDays(value: number): AdminPlatformTrendRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminPlatformTrendRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminPlatformTrendRequest): AdminPlatformTrendRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminPlatformTrendRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminPlatformTrendRequest;
+  static deserializeBinaryFromReader(message: AdminPlatformTrendRequest, reader: jspb.BinaryReader): AdminPlatformTrendRequest;
+}
+
+export namespace AdminPlatformTrendRequest {
+  export type AsObject = {
+    days: number;
+  };
+}
+
+export class AdminPlatformTrendResponse extends jspb.Message {
+  getDaysList(): Array<AdminPlatformDay>;
+  setDaysList(value: Array<AdminPlatformDay>): AdminPlatformTrendResponse;
+  clearDaysList(): AdminPlatformTrendResponse;
+  addDays(value?: AdminPlatformDay, index?: number): AdminPlatformDay;
+
+  getMissingDays(): number;
+  setMissingDays(value: number): AdminPlatformTrendResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminPlatformTrendResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminPlatformTrendResponse): AdminPlatformTrendResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminPlatformTrendResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminPlatformTrendResponse;
+  static deserializeBinaryFromReader(message: AdminPlatformTrendResponse, reader: jspb.BinaryReader): AdminPlatformTrendResponse;
+}
+
+export namespace AdminPlatformTrendResponse {
+  export type AsObject = {
+    daysList: Array<AdminPlatformDay.AsObject>;
+    missingDays: number;
   };
 }
 

@@ -44,6 +44,13 @@ export class DeviceServiceClient {
                response: google_protobuf_empty_pb.Empty) => void
   ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
+  decideDevice(
+    request: auth_device_pb.DecideDeviceRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_device_pb.DecideDeviceResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_device_pb.DecideDeviceResponse>;
+
   revokeAllDevices(
     request: auth_device_pb.RevokeAllDevicesRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -96,6 +103,11 @@ export class DeviceServicePromiseClient {
     request: auth_device_pb.RevokeDeviceRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<google_protobuf_empty_pb.Empty>;
+
+  decideDevice(
+    request: auth_device_pb.DecideDeviceRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_device_pb.DecideDeviceResponse>;
 
   revokeAllDevices(
     request: auth_device_pb.RevokeAllDevicesRequest,

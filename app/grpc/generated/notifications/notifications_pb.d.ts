@@ -1929,3 +1929,291 @@ export namespace ListUserEventsSinceResponse {
   };
 }
 
+export class FeatureFlag extends jspb.Message {
+  getName(): string;
+  setName(value: string): FeatureFlag;
+
+  getValue(): string;
+  setValue(value: string): FeatureFlag;
+
+  getDescription(): string;
+  setDescription(value: string): FeatureFlag;
+
+  getCategory(): string;
+  setCategory(value: string): FeatureFlag;
+
+  getUpdatedAt(): string;
+  setUpdatedAt(value: string): FeatureFlag;
+
+  getUpdatedBy(): string;
+  setUpdatedBy(value: string): FeatureFlag;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FeatureFlag.AsObject;
+  static toObject(includeInstance: boolean, msg: FeatureFlag): FeatureFlag.AsObject;
+  static serializeBinaryToWriter(message: FeatureFlag, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FeatureFlag;
+  static deserializeBinaryFromReader(message: FeatureFlag, reader: jspb.BinaryReader): FeatureFlag;
+}
+
+export namespace FeatureFlag {
+  export type AsObject = {
+    name: string;
+    value: string;
+    description: string;
+    category: string;
+    updatedAt: string;
+    updatedBy: string;
+  };
+}
+
+export class ListFeatureFlagsRequest extends jspb.Message {
+  getCategory(): string;
+  setCategory(value: string): ListFeatureFlagsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListFeatureFlagsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListFeatureFlagsRequest): ListFeatureFlagsRequest.AsObject;
+  static serializeBinaryToWriter(message: ListFeatureFlagsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListFeatureFlagsRequest;
+  static deserializeBinaryFromReader(message: ListFeatureFlagsRequest, reader: jspb.BinaryReader): ListFeatureFlagsRequest;
+}
+
+export namespace ListFeatureFlagsRequest {
+  export type AsObject = {
+    category: string;
+  };
+}
+
+export class ListFeatureFlagsResponse extends jspb.Message {
+  getFlagsList(): Array<FeatureFlag>;
+  setFlagsList(value: Array<FeatureFlag>): ListFeatureFlagsResponse;
+  clearFlagsList(): ListFeatureFlagsResponse;
+  addFlags(value?: FeatureFlag, index?: number): FeatureFlag;
+
+  getVersion(): number;
+  setVersion(value: number): ListFeatureFlagsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListFeatureFlagsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListFeatureFlagsResponse): ListFeatureFlagsResponse.AsObject;
+  static serializeBinaryToWriter(message: ListFeatureFlagsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListFeatureFlagsResponse;
+  static deserializeBinaryFromReader(message: ListFeatureFlagsResponse, reader: jspb.BinaryReader): ListFeatureFlagsResponse;
+}
+
+export namespace ListFeatureFlagsResponse {
+  export type AsObject = {
+    flagsList: Array<FeatureFlag.AsObject>;
+    version: number;
+  };
+}
+
+export class SetFeatureFlagRequest extends jspb.Message {
+  getName(): string;
+  setName(value: string): SetFeatureFlagRequest;
+
+  getValue(): string;
+  setValue(value: string): SetFeatureFlagRequest;
+
+  getChangedBy(): string;
+  setChangedBy(value: string): SetFeatureFlagRequest;
+
+  getReason(): string;
+  setReason(value: string): SetFeatureFlagRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SetFeatureFlagRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: SetFeatureFlagRequest): SetFeatureFlagRequest.AsObject;
+  static serializeBinaryToWriter(message: SetFeatureFlagRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SetFeatureFlagRequest;
+  static deserializeBinaryFromReader(message: SetFeatureFlagRequest, reader: jspb.BinaryReader): SetFeatureFlagRequest;
+}
+
+export namespace SetFeatureFlagRequest {
+  export type AsObject = {
+    name: string;
+    value: string;
+    changedBy: string;
+    reason: string;
+  };
+}
+
+export class SetFeatureFlagResponse extends jspb.Message {
+  getSuccess(): boolean;
+  setSuccess(value: boolean): SetFeatureFlagResponse;
+
+  getMessage(): string;
+  setMessage(value: string): SetFeatureFlagResponse;
+
+  getVersion(): number;
+  setVersion(value: number): SetFeatureFlagResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SetFeatureFlagResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: SetFeatureFlagResponse): SetFeatureFlagResponse.AsObject;
+  static serializeBinaryToWriter(message: SetFeatureFlagResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SetFeatureFlagResponse;
+  static deserializeBinaryFromReader(message: SetFeatureFlagResponse, reader: jspb.BinaryReader): SetFeatureFlagResponse;
+}
+
+export namespace SetFeatureFlagResponse {
+  export type AsObject = {
+    success: boolean;
+    message: string;
+    version: number;
+  };
+}
+
+export class FeatureFlagChange extends jspb.Message {
+  getName(): string;
+  setName(value: string): FeatureFlagChange;
+
+  getOldValue(): string;
+  setOldValue(value: string): FeatureFlagChange;
+
+  getNewValue(): string;
+  setNewValue(value: string): FeatureFlagChange;
+
+  getChangedBy(): string;
+  setChangedBy(value: string): FeatureFlagChange;
+
+  getReason(): string;
+  setReason(value: string): FeatureFlagChange;
+
+  getChangedAt(): string;
+  setChangedAt(value: string): FeatureFlagChange;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FeatureFlagChange.AsObject;
+  static toObject(includeInstance: boolean, msg: FeatureFlagChange): FeatureFlagChange.AsObject;
+  static serializeBinaryToWriter(message: FeatureFlagChange, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FeatureFlagChange;
+  static deserializeBinaryFromReader(message: FeatureFlagChange, reader: jspb.BinaryReader): FeatureFlagChange;
+}
+
+export namespace FeatureFlagChange {
+  export type AsObject = {
+    name: string;
+    oldValue: string;
+    newValue: string;
+    changedBy: string;
+    reason: string;
+    changedAt: string;
+  };
+}
+
+export class GetFeatureFlagHistoryRequest extends jspb.Message {
+  getName(): string;
+  setName(value: string): GetFeatureFlagHistoryRequest;
+
+  getLimit(): number;
+  setLimit(value: number): GetFeatureFlagHistoryRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetFeatureFlagHistoryRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: GetFeatureFlagHistoryRequest): GetFeatureFlagHistoryRequest.AsObject;
+  static serializeBinaryToWriter(message: GetFeatureFlagHistoryRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetFeatureFlagHistoryRequest;
+  static deserializeBinaryFromReader(message: GetFeatureFlagHistoryRequest, reader: jspb.BinaryReader): GetFeatureFlagHistoryRequest;
+}
+
+export namespace GetFeatureFlagHistoryRequest {
+  export type AsObject = {
+    name: string;
+    limit: number;
+  };
+}
+
+export class GetFeatureFlagHistoryResponse extends jspb.Message {
+  getChangesList(): Array<FeatureFlagChange>;
+  setChangesList(value: Array<FeatureFlagChange>): GetFeatureFlagHistoryResponse;
+  clearChangesList(): GetFeatureFlagHistoryResponse;
+  addChanges(value?: FeatureFlagChange, index?: number): FeatureFlagChange;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetFeatureFlagHistoryResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetFeatureFlagHistoryResponse): GetFeatureFlagHistoryResponse.AsObject;
+  static serializeBinaryToWriter(message: GetFeatureFlagHistoryResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetFeatureFlagHistoryResponse;
+  static deserializeBinaryFromReader(message: GetFeatureFlagHistoryResponse, reader: jspb.BinaryReader): GetFeatureFlagHistoryResponse;
+}
+
+export namespace GetFeatureFlagHistoryResponse {
+  export type AsObject = {
+    changesList: Array<FeatureFlagChange.AsObject>;
+  };
+}
+
+export class AdminListUserEventsRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): AdminListUserEventsRequest;
+
+  getBeforeSeq(): number;
+  setBeforeSeq(value: number): AdminListUserEventsRequest;
+
+  getLimit(): number;
+  setLimit(value: number): AdminListUserEventsRequest;
+
+  getEventType(): string;
+  setEventType(value: string): AdminListUserEventsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListUserEventsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListUserEventsRequest): AdminListUserEventsRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminListUserEventsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListUserEventsRequest;
+  static deserializeBinaryFromReader(message: AdminListUserEventsRequest, reader: jspb.BinaryReader): AdminListUserEventsRequest;
+}
+
+export namespace AdminListUserEventsRequest {
+  export type AsObject = {
+    userId: string;
+    beforeSeq: number;
+    limit: number;
+    eventType: string;
+  };
+}
+
+export class AdminListUserEventsResponse extends jspb.Message {
+  getEventsList(): Array<UserEvent>;
+  setEventsList(value: Array<UserEvent>): AdminListUserEventsResponse;
+  clearEventsList(): AdminListUserEventsResponse;
+  addEvents(value?: UserEvent, index?: number): UserEvent;
+
+  getHasMore(): boolean;
+  setHasMore(value: boolean): AdminListUserEventsResponse;
+
+  getOldestSeq(): number;
+  setOldestSeq(value: number): AdminListUserEventsResponse;
+
+  getAvailableTypesList(): Array<string>;
+  setAvailableTypesList(value: Array<string>): AdminListUserEventsResponse;
+  clearAvailableTypesList(): AdminListUserEventsResponse;
+  addAvailableTypes(value: string, index?: number): AdminListUserEventsResponse;
+
+  getRetentionDays(): number;
+  setRetentionDays(value: number): AdminListUserEventsResponse;
+
+  getPerUserCap(): number;
+  setPerUserCap(value: number): AdminListUserEventsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListUserEventsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListUserEventsResponse): AdminListUserEventsResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminListUserEventsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListUserEventsResponse;
+  static deserializeBinaryFromReader(message: AdminListUserEventsResponse, reader: jspb.BinaryReader): AdminListUserEventsResponse;
+}
+
+export namespace AdminListUserEventsResponse {
+  export type AsObject = {
+    eventsList: Array<UserEvent.AsObject>;
+    hasMore: boolean;
+    oldestSeq: number;
+    availableTypesList: Array<string>;
+    retentionDays: number;
+    perUserCap: number;
+  };
+}
+

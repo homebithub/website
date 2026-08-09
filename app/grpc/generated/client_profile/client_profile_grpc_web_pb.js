@@ -870,6 +870,67 @@ proto.client_profile.ClientProfileServicePromiseClient.prototype.matchCandidates
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.client_profile.MatchListingsRequest,
+ *   !proto.shared.GenericResponse>}
+ */
+const methodDescriptor_ClientProfileService_MatchListings = new grpc.web.MethodDescriptor(
+  '/client_profile.ClientProfileService/MatchListings',
+  grpc.web.MethodType.UNARY,
+  proto.client_profile.MatchListingsRequest,
+  shared_shared_pb.GenericResponse,
+  /**
+   * @param {!proto.client_profile.MatchListingsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  shared_shared_pb.GenericResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.client_profile.MatchListingsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.shared.GenericResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.shared.GenericResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.client_profile.ClientProfileServiceClient.prototype.matchListings =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/client_profile.ClientProfileService/MatchListings',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_MatchListings,
+      callback);
+};
+
+
+/**
+ * @param {!proto.client_profile.MatchListingsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.shared.GenericResponse>}
+ *     Promise that resolves to the response
+ */
+proto.client_profile.ClientProfileServicePromiseClient.prototype.matchListings =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/client_profile.ClientProfileService/MatchListings',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_MatchListings);
+};
+
+
 export default proto.client_profile;
 export const {
   ClientProfileServiceClient,
