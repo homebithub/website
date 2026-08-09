@@ -279,7 +279,18 @@ export default function HousehelpPublicProfile() {
         setUser(rawUser);
         setIsViewingOther(!!profileId); // Set to true if viewing someone else's profile
 
-        // Fetch photos from documents table for this user
+        // The page is released here, not after everything below finishes.
+        //
+        // The profile is the page. The photos, the open-for-work listing and the
+        // shortlist state are decorations on it, and each was a request the
+        // person waited through behind a full-page shimmer — four round trips
+        // to see a name that arrived on the first one.
+        setProfile(normalizedProfile);
+        setLoading(false);
+
+        // Photos land into the profile already on screen. A merge rather than a
+        // replace, since anything set below would otherwise be dropped by
+        // whichever of these resolves last.
         const targetUserId = rawUser?.id || rawProfile?.user_id;
         if (targetUserId) {
           try {
@@ -288,14 +299,12 @@ export default function HousehelpPublicProfile() {
             const documentsArray = Array.isArray(docs) ? docs : [];
             const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
             if (photoUrls.length > 0) {
-              normalizedProfile.photos = photoUrls;
+              setProfile((current: any) => (current ? { ...current, photos: photoUrls } : current));
             }
           } catch (err) {
             console.error('Failed to fetch profile photos:', err);
           }
         }
-
-        setProfile(normalizedProfile);
 
         let shortlistTargetId = queryOpenForWorkId;
         if (!shortlistTargetId && normalizedProfile.id) {

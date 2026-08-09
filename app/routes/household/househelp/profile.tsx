@@ -125,7 +125,19 @@ export default function HousehelpProfile() {
       setError(null);
       try {
         if (!profileId) throw new Error("No profile ID provided");
-        // Check if already shortlisted
+
+        // The profile first, and the page is released the moment it lands.
+        //
+        // A shortlist check and a view-tracking call used to run ahead of it,
+        // so the person waited through two requests that render nothing before
+        // the one they came for even started. Recording that a profile was
+        // viewed is our bookkeeping, not theirs.
+        const profileData = await grpcProfileService.getHousehelpProfileWithUser(profileId);
+        setData(profileData);
+        setLoading(false);
+
+        // Whether they already shortlisted this person decides one button's
+        // state, so it settles behind the profile rather than in front of it.
         try {
           const shortlistData = await shortlistService.shortlistExists('', profileId);
           const exists = !!(shortlistData?.getExists?.() ?? shortlistData?.exists);
@@ -138,15 +150,12 @@ export default function HousehelpProfile() {
             setShortlistDisabledReason(null);
           }
         } catch { /* ignore */ }
-        // Track profile view via gRPC
+
         try {
           await profileViewService.recordView('', profileId, 'househelp');
         } catch (err) {
           console.warn('Failed to record profile view:', err);
         }
-        // Fetch profile via gRPC
-        const profileData = await grpcProfileService.getHousehelpProfileWithUser(profileId);
-        setData(profileData);
       } catch (err: any) {
         setError(err.message || "Failed to load profile");
       } finally {

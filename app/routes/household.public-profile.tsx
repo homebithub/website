@@ -128,20 +128,25 @@ export default function HouseholdPublicProfile() {
 
         const ownerUserId = resolveHouseholdOwnerUserId(profileData) || resolvedUserId;
 
-        // Fetch photos from documents table via gRPC
+        // The page is released on the profile, not on the photos. Everything
+        // written on it — the name, the location, what they are hiring for —
+        // arrived in the call above, and holding all of it behind a second
+        // request for pictures made the whole page as slow as its least
+        // important part.
+        setProfile(profileData);
+        setLoading(false);
+
         try {
           const docsData = await documentService.getUserDocuments(ownerUserId, 'profile_photo');
           const docs = docsData?.data || docsData?.documents || docsData || [];
           const documentsArray = Array.isArray(docs) ? docs : [];
           const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
           if (photoUrls.length > 0) {
-            profileData.photos = photoUrls;
+            setProfile((current) => (current ? { ...current, photos: photoUrls } : current));
           }
         } catch (err) {
           console.error("Failed to fetch profile photos:", err);
         }
-
-        setProfile(profileData);
       } catch (err: any) {
         console.error("Error loading household profile:", err);
         setError(err.message || "Failed to load profile");
