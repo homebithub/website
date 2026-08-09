@@ -6,7 +6,9 @@ interface ConfirmDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: string;
+  /** ReactNode, not string: a confirmation that only says "are you sure?"
+      leaves the person to guess the consequences. Plain strings still work. */
+  message: React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   variant?: 'danger' | 'warning' | 'info';

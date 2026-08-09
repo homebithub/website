@@ -13,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Navigation } from "~/components/Navigation";
+import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { Footer } from "~/components/Footer";
 import { Loading } from "~/components/Loading";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -49,6 +50,10 @@ export default function DevicesPage() {
   const [currentDeviceId, setCurrentDeviceId] = useState("");
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // What the dialog is currently asking about: a single device, every other
+  // device, or nothing.
+  const [pendingRevoke, setPendingRevoke] = useState<any | null>(null);
+  const [pendingRevokeAll, setPendingRevokeAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [counts, setCounts] = useState({ total: 0, active: 0, pending: 0 });
   const [activityDeviceId, setActivityDeviceId] = useState<string | null>(null);
@@ -84,9 +89,10 @@ export default function DevicesPage() {
     void loadDevices();
   }, [loadDevices]);
 
+  // Asking is a separate step from doing, so the dialog can describe the
+  // consequences and the handler stays about the work.
   const revoke = async (device: any) => {
     if (device.deviceId === currentDeviceId || device.isCurrentDevice) return;
-    if (!window.confirm(`Revoke access for ${device.deviceName || "this device"}?`)) return;
     setBusyId(device.id || device.deviceId);
     setError(null);
     try {
@@ -104,9 +110,6 @@ export default function DevicesPage() {
   };
 
   const revokeOthers = async () => {
-    if (!window.confirm("Revoke every other active device? Your current browser will remain signed in.")) {
-      return;
-    }
     setBusyId("all");
     setError(null);
     try {
@@ -178,7 +181,7 @@ export default function DevicesPage() {
               </button>
               <button
                 type="button"
-                onClick={revokeOthers}
+                onClick={() => setPendingRevokeAll(true)}
                 disabled={busyId !== null || counts.active <= 1}
                 className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-2 text-xs font-semibold text-white shadow disabled:opacity-50"
               >
@@ -300,7 +303,7 @@ export default function DevicesPage() {
                         {!current && !revoked && (
                           <button
                             type="button"
-                            onClick={() => void revoke(device)}
+                            onClick={() => setPendingRevoke(device)}
                             disabled={busyId !== null}
                             className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-400/40 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:text-red-300 dark:hover:bg-red-500/10"
                           >
@@ -350,6 +353,66 @@ export default function DevicesPage() {
           )}
         </main>
       </PurpleThemeWrapper>
+      <ConfirmDialog
+        isOpen={Boolean(pendingRevoke)}
+        onClose={() => setPendingRevoke(null)}
+        onConfirm={() => {
+          const device = pendingRevoke;
+          setPendingRevoke(null);
+          if (device) void revoke(device);
+        }}
+        title={`Sign out ${pendingRevoke?.deviceName || "this device"}?`}
+        variant="danger"
+        confirmText="Sign it out"
+        cancelText="Keep it"
+        isLoading={busyId === (pendingRevoke?.id || pendingRevoke?.deviceId)}
+        message={
+          <span className="block space-y-2">
+            <span className="block">
+              {pendingRevoke?.deviceName || "That device"} will be signed out of your
+              account and will not be able to sign back in without your password.
+            </span>
+            <span className="block text-xs text-gray-500 dark:text-gray-400">
+              If it is open right now it is signed out immediately; otherwise within
+              fifteen minutes, or the next time it loads the site.
+            </span>
+            <span className="block text-xs text-gray-500 dark:text-gray-400">
+              You are not signed out of this browser.
+            </span>
+          </span>
+        }
+      />
+
+      <ConfirmDialog
+        isOpen={pendingRevokeAll}
+        onClose={() => setPendingRevokeAll(false)}
+        onConfirm={() => {
+          setPendingRevokeAll(false);
+          void revokeOthers();
+        }}
+        title="Sign out every other device?"
+        variant="danger"
+        confirmText="Sign them out"
+        cancelText="Cancel"
+        isLoading={busyId === "all"}
+        message={
+          <span className="block space-y-2">
+            <span className="block">
+              Every device except this browser will be signed out of your account.
+              None of them can sign back in without your password.
+            </span>
+            <span className="block text-xs text-gray-500 dark:text-gray-400">
+              Any that are open right now are signed out immediately; the rest within
+              fifteen minutes, or the next time they load the site.
+            </span>
+            <span className="block text-xs text-gray-500 dark:text-gray-400">
+              This browser stays signed in. Each device can be trusted again by
+              signing in on it.
+            </span>
+          </span>
+        }
+      />
+
       <Footer />
     </div>
   );
