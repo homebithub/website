@@ -41,6 +41,34 @@ function deviceIcon(type: string) {
   return /mobile|tablet/i.test(type) ? Smartphone : Laptop;
 }
 
+/**
+ * What an activity entry says to the person reading it.
+ *
+ * The stored values are machine strings — registration_refused, all_revoked —
+ * and were being rendered straight onto the page. This is a security history
+ * someone reads when they are worried, which is the worst moment to hand them
+ * a database enum and let them guess.
+ *
+ * Unknown types fall back to the raw value with its underscores removed, so a
+ * new event added later is legible rather than invisible.
+ */
+function activityLabel(eventType: string): string {
+  const labels: Record<string, string> = {
+    registered: "Signed in from this device",
+    confirmed: "You approved this device",
+    decided_approve: "You approved this device",
+    decided_reject: "You rejected this device",
+    decided_ban: "You banned this device",
+    revoked: "You signed this device out",
+    all_revoked: "Signed out with every other device",
+    registration_refused: "Blocked: this device tried to sign in again",
+    activity: "Used this device",
+  };
+  if (labels[eventType]) return labels[eventType];
+  const cleaned = String(eventType || "").replace(/_/g, " ").trim();
+  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : "Account activity";
+}
+
 export default function DevicesPage() {
   const { user, loading: authLoading } = useAuth();
   const currentUser = ((user as any)?.user || user) as any;
@@ -390,7 +418,9 @@ export default function DevicesPage() {
                                   className="flex flex-col justify-between gap-1 rounded-xl bg-purple-50/70 px-3 py-2 text-xs dark:bg-purple-500/10 sm:flex-row"
                                 >
                                   <span className="font-medium text-gray-800 dark:text-gray-200">
-                                    {item.activityType || item.action || item.eventType || "Account activity"}
+                                    {activityLabel(
+                                      item.activityType || item.action || item.eventType || "",
+                                    )}
                                   </span>
                                   <span className="text-gray-500 dark:text-gray-400">
                                     {[occurredAt?.toLocaleString(), item.ipAddress, item.location].filter(Boolean).join(" · ")}
