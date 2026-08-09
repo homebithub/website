@@ -9,6 +9,8 @@ a real deployment. Nothing moves to Retested on my say-so.
 Bugs are numbered in the order they were reported. Area is included because these
 span several repositories.
 
+Work that was scoped and deliberately postponed lives in [DEFERRED_WORK.md](DEFERRED_WORK.md).
+
 | # | Bug | Area | Fixed | Retested |
 |---|-----|------|-------|----------|
 | 1 | Household **Saved** page showed a bare heading over blank space when there was nothing to list — no empty state at all. | website | ✅ | ⬜ |
@@ -16,7 +18,7 @@ span several repositories.
 | 2b | Footer floated mid-screen instead of sitting at the bottom, at a different height on each route. | website | ✅ | ⬜ |
 | 2c | Whole page waits for every request before anything renders, instead of each section clearing as its own data arrives. | website | 🟡 partial | ⬜ |
 | 3a | Settings shows a permanent "We couldn't load your app preferences" error on load. | auth | ✅ | ⬜ |
-| 3b | Admin settings shows a permanent "Platform settings are not available" error. | admin | ❓ needs decision | ⬜ |
+| 3b | Admin settings shows a permanent "Platform settings are not available" error. | admin + auth | ✅ | ⬜ |
 | 3c | App preferences do not work (same root cause as 3a). | auth | ✅ | ⬜ |
 | 3d | Password change should redirect to login, and must reject reusing the current password. | website + auth | ⬜ | ⬜ |
 | 3e | Remove the Account card from settings, leaving three. | website | ⬜ | ⬜ |
@@ -24,7 +26,7 @@ span several repositories.
 | 3g | Revoking a device does not sign it out — live sessions continue, and offline devices are not checked on return. | auth + website | ⬜ | ⬜ |
 | 3h | Device activity is never logged, so "Recent activity" is always empty. | auth + admin | ⬜ | ⬜ |
 | 3i | Preference toggles need a Save button; should persist on toggle and revert visibly on failure. Same for admin. | website + admin | ⬜ | ⬜ |
-| 4 | Admin settings has no backend — build one. | admin + a service | ⬜ | ⬜ |
+| 4 | Admin settings has no backend — build one. | admin + auth | ✅ | ⬜ |
 | 5 | Image uploads: audited, see notes. Admin settings has no upload to fix. | website + admin | ✅ audit | ⬜ |
 | 6 | New-device login approval: email + in-app notification, approve / reject / ban, SSE and refresh paths. | auth + notifications + website | ⬜ | ⬜ |
 
@@ -294,3 +296,38 @@ that any unknown browser needs approval regardless.
 **Recommendation:** build states and approval on the browser-as-device model, keep
 `banned` as a record-level state, and treat WebAuthn as the upgrade path if device
 binding ever needs to be genuine.
+
+---
+
+## 4. Admin settings backend ✅
+
+**Built.** The page now reads and writes real settings.
+
+The storage already existed. `platform_settings` and a seeded `app_settings` row have
+been there since migration 34, in exactly the shape the admin expects — general,
+notifications, security, features. Nothing could reach them: `getPlatformSettings`
+called a `PlatformSettingsService` that appears in no proto and is implemented by
+nothing, so it threw, and the page showed an error over controls that could never
+save.
+
+I nearly added a second `platform_settings` table before validating the migration
+against the real database and finding the first. Worth remembering as an argument for
+checking the schema rather than the repository.
+
+- `pkg` v1.53.0 — `AdminGetPlatformSettings` / `AdminUpdatePlatformSettings` on
+  AdminService, carrying a Struct so new settings do not need a proto change, a
+  package release and three bumps before anyone can see a checkbox.
+- `auth` — handlers plus migration 66 adding `updated_by`, taken from the caller's
+  token rather than the request body.
+- `gateway` — pkg bump; both methods resolve to `admin` through the existing
+  `/auth.AdminService/` prefix rule.
+- `admin` — real calls, merging over defaults so a stored document that predates a new
+  setting does not hand the form `undefined`.
+
+Verified against the live preprod schema inside a rolled-back transaction: migration
+applies, the read returns `Homebit`, the upsert writes `updated_by`, and the other
+three unrelated keys in the table are untouched.
+
+**To retest:** open admin Settings — no error banner. Change something on General,
+save, reload, confirm it persisted. Confirm the System page's feature flags are
+unaffected: they are a separate store on purpose.
