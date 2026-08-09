@@ -7,6 +7,7 @@ import { ThemeProvider } from "~/contexts/ThemeContext";
 import { ProfileEditorProvider } from "~/contexts/ProfileEditorContext";
 import { WebSocketProvider } from "~/contexts/WebSocketContext";
 import { SSEProvider } from "~/contexts/SSEContext";
+import { DeviceRevocationWatcher } from "~/components/DeviceRevocationWatcher";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
 import stylesheet from "./tailwind.css?url";
 
@@ -162,6 +163,7 @@ export default function App() {
                         <SSEProvider>
                             <WebSocketProvider>
                                 <ProfileEditorProvider>
+                                    <DeviceRevocationWatcher/>
                                     <Outlet/>
                                 </ProfileEditorProvider>
                             </WebSocketProvider>

@@ -73,6 +73,10 @@ export default function LoginPage() {
   // Set when a password change signed them out. Without it, arriving at a login
   // screen straight after a success message reads as the change having failed.
   const passwordChanged = searchParams.get('passwordChanged') === '1';
+  // Set when this browser was revoked from the trusted-devices page, here or
+  // elsewhere. Without it, being signed out mid-session looks like a fault.
+  const deviceRevoked = searchParams.get('deviceRevoked') === '1';
+  const deviceRevokedReason = searchParams.get('reason') || '';
 
   // Handle return from Google OAuth callback
   useEffect(() => {
@@ -277,6 +281,17 @@ export default function LoginPage() {
           <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
           <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 text-center">Welcome Back! 👋</h1>
           
+          {deviceRevoked && !loginError && (
+            <div
+              role="status"
+              className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+            >
+              {deviceRevokedReason ||
+                'This device was signed out from your trusted devices.'}{' '}
+              Sign in again to keep using it, or leave it signed out if you did not expect this.
+            </div>
+          )}
+
           {passwordChanged && !loginError && (
             <div
               role="status"
