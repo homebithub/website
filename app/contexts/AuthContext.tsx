@@ -7,7 +7,7 @@ import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
 import { authService } from "~/services/grpc/auth.service";
 import { getAuthFromCookies } from "~/utils/cookie";
-import { needsRenewal, msUntilRefresh, nextTimerDelay } from "~/utils/session";
+import { needsRenewal, msUntilRefresh, nextTimerDelay, sessionState } from "~/utils/session";
 import {
   cacheAuthSession,
   clearStoredAuthSession,
@@ -66,6 +66,37 @@ function normalizeVerificationState(raw: any, userId: string, target: string) {
   };
 }
 
+/**
+ * Renew a session whose access token has already expired, before anything uses
+ * it.
+ *
+ * Only acts on "expired". A token that is merely close to expiry is left to the
+ * renewal timer, and one whose expiry cannot be parsed is left alone entirely —
+ * signing someone out over a parsing failure would be worse than doing nothing.
+ *
+ * Failures are swallowed on purpose: this runs before we know whether the
+ * person is even signed in, and the normal unauthenticated path below handles
+ * the outcome. Throwing here would turn "your session lapsed" into a broken
+ * page.
+ */
+async function renewExpiredSessionBeforeUse(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (sessionState(getStoredAccessToken()) !== "expired") return;
+
+  const { refreshToken } = getAuthFromCookies();
+  if (!refreshToken) return;
+
+  try {
+    const { default: authService } = await import("~/services/grpc/auth.service");
+    const renewed = await authService.refreshSession(refreshToken);
+    if (renewed?.token) {
+      cacheAuthSession({ token: renewed.token, refreshToken: renewed.refreshToken });
+    }
+  } catch {
+    // Left to the unauthenticated path.
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [user, setUser] = useState<LoginResponse | null>(null);
@@ -117,6 +148,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
+      // Renew before anything reads the token, when it has already expired.
+      //
+      // The renewal timer only runs while a page is open. A tab closed for
+      // longer than the token's life comes back holding an expired one, and
+      // every request made during bootstrap would race the renewal that the
+      // timer is about to schedule — some failing, some not, depending on
+      // timing. Settling it here, before `loading` clears and authenticated
+      // views render, removes the race rather than making it rarer.
+      //
+      // This is what allows the access token to be short. Without it, shortening
+      // the token only moves the race from unlikely to routine.
+      await renewExpiredSessionBeforeUse();
+
       const token = getStoredAccessToken() || null;
       const cachedUser = getStoredUser();
       const shouldUseCachedUserOnly = location.pathname === '/profile';
