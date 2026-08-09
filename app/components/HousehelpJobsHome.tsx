@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSavedFilters } from '~/hooks/useSavedFilters';
 import { useNavigate, useLocation } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -13,7 +14,7 @@ import {
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { formatTimeAgo } from "~/utils/timeAgo";
-import { getStoredUser, getStoredUserId } from "~/utils/authStorage";
+import { getStoredUser, getStoredUserId, getStoredUserProfileId } from "~/utils/authStorage";
 import {
   getInboxRoute,
   startOrGetConversation,
@@ -362,7 +363,14 @@ export default function HousehelpJobsHome() {
   const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState(() => ({ ...DEFAULT_JOB_FILTERS }));
+  // Kept between visits. Narrowing a search used to be thrown away when the
+  // tab closed, so anyone returning daily redid the same work every day — and
+  // the people who return daily are the ones actually looking.
+  const viewerProfileId = useMemo(() => getStoredUserProfileId() || "", []);
+  const { filters, setFilters, restored: filtersRestored } = useSavedFilters(
+    viewerProfileId,
+    DEFAULT_JOB_FILTERS,
+  );
   const [locationPickerKey, setLocationPickerKey] = useState(0);
   const [sortBy, setSortBy] = useState("best_match");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -559,6 +567,12 @@ export default function HousehelpJobsHome() {
   }, []);
 
   useEffect(() => {
+    // Wait for the stored filters to arrive before asking for listings.
+    // Otherwise the page fetches once with the defaults and again the moment
+    // the saved set lands — a wasted request, and results that visibly change
+    // under the person a beat after they appear.
+    if (!filtersRestored) return;
+
     let cancelled = false;
     const fetchJobs = async () => {
       setLoading(true);
@@ -631,7 +645,7 @@ export default function HousehelpJobsHome() {
     return () => {
       cancelled = true;
     };
-  }, [offset, searchKey, selectedSalaryRange, currentUserId]);
+  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;

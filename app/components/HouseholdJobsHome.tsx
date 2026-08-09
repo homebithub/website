@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSavedFilters } from '~/hooks/useSavedFilters';
 import { useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -541,7 +542,14 @@ export default function HouseholdJobsHome() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState(() => ({ ...DEFAULT_OPEN_FOR_WORK_FILTERS }));
+  // Kept between visits. Narrowing a search used to be thrown away when the
+  // tab closed, so anyone returning daily redid the same work every day — and
+  // the people who return daily are the ones actually looking.
+  const viewerProfileId = useMemo(() => getStoredUserProfileId() || "", []);
+  const { filters, setFilters, restored: filtersRestored } = useSavedFilters(
+    viewerProfileId,
+    DEFAULT_OPEN_FOR_WORK_FILTERS,
+  );
   const [sortBy, setSortBy] = useState("best_match");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [inviteDraft, setInviteDraft] = useState(loadSavedInviteMessage());
@@ -753,6 +761,11 @@ export default function HouseholdJobsHome() {
   }, []);
 
   useEffect(() => {
+    // Wait for the stored filters before the first request. Otherwise the page
+    // fetches once with the defaults and again when the saved set lands, and
+    // the results visibly change under the person a beat after they appear.
+    if (!filtersRestored) return;
+
     let cancelled = false;
     const fetchListings = async () => {
       setLoading(true);
@@ -805,7 +818,7 @@ export default function HouseholdJobsHome() {
     return () => {
       cancelled = true;
     };
-  }, [offset, searchKey, selectedSalaryRange, currentUserId, isServiceProvider]);
+  }, [offset, searchKey, selectedSalaryRange, currentUserId, isServiceProvider, filtersRestored]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
