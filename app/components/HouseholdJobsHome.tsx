@@ -59,22 +59,6 @@ interface HousehelpSummary {
 
 const normalizeToken = (value?: string) => (value || "").trim().toLowerCase();
 
-const toNumberArray = (value: unknown): number[] => {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((item) => {
-      if (typeof item === "number") return item;
-      if (typeof item === "string" && item.trim() !== "") {
-        const parsed = Number(item);
-        return Number.isFinite(parsed) ? parsed : undefined;
-      }
-      return undefined;
-    })
-    .filter((item): item is number => typeof item === "number");
-};
-
-const toIdString = (value: unknown): string => (value == null ? "" : String(value));
-
 const toRecord = (value: unknown): Record<string, any> | null => (
   value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : null
 );
@@ -150,17 +134,24 @@ type SalaryRangeOption = {
   frequency?: string;
 };
 
+// Every one of these is a catalogue id the server can filter on: a job type,
+// or a feature property.
+//
+// It previously also carried an availability window, a schedule slot and two
+// yes/no questions about kids and pets. Those were compared in the browser
+// against listing.available_from, listing.work_schedule and
+// listing.can_work_with_kids — fields no service has ever produced. Setting any
+// of them compared a value against undefined and removed every listing, so the
+// filter panel could only ever empty the board. They are gone until the
+// catalogue exposes the StartTiming and ShiftWindow features that hold the real
+// answers.
 const DEFAULT_OPEN_FOR_WORK_FILTERS = {
   jobType: "",
-  availabilityWindow: "",
-  scheduleSlot: "",
   salaryRangeId: "",
   choreId: "",
   petTypeId: "",
   childrenAgeRangeId: "",
   childrenCapacityId: "",
-  canWorkWithKids: "",
-  canWorkWithPets: "",
 };
 
 
@@ -281,52 +272,6 @@ const toFiniteNumber = (value: unknown): number | undefined => {
     return Number.isFinite(parsed) ? parsed : undefined;
   }
   return undefined;
-};
-
-const hasScheduleSlot = (
-  schedule: OpenForWorkListing["work_schedule"],
-  slot: "morning" | "afternoon" | "evening"
-): boolean => {
-  if (!schedule) return false;
-  return Object.values(schedule).some((day) => day?.[slot]);
-};
-
-const matchesAvailabilityWindow = (value: string | undefined, window: string) => {
-  if (!window) return true;
-  if (!value) return window === "flexible";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return window === "flexible";
-  const now = new Date();
-  const msDiff = parsed.getTime() - now.getTime();
-  const days = msDiff / (1000 * 60 * 60 * 24);
-  switch (window) {
-    case "next_14":
-      return days <= 14;
-    case "next_30":
-      return days <= 30;
-    case "later":
-      return days > 30;
-    case "flexible":
-      return false;
-    default:
-      return true;
-  }
-};
-
-const matchesOpenForWorkSalary = (listing: OpenForWorkListing, selected?: SalaryRangeOption) => {
-  if (!selected) return true;
-  const rawMin = toFiniteNumber(listing.salary_min ?? listing.househelp?.salary_expectation);
-  const rawMax = toFiniteNumber(listing.salary_max ?? listing.househelp?.salary_expectation);
-  if (rawMin == null && rawMax == null) return false;
-  const listingMin = rawMin ?? rawMax ?? 0;
-  const listingMax = rawMax ?? rawMin ?? 0;
-  const listingFrequency = listing.salary_frequency || listing.househelp?.salary_frequency;
-  if (selected.frequency && listingFrequency && normalizeToken(listingFrequency) !== normalizeToken(selected.frequency)) {
-    return false;
-  }
-  if (selected.min != null && listingMax < selected.min) return false;
-  if (selected.max != null && listingMin > selected.max) return false;
-  return true;
 };
 
 const toTimestamp = (value?: string): number | null => {
@@ -610,10 +555,6 @@ export default function HouseholdJobsHome() {
       frequency: range.frequency,
     }));
   }, [onboardingOptions]);
-  const selectedSalaryRange = useMemo(
-    () => salaryRangeOptions.find((range) => range.value === filters.salaryRangeId),
-    [salaryRangeOptions, filters.salaryRangeId]
-  );
   const hasActiveFilters = useMemo(
     () => Object.values(filters).some(Boolean),
     [filters]
@@ -623,33 +564,17 @@ export default function HouseholdJobsHome() {
     [filters]
   );
   const clearFilters = () => setFilters({ ...DEFAULT_OPEN_FOR_WORK_FILTERS });
-  const filteredListings = useMemo(() => {
-    const choreFilter = filters.choreId ? Number(filters.choreId) : null;
-    const petFilter = filters.petTypeId ? Number(filters.petTypeId) : null;
-    return listings.filter((listing) => {
-      // Only listings that are actually open. A closed one is not a result.
-      if (!isServiceProvider && !isOpenForWorkListingActive(listing)) return false;
-      if (filters.jobType && !toStringArray(listing.job_types).some((type) => normalizeToken(type) === filters.jobType)) {
-        return false;
-      }
-      if (filters.availabilityWindow && !matchesAvailabilityWindow(listing.available_from, filters.availabilityWindow)) {
-        return false;
-      }
-      if (filters.scheduleSlot && !hasScheduleSlot(listing.work_schedule, filters.scheduleSlot as "morning" | "afternoon" | "evening")) {
-        return false;
-      }
-      if (choreFilter && !toNumberArray(listing.chores_ids).includes(choreFilter)) return false;
-      if (petFilter && !toNumberArray(listing.pet_type_ids).includes(petFilter)) return false;
-      if (filters.childrenAgeRangeId && toIdString(listing.children_age_range_id) !== filters.childrenAgeRangeId) return false;
-      if (filters.childrenCapacityId && toIdString(listing.children_capacity_id) !== filters.childrenCapacityId) return false;
-      if (filters.canWorkWithKids === "yes" && !listing.can_work_with_kids) return false;
-      if (filters.canWorkWithKids === "no" && listing.can_work_with_kids) return false;
-      if (filters.canWorkWithPets === "yes" && !listing.can_work_with_pets) return false;
-      if (filters.canWorkWithPets === "no" && listing.can_work_with_pets) return false;
-      if (!matchesOpenForWorkSalary(listing, selectedSalaryRange)) return false;
-      return true;
-    });
-  }, [listings, filters, selectedSalaryRange, isServiceProvider]);
+  // The filters themselves are applied by the service now, which is the only
+  // place they can be applied correctly: this list is one page of twelve, and
+  // narrowing a page in the browser hides results rather than finding them —
+  // a ward with four matches on page nine looks empty until you scroll to it.
+  //
+  // What remains here is the one thing the page knows and the query does not:
+  // whether a listing has lapsed since it was fetched.
+  const filteredListings = useMemo(
+    () => listings.filter((listing) => isServiceProvider || isOpenForWorkListingActive(listing)),
+    [listings, isServiceProvider],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -777,12 +702,6 @@ export default function HouseholdJobsHome() {
       setLoading(true);
       setError(null);
       try {
-        const params = new URLSearchParams({
-          limit: String(limit),
-          offset: String(offset),
-          hydrate: "get",
-        });
-        params.set("status", "active");
 
         // People, not job posts.
         //
@@ -796,14 +715,29 @@ export default function HouseholdJobsHome() {
         // Scored against this household's own job, so whoever suits what they
         // are hiring for comes first. The score arrives as fit_score, which the
         // card already renders as a Match badge.
-        const raw = await jobService.listJobs(
+        // Chore, pet type, children age range, capacity and salary range are
+        // all feature properties, and the pickers carry the catalogue's own
+        // feature_properties ids, so they travel as one list — the same shape
+        // the househelp board sends.
+        const propertyIds = [
+          filters.choreId,
+          filters.petTypeId,
+          filters.childrenAgeRangeId,
+          filters.childrenCapacityId,
+          filters.salaryRangeId,
+        ]
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value) && value > 0);
+
+        const raw = await jobService.searchJobs({
           limit,
           offset,
-          "",
-          "active",
-          getStoredUserProfileId() || "",
-          true,
-        );
+          status: "active",
+          owner: "househelp",
+          match_candidates_for_profile: getStoredUserProfileId() || "",
+          ...(filters.jobType ? { job_type_id: Number(filters.jobType) } : {}),
+          ...(propertyIds.length > 0 ? { property_ids: propertyIds } : {}),
+        });
         const data = raw?.data || raw || [];
         const items = Array.isArray(data) ? data : [];
         const normalizedItems = items.map((item: unknown, index: number) => (
@@ -824,7 +758,7 @@ export default function HouseholdJobsHome() {
     return () => {
       cancelled = true;
     };
-  }, [offset, searchKey, selectedSalaryRange, currentUserId, isServiceProvider, filtersRestored]);
+  }, [offset, searchKey, currentUserId, isServiceProvider, filtersRestored]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -1089,39 +1023,6 @@ export default function HouseholdJobsHome() {
                     />
                   </label>
                   <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Availability
-                    <CustomSelect
-                      value={filters.availabilityWindow}
-                      onChange={(value) => setFilters((prev) => ({ ...prev, availabilityWindow: value }))}
-                      options={[
-                        { value: "", label: "Any start window" },
-                        { value: "next_14", label: "Within 2 weeks" },
-                        { value: "next_30", label: "Within 30 days" },
-                        { value: "later", label: "Later" },
-                        { value: "flexible", label: "Flexible" },
-                      ]}
-                      className="w-full"
-                      size="sm"
-                      placeholder="Any start window"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Schedule slot
-                    <CustomSelect
-                      value={filters.scheduleSlot}
-                      onChange={(value) => setFilters((prev) => ({ ...prev, scheduleSlot: value }))}
-                      options={[
-                        { value: "", label: "Any slot" },
-                        { value: "morning", label: "Morning" },
-                        { value: "afternoon", label: "Afternoon" },
-                        { value: "evening", label: "Evening" },
-                      ]}
-                      className="w-full"
-                      size="sm"
-                      placeholder="Any slot"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Salary range
                     <CustomSelect
                       value={filters.salaryRangeId}
@@ -1189,36 +1090,6 @@ export default function HouseholdJobsHome() {
                       className="w-full"
                       size="sm"
                       placeholder="Any capacity"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Work with kids
-                    <CustomSelect
-                      value={filters.canWorkWithKids}
-                      onChange={(value) => setFilters((prev) => ({ ...prev, canWorkWithKids: value }))}
-                      options={[
-                        { value: "", label: "Any preference" },
-                        { value: "yes", label: "Can work with kids" },
-                        { value: "no", label: "Prefers no kids" },
-                      ]}
-                      className="w-full"
-                      size="sm"
-                      placeholder="Any preference"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Work with pets
-                    <CustomSelect
-                      value={filters.canWorkWithPets}
-                      onChange={(value) => setFilters((prev) => ({ ...prev, canWorkWithPets: value }))}
-                      options={[
-                        { value: "", label: "Any preference" },
-                        { value: "yes", label: "Can work with pets" },
-                        { value: "no", label: "Prefers no pets" },
-                      ]}
-                      className="w-full"
-                      size="sm"
-                      placeholder="Any preference"
                     />
                   </label>
                 </div>

@@ -1552,6 +1552,14 @@ export const jobService = {
     // they asked for. Absent, the list comes back unranked rather than empty.
     if (filters?.match_for) params.set('match_for', String(filters.match_for));
 
+    // The two the household board needs, which listJobs already had and this
+    // did not: households browse people rather than job posts, and each person
+    // is scored against the household's own job.
+    if (filters?.owner) params.set('owner', String(filters.owner));
+    if (filters?.match_candidates_for_profile) {
+      params.set('match_candidates_for_profile', String(filters.match_candidates_for_profile));
+    }
+
     const payload = await jobListingsApi(`?${params.toString()}`);
     return { data: normalizeArray(payload.data ?? payload) };
   },
