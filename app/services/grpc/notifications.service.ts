@@ -7,7 +7,7 @@
 import { NotificationsServiceClient } from '~/grpc/generated/notifications/notifications_grpc_web_pb';
 import notifications_pb_module from '~/grpc/generated/notifications/notifications_pb';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import { GRPC_WEB_BASE_URL, handleGrpcError, callWithAuthRetry } from './client';
 import {
   getStoredAccessToken,
   getStoredProfileType,
@@ -41,14 +41,10 @@ function jsonResponseToJs(response: any): any {
   return response;
 }
 
-function grpcCall<T>(fn: (cb: (err: any, res: T) => void) => void): Promise<T> {
-  return new Promise((resolve, reject) => {
-    fn((err, res) => {
-      if (err) reject(handleGrpcError(err));
-      else resolve(res);
-    });
-  });
-}
+// Renews the session once and retries when the server says the token has
+// expired, rather than surfacing "please sign in again" to somebody holding a
+// perfectly good refresh token.
+const grpcCall = callWithAuthRetry;
 
 // ── Helper: convert JS object to google.protobuf.Struct ────────────────
 const _StructClass: any =

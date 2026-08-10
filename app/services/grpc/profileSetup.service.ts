@@ -6,7 +6,7 @@
 
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import { GRPC_WEB_BASE_URL, handleGrpcError, callWithAuthRetry } from './client';
 import {
   getStoredAccessToken,
   getStoredProfileType,
@@ -42,14 +42,10 @@ function jsonResponseToJs(response: any): any {
   return response;
 }
 
-function grpcCall<T>(fn: (cb: (err: any, res: T) => void) => void): Promise<T> {
-  return new Promise((resolve, reject) => {
-    fn((err, res) => {
-      if (err) reject(handleGrpcError(err));
-      else resolve(res);
-    });
-  });
-}
+// Renews the session once and retries when the server says the token has
+// expired, rather than surfacing "please sign in again" to somebody holding a
+// perfectly good refresh token.
+const grpcCall = callWithAuthRetry;
 
 export const profileSetupService = {
   async getProgress(userId: string, profileType?: string): Promise<any> {
