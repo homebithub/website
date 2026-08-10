@@ -76,8 +76,21 @@ export default function ForgotPasswordPage() {
 
       const { default: authService } = await import('~/services/grpc/auth.service');
       const response = await authService.forgotPassword(normalizedPhone);
-      const verificationProto = response.getVerification();
-      if (verificationProto) {
+      const verificationProto = response.getVerification?.();
+
+      // Auth returns the attempt so this page can hand the code screen who it is
+      // for. Without it there is nothing to send them on with — the code screen
+      // verifies against a user id — so this says so rather than opening a page
+      // that cannot work.
+      //
+      // It stayed silent before: the branch below simply did not run, and a
+      // reset that had actually been sent looked exactly like one that had not.
+      if (!verificationProto) {
+        setError('The reset code was sent, but we could not open the code screen. Please try again.');
+        return;
+      }
+
+      {
         const verification = {
           id: verificationProto.getId(),
           user_id: verificationProto.getUserId(),
