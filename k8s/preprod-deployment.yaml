@@ -27,7 +27,7 @@ spec:
               weight: 100
       containers:
         - name: preprod-website
-          image: ghcr.io/homebithub/preprod-website:20260810051126
+          image: ghcr.io/homebithub/preprod-website:20260810052925
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
