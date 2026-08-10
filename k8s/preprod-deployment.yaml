@@ -32,8 +32,14 @@ spec:
           ports:
             - containerPort: 3000
           env:
+            # preprod's own socket. This named production, whose /ws is served
+            # by production's notifications service and rejects an origin of
+            # preprod.homebit.co.ke — so the connection was refused and the
+            # inbox, the unread badge and every live update on preprod went
+            # with it. The preprod website host has no /ws route of its own;
+            # preprod-api does, and it points at preprod-notifications-srv.
             - name: NOTIFICATIONS_WS_BASE_URL
-              value: "https://homebit.co.ke/ws"
+              value: "https://preprod-api.homebit.co.ke/ws"
             - name: AUTH_GRPC_BASE_URL
               value: "http://preprod-auth-srv-headless:5004"
             - name: GATEWAY_API_BASE_URL
