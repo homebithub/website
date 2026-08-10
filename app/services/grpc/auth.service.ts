@@ -9,7 +9,7 @@ import { storedDeviceId } from '~/utils/deviceFingerprint';
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
 import * as shared_pb_module from '~/grpc/generated/shared/shared_pb';
 import * as grpcWeb from 'grpc-web';
-import { AUTH_GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import { AUTH_GRPC_WEB_BASE_URL, handleGrpcError, retryOnExpiry } from './client';
 import {
   getStoredAccessToken,
   getStoredProfileType,
@@ -158,6 +158,16 @@ export const authService = {
    * The RPC has always existed and nothing called it, so a session simply ended
    * when its access token did. This is the wire; the session keeper decides
    * when to pull it.
+   */
+  /**
+   * Deliberately not wrapped in retryOnExpiry, unlike the authenticated calls
+   * below it. This *is* the renewal: retrying it on UNAUTHENTICATED would have
+   * it call itself, and a refused refresh token would produce a loop rather
+   * than the sign-out it is supposed to produce.
+   *
+   * The same applies to login, signup, the OTP and password-reset calls and
+   * logout — none of them needs a live session, and renewing one in order to
+   * end it is nonsense.
    */
   async refreshSession(refreshToken: string): Promise<{ token: string; refreshToken: string }> {
     return new Promise((resolve, reject) => {
@@ -314,7 +324,7 @@ export const authService = {
     const request = new auth_pb.GetCurrentUserRequest();
     request.setUserId(resolvedUserId);
     return new Promise((resolve, reject) => {
-      authClient.getCurrentUser(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => authClient.getCurrentUser(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -330,7 +340,7 @@ export const authService = {
       request.setUserId(resolveUserId(userId));
       request.setPhone(phone);
 
-      authClient.updatePhone(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => authClient.updatePhone(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -367,7 +377,7 @@ export const authService = {
       request.setUserId(resolveUserId(userId));
       request.setEmail(email);
 
-      authClient.updateEmail(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => authClient.updateEmail(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -412,7 +422,7 @@ export const authService = {
       request.setCurrentPassword(currentPassword);
       request.setNewPassword(newPassword);
 
-      authClient.changePassword(request, getMetadata(), (err: any) => {
+      retryOnExpiry((cb) => authClient.changePassword(request, getMetadata(), cb), (err: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve();
       });
@@ -447,7 +457,7 @@ export const authService = {
       if (fields.lastName) request.setLastName(fields.lastName);
       if (fields.phone) request.setPhone(fields.phone);
 
-      authClient.updateUser(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => authClient.updateUser(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });

@@ -7,7 +7,7 @@
 
 import { DeviceServiceClient } from '~/grpc/generated/auth/device_grpc_web_pb';
 import device_pb_module from '~/grpc/generated/auth/device_pb';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import { GRPC_WEB_BASE_URL, handleGrpcError, retryOnExpiry } from './client';
 import {
   getStoredAccessToken,
   getStoredProfileType,
@@ -57,7 +57,7 @@ export const deviceService = {
         if (latitude) request.setLatitude(latitude);
         if (longitude) request.setLongitude(longitude);
 
-        deviceClient.registerDevice(request, getMetadata(), (err: any, response: any) => {
+        retryOnExpiry((cb) => deviceClient.registerDevice(request, getMetadata(), cb), (err: any, response: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
@@ -83,7 +83,7 @@ export const deviceService = {
         const request = new device_pb.ConfirmDeviceRequest();
         request.setToken(token);
 
-        deviceClient.confirmDevice(request, getMetadata(), (err: any, response: any) => {
+        retryOnExpiry((cb) => deviceClient.confirmDevice(request, getMetadata(), cb), (err: any, response: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
@@ -121,7 +121,7 @@ export const deviceService = {
         request.setDecision(decision);
         if (reason) request.setReason(reason);
 
-        deviceClient.decideDevice(request, getMetadata(), (err: any, response: any) => {
+        retryOnExpiry((cb) => deviceClient.decideDevice(request, getMetadata(), cb), (err: any, response: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
@@ -147,7 +147,7 @@ export const deviceService = {
         request.setUserId(resolveUserId(userId));
         if (currentDeviceId) request.setCurrentDeviceId(currentDeviceId);
 
-        deviceClient.getUserDevices(request, getMetadata(), (err: any, response: any) => {
+        retryOnExpiry((cb) => deviceClient.getUserDevices(request, getMetadata(), cb), (err: any, response: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
@@ -176,7 +176,7 @@ export const deviceService = {
         request.setUserId(resolveUserId(userId));
         if (reason) request.setReason(reason);
 
-        deviceClient.revokeDevice(request, getMetadata(), (err: any) => {
+        retryOnExpiry((cb) => deviceClient.revokeDevice(request, getMetadata(), cb), (err: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
@@ -200,7 +200,7 @@ export const deviceService = {
         if (exceptDeviceId) request.setExceptDeviceId(exceptDeviceId);
         if (reason) request.setReason(reason);
 
-        deviceClient.revokeAllDevices(request, getMetadata(), (err: any) => {
+        retryOnExpiry((cb) => deviceClient.revokeAllDevices(request, getMetadata(), cb), (err: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
@@ -228,7 +228,7 @@ export const deviceService = {
         request.setUserId(resolveUserId(userId));
         if (limit) request.setLimit(limit);
 
-        deviceClient.getDeviceActivity(request, getMetadata(), (err: any, response: any) => {
+        retryOnExpiry((cb) => deviceClient.getDeviceActivity(request, getMetadata(), cb), (err: any, response: any) => {
           if (err) {
             reject(handleGrpcError(err));
             return;

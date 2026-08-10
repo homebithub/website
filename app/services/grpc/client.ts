@@ -260,3 +260,39 @@ export function callWithAuthRetry<T>(fn: (cb: (err: any, res: T) => void) => voi
     });
   });
 }
+
+/**
+ * The same renewal, for call sites that are written as callbacks.
+ *
+ * Most services here build their own promise per method, with the request
+ * assembled inside it and the response unpacked in the success branch. Rewriting
+ * all of those into callWithAuthRetry would mean restructuring sixty-odd bodies
+ * to no benefit. This wraps the invocation instead and leaves every body exactly
+ * as it was: only the line that calls the client changes.
+ *
+ * `invoke` is called again rather than replayed, for the same reason as above —
+ * it rebuilds its metadata from storage, so the retry carries the new token.
+ */
+export function retryOnExpiry<T>(
+  invoke: (cb: (err: any, res: T) => void) => void,
+  done: (err: any, res: T) => void,
+): void {
+  invoke((err, res) => {
+    if (!isUnauthenticated(err)) {
+      done(err, res);
+      return;
+    }
+
+    renewSessionOnce()
+      .then((renewed) => {
+        // Renewal refused: the original UNAUTHENTICATED is the honest answer,
+        // and the caller's own error branch already knows how to present it.
+        if (!renewed) {
+          done(err, res);
+          return;
+        }
+        invoke(done);
+      })
+      .catch(() => done(err, res));
+  });
+}
