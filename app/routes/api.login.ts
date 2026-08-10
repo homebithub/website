@@ -1,23 +1,49 @@
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
 import { callUnaryGrpc, resolveAuthGrpcBaseUrl } from '~/utils/grpcRaw.server';
+import {
+  REFRESH_TOKEN_COOKIE_NAME,
+  TOKEN_COOKIE_NAME,
+  USER_COOKIE_NAME,
+  accessTokenOptions,
+  cookieOptions,
+  refreshTokenOptions,
+  serializeCookie,
+} from '~/utils/cookie';
 
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 
-function createPhoneVerification(authId: string, target: string) {
+/**
+ * Signing in, with the server writing the cookies.
+ *
+ * The browser used to call auth directly and then write the cookies itself.
+ * That cannot work here: both auth cookies are HttpOnly in a deployed
+ * environment, and a browser refuses a document.cookie write when an HttpOnly
+ * cookie of that name already exists — Firefox says so out loud. The first
+ * server-side renewal makes them HttpOnly for good, and from that moment every
+ * subsequent sign-in updated localStorage while the refresh cookie kept a token
+ * auth had already rotated away. The next renewal presented it, auth refused,
+ * and the person was signed out. That is the 401.
+ *
+ * So the server owns them. It holds the only writes that are not silently
+ * discarded, which makes it the only place they can be kept true.
+ */
+function normalizeUser(raw: any, fallbackPhone: string) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const userId = String(
+    source.id || source.user_id || source.userId || source.auth_id || source.authId || '',
+  );
   return {
-    id: '',
-    user_id: authId,
-    type: 'phone',
-    status: 'pending',
-    target,
-    expires_at: '',
-    next_resend_at: '',
-    attempts: 0,
-    max_attempts: 3,
-    resends: 0,
-    max_resends: 3,
-    created_at: '',
-    updated_at: '',
+    id: userId,
+    user_id: userId,
+    email: String(source.email || ''),
+    phone: String(source.phone || source.phone_number || source.phoneNumber || fallbackPhone),
+    first_name: String(source.first_name || source.firstName || ''),
+    last_name: String(source.last_name || source.lastName || ''),
+    profile_type: String(source.profile_type || source.profileType || ''),
+    profile_id: String(source.profile_id || source.profileId || ''),
+    user_profile_id: String(source.user_profile_id || source.userProfileId || ''),
+    is_verified: Boolean(source.is_verified ?? source.isVerified ?? false),
+    profile_image: String(source.profile_image || source.profileImage || ''),
   };
 }
 
@@ -28,6 +54,8 @@ export async function action({ request }: { request: Request }) {
 
   try {
     const body = await request.json();
+    // Auth accepts +254…, 254… and 07… alike now, but the stored form is what
+    // the rest of this response reports back.
     const phone = String(body.phone || '').replace(/^\+/, '');
     const loginRequest = new auth_pb.LoginRequest();
     loginRequest.setPhone(phone);
@@ -39,18 +67,41 @@ export async function action({ request }: { request: Request }) {
       loginRequest.serializeBinary(),
     );
 
-    const authId = String(responseBody.auth_id || responseBody.authId || '');
-    if (!authId) {
-      throw Object.assign(new Error('Login succeeded but no auth ID was returned'), {
+    const payload = (responseBody?.data && typeof responseBody.data === 'object'
+      ? { ...responseBody, ...responseBody.data }
+      : responseBody ?? {}) as Record<string, any>;
+
+    const token = String(payload.access_token || payload.accessToken || payload.token || '');
+    const refreshToken = String(payload.refresh_token || payload.refreshToken || '');
+    const user = normalizeUser(payload.user, phone);
+
+    if (!token || !user.user_id) {
+      throw Object.assign(new Error('Login succeeded but returned no session'), {
         grpcCode: 'UNKNOWN',
       });
     }
 
-    return Response.json({
-      auth_id: authId,
-      user_id: authId,
-      verification: createPhoneVerification(authId, phone),
-    });
+    const headers = new Headers();
+    headers.set('Content-Type', 'application/json');
+    headers.set('Cache-Control', 'no-store');
+    headers.append('Set-Cookie', serializeCookie(TOKEN_COOKIE_NAME, token, accessTokenOptions));
+    if (refreshToken) {
+      headers.append(
+        'Set-Cookie',
+        serializeCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, refreshTokenOptions),
+      );
+    }
+    headers.append(
+      'Set-Cookie',
+      serializeCookie(USER_COOKIE_NAME, JSON.stringify(user), cookieOptions),
+    );
+
+    // The access token comes back in the body as well as the cookie: the access
+    // cookie is HttpOnly too, and the rest of the app reads the token from
+    // localStorage to put it in gRPC metadata. The refresh token deliberately
+    // does not — nothing in the browser needs it, and renewal happens on the
+    // server where the cookie already is.
+    return new Response(JSON.stringify({ token, user }), { status: 200, headers });
   } catch (err: any) {
     const rawMessage = String(err?.message || '');
     const isLoginUnavailable =

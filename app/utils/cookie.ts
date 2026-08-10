@@ -65,7 +65,7 @@ export const parseCookies = (raw: string) => {
 
 export const TOKEN_COOKIE_NAME = "hb_token";
 export const REFRESH_TOKEN_COOKIE_NAME = "hb_refresh_token";
-const USER_COOKIE_NAME = "hb_user";
+export const USER_COOKIE_NAME = "hb_user";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 

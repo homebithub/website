@@ -25,13 +25,6 @@ interface User {
   role: string;
 }
 
-function genericResponseBodyToJs(response: any) {
-  const body = response?.getBody?.();
-  if (body?.toJavaScript) return body.toJavaScript();
-  if (body?.toObject) return body.toObject();
-  return body || response || {};
-}
-
 function normalizeLoginUser(raw: any, fallbackPhone = '') {
   const userId = raw?.getId?.() || raw?.id || raw?.user_id || raw?.userId || raw?.auth_id || raw?.authId || '';
   return {
@@ -201,12 +194,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       const normalizedPhone = normalizeKenyanPhoneNumber(phone);
-      const { default: authService } = await import('~/services/grpc/auth.service');
-      const loginResponse = await authService.login(normalizedPhone.replace(/^\+/, ''), password);
 
-      const responseBody = genericResponseBodyToJs(loginResponse);
+      // Through the server, not from here.
+      //
+      // Both auth cookies are HttpOnly in a deployed environment, and a browser
+      // refuses a document.cookie write when an HttpOnly cookie of that name
+      // already exists. Signing in from the browser therefore updated
+      // localStorage while the refresh cookie kept a token auth had already
+      // rotated away — and the next renewal presented it, was refused, and
+      // signed the person out. The server holds the only writes that are not
+      // silently discarded.
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: normalizedPhone.replace(/^\+/, ''),
+          password,
+        }),
+      });
+      const responseBody = (await response.json().catch(() => ({}))) as Record<string, any>;
+      if (!response.ok) {
+        throw new Error(responseBody?.message || 'Invalid phone number or password.');
+      }
+
       const userData = normalizeLoginUser(
-        loginResponse.getUser?.() || responseBody.user || responseBody,
+        responseBody.user,
         normalizedPhone.replace(/^\+/, ''),
       );
       const authId = responseBody.auth_id || responseBody.authId || responseBody.user_id || responseBody.userId || userData.user_id;
@@ -230,11 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Read through an envelope as well as off the top level: the body is the
       // LoginResult marshalled directly today, and the neighbouring call sites
       // in this file already defend against a `data` wrapper.
-      const payload = responseBody?.data && typeof responseBody.data === 'object'
-        ? { ...responseBody, ...responseBody.data }
-        : responseBody;
-      const token = payload.access_token || payload.accessToken || payload.token || '';
-      const refreshToken = payload.refresh_token || payload.refreshToken || '';
+      const token = String(responseBody.token || '');
 
       if (!token) {
         throw new Error('Login response is missing a session token.');
@@ -251,7 +260,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const signedIn = { ...userData, user_id: authId, id: authId, profile_type: profileType };
-      cacheAuthSession({ token, refreshToken, user: signedIn, provider: 'password' });
+      // Cookies are already set by the response; this keeps localStorage, which
+      // is where the app reads the access token from for gRPC metadata.
+      cacheAuthSession({ token, user: signedIn, provider: 'password' });
       setUser({ token, user: signedIn } as unknown as LoginResponse);
 
       // Registered before navigating, as the verify-otp path did: this is the
