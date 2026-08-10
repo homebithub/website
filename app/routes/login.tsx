@@ -14,7 +14,6 @@ import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { cacheAuthSession, getStoredAccessToken } from '~/utils/authStorage';
 import { registerCurrentDevice } from '~/utils/deviceFingerprint';
-import { API_ENDPOINTS } from '~/config/api';
 
 export const meta = () => [
     { title: "Log In — Homebit" },
@@ -241,22 +240,31 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const response = await fetch(`${API_ENDPOINTS.auth.googleUrl}?flow=auth`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`google_auth_url_failed:${response.status}`);
+      // Asked over gRPC, because the REST path this used does not exist.
+      //
+      // GET /api/v1/auth/google/url answers 404 in every environment: the
+      // gateway lists /api/v1/auth/google/ among its public prefixes but never
+      // registers a handler for it, so the button failed on its first line and
+      // reported "Google login failed" as though Google had refused. The
+      // GetGoogleAuthURL method behind it works and is what everything else
+      // here already speaks.
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const response = await authService.getGoogleAuthURL('auth');
+      const url = response?.getUrl?.() || response?.url || '';
+
+      if (!url) {
+        // Sign-in is not configured rather than broken — auth refuses when it
+        // holds no client id — and saying "try again" would have somebody
+        // retry something that cannot succeed.
+        setLoginError('Google sign-in is unavailable right now. Please use your phone number and password.');
+        return;
       }
-      const payload = await response.json();
-      const url = payload?.url;
-      if (url) {
-        window.location.href = url as string;
-      }
-    } catch (e) {
-      setLoginError('Google login failed. Please try again or use phone and password.');
+      window.location.href = url as string;
+    } catch (googleError: unknown) {
+      const message = googleError instanceof Error ? googleError.message : '';
+      setLoginError(
+        message || 'Google login failed. Please try again or use phone and password.',
+      );
     }
   };
 
