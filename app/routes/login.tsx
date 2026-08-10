@@ -229,9 +229,9 @@ export default function LoginPage() {
     }
     
     try {
-      await login(formData.phone, formData.password);
-      // Device registration is handled inside AuthContext login() before navigate
-      // Login successful, redirect will be handled by useEffect
+      // Signed in and taken to the destination by login(); the device is
+      // registered there too, before it navigates.
+      await login(formData.phone, formData.password, redirectUrl || undefined);
     } catch (error) {
       // Capture login error and display it
       const errorMessage = error instanceof Error ? error.message : 'Invalid phone number or password. Please try again.';

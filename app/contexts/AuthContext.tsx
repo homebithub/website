@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/routes/login";
 import { migratePreferences } from '~/utils/preferencesApi';
+import { registerCurrentDevice } from '~/utils/deviceFingerprint';
 import { extractErrorMessage, transformErrorMessage } from '~/utils/errorMessages';
 import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
@@ -45,24 +46,6 @@ function normalizeLoginUser(raw: any, fallbackPhone = '') {
     user_profile_id: raw?.getUserProfileId?.() || raw?.user_profile_id || raw?.userProfileId || '',
     is_verified: Boolean(raw?.getIsVerified?.() || raw?.is_verified || raw?.isVerified || false),
     profile_image: raw?.getProfileImage?.() || raw?.profile_image || raw?.profileImage || '',
-  };
-}
-
-function normalizeVerificationState(raw: any, userId: string, target: string) {
-  return {
-    id: raw?.id || raw?.verification_id || raw?.verificationId || '',
-    user_id: raw?.user_id || raw?.userId || userId,
-    type: raw?.type || raw?.verification_type || raw?.verificationType || 'phone',
-    status: raw?.status || 'pending',
-    target: raw?.target || target,
-    expires_at: raw?.expires_at || raw?.expiresAt || '',
-    next_resend_at: raw?.next_resend_at || raw?.nextResendAt || '',
-    attempts: Number(raw?.attempts ?? 0),
-    max_attempts: Number(raw?.max_attempts ?? raw?.maxAttempts ?? 3),
-    resends: Number(raw?.resends ?? 0),
-    max_resends: Number(raw?.max_resends ?? raw?.maxResends ?? 3),
-    created_at: raw?.created_at || raw?.createdAt || '',
-    updated_at: raw?.updated_at || raw?.updatedAt || '',
   };
 }
 
@@ -218,7 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = async (phone: string, password: string) => {
+  const login = async (phone: string, password: string, redirectTo?: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -235,28 +218,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const authId = responseBody.auth_id || responseBody.authId || responseBody.user_id || responseBody.userId || userData.user_id;
 
       if (!authId) {
-        throw new Error('Login response is missing verification details.');
+        throw new Error('Login response is missing the signed-in user.');
+      }
+
+      // The password is the whole check.
+      //
+      // Login already returns an access token and a refresh token — it has
+      // verified the password and the account's standing before answering. This
+      // threw both away and sent the person to /verify-otp to be issued a
+      // second, identical pair, so every sign-in cost an SMS and a six-digit
+      // code to arrive at the session it had already been handed.
+      //
+      // A one-time code is worth asking for when it proves something the
+      // password does not: that the phone is reachable at signup, that somebody
+      // resetting a forgotten password holds the number. None of those is this.
+      // Those flows still go through /verify-otp and are untouched.
+      // Read through an envelope as well as off the top level: the body is the
+      // LoginResult marshalled directly today, and the neighbouring call sites
+      // in this file already defend against a `data` wrapper.
+      const payload = responseBody?.data && typeof responseBody.data === 'object'
+        ? { ...responseBody, ...responseBody.data }
+        : responseBody;
+      const token = payload.access_token || payload.accessToken || payload.token || '';
+      const refreshToken = payload.refresh_token || payload.refreshToken || '';
+
+      if (!token) {
+        throw new Error('Login response is missing a session token.');
       }
 
       const profileType = normalizeProfileType(userData.profile_type || "");
 
       if (typeof window !== 'undefined') {
         window.localStorage.setItem('user_id', authId);
+        if (userData.profile_id) window.localStorage.setItem('profile_id', userData.profile_id);
+        if (userData.user_profile_id) {
+          window.localStorage.setItem('user_profile_id', userData.user_profile_id);
+        }
       }
 
-      navigate('/verify-otp', {
-        state: {
-          verification: normalizeVerificationState(
-            responseBody.verification || responseBody.data?.verification,
-            authId,
-            normalizedPhone.replace(/^\+/, ''),
-          ),
-          profileType,
-          profileId: responseBody.profile_id || responseBody.profileId || userData.profile_id || '',
-          userProfileId: responseBody.user_profile_id || responseBody.userProfileId || userData.user_profile_id || '',
-          redirectTo: '/',
-        },
+      const signedIn = { ...userData, user_id: authId, id: authId, profile_type: profileType };
+      cacheAuthSession({ token, refreshToken, user: signedIn, provider: 'password' });
+      setUser({ token, user: signedIn } as unknown as LoginResponse);
+
+      // Registered before navigating, as the verify-otp path did: this is the
+      // moment a new device becomes known, and it is what a pending-approval
+      // decision is later taken about.
+      registerCurrentDevice(authId).catch((deviceError) => {
+        console.warn('Device registration failed:', deviceError);
       });
+      migratePreferences().catch((err) => console.error('Failed to migrate preferences:', err));
+
+      // Bureau accounts have their own landing page; everyone else goes home,
+      // unless they were sent to the login screen from somewhere in particular.
+      // That redirect was accepted on the login page and then dropped, because
+      // the OTP detour hardcoded '/' as its destination — so following a link
+      // into the site and signing in always landed on the homepage instead.
+      const destination = profileType === 'bureau'
+        ? '/bureau/househelps'
+        : (redirectTo || '/');
+      navigate(destination, { replace: true });
       return;
     } catch (error: any) {
       const errorMsg = error.message || "An error occurred during login";
