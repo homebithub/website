@@ -186,8 +186,15 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
         onError: (message: string) => setError(message),
       });
     } catch (launchError: any) {
-      setError(launchError?.message || "We could not start identity verification.");
+      // Status first, message last.
+      //
+      // These two lines were the other way round, and refresh() ends with
+      // setError("") when it succeeds — so a failed launch set its message and
+      // then wiped it a moment later. The button appeared to do nothing at all:
+      // no Smile ID, no explanation, no trace that anything had been tried.
+      // Whatever the underlying failure was, this is what hid it.
       await refresh();
+      setError(launchError?.message || "We could not start identity verification.");
     } finally {
       setLaunching(false);
     }

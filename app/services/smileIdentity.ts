@@ -40,25 +40,33 @@ export const loadSmileScript = (): Promise<void> => {
   if (smileScriptPromise) return smileScriptPromise;
 
   smileScriptPromise = new Promise<void>((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>("script[data-smileid-sdk='web']");
-    const script = existing ?? document.createElement("script");
+    // Any tag from a previous attempt is discarded rather than reused.
+    //
+    // Reusing it was a trap: a tag that has already finished — loaded or failed
+    // — will never fire load or error again, so attaching listeners to it left
+    // this promise pending forever. The first failure appended a tag and
+    // cleared smileScriptPromise, and every retry after that hung on the corpse
+    // with the button stuck mid-launch. A fresh tag always fires exactly one of
+    // the two events.
+    document.querySelectorAll("script[data-smileid-sdk='web']").forEach((tag) => tag.remove());
+
+    const script = document.createElement("script");
     const handleLoad = () => {
       if (window.SmileIdentity) resolve();
       else reject(new Error("Smile ID loaded without its verification client."));
     };
     const handleError = () => {
       smileScriptPromise = null;
+      script.remove();
       reject(new Error("We could not load Smile ID. Check your connection and try again."));
     };
 
     script.addEventListener("load", handleLoad, { once: true });
     script.addEventListener("error", handleError, { once: true });
-    if (!existing) {
-      script.src = SMILE_SCRIPT_URL;
-      script.async = true;
-      script.dataset.smileidSdk = "web";
-      document.body.appendChild(script);
-    }
+    script.src = SMILE_SCRIPT_URL;
+    script.async = true;
+    script.dataset.smileidSdk = "web";
+    document.body.appendChild(script);
   });
   return smileScriptPromise;
 };
