@@ -84,34 +84,61 @@ app.use(cors({
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.get("/healthz", (req, res) => res.json({ status: "ok" }));
 
-const websiteApiRoutes = new Set([
-    "/api/job-applications",
-    "/api/job-listings",
-    "/api/job-shortlist",
-    "/api/job-types",
-    "/api/login",
-    "/api/profile-features",
-    "/api/profile-picks",
-    "/api/signup",
-    "/api/verify-otp",
-]);
+/**
+ * Where auth's own REST API lives, for this environment.
+ *
+ * This was the bare string "http://auth-srv:3000" — production's service name,
+ * hardcoded. In a preprod pod that resolves to production's auth (a different
+ * cluster IP entirely), so anything this forwarded left preprod and arrived at
+ * the live service, bypassing the gateway on the way.
+ *
+ * Derived from AUTH_GRPC_BASE_URL, which every environment already sets to its
+ * own auth, so the two halves of this service cannot end up talking to
+ * different environments.
+ */
+function authRestTarget() {
+    const explicit = (process.env.AUTH_REST_BASE_URL || "").trim();
+    if (explicit) return explicit.replace(/\/$/, "");
 
-function isWebsiteApiRoute(req) {
-    const pathname = new URL(req.originalUrl, "http://localhost").pathname;
-    return websiteApiRoutes.has(pathname);
+    const grpc = (process.env.AUTH_GRPC_BASE_URL || "").trim();
+    if (grpc) {
+        try {
+            // The gRPC address names a headless service on 5004; the REST API is
+            // the ordinary service on 3000.
+            const host = new URL(grpc).hostname.replace(/-headless$/, "");
+            return `http://${host}:3000`;
+        } catch {
+            // Fall through to the default below.
+        }
+    }
+
+    return "http://auth-srv:3000";
 }
 
 const backendApiProxy = createProxyMiddleware({
-    target: "http://auth-srv:3000",
+    target: authRestTarget(),
     changeOrigin: true,
     pathRewrite: {
         "^/api": "/api",
     },
 });
 
-// Proxy backend API calls, but let React Router handle website-owned API routes.
+/**
+ * Forward only auth's own REST namespace.
+ *
+ * This used to forward everything under /api except a hand-written list of the
+ * website's own routes — a duplicate of the routes directory that had to be
+ * edited every time a route was added, and was not. /api/saved-filters and
+ * /api/work-outcome were both missing from it, so in every deployed
+ * environment they were proxied to auth, which has no such endpoints, and
+ * answered 404. Both worked locally, where no proxy runs at all.
+ *
+ * Inverted, the rule needs no list: auth's REST API is versioned under /api/v1,
+ * the website's routes are not, and a new website route works by existing.
+ */
 app.use("/api", (req, res, next) => {
-    if (isWebsiteApiRoute(req)) {
+    const pathname = new URL(req.originalUrl, "http://localhost").pathname;
+    if (!pathname.startsWith("/api/v1/")) {
         return next();
     }
 
