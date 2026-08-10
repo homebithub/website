@@ -191,25 +191,51 @@ function isUnauthenticated(error: any): boolean {
   return /token is expired|invalid or expired token|UNAUTHENTICATED/i.test(message);
 }
 
-async function renewSessionOnce(): Promise<boolean> {
+/**
+ * Renew the session, at most once concurrently.
+ *
+ * Exported so the renewal timer in AuthProvider shares this one attempt with
+ * the retry path here. Two independent renewals would each spend a refresh
+ * token that auth rotates on use, and the loser would be holding one that had
+ * already been consumed.
+ */
+export async function renewSessionOnce(): Promise<boolean> {
   if (typeof window === 'undefined') return false;
   if (inFlightRenewal) return inFlightRenewal;
 
   inFlightRenewal = (async () => {
     try {
-      const [{ getAuthFromCookies }, { cacheAuthSession }, authService] = await Promise.all([
+      const [{ getAuthFromCookies }, { cacheAuthSession }] = await Promise.all([
         import('~/utils/cookie'),
         import('~/utils/authStorage'),
-        import('./auth.service').then((m) => m.default ?? m.authService),
       ]);
 
+      // Renewed through the server, not from here.
+      //
+      // The refresh cookie is HttpOnly, so this code cannot read it — Firefox
+      // reports the same thing from the other side when a script tries to write
+      // one. Reading it with document.cookie returned nothing and this gave up
+      // immediately, which is why wiring every service for retry still left
+      // sessions expiring. The route below has the cookie on the request.
+      //
+      // A token is sent along when this context can see one, for sessions whose
+      // cookie was written by client code, where the HttpOnly attribute is
+      // ignored by the browser.
       const { refreshToken } = getAuthFromCookies();
-      if (!refreshToken) return false;
+      const response = await fetch('/api/session/refresh', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(refreshToken ? { refresh_token: refreshToken } : {}),
+      });
+      if (!response.ok) return false;
 
-      const renewed = await authService.refreshSession(refreshToken);
+      const renewed = (await response.json().catch(() => ({}))) as { token?: string };
       if (!renewed?.token) return false;
 
-      cacheAuthSession({ token: renewed.token, refreshToken: renewed.refreshToken });
+      // The cookies were set by the response; this keeps localStorage, which is
+      // where the rest of the app reads the access token from.
+      cacheAuthSession({ token: renewed.token });
       return true;
     } catch {
       // A refusal here is the end of the session, not a transient fault: the

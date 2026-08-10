@@ -41,7 +41,7 @@ export const serializeCookie = (name: string, value: string, options: SerializeO
   return parts.join("; ");
 };
 
-const parseCookies = (raw: string) => {
+export const parseCookies = (raw: string) => {
   const parsed: Record<string, string> = {};
   if (!raw) return parsed;
 
@@ -64,7 +64,7 @@ const parseCookies = (raw: string) => {
  */
 
 export const TOKEN_COOKIE_NAME = "hb_token";
-const REFRESH_TOKEN_COOKIE_NAME = "hb_refresh_token";
+export const REFRESH_TOKEN_COOKIE_NAME = "hb_refresh_token";
 const USER_COOKIE_NAME = "hb_user";
 
 const IS_PROD = process.env.NODE_ENV === "production";

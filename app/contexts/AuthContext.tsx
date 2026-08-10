@@ -66,15 +66,9 @@ async function renewExpiredSessionBeforeUse(): Promise<void> {
   if (typeof window === "undefined") return;
   if (sessionState(getStoredAccessToken()) !== "expired") return;
 
-  const { refreshToken } = getAuthFromCookies();
-  if (!refreshToken) return;
-
   try {
-    const { default: authService } = await import("~/services/grpc/auth.service");
-    const renewed = await authService.refreshSession(refreshToken);
-    if (renewed?.token) {
-      cacheAuthSession({ token: renewed.token, refreshToken: renewed.refreshToken });
-    }
+    const { renewSessionOnce } = await import("~/services/grpc/client");
+    await renewSessionOnce();
   } catch {
     // Left to the unauthenticated path.
   }
@@ -339,16 +333,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // cannot be read is left alone, since it may be perfectly valid.
       if (!needsRenewal(token)) return;
 
-      const { refreshToken } = getAuthFromCookies();
-      if (!refreshToken) return;
-
-      try {
-        const renewed = await authService.refreshSession(refreshToken);
-        if (cancelled || !renewed.token) return;
-        cacheAuthSession({ token: renewed.token, refreshToken: renewed.refreshToken });
-      } catch (renewError) {
-        if (cancelled) return;
-        console.warn("[Auth] Session could not be renewed", renewError);
+      // Renewed through the shared, server-side path: the refresh cookie is
+      // HttpOnly, so reading it here returned nothing and this never renewed
+      // anything. Shared so the timer and a retrying request do not each spend
+      // a refresh token that auth rotates on use.
+      const { renewSessionOnce } = await import("~/services/grpc/client");
+      const renewed = await renewSessionOnce();
+      if (cancelled) return;
+      if (!renewed) {
+        console.warn("[Auth] Session could not be renewed");
         await performLogout();
       }
     };
