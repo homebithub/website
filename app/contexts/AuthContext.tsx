@@ -351,9 +351,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { renewSessionOnce } = await import("~/services/grpc/client");
       const renewed = await renewSessionOnce();
       if (cancelled) return;
-      if (!renewed) {
-        console.warn("[Auth] Session could not be renewed");
+
+      // Only an outright refusal ends the session.
+      //
+      // This used to sign out on anything that was not success, which meant a
+      // 502, a dropped connection or a pod restarting during a deploy logged
+      // people out of a session that was completely valid. The token now lasts
+      // four weeks, so a renewal that cannot be reached costs nothing: the timer
+      // re-arms and tries again long before the token itself runs out.
+      if (renewed === "refused") {
+        console.warn("[Auth] Session renewal refused; signing out");
         await performLogout();
+      } else if (renewed === "unavailable") {
+        console.warn("[Auth] Session renewal unreachable; keeping the session and retrying later");
       }
     };
 

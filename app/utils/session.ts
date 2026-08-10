@@ -6,10 +6,15 @@
  * session therefore lasted exactly as long as its access token and then ended,
  * wherever the person happened to be.
  *
- * Worth knowing while reading this: access tokens are currently issued with a
- * six-month life, so this rarely fires today. That is the reason to build it —
- * shortening that token is the real fix, and shortening it is only safe once
- * renewal works. This is the prerequisite, not the whole job.
+ * Access tokens now last four weeks. They were briefly fifteen minutes, on the
+ * assumption that renewal was dependable; it was not, and the result was people
+ * being signed out mid-task every quarter of an hour while each broken link in
+ * the chain was found and fixed in turn.
+ *
+ * So renewal is no longer load-bearing. It still runs, and it still slides the
+ * window so an active session never ends. But nothing here is the only thing
+ * standing between somebody and the login page — which is the property that
+ * makes this code safe to be wrong.
  */
 
 /**
@@ -25,6 +30,23 @@ export const REFRESH_MARGIN_MS = 2 * 60 * 1000;
  * long wait is taken in chunks and re-armed.
  */
 export const MAX_TIMER_MS = 10 * 60 * 1000;
+
+/**
+ * The shortest gap between two renewal attempts.
+ *
+ * Once a token is past its refresh point, msUntilRefresh returns 0 and stays
+ * there — the expiry does not move until a renewal succeeds. Re-arming on that
+ * unfloored would schedule the next attempt immediately, so a renewal that keeps
+ * failing becomes a tight loop against /api/session/refresh: exactly the state
+ * an outage puts every open tab into at once, which is when hammering it is
+ * least affordable.
+ *
+ * It never mattered before because a failed renewal signed the person out on the
+ * first try, so there was no second attempt to schedule. Now that an unreachable
+ * server no longer ends the session, this is what stands between "retry later"
+ * and a self-inflicted denial of service.
+ */
+export const MIN_TIMER_MS = 30 * 1000;
 
 /**
  * Reads a JWT's expiry without verifying it.
@@ -74,7 +96,7 @@ export function msUntilRefresh(token: string | null | undefined, now: number = D
 }
 
 export function nextTimerDelay(msUntil: number): number {
-  return Math.min(msUntil, MAX_TIMER_MS);
+  return Math.min(Math.max(msUntil, MIN_TIMER_MS), MAX_TIMER_MS);
 }
 
 /**

@@ -182,7 +182,23 @@ const GRPC_UNAUTHENTICATED = 16;
  * would be spending a token that a sibling had already consumed, turning a
  * recoverable lapse into a forced sign-out.
  */
-let inFlightRenewal: Promise<boolean> | null = null;
+let inFlightRenewal: Promise<RenewalOutcome> | null = null;
+
+/**
+ * How a renewal ended, kept separate from whether it succeeded.
+ *
+ * 'refused' means the server considered the credential and said no. 'unavailable'
+ * means we never got an answer — offline, a 502, a deploy swapping the pod out
+ * underneath the request.
+ *
+ * The distinction exists because only one of them may sign a person out. This
+ * previously returned a bare boolean, so a dropped connection was indistinguishable
+ * from an expired refresh token, and the renewal timer treated both as the end of
+ * the session: close the laptop lid on a train, and a single failed request ended a
+ * session that was entirely valid. Whatever else is true of a wobbly network, it is
+ * not evidence about the credential.
+ */
+export type RenewalOutcome = 'renewed' | 'refused' | 'unavailable';
 
 function isUnauthenticated(error: any): boolean {
   if (!error) return false;
@@ -199,8 +215,8 @@ function isUnauthenticated(error: any): boolean {
  * token that auth rotates on use, and the loser would be holding one that had
  * already been consumed.
  */
-export async function renewSessionOnce(): Promise<boolean> {
-  if (typeof window === 'undefined') return false;
+export async function renewSessionOnce(): Promise<RenewalOutcome> {
+  if (typeof window === 'undefined') return 'unavailable';
   if (inFlightRenewal) return inFlightRenewal;
 
   inFlightRenewal = (async () => {
@@ -241,21 +257,26 @@ export async function renewSessionOnce(): Promise<boolean> {
           ...(deviceId ? { device_id: deviceId } : {}),
         }),
       });
-      if (!response.ok) return false;
+      // 401 is the route's considered no: the refresh token has expired, or the
+      // device was revoked. Anything else — 502, 503, a proxy timing out, a pod
+      // restarting mid-deploy — says nothing about the credential, and treating
+      // it as a refusal signs out people whose session is fine.
+      if (response.status === 401) return 'refused';
+      if (!response.ok) return 'unavailable';
 
       const renewed = (await response.json().catch(() => ({}))) as { token?: string };
-      if (!renewed?.token) return false;
+      // A 200 carrying no token is a broken response, not a rejection.
+      if (!renewed?.token) return 'unavailable';
 
       // The cookies were set by the response; this keeps localStorage, which is
       // where the rest of the app reads the access token from.
       cacheAuthSession({ token: renewed.token });
-      return true;
+      return 'renewed';
     } catch {
-      // A refusal here is the end of the session, not a transient fault: the
-      // refresh token has expired, been rotated away, or belongs to an account
-      // the server will no longer renew. The original UNAUTHENTICATED is
-      // allowed to surface, which is the honest answer.
-      return false;
+      // fetch only rejects when the request never completed: offline, DNS,
+      // connection reset. No answer came back, so nothing here is a verdict on
+      // the session — the timer will try again.
+      return 'unavailable';
     } finally {
       // Cleared in a microtask so callers that arrived during this renewal
       // still join it rather than starting a second one.
@@ -293,7 +314,7 @@ export function callWithAuthRetry<T>(fn: (cb: (err: any, res: T) => void) => voi
   return attempt().catch(async (error) => {
     if (!isUnauthenticated(error)) throw handleGrpcError(error);
     const renewed = await renewSessionOnce();
-    if (!renewed) throw handleGrpcError(error);
+    if (renewed !== 'renewed') throw handleGrpcError(error);
     return attempt().catch((retryError) => {
       throw handleGrpcError(retryError);
     });
@@ -324,9 +345,12 @@ export function retryOnExpiry<T>(
 
     renewSessionOnce()
       .then((renewed) => {
-        // Renewal refused: the original UNAUTHENTICATED is the honest answer,
-        // and the caller's own error branch already knows how to present it.
-        if (!renewed) {
+        // Not renewed, for either reason: the original UNAUTHENTICATED is the
+        // honest answer to this call, and the caller's own error branch already
+        // knows how to present it. Whether the session itself is over is not
+        // decided here — that is the renewal timer's call, and it distinguishes
+        // a refusal from an unreachable server.
+        if (renewed !== 'renewed') {
           done(err, res);
           return;
         }
