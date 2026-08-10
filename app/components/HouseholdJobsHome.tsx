@@ -5,6 +5,7 @@ import { useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { ShimmerListPlaceholder } from "~/components/ShimmerLoader";
+import { VerifiedBadge } from "~/components/VerifiedBadge";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { jobService, listingApplicationService, shortlistService, profileService as grpcProfileService } from "~/services/grpc/authServices";
 import { notificationsService } from "~/services/grpc/notifications.service";
@@ -32,6 +33,9 @@ interface HousehelpSummary {
   user_id?: string;
   first_name?: string;
   last_name?: string;
+  /** True only for a KYC record the reviewers approved. See VerifiedBadge. */
+  identity_verified?: boolean;
+  identity_verified_at?: string;
   avatar_url?: string;
   photos?: string[];
   town?: string;
@@ -322,6 +326,12 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
   const ownerProfileId = formatTextValue(owner?.user_profile_id)
     || formatTextValue(owner?.househelp_profile_id) || undefined;
 
+  // The badge travels on the listing row rather than the nested profile: it is
+  // computed from the KYC table in the same query, so it is present even when
+  // the search endpoint returns listings without people attached.
+  const ownerVerified = owner?.identity_verified === true;
+  const ownerVerifiedAt = formatTextValue(owner?.identity_verified_at) || undefined;
+
   if (!househelp) {
     if (!ownerUserId && !ownerFirstName) return undefined;
     return {
@@ -329,6 +339,8 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
       user_id: ownerUserId,
       first_name: ownerFirstName,
       last_name: ownerLastName,
+      identity_verified: ownerVerified,
+      identity_verified_at: ownerVerifiedAt,
     };
   }
 
@@ -342,6 +354,10 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
     user_id: formatTextValue(househelp.user_id) || ownerUserId || undefined,
     first_name: formatTextValue(househelp.first_name) || ownerFirstName || undefined,
     last_name: formatTextValue(househelp.last_name) || ownerLastName || undefined,
+    // Strictly true or absent. A truthy-but-not-true value (the string "false",
+    // say) must not light this up, since it is a claim about someone's identity.
+    identity_verified: househelp.identity_verified === true || ownerVerified,
+    identity_verified_at: formatTextValue(househelp.identity_verified_at) || ownerVerifiedAt,
     avatar_url: formatTextValue(househelp.avatar_url) || undefined,
     photos: toStringArray(househelp.photos),
     town: formatTextValue(househelp.town) || undefined,
@@ -1252,6 +1268,13 @@ export default function HouseholdJobsHome() {
                             <div>
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{cardTitle}</h3>
+                                {/* Beside the name, the way every other platform
+                                    places it — an employer scanning a list reads
+                                    the tick as part of the person, not as one
+                                    more chip among the match scores. */}
+                                {househelp.identity_verified && (
+                                  <VerifiedBadge verifiedAt={househelp.identity_verified_at} />
+                                )}
                                 {typeof listing.fit_score === "number" && listing.fit_score > 0 && (
                                   <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
                                     Match {listing.fit_score}%
@@ -1654,7 +1677,12 @@ export default function HouseholdJobsHome() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Invite househelp</p>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">{name}</h2>
+                  <h2 className="flex items-center gap-1.5 text-lg font-bold text-gray-900 dark:text-white">
+                    {name}
+                    {househelp.identity_verified && (
+                      <VerifiedBadge verifiedAt={househelp.identity_verified_at} showLabel />
+                    )}
+                  </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {location}</p>
                 </div>
                 <button
