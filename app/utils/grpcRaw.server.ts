@@ -244,6 +244,58 @@ export async function callUnaryGrpc(
   return decodeGenericResponse(message);
 }
 
+/**
+ * Read a JsonResponse, whose only field is `data` at number 1.
+ *
+ * GenericResponse puts its header at 1 and its Struct body at 2, so decoding a
+ * JsonResponse with decodeGenericResponse reads the payload Struct as a header,
+ * finds no field 2, and returns a null body — an empty result that looks like
+ * "nothing matched" rather than "this was parsed as the wrong message". Every
+ * caller that reached a JsonResponse RPC through callUnaryGrpc has silently
+ * received nothing.
+ */
+function decodeJsonResponse(payload: Buffer) {
+  let offset = 0;
+  let data: Record<string, unknown> | null = null;
+
+  while (offset < payload.length) {
+    const tag = readVarint(payload, offset);
+    offset = tag.offset;
+    const fieldNo = tag.value >> 3;
+    const wireType = tag.value & 7;
+
+    if (wireType !== 2) {
+      offset = skipField(payload, offset, wireType);
+      continue;
+    }
+
+    const length = readVarint(payload, offset);
+    offset = length.offset;
+    const bytes = payload.subarray(offset, offset + length.value);
+    offset += length.value;
+
+    if (fieldNo === 1) {
+      data = Struct.deserializeBinary(bytes).toJavaScript() as Record<string, unknown>;
+    }
+  }
+
+  return { header: {}, body: data };
+}
+
+/**
+ * callUnaryGrpc for an RPC that answers with JsonResponse rather than
+ * GenericResponse. The two are different messages and cannot share a decoder.
+ */
+export async function callUnaryGrpcJson(
+  baseUrl: string,
+  path: string,
+  requestBytes: Uint8Array,
+  metadata?: Record<string, string | undefined>,
+) {
+  const message = await callUnaryGrpcMessage(baseUrl, path, requestBytes, metadata);
+  return decodeJsonResponse(message);
+}
+
 export async function callUnaryGrpcMessage(
   baseUrl: string,
   path: string,

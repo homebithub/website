@@ -425,7 +425,7 @@ async function enrichListingsWithFeatures(baseUrl: string, listings: Record<stri
 
 export async function loader({ request }: { request: Request }) {
   try {
-    const { callUnaryGrpc, resolveAuthGrpcBaseUrl } = await import('~/utils/grpcRaw.server');
+    const { callUnaryGrpc, callUnaryGrpcJson, resolveAuthGrpcBaseUrl } = await import('~/utils/grpcRaw.server');
     const url = new URL(request.url);
     const baseUrl = resolveAuthGrpcBaseUrl(request);
     const requestedId = Number(url.searchParams.get('id') || url.searchParams.get('listing_id') || 0);
@@ -464,15 +464,27 @@ export async function loader({ request }: { request: Request }) {
     // work" on the househelp jobs board with an Apply button under it.
     const owner = String(url.searchParams.get('owner') || '');
 
-    const { body: responseBody } = await callUnaryGrpc(
-      baseUrl,
-      owner === 'househelp'
-        ? '/auth.OpenForWorkService/ListOpenForWork'
-        : '/auth.ListingService/ListJobs',
-      encodeListRequest(url.searchParams),
-    );
+    // Two endpoints, two response messages. ListOpenForWork answers with
+    // JsonResponse, whose data sits at field 1; ListJobs answers with
+    // GenericResponse, whose header is at 1 and body at 2. Decoding the former
+    // with the latter's reader finds no body and returns nothing — which is
+    // why browsing househelps came back empty rather than erroring.
+    const { body: responseBody } = owner === 'househelp'
+      ? await callUnaryGrpcJson(
+        baseUrl,
+        '/auth.OpenForWorkService/ListOpenForWork',
+        encodeListRequest(url.searchParams),
+      )
+      : await callUnaryGrpc(
+        baseUrl,
+        '/auth.ListingService/ListJobs',
+        encodeListRequest(url.searchParams),
+      );
 
-    const payload = responseBody.data ?? responseBody;
+    // A null body means the response could not be read, which normalizeArray
+    // would render as an empty list — the failure this whole branch exists to
+    // stop looking like "nothing matched".
+    const payload = responseBody?.data ?? responseBody ?? {};
     const listings = normalizeArray(payload);
     const hydratedListings = hydrateWithGetListing
       ? await Promise.all(listings.map(async (listing) => {
