@@ -56,7 +56,7 @@ export default function VerifyContinue() {
       <div className="rounded-3xl border border-purple-200 bg-white p-6 shadow-xl dark:border-purple-500/30 dark:bg-[#111018]">
         <span className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-100 px-3 py-1 text-[10px] font-bold tracking-[0.16em] text-purple-700 dark:border-purple-400/25 dark:bg-purple-500/10 dark:text-purple-200">
           <ShieldCheck className="h-3.5 w-3.5" />
-          VERIFIED WITH SMILE ID
+          IDENTITY VERIFIED
         </span>
 
         {state === "done" ? (

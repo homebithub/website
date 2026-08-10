@@ -99,7 +99,7 @@ function describeAction(action: string): string {
     case 'photo':
       return 'Upload at least one photo';
     case 'verification':
-      return 'Verify your identity with Smile ID';
+      return 'Verify your identity';
     default:
       return 'Open to complete';
   }

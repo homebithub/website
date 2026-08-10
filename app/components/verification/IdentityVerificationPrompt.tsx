@@ -64,7 +64,7 @@ export function IdentityVerificationPrompt({
       icon: ShieldCheck,
       eyebrow: "IDENTITY VERIFICATION",
       title: "Build trust with a verified identity",
-      description: "Verify with Smile ID so households know that your identity has been checked securely.",
+      description: "Verify your identity so households know it has been checked securely.",
       action: "Verify identity",
       tone: "purple",
     },
@@ -72,7 +72,7 @@ export function IdentityVerificationPrompt({
       ? {
           icon: Clock3,
           eyebrow: "VERIFICATION IN PROGRESS",
-          title: "Smile ID is reviewing your identity",
+          title: "Your identity is being reviewed",
           description: "You can continue using Homebit. We’ll notify you as soon as the review is complete.",
           action: "Check status",
           tone: "blue",
@@ -197,13 +197,13 @@ export function IdentityVerificationPrompt({
             <div className="pr-10">
               <span className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-100 px-3 py-1 text-[10px] font-bold tracking-[0.16em] text-purple-700 dark:border-purple-400/25 dark:bg-purple-500/10 dark:text-purple-200">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                VERIFIED WITH SMILE ID
+                IDENTITY VERIFIED
               </span>
               <h2 id="identity-verification-title" className="mt-4 text-xl font-semibold sm:text-2xl">
                 Verify your identity
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-gray-600 dark:text-white/65">
-                Identity checks make Homebit safer for househelps and households. Smile ID securely compares your
+                Identity checks make Homebit safer for househelps and households. We securely compare your
                 government-issued document with a live selfie to confirm that it belongs to you.
               </p>
             </div>
@@ -268,7 +268,7 @@ export function IdentityVerificationPrompt({
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 text-xs font-semibold text-white shadow-lg shadow-purple-950/40 transition hover:from-purple-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {launching ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
-                {launching ? "Preparing secure check…" : status === "failed" ? "Retry with Smile ID" : "Continue with Smile ID"}
+                {launching ? "Preparing secure check…" : status === "failed" ? "Try again" : "Start verification"}
               </button>
             </div>
           </section>
@@ -305,7 +305,7 @@ function PhoneHandoffPanel({ verification }: { verification: IdentityVerificatio
   // On a desktop this is the recommended path, not a fallback — a phone camera
   // photographs an ID far better than a webcam, and since capture is camera-only
   // a machine without one has no other route. A collapsed "Show QR code" button
-  // sitting above a large "Continue with Smile ID" is a button nobody presses,
+  // sitting above a large "Start verification" is a button nobody presses,
   // which is exactly what happened: the panel shipped and the first person
   // through it reported there was no way to scan anything.
   useEffect(() => {

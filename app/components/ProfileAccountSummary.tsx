@@ -409,7 +409,7 @@ export function ProfileAccountSummary({
 
               {!isHousehold ? (
                 <p className="rounded-xl border border-purple-200/70 bg-purple-50 px-3 py-2.5 text-xs text-purple-800 dark:border-purple-500/20 dark:bg-purple-950/30 dark:text-purple-200">
-                  Your name is locked to the verified name returned by Smile ID.
+                  Your name is locked to the name on your verified ID document.
                 </p>
               ) : null}
 

@@ -493,7 +493,30 @@ export async function loader({ request }: { request: Request }) {
         return { ...listing, ...await getJobListing(baseUrl, listingId, callUnaryGrpc).catch(() => ({})) };
       }))
       : listings;
-    const enriched = await enrichListingsWithFeatures(baseUrl, hydratedListings, callUnaryGrpc);
+    let enriched = await enrichListingsWithFeatures(baseUrl, hydratedListings, callUnaryGrpc);
+
+    // Who among these people is a paying member.
+    //
+    // Only when browsing househelps: the other side of the board returns a
+    // household's job posts, where the poster is the person hiring and a
+    // premium badge on their advert says nothing a househelp needs.
+    //
+    // One call for the whole page, not one per person — payments answers a list
+    // of ids, and a badge is not worth twenty round trips to the service that
+    // takes payments. A failure inside leaves the listings untouched, so the
+    // page loses the badge rather than the listings.
+    if (owner === 'househelp') {
+      const { attachPremiumStatus } = await import('~/utils/premium.server');
+      enriched = await attachPremiumStatus(
+        baseUrl,
+        enriched,
+        (listing) => {
+          const value = listing.househelp_user_id ?? listing.owner_user_id ?? listing.user_id;
+          return typeof value === 'string' && value ? value : undefined;
+        },
+        authMetadata(request),
+      );
+    }
 
     // Relevance, when the caller says who is looking.
     //

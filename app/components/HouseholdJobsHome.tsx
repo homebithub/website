@@ -6,6 +6,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { ShimmerListPlaceholder } from "~/components/ShimmerLoader";
 import { VerifiedBadge } from "~/components/VerifiedBadge";
+import { PremiumBadge } from "~/components/PremiumBadge";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { jobService, listingApplicationService, shortlistService, profileService as grpcProfileService } from "~/services/grpc/authServices";
 import { notificationsService } from "~/services/grpc/notifications.service";
@@ -36,6 +37,10 @@ interface HousehelpSummary {
   /** True only for a KYC record the reviewers approved. See VerifiedBadge. */
   identity_verified?: boolean;
   identity_verified_at?: string;
+  /** True while a subscription is active. Separate from verification on
+   *  purpose: one says who someone is, the other says that they pay us. */
+  premium?: boolean;
+  premium_is_trial?: boolean;
   avatar_url?: string;
   photos?: string[];
   town?: string;
@@ -331,6 +336,9 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
   // the search endpoint returns listings without people attached.
   const ownerVerified = owner?.identity_verified === true;
   const ownerVerifiedAt = formatTextValue(owner?.identity_verified_at) || undefined;
+  // Attached to the listing by the loader, from one batched call to payments.
+  const ownerPremium = owner?.premium === true;
+  const ownerPremiumTrial = owner?.premium_is_trial === true;
 
   if (!househelp) {
     if (!ownerUserId && !ownerFirstName) return undefined;
@@ -341,6 +349,8 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
       last_name: ownerLastName,
       identity_verified: ownerVerified,
       identity_verified_at: ownerVerifiedAt,
+      premium: ownerPremium,
+      premium_is_trial: ownerPremiumTrial,
     };
   }
 
@@ -358,6 +368,8 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
     // say) must not light this up, since it is a claim about someone's identity.
     identity_verified: househelp.identity_verified === true || ownerVerified,
     identity_verified_at: formatTextValue(househelp.identity_verified_at) || ownerVerifiedAt,
+    premium: househelp.premium === true || ownerPremium,
+    premium_is_trial: househelp.premium_is_trial === true || ownerPremiumTrial,
     avatar_url: formatTextValue(househelp.avatar_url) || undefined,
     photos: toStringArray(househelp.photos),
     town: formatTextValue(househelp.town) || undefined,
@@ -1275,6 +1287,9 @@ export default function HouseholdJobsHome() {
                                 {househelp.identity_verified && (
                                   <VerifiedBadge verifiedAt={househelp.identity_verified_at} />
                                 )}
+                                {househelp.premium && (
+                                  <PremiumBadge isTrial={househelp.premium_is_trial} />
+                                )}
                                 {typeof listing.fit_score === "number" && listing.fit_score > 0 && (
                                   <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
                                     Match {listing.fit_score}%
@@ -1681,6 +1696,9 @@ export default function HouseholdJobsHome() {
                     {name}
                     {househelp.identity_verified && (
                       <VerifiedBadge verifiedAt={househelp.identity_verified_at} showLabel />
+                    )}
+                    {househelp.premium && (
+                      <PremiumBadge isTrial={househelp.premium_is_trial} showLabel />
                     )}
                   </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {location}</p>
