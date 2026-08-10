@@ -222,11 +222,24 @@ export async function renewSessionOnce(): Promise<boolean> {
       // cookie was written by client code, where the HttpOnly attribute is
       // ignored by the browser.
       const { refreshToken } = getAuthFromCookies();
+      // The device id travels with the renewal so auth can refuse one that was
+      // revoked. It is the only thing that can end a session before its time —
+      // the refresh token is a stateless JWT with no revocation list.
+      let deviceId = '';
+      try {
+        deviceId = window.localStorage.getItem('device_id') || '';
+      } catch {
+        // Storage unavailable; renewal proceeds without it.
+      }
+
       const response = await fetch('/api/session/refresh', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(refreshToken ? { refresh_token: refreshToken } : {}),
+        body: JSON.stringify({
+          ...(refreshToken ? { refresh_token: refreshToken } : {}),
+          ...(deviceId ? { device_id: deviceId } : {}),
+        }),
       });
       if (!response.ok) return false;
 

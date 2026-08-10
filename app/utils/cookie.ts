@@ -78,7 +78,15 @@ export const cookieOptions: SerializeOptions = {
   httpOnly: false, // Default to false for client-side hydration
   secure: IS_PROD,
   sameSite: "lax",
-  maxAge: 60 * 60 * 24 * 7, // 7 days
+  // A year, re-set on every renewal so it slides.
+  //
+  // These are not credentials — the access token expires in fifteen minutes
+  // whatever the cookie says, and the refresh token is checked on every use.
+  // What the lifetime decides is how long somebody may be away before the site
+  // forgets them, and a week is not how people use a site they trust. Somebody
+  // who signs in on their phone and comes back next month expects to still be
+  // there, the way every app they already use behaves.
+  maxAge: 60 * 60 * 24 * 365,
 };
 
 /**
@@ -98,7 +106,15 @@ export const accessTokenOptions: SerializeOptions = {
 export const refreshTokenOptions: SerializeOptions = {
   ...cookieOptions,
   httpOnly: true,
-  maxAge: 60 * 60 * 24 * 30, // 30 days
+  // Matched to the refresh token's own life, and re-set on every renewal.
+  //
+  // Thirty days meant the cookie died while the credential inside it was still
+  // valid for another eleven months — the session ended for no reason anybody
+  // could point at, and the person was asked to sign in again while holding
+  // something that still worked. Sliding it on renewal is what makes an active
+  // session effectively permanent: each visit resets the clock, and only real
+  // absence ends it.
+  maxAge: 60 * 60 * 24 * 365,
 };
 
 export const setAuthCookies = (token: string, refreshToken: string | null | undefined, user: any) => {

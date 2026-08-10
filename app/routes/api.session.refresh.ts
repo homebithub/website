@@ -39,10 +39,19 @@ export async function action({ request }: { request: Request }) {
   const cookies = parseCookies(request.headers.get('cookie') || '');
   let refreshToken = cookies[REFRESH_TOKEN_COOKIE_NAME] || '';
 
+  const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   if (!refreshToken) {
-    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     refreshToken = String(body.refresh_token || body.refreshToken || '');
   }
+
+  // Which device is asking.
+  //
+  // auth refuses renewal for a device that was revoked or banned, and that
+  // check is the only thing that ends a session early — the refresh token is a
+  // stateless JWT with no revocation list, so nothing else can. Renewing on the
+  // server without passing this quietly disabled it: signing a device out of
+  // Trusted devices would have left it renewing happily for a year.
+  const deviceId = String(body.device_id || body.deviceId || '');
 
   if (!refreshToken) {
     // No credential to renew with. Not an error worth a 500: it is the ordinary
@@ -58,6 +67,7 @@ export async function action({ request }: { request: Request }) {
       resolveAuthGrpcBaseUrl(request),
       '/auth.AuthService/RefreshToken',
       renewRequest.serializeBinary(),
+      deviceId ? { 'x-device-id': deviceId } : undefined,
     );
 
     const payload = (responseBody ?? {}) as Record<string, unknown>;
@@ -70,9 +80,14 @@ export async function action({ request }: { request: Request }) {
       return Response.json({ message: 'Renewal returned no token' }, { status: 502 });
     }
 
-    // Both cookies are rewritten, not just the access token: auth rotates the
-    // refresh token on every use, so keeping the old one would leave the next
-    // renewal holding a token that has already been spent.
+    // Both cookies are rewritten, and both slide: their Max-Age restarts here,
+    // which is what keeps an active session alive indefinitely without the
+    // credential itself ever needing to be long-lived in one place.
+    //
+    // auth issues a fresh refresh token each time, though the previous one does
+    // not stop working — ParseRefreshToken validates the JWT and consults
+    // nothing else. Worth knowing before relying on rotation for anything: what
+    // ends a session early is the device check, not the token.
     const headers = new Headers();
     headers.append('Set-Cookie', serializeCookie(TOKEN_COOKIE_NAME, token, accessTokenOptions));
     headers.append(
@@ -87,8 +102,8 @@ export async function action({ request }: { request: Request }) {
     // and unreadable from a script for the same reason as above.
     return new Response(JSON.stringify({ token }), { status: 200, headers });
   } catch (error: unknown) {
-    // A refusal here ends the session: the refresh token has expired, been
-    // rotated away, or belongs to an account the server will not renew. 401 so
+    // A refusal here ends the session: the refresh token has expired, the
+    // account is no longer in good standing, or the device was revoked. 401 so
     // the caller can tell that apart from a fault it should retry.
     const message = error instanceof Error ? error.message : 'Could not renew the session';
     console.warn('[session] renewal refused:', message);
