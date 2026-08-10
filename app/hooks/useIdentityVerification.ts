@@ -10,6 +10,10 @@ export type IdentityVerificationStatus =
   | "loading"
   | "not_started"
   | "in_progress"
+  /** With a reviewer. Nothing for the person to do, so nothing is offered. */
+  | "under_review"
+  /** The documents were unusable. Retryable, and not a judgement on them. */
+  | "resubmission_requested"
   | "failed"
   | "approved";
 
@@ -49,12 +53,19 @@ const normalizeStatus = (raw: any): {
   const legacyStatus = String(raw?.status ?? "").toLowerCase();
   let status: Exclude<IdentityVerificationStatus, "loading"> = "not_started";
 
-  if (["not_started", "in_progress", "failed", "approved"].includes(explicitStatus)) {
+  if (
+    ["not_started", "in_progress", "under_review", "resubmission_requested", "failed", "approved"]
+      .includes(explicitStatus)
+  ) {
     status = explicitStatus as Exclude<IdentityVerificationStatus, "loading">;
   } else if (legacyStatus === "approved") {
     status = "approved";
   } else if (legacyStatus === "pending") {
     status = "in_progress";
+  } else if (legacyStatus === "manual_review") {
+    status = "under_review";
+  } else if (legacyStatus === "resubmission_requested") {
+    status = "resubmission_requested";
   } else if (legacyStatus === "rejected" || legacyStatus === "expired") {
     status = "failed";
   }
@@ -63,7 +74,13 @@ const normalizeStatus = (raw: any): {
     status,
     internalStatus: String(verification?.internal_status ?? legacyStatus),
     failureReason: String(verification?.failure_reason ?? raw?.reject_reason ?? ""),
-    canRetry: Boolean(verification?.can_retry ?? status === "failed"),
+    // Under review is the one state that must not offer a retry: the capture is
+    // already with somebody, and running it again only creates a second thing
+    // to review.
+    canRetry:
+      status === "under_review"
+        ? false
+        : Boolean(verification?.can_retry ?? (status === "failed" || status === "resubmission_requested")),
   };
 };
 

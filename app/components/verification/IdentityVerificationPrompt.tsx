@@ -85,21 +85,54 @@ export function IdentityVerificationPrompt({
           action: "Continue verification",
           tone: "purple",
         },
+    // With a reviewer, and deliberately offering nothing.
+    //
+    // An action here would have somebody re-run a capture that is already being
+    // looked at, producing a second submission to review and no faster answer.
+    // Saying so plainly is the whole job of this state — silence is what makes
+    // people assume they have been quietly turned down.
+    under_review: {
+      icon: Clock3,
+      eyebrow: "VERIFICATION UNDER REVIEW",
+      title: "Somebody is reviewing your verification",
+      description:
+        failureReason ||
+        "There is nothing for you to do. We will let you know by email and here as soon as it is decided.",
+      action: "",
+      tone: "blue",
+    },
+    // Not a refusal, and worded so it does not read as one. The documents were
+    // unusable; the person is fine.
+    resubmission_requested: {
+      icon: FileCheck2,
+      eyebrow: "WE NEED CLEARER DOCUMENTS",
+      title: "Please send your documents again",
+      description:
+        failureReason ||
+        "We could not read the documents clearly enough. A brighter room and a steady hand usually fixes it — it takes a couple of minutes.",
+      action: "Start a new verification",
+      tone: "amber",
+    },
     failed: {
       icon: AlertTriangle,
       eyebrow: "VERIFICATION NEEDS ATTENTION",
       title: "We couldn’t verify your identity",
       description: failureReason || "Review your document details and try again with clear, well-lit images.",
-      action: "Try again",
+      action: "Start a new verification",
       tone: "rose",
     },
   }[status];
+
+  // A state the server reports and this component has no words for should show
+  // nothing rather than crash the page it sits on.
+  if (!banner) return null;
 
   const Icon = banner.icon;
   const toneClasses = {
     purple: "border-purple-200 bg-purple-50 text-purple-900 dark:border-purple-500/40 dark:bg-purple-950/45 dark:text-purple-100",
     blue: "border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-500/35 dark:bg-sky-950/35 dark:text-sky-100",
     rose: "border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-500/35 dark:bg-rose-950/35 dark:text-rose-100",
+    amber: "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/35 dark:bg-amber-950/35 dark:text-amber-100",
   }[banner.tone];
 
   return (
@@ -117,14 +150,23 @@ export function IdentityVerificationPrompt({
               {error && <p className="mt-2 text-xs font-medium text-rose-600 dark:text-rose-300">{error}</p>}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={waiting ? () => void refresh() : openModal}
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 text-xs font-semibold text-white shadow-lg shadow-purple-950/30 transition hover:from-purple-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-purple-400"
-          >
-            {waiting ? <RefreshCw className="h-4 w-4" /> : <Fingerprint className="h-4 w-4" />}
-            {banner.action}
-          </button>
+          {/*
+            No button when there is nothing to press.
+            
+            A submission sitting with a reviewer has no action worth offering —
+            one would only produce a second capture to review, and no faster
+            answer.
+          */}
+          {banner.action ? (
+            <button
+              type="button"
+              onClick={waiting ? () => void refresh() : openModal}
+              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 text-xs font-semibold text-white shadow-lg shadow-purple-950/30 transition hover:from-purple-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            >
+              {waiting ? <RefreshCw className="h-4 w-4" /> : <Fingerprint className="h-4 w-4" />}
+              {banner.action}
+            </button>
+          ) : null}
         </div>
       </section>
 
