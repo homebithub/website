@@ -81,6 +81,9 @@ function encodeListRequest(params: URLSearchParams) {
     encodeInt32Field(7, Number.isFinite(wardId) ? wardId : 0),
     encodeInt32Field(8, Number.isFinite(jobTypeId) ? jobTypeId : 0),
     ...propertyIds.map((id) => encodeInt32Field(9, id)),
+    // Which side of the market posted it. Empty means both, which is what every
+    // caller got before this field existed.
+    encodeStringField(10, String(params.get('owner') || '')),
   ]);
 }
 
@@ -452,11 +455,18 @@ export async function loader({ request }: { request: Request }) {
     // title where the househelp's skills belong. ListOpenForWork is the same
     // query joined to the owner's profile and restricted to househelps, which
     // is what "who is available" actually means.
-    const ownerIsHousehelp = String(url.searchParams.get('owner') || '') === 'househelp';
+    // owner=househelp has its own endpoint, which carries the poster's name and
+    // contact alongside the listing — what a household browsing people needs.
+    // owner=household is the same ListJobs query narrowed to the other side,
+    // because a jobs board wants the job, not the person.
+    //
+    // Absent, ListJobs returns both sides, and that is what put "Available for
+    // work" on the househelp jobs board with an Apply button under it.
+    const owner = String(url.searchParams.get('owner') || '');
 
     const { body: responseBody } = await callUnaryGrpc(
       baseUrl,
-      ownerIsHousehelp
+      owner === 'househelp'
         ? '/auth.OpenForWorkService/ListOpenForWork'
         : '/auth.ListingService/ListJobs',
       encodeListRequest(url.searchParams),

@@ -589,6 +589,13 @@ export default function HousehelpJobsHome() {
           offset,
         };
         payload.status = "open";
+        // Jobs, not other househelps.
+        //
+        // Households' job posts and househelps' open-for-work posts share one
+        // table, and this asked for listings without saying whose — so the board
+        // showed "Available for work", posted by another househelp, with an
+        // Apply button under it.
+        payload.owner = "household";
         if (filters.jobType) payload.job_type_id = Number(filters.jobType);
         if (filters.wardId) payload.ward_id = Number(filters.wardId);
         else if (filters.subcountyId) payload.subcounty_id = Number(filters.subcountyId);
