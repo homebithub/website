@@ -57,11 +57,17 @@ export function shouldSilenceGatewayError(error: unknown): boolean {
  * Parse a gRPC error message that may contain JSON from the backend.
  * Backend errors look like: {"code":"ALREADY_EXISTS","message":"This phone number is already in use"}
  */
-function parseGrpcErrorMessage(raw: string): { code: string; message: string } | null {
+function parseGrpcErrorMessage(raw: string): { code: string; message: string; field?: string } | null {
   try {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.message === 'string') {
-      return { code: parsed.code || '', message: parsed.message };
+      // details.field names the input the message belongs under, when the
+      // failure is about one thing the person typed. Reading it is what lets a
+      // form put "this phone number is already registered" beside the phone
+      // box without searching the sentence for the word "phone" — which breaks
+      // the moment somebody rewords it, and silently.
+      const field = typeof parsed.details?.field === 'string' ? parsed.details.field : undefined;
+      return { code: parsed.code || '', message: parsed.message, field };
     }
   } catch {
     // Not JSON, return null
@@ -94,11 +100,19 @@ function isTechnicalErrorMessage(message: string): boolean {
   );
 }
 
-function friendlyError(message: string, cause: unknown, grpcCode?: string | number): Error {
+function friendlyError(
+  message: string,
+  cause: unknown,
+  grpcCode?: string | number,
+  field?: string,
+): Error {
   const result = new Error(message);
   result.cause = cause;
   if (grpcCode !== undefined) {
     (result as Error & { grpcCode?: string | number }).grpcCode = grpcCode;
+  }
+  if (field) {
+    (result as Error & { field?: string }).field = field;
   }
   return result;
 }
@@ -130,7 +144,7 @@ export function handleGrpcError(error: any): Error {
     ) {
       return friendlyError(GENERIC_ERROR_MESSAGE, error, parsed.code);
     }
-    return friendlyError(parsed.message || GENERIC_ERROR_MESSAGE, error, parsed.code);
+    return friendlyError(parsed.message || GENERIC_ERROR_MESSAGE, error, parsed.code, parsed.field);
   }
 
   // Fallback: map numeric gRPC status codes to friendly messages

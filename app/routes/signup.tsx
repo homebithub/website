@@ -73,6 +73,40 @@ type ProfileOption = {
     slug?: string;
 };
 
+/**
+ * Putting a server error beside the input it is about.
+ *
+ * The server names the field — details.field on the error payload, surfaced as
+ * err.field by the gRPC client — so this reads that rather than searching the
+ * sentence for the word "phone". Searching worked until somebody reworded the
+ * message, and then it failed silently: the error still appeared, just at the
+ * top of the form with no indication of which box to fix.
+ *
+ * The word matching is kept as a fallback, for a server that has not been
+ * deployed yet. It can go once nothing older is running.
+ */
+function placeError(
+    err: unknown,
+    message: string,
+    setFieldErrors: (errors: Record<string, string>) => void,
+    setTouchedFields: (update: (prev: Record<string, boolean>) => Record<string, boolean>) => void,
+    setError: (message: string) => void,
+) {
+    const named = (err as { field?: string } | null)?.field;
+    const lower = message.toLowerCase();
+
+    const field = named
+        || (lower.includes('phone') ? 'phone' : '')
+        || (lower.includes('email') ? 'email' : '');
+
+    if (field === 'phone' || field === 'email') {
+        setFieldErrors({ [field]: message });
+        setTouchedFields(prev => ({ ...prev, [field]: true }));
+    }
+
+    setError(message);
+}
+
 function createPhoneVerification(authId: string, target: string) {
     return {
         id: '',
@@ -441,17 +475,7 @@ export default function SignupPage() {
                     const lowerMsg = errorMsg.toLowerCase();
 
                     if (grpcCode === 'ALREADY_EXISTS' || lowerMsg.includes('already')) {
-                        if (lowerMsg.includes('phone')) {
-                            setFieldErrors({ phone: 'This phone number is already registered' });
-                            setTouchedFields(prev => ({ ...prev, phone: true }));
-                            setError('This phone number is already registered');
-                        } else if (lowerMsg.includes('email')) {
-                            setFieldErrors({ email: 'This email is already registered' });
-                            setTouchedFields(prev => ({ ...prev, email: true }));
-                            setError('This email is already registered');
-                        } else {
-                            setError('Account already exists');
-                        }
+                        placeError(err, errorMsg, setFieldErrors, setTouchedFields, setError);
                         setFormLoading(false);
                         return;
                     }
@@ -536,17 +560,7 @@ export default function SignupPage() {
                 
                 // Handle duplicate phone/email errors
                 if (grpcCode === 'ALREADY_EXISTS' || lowerMsg.includes('already')) {
-                    if (lowerMsg.includes('phone')) {
-                        setFieldErrors({ phone: 'This phone number is already registered' });
-                        setTouchedFields(prev => ({ ...prev, phone: true }));
-                        setError('This phone number is already registered');
-                    } else if (lowerMsg.includes('email')) {
-                        setFieldErrors({ email: 'This email is already registered' });
-                        setTouchedFields(prev => ({ ...prev, email: true }));
-                        setError('This email is already registered');
-                    } else {
-                        setError('Account already exists');
-                    }
+                    placeError(err, errorMsg, setFieldErrors, setTouchedFields, setError);
                     setFormLoading(false);
                     return;
                 }
