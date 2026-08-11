@@ -212,8 +212,28 @@ export default function EmploymentContractPage() {
 
   const fetchDefaultClauses = async () => {
     try {
-      const data = await employmentContractService.getDefaultClauses();
-      setClauses(data?.clauses || []);
+      const raw = await employmentContractService.getDefaultClauses();
+      // Unwrapped, and shaped the way this page renders a clause.
+      //
+      // This read `data.clauses` off the envelope rather than its body, so it
+      // always found nothing — the panel rendered its heading and its
+      // instructions above an empty list, and a contract went out with no terms
+      // in it. The service also used to answer with bare strings, which this
+      // page cannot draw: it wants a heading and a body it can show and let the
+      // household switch off.
+      const list = raw?.data?.clauses ?? raw?.clauses ?? [];
+      const normalised: ContractClause[] = (Array.isArray(list) ? list : []).map(
+        (entry: any, index: number) =>
+          typeof entry === 'string'
+            ? { id: `clause-${index}`, title: entry, body: '', included: true }
+            : {
+                id: String(entry?.id ?? `clause-${index}`),
+                title: String(entry?.title ?? ''),
+                body: String(entry?.body ?? ''),
+                included: true,
+              },
+      ).filter((clause) => clause.title || clause.body);
+      setClauses(normalised);
     } catch (err) {
       console.error('Failed to fetch default clauses:', err);
     }
@@ -364,6 +384,14 @@ export default function EmploymentContractPage() {
   };
 
   const signerName = signingAs === 'household' ? employerName : employeeName;
+
+  // Whether there is anything here to sign.
+  //
+  // A draft created by "send contract" starts empty, and the househelp could
+  // sign it in that state — a document with no position, no pay and no dates.
+  const contractHasTerms = Boolean(
+    contract && (contract.job_title || contract.salary || contract.start_date),
+  );
 
   const handleSign = async () => {
     if (!contract || !signerName.trim()) {
@@ -768,10 +796,23 @@ export default function EmploymentContractPage() {
                 <div className="mb-8">
                   <h2 className="text-base font-semibold text-gray-900 border-b border-gray-300 pb-1 mb-3">Terms of Employment</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-gray-700">
-                    <div><strong>Position:</strong> {contract.job_title}</div>
-                    <div><strong>Location:</strong> {contract.work_location || 'As agreed'}</div>
-                    <div><strong>Salary:</strong> KES {contract.salary?.toLocaleString()} / {contract.salary_frequency}</div>
-                    <div><strong>Start Date:</strong> {contract.start_date ? formatDate(contract.start_date) : 'As agreed'}</div>
+                    {/* A term nobody has filled in says so.
+                        "As agreed" reads like something the two of them settled
+                        between themselves; blank pay rendered as "KES /". On a
+                        document somebody is about to sign, an unfilled term must
+                        not look like a decided one. */}
+                    <div><strong>Position:</strong> {contract.job_title || <em className="text-gray-400">Not set</em>}</div>
+                    <div><strong>Location:</strong> {contract.work_location || <em className="text-gray-400">Not set</em>}</div>
+                    <div>
+                      <strong>Salary:</strong>{' '}
+                      {contract.salary
+                        ? `KES ${contract.salary.toLocaleString()} / ${contract.salary_frequency || 'month'}`
+                        : <em className="text-gray-400">Not set</em>}
+                    </div>
+                    <div>
+                      <strong>Start Date:</strong>{' '}
+                      {contract.start_date ? formatDate(contract.start_date) : <em className="text-gray-400">Not set</em>}
+                    </div>
                     {contract.end_date && <div><strong>End Date:</strong> {formatDate(contract.end_date)}</div>}
                   </div>
                   {contract.job_description && (
@@ -868,7 +909,7 @@ export default function EmploymentContractPage() {
                     ) : (
                       <button
                         onClick={() => handleAcceptAndSign('household')}
-                        disabled={savingNames || !employerName.trim() || !isHousehold}
+                        disabled={savingNames || !employerName.trim() || !isHousehold || !contractHasTerms}
                         className={`w-full px-4 py-2.5 text-white rounded-xl transition-all font-semibold flex items-center justify-center gap-2 ${
                           isHousehold
                             ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/30 disabled:opacity-50'
@@ -901,7 +942,7 @@ export default function EmploymentContractPage() {
                     ) : (
                       <button
                         onClick={() => handleAcceptAndSign('househelp')}
-                        disabled={savingNames || !employeeName.trim() || !isHousehelp}
+                        disabled={savingNames || !employeeName.trim() || !isHousehelp || !contractHasTerms}
                         className={`w-full px-4 py-2.5 text-white rounded-xl transition-all font-semibold flex items-center justify-center gap-2 ${
                           isHousehelp
                             ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/30 disabled:opacity-50'
