@@ -1010,12 +1010,19 @@ export default function HiringHistory() {
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-sm border border-purple-100 mb-6 dark:bg-purple-900/30 dark:shadow-inner dark:shadow-purple-900/40 dark:border-purple-700/50 transition-colors">
           <div className="border-b border-gray-200 dark:border-purple-800/50">
-            <nav className="flex space-x-6 px-6 text-gray-600 dark:text-purple-200 overflow-x-auto no-scrollbar" aria-label="Tabs">
+            {/* Scrolls when it has to, but sized so it usually does not have
+                to: at phone widths the old px-6/space-x-6 pushed the last tab
+                past the edge, and no-scrollbar meant nothing showed that there
+                was more to reach. */}
+            <nav
+              className="flex gap-4 sm:gap-6 px-4 sm:px-6 text-gray-600 dark:text-purple-200 overflow-x-auto no-scrollbar"
+              aria-label="Tabs"
+            >
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  className={`py-4 px-1 border-b-2 font-medium text-xs transition-colors flex items-center gap-2 ${
+                  className={`shrink-0 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-xs transition-colors flex items-center gap-1.5 sm:gap-2 ${
                     activeTab === tab.key
                       ? 'border-purple-500 text-purple-700 dark:text-white'
                       : 'border-transparent text-gray-400 hover:text-purple-700 dark:hover:text-white hover:border-purple-300'
@@ -1242,37 +1249,6 @@ export default function HiringHistory() {
                       : 'border-purple-100 dark:border-purple-800/40'
                   }`}
                 >
-                  <div className="absolute top-4 right-4 flex flex-col gap-2 sm:flex-row">
-                    <button
-                      onClick={() => handleChatWithApplicant(interest)}
-                      disabled={chatLoading}
-                      className="inline-flex items-center gap-2 rounded-full border border-purple-200/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
-                    >
-                      {chatLoading ? (
-                        <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
-                      ) : (
-                        <MessageCircle className="h-4 w-4" />
-                      )}
-                      <span>Chat</span>
-                    </button>
-                    <button
-                      onClick={() => handleShortlistApplicant(interest)}
-                      disabled={shortlistLoading || isShortlisted}
-                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors ${
-                        isShortlisted
-                          ? 'border-green-500 bg-green-500/90 text-white dark:bg-green-500/70'
-                          : 'border-purple-300 bg-white text-purple-700 hover:bg-purple-50 disabled:hover:bg-white dark:border-purple-700/40 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60'
-                      } disabled:opacity-60`}
-                    >
-                      {shortlistLoading ? (
-                        <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
-                      ) : (
-                        <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-current' : ''}`} />
-                      )}
-                      <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
-                    </button>
-                  </div>
-
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8">
                     <div className="flex flex-1 items-start gap-4">
                       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg">
@@ -1385,8 +1361,42 @@ export default function HiringHistory() {
                     </div>
                   </div>
 
+                  {/* Everything you can do about this applicant, in one place.
+                      Chat and Shortlist used to be pinned to the card's top
+                      right corner, which cleared the text only while the card
+                      was wide: on a phone they landed on top of the applicant's
+                      own name and the status beside it, covering both and
+                      taking the taps meant for them. */}
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => handleChatWithApplicant(interest)}
+                        disabled={chatLoading}
+                        className="inline-flex items-center gap-2 rounded-full border border-purple-200/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
+                      >
+                        {chatLoading ? (
+                          <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
+                        ) : (
+                          <MessageCircle className="h-4 w-4" />
+                        )}
+                        <span>Chat</span>
+                      </button>
+                      <button
+                        onClick={() => handleShortlistApplicant(interest)}
+                        disabled={shortlistLoading || isShortlisted}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors ${
+                          isShortlisted
+                            ? 'border-green-500 bg-green-500/90 text-white dark:bg-green-500/70'
+                            : 'border-purple-300 bg-white text-purple-700 hover:bg-purple-50 disabled:hover:bg-white dark:border-purple-700/40 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60'
+                        } disabled:opacity-60`}
+                      >
+                        {shortlistLoading ? (
+                          <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
+                        ) : (
+                          <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-current' : ''}`} />
+                        )}
+                        <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
+                      </button>
                       {canActOnInterest ? (
                         <>
                           <button
@@ -1404,18 +1414,23 @@ export default function HiringHistory() {
                             Decline
                           </button>
                         </>
-                      ) : (
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-300">Status: {statusLabel}</p>
-                      )}
+                      ) : null}
                     </div>
 
-                    <button
-                      onClick={() => handleViewInterest(interest)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-1.5 text-xs font-semibold text-white shadow-lg transition-colors hover:from-purple-700 hover:via-pink-700 hover:to-rose-500"
-                    >
-                      <Eye className="h-4 w-4" />
-                      View More
-                    </button>
+                    <div className="flex items-center gap-3">
+                      {!canActOnInterest && (
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-300">
+                          Status: {statusLabel}
+                        </p>
+                      )}
+                      <button
+                        onClick={() => handleViewInterest(interest)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-1.5 text-xs font-semibold text-white shadow-lg transition-colors hover:from-purple-700 hover:via-pink-700 hover:to-rose-500"
+                      >
+                        <Eye className="h-4 w-4" />
+                        View More
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

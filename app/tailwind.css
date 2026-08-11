@@ -227,3 +227,19 @@ body {
 body > * {
   font-size: 1rem;
 }
+
+@layer utilities {
+  /* A strip that scrolls sideways without a bar sitting under it.
+     Two tab strips already asked for this class; it had never been defined
+     anywhere, so it silently did nothing. Defining it is the honest fix —
+     a class name that looks deliberate and does nothing is worse than one
+     that is absent, because the next person reads it as handled. */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
