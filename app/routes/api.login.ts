@@ -27,7 +27,7 @@ const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
  * So the server owns them. It holds the only writes that are not silently
  * discarded, which makes it the only place they can be kept true.
  */
-function normalizeUser(raw: any, fallbackPhone: string) {
+function normalizeUser(raw: any, fallbackPhone: string, envelope: Record<string, any> = {}) {
   const source = raw && typeof raw === 'object' ? raw : {};
   const userId = String(
     source.id || source.user_id || source.userId || source.auth_id || source.authId || '',
@@ -40,8 +40,20 @@ function normalizeUser(raw: any, fallbackPhone: string) {
     first_name: String(source.first_name || source.firstName || ''),
     last_name: String(source.last_name || source.lastName || ''),
     profile_type: String(source.profile_type || source.profileType || ''),
-    profile_id: String(source.profile_id || source.profileId || ''),
-    user_profile_id: String(source.user_profile_id || source.userProfileId || ''),
+    profile_id: String(source.profile_id || source.profileId || envelope.profile_id || ''),
+    // The profile id sits beside `user` in the login result, not inside it.
+    //
+    // The website scopes a person's own data by this — their job listings,
+    // their hiring pages — and reads it from what sign-in returned. Reading
+    // only the nested copy meant it was empty on any browser that signed in
+    // with a password, so those pages had nothing to scope by and showed
+    // nothing of their own, while messages worked because they go by user id.
+    // A browser that had signed in during the OTP era still had it stored,
+    // which is what made it look like a caching problem.
+    user_profile_id: String(
+      source.user_profile_id || source.userProfileId
+      || envelope.user_profile_id || envelope.userProfileId || '',
+    ),
     is_verified: Boolean(source.is_verified ?? source.isVerified ?? false),
     profile_image: String(source.profile_image || source.profileImage || ''),
   };
@@ -73,7 +85,7 @@ export async function action({ request }: { request: Request }) {
 
     const token = String(payload.access_token || payload.accessToken || payload.token || '');
     const refreshToken = String(payload.refresh_token || payload.refreshToken || '');
-    const user = normalizeUser(payload.user, phone);
+    const user = normalizeUser(payload.user, phone, payload);
 
     if (!token || !user.user_id) {
       throw Object.assign(new Error('Login succeeded but returned no session'), {
