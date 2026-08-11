@@ -320,6 +320,30 @@ export default function HiringHistory() {
   // Ids arrive as strings from the shortlist service and are read off records
   // that have carried them as numbers, so both sides are keyed the same way
   // before being compared.
+  // The applicant's user id, which is not on the application.
+  //
+  // toApplicantRow builds rows out of what ListApplications returns, and that
+  // carries applicant_profile_id — a profile id, not a user id — and no nested
+  // househelp at all. Three things written against interest.househelp?.user_id
+  // were therefore reading undefined every time: ending an engagement, opening a
+  // review, and deciding whether a hire had finished. Each failed quietly or did
+  // nothing. The profiles this page already resolves are where the user id
+  // actually lives.
+  const househelpUserIdFor = useCallback(
+    (interest: Interest): string => {
+      const profileId = interest.househelp_id || interest.househelp?.id;
+      const profile = profileId ? profilesById[profileId] : undefined;
+      return String(
+        profile?.user_id ??
+          profile?.userId ??
+          (profile?.user && typeof profile.user === 'object' ? (profile.user as any).id : '') ??
+          interest.househelp?.user_id ??
+          '',
+      );
+    },
+    [profilesById],
+  );
+
   const refreshEngagements = useCallback(async () => {
     const userId = getStoredUserId();
     if (!userId) return;
@@ -860,7 +884,7 @@ export default function HiringHistory() {
       // "approved" records that the hire happened, not that it is still
       // happening — that lives on the engagement. Read from the application
       // alone, a finished job sits under Hired for good.
-      const househelpUserID = row.househelp?.user_id;
+      const househelpUserID = househelpUserIdFor(row);
       if (
         row.status === 'approved' &&
         househelpUserID &&
@@ -878,7 +902,7 @@ export default function HiringHistory() {
       }
     }
     return groups;
-  }, [applicants, endedEngagements]);
+  }, [applicants, endedEngagements, househelpUserIdFor]);
 
   // The nav badge counts what needs the household's attention: new applicants
   // plus anyone who has accepted and is waiting on their approval.
@@ -1044,7 +1068,7 @@ export default function HiringHistory() {
     const reason = terminateReason.trim();
     if (!reason) return;
 
-    const househelpUserId = interest.househelp?.user_id;
+    const househelpUserId = househelpUserIdFor(interest);
     if (!househelpUserId) {
       setError('We could not tell whose engagement this is. Please reload and try again.');
       return;
@@ -1070,7 +1094,7 @@ export default function HiringHistory() {
   // the eligibility rule is enforced. Sending them there beats a second copy of
   // the form that could disagree with it.
   const openReview = (interest: Interest) => {
-    const userId = interest.househelp?.user_id || '';
+    const userId = househelpUserIdFor(interest);
     if (!userId) {
       setError('We could not open a review for this person.');
       return;
@@ -1332,9 +1356,14 @@ export default function HiringHistory() {
               const isClosed = ['declined', 'approved'].includes(interest.status);
               // Approved means the work is on. Ending it and reviewing them are
               // the two things left to do about this person.
+              // Shortlisting is a decision about somebody you have not answered
+              // yet. Once an offer is out, accepted, or the job is theirs, the
+              // question has been settled and offering it again is offering to
+              // go backwards — which the state machine will not do anyway.
+              const canShortlist = interest.status === 'initiated';
               const isHired =
                 interest.status === 'approved' &&
-                !endedEngagements.has(String(interest.househelp?.user_id ?? ''));
+                !endedEngagements.has(househelpUserIdFor(interest));
               const chatLoading = chatLoadingInterestId === interest.id;
               const shortlistLoading = shortlistLoadingInterestId === interest.id;
               // Where the household has a next step of its own.
@@ -1499,6 +1528,7 @@ export default function HiringHistory() {
                         )}
                         <span>Chat</span>
                       </button>
+                      {(canShortlist || isShortlisted) && (
                       <button
                         onClick={() => handleShortlistApplicant(interest)}
                         disabled={shortlistLoading || isShortlisted}
@@ -1520,6 +1550,7 @@ export default function HiringHistory() {
                         )}
                         <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
                       </button>
+                      )}
                       {isHired && (
                         <>
                           <button
