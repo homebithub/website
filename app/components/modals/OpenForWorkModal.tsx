@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { openForWorkService } from "~/services/grpc/authServices";
-import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
+import { FormError } from '~/components/FormError';
 
 const JOB_TYPES = [
   { value: "live_in", label: "Live-in" },
@@ -138,8 +138,6 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {success && <SuccessAlert message={success} />}
-          {error && <ErrorAlert message={error} />}
-
           <div>
             <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Job Types</label>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -246,6 +244,8 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
               Share your preferred pay range so households can match you with the right opportunities.
             </p>
           </div>
+
+          <FormError message={error} />
 
           <button
             type="submit"

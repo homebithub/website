@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../../utils/errorMessages';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { FormError } from '~/components/FormError';
 
 const YearsOfExperience = () => {
     const [years, setYears] = useState<number | null>(null);
@@ -65,11 +66,6 @@ const YearsOfExperience = () => {
 
     return (
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6">
-            {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-xs">
-                    {error}
-                </div>
-            )}
             
             {success && (
                 <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-xs">
@@ -119,6 +115,10 @@ const YearsOfExperience = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Beside the button, not at the top of a form the person has
+                    already scrolled past. */}
+                <FormError message={error} />
 
                 <div className="pt-2">
                     <button

@@ -247,6 +247,20 @@ const extractArray = <T,>(raw: any): T[] => {
 };
 
 
+/**
+ * A listing's id as a string, wherever it came from.
+ *
+ * JobListing.id is declared string and arrives from the API as a number. That
+ * mismatch is invisible to TypeScript, because the listing is parsed out of an
+ * untyped response — and it made the saved set useless: the ids fetched from the
+ * server are strings, the ids on the listings are numbers, and
+ * Set<string>.has(number) is always false. So a job you had saved came back
+ * looking unsaved, and the only hearts that ever filled were the ones you
+ * clicked in that same session.
+ */
+const jobKey = (job: { id?: unknown } | null | undefined): string =>
+  job?.id === undefined || job?.id === null ? "" : String(job.id);
+
 const SAVED_PITCH_STORAGE_KEY = "homebit_househelp_saved_pitch";
 
 const loadSavedPitchFromStorage = (): string => {
@@ -595,7 +609,7 @@ export default function HousehelpJobsHome() {
         setShortlistedJobIds(new Set(
           items
             .filter((item) => item.profile_type === 'job')
-            .map((item) => item.profile_id)
+            .map((item) => (item.profile_id === undefined || item.profile_id === null ? '' : String(item.profile_id)))
             .filter((id): id is string => Boolean(id))
         ));
       } catch (err) {
@@ -690,7 +704,7 @@ export default function HousehelpJobsHome() {
         setAppliedJobIds((prev) => {
           const next = new Set(prev);
           items.forEach((job: JobListing) => {
-            if (job.has_applied) next.add(job.id);
+            if (job.has_applied) next.add(jobKey(job));
           });
           return next;
         });
@@ -915,13 +929,13 @@ export default function HousehelpJobsHome() {
 
   const handleShortlistJob = async (job: JobListing) => {
     setShortlistLoadingId(job.id);
-    const shortlisted = shortlistedJobIds.has(job.id);
+    const shortlisted = shortlistedJobIds.has(jobKey(job));
     try {
       if (shortlisted) {
         await shortlistService.deleteShortlist(job.id);
         setShortlistedJobIds((prev) => {
           const next = new Set(prev);
-          next.delete(job.id);
+          next.delete(jobKey(job));
           return next;
         });
         setSuccess("Job removed from saved.");
@@ -949,7 +963,7 @@ export default function HousehelpJobsHome() {
           profile_type: 'job',
         });
 
-        setShortlistedJobIds((prev) => new Set(prev).add(job.id));
+        setShortlistedJobIds((prev) => new Set(prev).add(jobKey(job)));
         setSuccess("Job saved.");
       }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
@@ -1211,8 +1225,8 @@ export default function HousehelpJobsHome() {
               <div className="space-y-4">
                 {sortedJobs.map((job) => {
                   const householdName = renderHouseholdName(job);
-                  const shortlisted = shortlistedJobIds.has(job.id);
-                  const hasApplied = appliedJobIds.has(job.id) || Boolean(job.has_applied);
+                  const shortlisted = shortlistedJobIds.has(jobKey(job));
+                  const hasApplied = appliedJobIds.has(jobKey(job)) || Boolean(job.has_applied);
                   const householdKey = householdProfileKey(job);
                     const householdProfile = householdKey ? householdProfiles[householdKey] : null;
                   const responseBadge = deriveHouseholdResponsivenessBadge(householdProfile);
@@ -1548,8 +1562,8 @@ export default function HousehelpJobsHome() {
       })()}
 
       {selectedJobDetail && (() => {
-        const shortlisted = shortlistedJobIds.has(selectedJobDetail.id);
-        const hasApplied = appliedJobIds.has(selectedJobDetail.id) || Boolean(selectedJobDetail.has_applied);
+        const shortlisted = shortlistedJobIds.has(jobKey(selectedJobDetail));
+        const hasApplied = appliedJobIds.has(jobKey(selectedJobDetail)) || Boolean(selectedJobDetail.has_applied);
         const scheduleSlots = [
           hasScheduleSlot(selectedJobDetail.work_schedule, "morning") && "Morning",
           hasScheduleSlot(selectedJobDetail.work_schedule, "afternoon") && "Afternoon",

@@ -258,10 +258,27 @@ export default function ShortlistPage() {
                   const isOpen = isJobOpen(job || {});
                   const hasApplied = Boolean(job?.has_applied);
                   const householdProfileLink = `/household/public-profile?userId=${encodeURIComponent(householdUserId || '')}&jobId=${encodeURIComponent(jobId)}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`;
+                  const openJob = () =>
+                    navigate(householdProfileLink, {
+                      state: { profileId: householdProfileId, backTo: '/shortlist', backLabel: 'Back to shortlist' },
+                    });
                   return (
+                    // The whole card opens the job, as it does on the board.
+                    // Here only "View more" did, so the obvious thing to do with
+                    // a card — tap it — did nothing at all, on the one page
+                    // whose whole purpose is going back to something.
                     <div
                       key={jobId}
-                      className="bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all"
+                      role="button"
+                      tabIndex={0}
+                      onClick={openJob}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          openJob();
+                        }
+                      }}
+                      className="cursor-pointer bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -282,7 +299,10 @@ export default function ShortlistPage() {
                           </span>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => handleChatWithHousehold(householdUserId, householdProfileId, jobId)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleChatWithHousehold(householdUserId, householdProfileId, jobId);
+                              }}
                               disabled={chatLoadingId === jobId}
                               className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition disabled:opacity-60"
                               aria-label="Chat with household"
@@ -294,18 +314,20 @@ export default function ShortlistPage() {
                               )}
                             </button>
                             <button
-                              onClick={() => handleRemove(jobId)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleRemove(jobId);
+                              }}
                               className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-pink-400 bg-pink-500 text-white transition"
                               aria-label="Remove job from shortlist"
                             >
                               <Heart className="w-4 h-4 fill-current" />
                             </button>
                             <button
-                              onClick={() =>
-                                navigate(householdProfileLink, {
-                                  state: { profileId: householdProfileId, backTo: '/shortlist', backLabel: 'Back to shortlist' },
-                                })
-                              }
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openJob();
+                              }}
                               className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition"
                               aria-label="View household profile"
                             >
@@ -359,11 +381,10 @@ export default function ShortlistPage() {
                       <div className="mt-4 flex items-center justify-between">
                         <span className="text-xs text-gray-400">Posted {formatTimeAgo(job?.created_at)}</span>
                         <button
-                          onClick={() =>
-                            navigate(householdProfileLink, {
-                              state: { profileId: householdProfileId, backTo: '/shortlist', backLabel: 'Back to shortlist' },
-                            })
-                          }
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openJob();
+                          }}
                           className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                         >
                           View more

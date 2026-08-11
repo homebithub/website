@@ -14,6 +14,7 @@ import CustomSelect from '~/components/ui/CustomSelect';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { FormError } from '~/components/FormError';
 
 type CertificationOption = {
   id: number;
@@ -311,7 +312,7 @@ export function CertificationDocuments({ profileId }: { profileId?: string }) {
         </button>
       </div>
 
-      {error && <ErrorAlert message={error} className="mb-4" />}
+      {selectedFiles.length === 0 && <FormError message={error} className="mb-4" />}
 
       <div className="mb-5 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <label className="block">
@@ -350,6 +351,8 @@ export function CertificationDocuments({ profileId }: { profileId?: string }) {
 
       {selectedFiles.length > 0 && (
         <div className="mb-5 rounded-xl border border-purple-200 bg-purple-50/60 p-4 dark:border-purple-500/25 dark:bg-purple-950/20">
+          <FormError message={error} className="mb-3" />
+
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <p className="text-xs font-semibold text-purple-800 dark:text-purple-200">

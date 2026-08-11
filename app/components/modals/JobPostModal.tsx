@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { clientProfileService, jobService } from "~/services/grpc/authServices";
 import { getStoredUserProfileId } from "~/utils/authStorage";
@@ -17,6 +16,7 @@ import CustomSelect from "~/components/ui/CustomSelect";
 import LocationPicker, { type LocationSelection } from "~/components/ui/LocationPicker";
 import { MODAL_Z_INDEX } from "~/components/ui/layers";
 import { humanizeFeatureName } from "~/utils/listingFeatures";
+import { FormError } from '~/components/FormError';
 
 type JobPostModalProps = {
   isOpen: boolean;
@@ -453,7 +453,6 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5">
-          {error && <ErrorAlert title="Job Posting" message={error} durationMs={12000} />}
           {success && <SuccessAlert title="Job Posting" message={success} durationMs={3000} />}
 
           <RequiredLegend className="mb-4" />
@@ -628,6 +627,10 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
               </section>
             )}
           </div>
+
+          {/* Beside the button. This form runs to several screens, so an error
+              at the top of it is an error nobody submitting has in view. */}
+          <FormError message={error} className="mt-6" />
 
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <button

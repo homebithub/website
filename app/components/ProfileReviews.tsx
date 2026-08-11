@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Star, ThumbsUp, MessageSquare, ChevronLeft, ChevronRight, LoaderCircle, X } from 'lucide-react';
 import { reviewService } from '~/services/grpc/review.service';
 import { getStoredUserId } from '~/utils/authStorage';
+import { employmentService } from '~/services/grpc/authServices';
+import { FormError } from '~/components/FormError';
 
 interface Review {
   id: string;
@@ -101,6 +103,68 @@ export default function ProfileReviews({
       setIsLoading(false);
     }
   };
+
+  /**
+   * Whether this person is someone the viewer has actually worked with.
+   *
+   * The server refuses a review from anybody without a shared engagement, which
+   * is right — but it only says so after the form has been filled in and sent,
+   * and the refusal then appeared on the page behind the modal. Asking the same
+   * question up front lets the button say what it knows.
+   *
+   * Advisory only. The server remains the authority: this decides whether to
+   * offer the button, never whether the review is allowed.
+   */
+  const [canReview, setCanReview] = useState<'checking' | 'yes' | 'no'>('checking');
+
+  useEffect(() => {
+    if (isOwnProfile || !profileId) return;
+    const viewerId = getStoredUserId();
+    if (!viewerId) {
+      setCanReview('no');
+      return;
+    }
+    let cancelled = false;
+
+    (async () => {
+      try {
+        // Whichever side the viewer is, their own engagements are the ones they
+        // can read. The person being viewed is the other party in each.
+        const [asHousehold, asHousehelp] = await Promise.all([
+          employmentService.listByHousehold(viewerId, 100, 0).catch(() => null),
+          employmentService.listByHousehelp(viewerId, 100, 0).catch(() => null),
+        ]);
+
+        const rows = [asHousehold, asHousehelp].flatMap((raw: any) => {
+          const data = raw?.data?.data ?? raw?.data ?? raw ?? [];
+          return Array.isArray(data) ? data : [];
+        });
+
+        // Same statuses the server counts: work that started, however it ended.
+        // A hire still being negotiated is not something to review yet.
+        const worked = rows.some((row: any) => {
+          const status = String(row?.status ?? '').toLowerCase();
+          if (!['active', 'completed', 'terminated'].includes(status)) return false;
+          return [
+            row?.househelp_user_id,
+            row?.household_owner_user_id,
+            row?.household_user_id,
+          ].some((id) => id && String(id) === String(profileId));
+        });
+
+        if (!cancelled) setCanReview(worked ? 'yes' : 'no');
+      } catch {
+        // Could not tell. Offer the button rather than withhold it — a refusal
+        // the viewer can read beats a button that is missing for no stated
+        // reason, and the server will still enforce the rule.
+        if (!cancelled) setCanReview('yes');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profileId, isOwnProfile]);
 
   const handleMarkHelpful = async (review: Review) => {
     if (!getStoredUserId()) {
@@ -212,11 +276,11 @@ export default function ProfileReviews({
 
   return (
     <div className="space-y-6">
-      {actionError && (
-        <div className="rounded-xl border border-red-400/40 bg-red-950/20 px-4 py-3 text-xs text-red-700 dark:text-red-200">
-          {actionError}
-        </div>
-      )}
+      {/* Only what happened on the page itself. While the review form is open
+          its own failures belong inside it, next to the button that caused
+          them — not out here, behind the modal, where the person cannot see
+          them and the form appears to have done nothing. */}
+      {!showReviewForm && <FormError message={actionError} />}
       {actionSuccess && (
         <div className="rounded-xl border border-emerald-400/40 bg-emerald-950/20 px-4 py-3 text-xs text-emerald-700 dark:text-emerald-200">
           {actionSuccess}
@@ -224,18 +288,29 @@ export default function ProfileReviews({
       )}
 
       {!isOwnProfile && (
-        <div className="flex justify-end">
+        <div className="flex flex-col items-end gap-2">
           <button
             type="button"
+            disabled={canReview !== 'yes'}
+            title={
+              canReview === 'no'
+                ? 'You can review someone once you have worked with them through HomeBit.'
+                : undefined
+            }
             onClick={() => {
               setActionError('');
               setShowReviewForm(true);
             }}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow transition hover:from-purple-700 hover:to-pink-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:from-purple-600 disabled:hover:to-pink-600"
           >
             <Star className="h-4 w-4" />
-            Leave a review
+            {canReview === 'checking' ? 'Checking…' : 'Leave a review'}
           </button>
+          {canReview === 'no' && (
+            <p className="text-right text-[11px] text-gray-500 dark:text-gray-400">
+              You can leave a review once you have worked together through HomeBit.
+            </p>
+          )}
         </div>
       )}
 
@@ -322,6 +397,8 @@ export default function ProfileReviews({
                 {reviewForm.content.length}/1000
               </span>
             </label>
+
+            <FormError message={actionError} className="mt-5" />
 
             <div className="mt-5 flex justify-end gap-3">
               <button

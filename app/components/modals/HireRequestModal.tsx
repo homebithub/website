@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { hireRequestService } from '~/services/grpc/authServices';
 import CustomSelect from '~/components/ui/CustomSelect';
-import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { FormError } from '~/components/FormError';
 
 interface AvailabilitySchedule {
   monday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
@@ -250,7 +250,6 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
           )}
 
           {/* Error Message */}
-          {error && <div className="mx-6 mt-4"><ErrorAlert message={error} /></div>}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -383,6 +382,8 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                 className="w-full text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
               />
             </div>
+
+            <FormError message={error} />
 
             {/* Actions */}
             <div className="flex gap-3 pt-4">

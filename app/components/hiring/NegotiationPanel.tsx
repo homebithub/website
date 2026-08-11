@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { hireNegotiationService } from '~/services/grpc/authServices';
 import { Send, MessageCircle } from 'lucide-react';
-import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { FormError } from '~/components/FormError';
 
 interface Negotiation {
   id: string;
@@ -129,8 +129,6 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
           </div>
         )}
 
-        {error && <ErrorAlert message={error} className="mb-4" />}
-
         {!loading && negotiations.length === 0 && (
           <div className="text-center py-8">
             <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
@@ -183,6 +181,8 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
 
       {/* Input Area */}
       <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+        <FormError message={error} className="mb-3" />
+
         <form onSubmit={handleSendMessage} className="flex gap-3">
           <textarea
             value={message}
