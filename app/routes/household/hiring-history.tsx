@@ -1491,8 +1491,18 @@ export default function HiringHistory() {
                             </div>
                           )}
                           <div>
-                            <span className="text-gray-500 dark:text-purple-300">Salary Expectation</span>
-                            <p className="font-medium text-gray-900 dark:text-white">{formatSalary(interest.salary_expectation, interest.salary_frequency)}</p>
+                            {/* What the job pays, off the advert.
+                                This read salary_expectation, which described an
+                                interest's asking rate, is always zero on an
+                                application, and so always said "Not specified"
+                                — beside a listing that states a figure. The
+                                same fault the househelp's side had. */}
+                            <span className="text-gray-500 dark:text-purple-300">Salary</span>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {listingHighlights(
+                                jobs.find((job) => String(job.id) === String((interest as any).listing_id ?? '')),
+                              ).salary || 'Not specified'}
+                            </p>
                           </div>
                           <div>
                             <span className="text-gray-500 dark:text-purple-300">Available From</span>

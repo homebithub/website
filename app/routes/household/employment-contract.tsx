@@ -524,7 +524,7 @@ export default function EmploymentContractPage() {
           </button>
           <div className="flex-1">
             <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1 dark:text-purple-300">
-              Household • Contract
+              {isHousehelp ? 'Househelp' : 'Household'} • Contract
             </p>
             <h1 className="text-lg font-extrabold text-gray-900 dark:text-white">
               {contractId ? 'Employment Contract' : 'Create Employment Contract'}
@@ -565,13 +565,23 @@ export default function EmploymentContractPage() {
             {contract.status === 'signed_by_both' && <CheckCircle className="w-5 h-5" />}
             {contract.status === 'pending_househelp' && <AlertCircle className="w-5 h-5" />}
             {contract.status === 'draft' && <FileText className="w-5 h-5" />}
+            {/* Said from the side of whoever is reading it.
+                Every line here was written for the household, so a househelp
+                who had just signed was told the page was "awaiting househelp
+                signature" — waiting, apparently, for themselves. Both sides
+                open this same page. */}
             <span className="font-medium">
-              {contract.status === 'draft' && !contract.household_signed_at && 'Draft — Sign and forward to househelp'}
-              {contract.status === 'draft' && contract.household_signed_at && 'Signed by you — Forward to househelp for their signature'}
-              {contract.status === 'pending_househelp' && 'Awaiting househelp signature'}
-              {contract.status === 'signed_by_both' && 'Fully signed by both parties'}
-              {contract.status === 'active' && 'Active contract'}
-              {contract.status === 'terminated' && 'Terminated'}
+              {contract.status === 'signed_by_both' || (contract.household_signed_at && contract.househelp_signed_at)
+                ? 'Signed by both of you'
+                : contract.household_signed_at && !contract.househelp_signed_at
+                  ? (isHousehelp ? 'Waiting for your signature' : 'Waiting for the househelp to sign')
+                  : contract.househelp_signed_at && !contract.household_signed_at
+                    ? (isHousehelp ? 'Signed — waiting for the household' : 'Waiting for your signature')
+                    : contract.status === 'terminated'
+                      ? 'Terminated'
+                      : contract.status === 'active'
+                        ? 'Active contract'
+                        : (isHousehelp ? 'Not signed yet' : 'Draft — sign and send it to them')}
             </span>
           </div>
         )}
