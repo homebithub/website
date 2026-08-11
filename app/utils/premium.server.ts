@@ -23,6 +23,48 @@ import {
 
 const MAX_LOOKUPS = 100;
 
+/**
+ * Where payments is, which is not where auth is.
+ *
+ * This is the bug that made the badge quietly never appear. Every other
+ * server-side call here goes to AUTH_GRPC_BASE_URL, which in the cluster is
+ * auth's own service — http://preprod-auth-srv-headless:5004 — not the gateway.
+ * Sending a payments method there reaches auth, which does not implement it,
+ * answers UNIMPLEMENTED, and gets swallowed by the catch below. The listings
+ * came back fine and the badge was simply absent, with nothing in the gateway
+ * log because the request never went near the gateway.
+ *
+ * Resolution order:
+ *
+ *   PAYMENTS_GRPC_BASE_URL, when someone sets it. Always right, never guessed.
+ *
+ *   Otherwise derived from the auth address, because the services are named and
+ *   numbered alike (…-auth-srv-headless:5004 / …-payments-srv-headless:5002) and
+ *   deriving keeps the environment prefix without a second variable to forget in
+ *   one environment. Only used when the substitution actually changes the host,
+ *   so a differently-named auth address falls through rather than producing an
+ *   address that resolves to nothing.
+ *
+ *   Otherwise the public gateway, which works but needs the viewer's token.
+ *
+ * Reached directly, payments sees no authorization header and treats the caller
+ * as internal, which is what lets it answer about the people on the page rather
+ * than about the viewer. Through the gateway a token is required and a signed-out
+ * visitor gets no badges.
+ */
+function paymentsBaseUrl(authBaseUrl: string): string {
+  const configured = process.env.PAYMENTS_GRPC_BASE_URL;
+  if (configured) return configured.replace(/\/+$/, "");
+
+  const derived = authBaseUrl
+    .replace("auth-srv-headless", "payments-srv-headless")
+    .replace("auth-srv", "payments-srv")
+    .replace(":5004", ":5002");
+  if (derived !== authBaseUrl) return derived.replace(/\/+$/, "");
+
+  return (process.env.GATEWAY_API_BASE_URL || "https://preprod-api.homebit.co.ke").replace(/\/+$/, "");
+}
+
 export type PremiumStatus = { premium: boolean; isTrial: boolean };
 
 /** A repeated string field is the same tag written once per value. */
@@ -138,7 +180,7 @@ export async function attachPremiumStatus(
   let statuses: Map<string, PremiumStatus>;
   try {
     const payload = await callUnaryGrpcMessage(
-      baseUrl,
+      paymentsBaseUrl(baseUrl),
       "/payments.PaymentsService/GetSubscriptionStatuses",
       encodeRepeatedString(1, ids),
       metadata,
