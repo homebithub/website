@@ -235,7 +235,11 @@ export default function EmploymentContractPage() {
       ).filter((clause) => clause.title || clause.body);
       setClauses(normalised);
     } catch (err) {
+      // Said out loud. This only logged to the console, so when the call failed
+      // the panel rendered its heading above an empty list and looked like a
+      // contract that simply had no clauses — which is how it went unnoticed.
       console.error('Failed to fetch default clauses:', err);
+      setError('We could not load the standard clauses. You can still add your own below.');
     }
   };
 

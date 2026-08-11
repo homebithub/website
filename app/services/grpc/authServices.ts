@@ -511,7 +511,12 @@ export const profileService = {
   async getPopularHousehelps(): Promise<any> {
     // google.protobuf.Empty - just pass an empty request object
     let req: any;
-    try { const { Empty } = require('google-protobuf/google/protobuf/empty_pb'); req = new Empty(); } catch { req = {}; }
+    // The module is imported at the top of this file; require() does not exist
+    // in the browser bundle, so this threw, the catch handed the client a bare
+    // {} where a proto message was expected, and the call failed. Callers that
+    // swallow errors — the clause list does — then showed an empty panel and no
+    // sign that anything had gone wrong.
+    req = new empty_pb.Empty();
     const res = await grpcCall((cb) => profileClient.getPopularHousehelps(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
@@ -1783,7 +1788,12 @@ export const employmentContractService = {
   },
   async getDefaultClauses(): Promise<any> {
     let req: any;
-    try { const { Empty } = require('google-protobuf/google/protobuf/empty_pb'); req = new Empty(); } catch { req = {}; }
+    // The module is imported at the top of this file; require() does not exist
+    // in the browser bundle, so this threw, the catch handed the client a bare
+    // {} where a proto message was expected, and the call failed. Callers that
+    // swallow errors — the clause list does — then showed an empty panel and no
+    // sign that anything had gone wrong.
+    req = new empty_pb.Empty();
     const res = await grpcCall((cb) => employmentContractClient.getDefaultClauses(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
