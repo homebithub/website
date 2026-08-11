@@ -6,6 +6,8 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { jobService, shortlistService } from "~/services/grpc/authServices";
+import { formatListingPlace } from "~/utils/place";
+import { listingHighlights } from "~/utils/listingFeatures";
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { formatTimeAgo } from "~/utils/timeAgo";
@@ -18,25 +20,23 @@ type JobLocation = {
   place?: string;
 };
 
-const formatJobLocation = (location?: string | JobLocation): string => {
-  if (!location) return "Location not specified";
-  if (typeof location === "string") return location;
-  return location.name || location.place || "Location not specified";
-};
+// Location and salary come from the shared helpers, the same ones the job board
+// uses.
+//
+// This page had its own of each, and both read shapes the API does not send: a
+// nested location.name, and a salary_range object. A listing carries its place
+// as ward/subcounty at the top level, and its salary as a SalaryRange feature
+// group — so every saved card said "Location not specified" and "Salary: Not
+// specified" for jobs that showed both on the board a click earlier.
+//
+// A second private copy of a formatter is how that happens. There is now one of
+// each, and the board is the thing keeping them honest.
 
 const formatDate = (value?: string) => {
   if (!value) return "Flexible";
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "Flexible";
   return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-};
-
-const formatSalaryRange = (range?: { min?: number; max?: number }) => {
-  if (!range) return "Not specified";
-  const min = range.min ? `KES ${range.min.toLocaleString()}` : "";
-  const max = range.max ? `KES ${range.max.toLocaleString()}` : "";
-  if (min && max) return `${min} - ${max}`;
-  return min || max || "Not specified";
 };
 
 const isJobOpen = (job: { status?: string }) => {
@@ -265,7 +265,7 @@ export default function ShortlistPage() {
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                             {job ? job.title || "Household Job" : "Loading..."}
                           </h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatJobLocation(job?.location)}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatListingPlace(job)}</p>
                         </div>
                         <div className="flex items-start gap-2">
                           <span
@@ -344,7 +344,7 @@ export default function ShortlistPage() {
                       </div>
 
                       <div className="mt-4 text-xs text-gray-600 dark:text-gray-300">
-                        Salary: {formatSalaryRange(job?.salary_range)}
+                        Salary: {listingHighlights(job).salary || "Not specified"}
                       </div>
 
                       {hasApplied && (
