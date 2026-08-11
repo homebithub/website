@@ -1372,6 +1372,27 @@ async function enrichListingsWithFeatures(listings: Record<string, any>[]) {
 }
 
 export const listingApplicationService = {
+  /**
+   * Open an application on a listing.
+   *
+   * Called by the househelp applying, and by a household inviting somebody to
+   * its own job — the service allows either and refuses a third party. A second
+   * call for the same pair is refused as a duplicate, which callers use as the
+   * signal that an application already exists.
+   */
+  async applyToListing(listingId: string, serviceProviderId: string, message = ''): Promise<any> {
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'apply',
+        id: String(listingId),
+        service_provider_id: serviceProviderId,
+        message,
+      }),
+    });
+    return payload?.data ?? payload;
+  },
+
   async shortlistListing(listingId: string, serviceProviderId: string, message = ''): Promise<any> {
     const payload = await jobListingsApi('', {
       method: 'POST',

@@ -10,6 +10,7 @@ import {
 import { resolveHousehelpProfile, resolveHousehelpProfileId } from '~/utils/househelpProfiles';
 import { FormPageSkeleton } from "~/components/ShimmerLoader";
 import CustomSelect from '~/components/ui/CustomSelect';
+import { contractPdfBytes, downloadContractPdf } from '~/utils/contractDocument';
 
 interface ContractClause {
   id: string;
@@ -89,6 +90,7 @@ export default function EmploymentContractPage() {
   const [employerName, setEmployerName] = useState('');
   const [employeeName, setEmployeeName] = useState('');
   const [showSigningModal, setShowSigningModal] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [signingAs, setSigningAs] = useState<'household' | 'househelp'>('household');
 
   // Load default clauses on mount and pre-fill from URL params
@@ -396,25 +398,13 @@ export default function EmploymentContractPage() {
   };
 
   const handleSendContractEmail = async () => {
-    if (!contract || !printRef.current || !emailAddress.trim()) return;
+    if (!contract || !emailAddress.trim()) return;
     setEmailSending(true);
     setError(null);
     try {
-      // Generate PDF from contract HTML
-      const html2pdf = (await import('html2pdf.js')).default;
-      const pdfBlob: Blob = await html2pdf()
-        .set({
-          margin: [10, 10, 10, 10],
-          filename: `employment-contract-${contract.id}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        })
-        .from(printRef.current)
-        .outputPdf('blob');
-
-      const arrayBuffer = await pdfBlob.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
+      // Rendered by the server from the contract's own rows, so the attachment
+      // is the agreement rather than a picture of this page.
+      const uint8Array = await contractPdfBytes(contract.id);
 
       const userObj = (user as any)?.user || user;
       const firstName = userObj?.first_name || 'there';
@@ -447,31 +437,17 @@ export default function EmploymentContractPage() {
     }
   };
 
-  const handleDownload = () => {
-    if (!printRef.current) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Employment Contract</title>
-          <style>
-            body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; background: white; color: #1a1a1a; }
-            h1 { text-align: center; font-size: 24px; margin-bottom: 8px; }
-            h2 { font-size: 18px; margin-top: 24px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-            .clause { margin-bottom: 16px; }
-            .clause-title { font-weight: bold; margin-bottom: 4px; }
-            .signature-block { margin-top: 40px; display: flex; justify-content: space-between; }
-            .signature-line { border-top: 1px solid #333; padding-top: 8px; width: 45%; text-align: center; }
-            .meta { text-align: center; color: #666; font-size: 14px; margin-bottom: 24px; }
-            @media print { body { padding: 20px; } }
-          </style>
-        </head>
-        <body>${printRef.current.innerHTML}</body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
+  const handleDownload = async () => {
+    if (!contract) return;
+    setDownloading(true);
+    setError(null);
+    try {
+      await downloadContractPdf(contract.id);
+    } catch (err: any) {
+      setError(err?.message || 'We could not produce that document. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const toggleClause = (id: string) => {
@@ -500,7 +476,17 @@ export default function EmploymentContractPage() {
   const isHousehold = profileType === 'household';
   const isHousehelp = profileType === 'househelp';
   const isSignedByBoth = contract?.household_signed_at && contract?.househelp_signed_at;
-  const canDownload = !!isSignedByBoth;
+  // Anyone party to it can take a copy, signed or not.
+  //
+  // This used to wait for both signatures, because the old download was a
+  // screenshot of the page with nothing on it to say whether it had been agreed,
+  // so an unsigned copy could be mistaken for a real one. The rendered document
+  // states its status across the top — "AWAITING THE HOUSEHELP'S SIGNATURE" — and
+  // leaves an unsigned party's line blank, so it cannot be mistaken for anything.
+  //
+  // Reading an offer away from the site is exactly when somebody wants it:
+  // to think it over, or to show it to a family member before signing.
+  const canDownload = !!contract;
   const handleBackNavigation = () => navigate(backTo, { replace: true });
 
   if (loading) {
@@ -903,9 +889,9 @@ export default function EmploymentContractPage() {
             <div className="flex flex-wrap gap-3 justify-end">
               {/* Download - only when both signed */}
               {canDownload && (
-                <button onClick={handleDownload}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg shadow-purple-500/30 flex items-center gap-2">
-                  <Download className="w-4 h-4" /> Download Contract
+                <button onClick={handleDownload} disabled={downloading}
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg shadow-purple-500/30 flex items-center gap-2 disabled:opacity-60">
+                  <Download className="w-4 h-4" /> {downloading ? 'Preparing PDF…' : 'Download PDF'}
                 </button>
               )}
 
@@ -918,17 +904,10 @@ export default function EmploymentContractPage() {
                 </button>
               )}
 
-              {/* Not signed by both - show disabled download with tooltip */}
-              {!canDownload && contract && (
-                <div className="relative group">
-                  <button disabled
-                    className="px-6 py-2.5 bg-purple-200/50 dark:bg-purple-900/30 text-purple-400 dark:text-purple-500 rounded-xl cursor-not-allowed flex items-center gap-2 border border-purple-200 dark:border-purple-700/40">
-                    <Download className="w-4 h-4" /> Download Contract
-                  </button>
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded-xl px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-lg">
-                    Both parties must sign before downloading
-                  </div>
-                </div>
+              {contract && !isSignedByBoth && (
+                <p className="w-full text-right text-xs text-gray-500 dark:text-purple-300/70">
+                  The PDF will show this contract as still awaiting a signature.
+                </p>
               )}
             </div>
           </div>

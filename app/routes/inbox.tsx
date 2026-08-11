@@ -7,7 +7,7 @@ import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { profileService as grpcProfileService, hireRequestService } from '~/services/grpc/authServices';
 import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
-import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
+import ConversationHire from '~/components/hiring/ConversationHire';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
 import { useWebSocketContext } from '~/contexts/WebSocketContext';
 import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved, WSEventTyping } from '~/types/websocket';
@@ -2617,23 +2617,27 @@ export default function InboxPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <div className="relative z-10 w-full px-4 sm:px-0 flex justify-center">
-            <ConversationHireWizard
-              househelpId={
+            <ConversationHire
+              househelpProfileId={
                 currentUserProfileType?.toLowerCase() === 'household'
                   ? (househelpProfileIdForHire || selectedConversation!.househelp_profile_id || selectedConversation!.househelp_id)
                   : (selectedConversation!.household_profile_id || selectedConversation!.household_id)
               }
               househelpName={selectedConversation!.participant_name || 'User'}
+              /* The job this thread belongs to. Present, the household is
+                 confirming rather than choosing; absent, they picked this person
+                 first and are asked which of their jobs it is for. */
+              listingId={(selectedConversation as any)?.listing_id || undefined}
               onClose={() => {
                 setShowHireWizard(false);
                 setHousehelpProfileIdForHire(null);
               }}
-              onSuccess={(newHireRequestId) => {
+              onHired={(contractId) => {
                 setShowHireWizard(false);
                 setHousehelpProfileIdForHire(null);
                 setHireRequestStatus('pending');
-                setHireRequestId(newHireRequestId);
-                const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
+                setHireRequestId(contractId);
+                const body = `I've sent you an offer for this job. Have a read, and sign when you're happy — nothing is agreed until you do.`;
                 notificationsService.sendMessage(activeConversationId!, body)
                   .then((data) => {
                     const msg = normalizeMessage(data || {});
@@ -2646,6 +2650,11 @@ export default function InboxPage() {
                     }
                   })
                   .catch(console.error);
+                // Straight to the contract, which is where the next thing
+                // happens: the household signs, then forwards it.
+                if (contractId) {
+                  navigate(`/household/employment-contract?id=${encodeURIComponent(contractId)}`);
+                }
               }}
             />
           </div>
