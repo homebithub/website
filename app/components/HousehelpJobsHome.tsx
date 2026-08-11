@@ -32,7 +32,7 @@ import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionRemind
 import CustomSelect from "~/components/ui/CustomSelect";
 import LocationPicker, { type LocationSelection } from "~/components/ui/LocationPicker";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
-import { Heart, ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, SlidersHorizontal, X } from "lucide-react";
+import { Heart, ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, SlidersHorizontal, X } from "lucide-react";
 import { useAuth } from "~/contexts/useAuth";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
@@ -328,6 +328,20 @@ const deriveHouseholdResponsivenessBadge = (profile?: HouseholdProfileLike | nul
 export default function HousehelpJobsHome() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // One household's jobs, when arriving from "See their jobs" on their profile.
+  //
+  // Read from the URL rather than held in state so the filter survives a
+  // reload and can be linked to, and so clearing it is a navigation rather
+  // than a hidden mode the board remembers.
+  const householdFilterId = useMemo(
+    () => new URLSearchParams(location.search).get("household") || "",
+    [location.search],
+  );
+  const householdFilterName = useMemo(
+    () => new URLSearchParams(location.search).get("householdName") || "",
+    [location.search],
+  );
   const { user: authUser } = useAuth();
   const memoizedStoredUser = useMemo(() => getStoredUser(), []);
   const resolvedUser = (authUser as any)?.user ?? memoizedStoredUser ?? null;
@@ -409,7 +423,13 @@ export default function HousehelpJobsHome() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const limit = 12;
-  const backToPath = "/househelp/jobs";
+  // The board's own address.
+  //
+  // This said "/househelp/jobs", which is routed nowhere: flat-routes renders
+  // this component from _index, so the board is "/". Every Back to jobs link
+  // built from it therefore led to a dead route — including the one on the
+  // household profile a househelp reaches from these very cards.
+  const backToPath = "/";
   const profileCompletionReminder = useProfileCompletionReminder(currentUserId || "", "househelp");
   const identityVerification = useIdentityVerification(currentUserId);
 
@@ -616,6 +636,13 @@ export default function HousehelpJobsHome() {
         // showed "Available for work", posted by another househelp, with an
         // Apply button under it.
         payload.owner = "household";
+        // One household's jobs, when arriving from their profile.
+        //
+        // The board took no parameters at all, so "See their jobs" could only
+        // ever drop somebody on the unfiltered board and hope. user_profile_id
+        // is the poster's profile, which is what the listing carries and what
+        // the service already filters on.
+        if (householdFilterId) payload.user_profile_id = householdFilterId;
         if (filters.jobType) payload.job_type_id = Number(filters.jobType);
         if (filters.wardId) payload.ward_id = Number(filters.wardId);
         else if (filters.subcountyId) payload.subcounty_id = Number(filters.subcountyId);
@@ -678,7 +705,7 @@ export default function HousehelpJobsHome() {
     return () => {
       cancelled = true;
     };
-  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored]);
+  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored, householdFilterId]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -935,9 +962,25 @@ export default function HousehelpJobsHome() {
           <section className="sticky top-[65px] z-30 mb-5 h-16 border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[73px] sm:h-[72px]">
             <div className="flex h-full items-center gap-2 sm:gap-3 px-8 sm:px-16 lg:px-32">
               <div className="hidden min-w-0 flex-1 sm:block">
-                <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">Latest job openings</h1>
+                <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                  {householdFilterId
+                    ? `Jobs from ${householdFilterName || "this household"}`
+                    : "Latest job openings"}
+                </h1>
                 <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                   {sortedJobs.length} {sortedJobs.length === 1 ? "role" : "roles"} available
+                  {/* A filter nobody can see is a board that looks broken. Made
+                      obvious, and clearable in one click, because arriving here
+                      from a profile is the only way to turn it on. */}
+                  {householdFilterId && (
+                    <button
+                      type="button"
+                      onClick={() => navigate("/")}
+                      className="ml-2 rounded-full border border-purple-200 px-2 py-0.5 text-[11px] font-semibold text-purple-700 hover:bg-purple-50 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                    >
+                      Show all jobs
+                    </button>
+                  )}
                 </p>
               </div>
 
@@ -1219,6 +1262,20 @@ export default function HousehelpJobsHome() {
                               ) : (
                                 <MessageCircle className="w-4 h-4" />
                               )}
+                            </button>
+                            {/* Restored. It was removed as dead, and it was not
+                                — it opens the household's profile, and that was
+                                broken by the household_id bug rather than by
+                                this button. */}
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleViewProfile(job);
+                              }}
+                              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition"
+                              aria-label="View household profile"
+                            >
+                              <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={(event) => {

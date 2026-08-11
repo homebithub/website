@@ -417,7 +417,21 @@ export default function HouseholdPublicProfile() {
                                 setShowSubscriptionModal(true);
                                 return;
                               }
-                              navigate('/househelp/jobs');
+                              // The board is "/", not "/househelp/jobs" —
+                              // that path is routed nowhere, which is what made
+                              // this button do nothing. Carrying the household's
+                              // profile id so the board can honour what this
+                              // button actually says: their jobs, not all jobs.
+                              const householdProfileId =
+                                (profile as any)?.user_profile_id
+                                || (profile as any)?.id
+                                || (profile as any)?.profile_id
+                                || '';
+                              navigate(
+                                householdProfileId
+                                  ? `/?household=${encodeURIComponent(householdProfileId)}&householdName=${encodeURIComponent(householdDisplayName || '')}`
+                                  : '/',
+                              );
                             }}
                             className="px-4 py-1.5 text-xs rounded-xl font-semibold shadow-lg transition-all flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:scale-105"
                           >

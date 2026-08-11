@@ -904,7 +904,7 @@ export default function HousehelpHiringHistory() {
                 <HandHeart className="w-16 h-16 text-purple-400 mx-auto mb-4" />
                 <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">You haven't applied to anything yet</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">Jobs you apply to will appear here, with where each one has got to.</p>
-                <button onClick={() => navigate('/househelp/jobs')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
+                <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
                   Browse jobs
                 </button>
               </div>
