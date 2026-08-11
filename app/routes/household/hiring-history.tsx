@@ -331,6 +331,8 @@ export default function HiringHistory() {
   const [chatLoadingInterestId, setChatLoadingInterestId] = useState<string | null>(null);
   const [shortlistLoadingInterestId, setShortlistLoadingInterestId] = useState<string | null>(null);
   const [shortlistedProfileIds, setShortlistedProfileIds] = useState<Set<string>>(() => new Set());
+  const [rejecting, setRejecting] = useState<Interest | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
   // Map all known househelp identifiers to the matching employment contract.
   const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, any>>({});
   const limit = 20;
@@ -931,24 +933,6 @@ export default function HiringHistory() {
     }
   };
 
-  const handleDeclineInterest = async (interest: Interest) => {
-    const actorProfileId = getStoredUserProfileId();
-    if (!actorProfileId) {
-      setError('We could not identify your household profile. Please sign in again.');
-      return;
-    }
-    try {
-      // Unshortlisting is the only removal the household controls; a live
-      // application is declined by the applicant, not by the household.
-      await listingApplicationService.unshortlistApplication(interest.id, actorProfileId);
-      await fetchApplicants();
-      window.dispatchEvent(new Event('hiring-updated'));
-    } catch (err: any) {
-      console.error('Failed to remove application:', err);
-      setError(err?.message || 'We could not update this application. Please try again.');
-    }
-  };
-
   const handleChatWithApplicant = async (interest: Interest) => {
     const profileId = interest.househelp_id || interest.househelp?.id;
     const profile = profileId ? profilesById[profileId] : undefined;
@@ -981,49 +965,73 @@ export default function HiringHistory() {
     }
   };
 
-  const handleShortlistApplicant = async (interest: Interest) => {
-    const profileId = interest.househelp_id || interest.househelp?.id;
-    if (!profileId) {
-      setShortlistError('Missing househelp profile information.');
+  // Shortlisting and rejecting are the two answers a household can give an
+  // application, and both go through the same call.
+  //
+  // Shortlist used to write a personal bookmark into the saved list — the same
+  // store the househelp's saved jobs live in. It reported "Added to shortlist"
+  // truthfully and filed the applicant under the navbar's Saved page, which is
+  // not where the household went looking, while the application itself stayed
+  // at "initiated" and the Shortlisted tab beside it stayed empty.
+  const answerApplication = async (
+    interest: Interest,
+    response: 'shortlisted' | 'declined',
+    note = '',
+  ) => {
+    const actorProfileId = getStoredUserProfileId();
+    if (!actorProfileId) {
+      setShortlistError('We could not tell which household you are. Please sign in again.');
       return;
     }
-
-    const alreadyShortlisted = isShortlistedProfile(profileId);
 
     setShortlistLoadingInterestId(interest.id);
     setShortlistError(null);
     setShortlistSuccess(null);
     try {
-      // A toggle, because shortlisting now moves somebody into a tab of their
-      // own. Pressing it a second time used to report "Already in your
-      // shortlist" and leave them there with no way back.
-      if (alreadyShortlisted) {
-        await shortlistService.deleteShortlist(String(profileId));
-        setShortlistedProfileIds((prev) => {
-          const next = new Set(prev);
-          next.delete(String(profileId));
-          return next;
-        });
-        window.dispatchEvent(new CustomEvent('shortlist-updated'));
-        await refreshShortlistedProfiles();
-        setShortlistSuccess('Removed from your shortlist.');
-        return;
-      }
-
-      await shortlistService.createShortlist('', 'household', {
-        profile_id: profileId,
-        profile_type: 'househelp',
-      });
-      setShortlistedProfileIds((prev) => new Set(prev).add(String(profileId)));
-      window.dispatchEvent(new CustomEvent('shortlist-updated'));
-      await refreshShortlistedProfiles();
-      setShortlistSuccess('Added to your shortlist. They are in the Shortlisted tab.');
+      await listingApplicationService.respondToApplication(
+        interest.id,
+        actorProfileId,
+        response,
+        note,
+      );
+      // Re-read rather than patched in place. Which tab an applicant belongs to
+      // is decided by their status, and guessing the new one here is how a list
+      // and the tabs above it drift apart.
+      await fetchApplicants();
+      setShortlistSuccess(
+        response === 'shortlisted'
+          ? 'Shortlisted. They are in the Shortlisted tab, and we have told them.'
+          : 'Application closed. We have told them.',
+      );
     } catch (err: any) {
-      console.error('Failed to shortlist applicant:', err);
-      setShortlistError(err?.message || 'Failed to add to shortlist.');
+      console.error('Failed to answer application:', err);
+      setShortlistError(
+        err?.message ||
+          (response === 'shortlisted'
+            ? 'We could not shortlist this applicant. Please try again.'
+            : 'We could not close this application. Please try again.'),
+      );
     } finally {
       setShortlistLoadingInterestId(null);
     }
+  };
+
+  const handleShortlistApplicant = (interest: Interest) =>
+    answerApplication(interest, 'shortlisted');
+
+  // Rejecting asks why. The reason is optional, because a household that does
+  // not want to give one should not be stuck — but it is asked for, because
+  // "we went with someone else" is worth far more to somebody looking for work
+  // than silence, and it is the only thing they will get.
+  const handleRejectApplicant = (interest: Interest) => setRejecting(interest);
+
+  const confirmRejection = async () => {
+    if (!rejecting) return;
+    const interest = rejecting;
+    const note = rejectReason.trim();
+    setRejecting(null);
+    setRejectReason('');
+    await answerApplication(interest, 'declined', note);
   };
 
   return (
@@ -1272,10 +1280,22 @@ export default function HiringHistory() {
                   ? formatDate(profile.availability_date)
                   : 'Flexible';
               const isNew = !interest.viewed_at;
-              const isShortlisted = isShortlistedProfile(profileId);
+              // The application's own status, not a bookmark somewhere else.
+              const isShortlisted = interest.status === 'shortlisted';
+              const isClosed = ['declined', 'approved'].includes(interest.status);
               const chatLoading = chatLoadingInterestId === interest.id;
               const shortlistLoading = shortlistLoadingInterestId === interest.id;
-              const canActOnInterest = interest.status === 'pending' || interest.status === 'viewed';
+              // Where the household has a next step of its own.
+              //
+              // This read `status === 'pending' || 'viewed'` — two statuses an
+              // application never holds. Applications are shortlisted,
+              // initiated, accepted, declined or approved, so the condition was
+              // false for every row ever rendered and the buttons under it had
+              // never once appeared.
+              const canActOnInterest =
+                interest.status === 'shortlisted' || interest.status === 'accepted';
+              const advanceLabel =
+                interest.status === 'accepted' ? 'Approve & hire' : 'Invite to apply';
               const statusLabel = interest.status
                 ? interest.status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
                 : 'Pending';
@@ -1426,11 +1446,11 @@ export default function HiringHistory() {
                       </button>
                       <button
                         onClick={() => handleShortlistApplicant(interest)}
-                        disabled={shortlistLoading}
+                        disabled={shortlistLoading || isShortlisted}
                         title={
                           isShortlisted
-                            ? 'Take them off your shortlist'
-                            : 'Keep them aside while you decide'
+                            ? 'Already shortlisted'
+                            : 'Keep them aside while you decide. They will be told.'
                         }
                         className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors ${
                           isShortlisted
@@ -1445,6 +1465,17 @@ export default function HiringHistory() {
                         )}
                         <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
                       </button>
+                      {!isClosed && (
+                        <button
+                          onClick={() => handleRejectApplicant(interest)}
+                          disabled={shortlistLoading}
+                          title="Let them know you are not going ahead"
+                          className="inline-flex items-center gap-2 rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                        >
+                          <UserX className="h-4 w-4" />
+                          <span>Reject</span>
+                        </button>
+                      )}
                       {canActOnInterest ? (
                         <>
                           <button
@@ -1452,14 +1483,7 @@ export default function HiringHistory() {
                             className="inline-flex items-center gap-2 rounded-xl bg-green-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-green-600"
                           >
                             <UserCheck className="h-4 w-4" />
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => handleDeclineInterest(interest)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-red-100 px-4 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-200 dark:bg-red-900/40 dark:text-red-200 dark:hover:bg-red-800/60"
-                          >
-                            <UserX className="h-4 w-4" />
-                            Decline
+                            {advanceLabel}
                           </button>
                         </>
                       ) : null}
@@ -1902,6 +1926,59 @@ export default function HiringHistory() {
   onCancel={() => setJobToDelete(null)}
   variant="danger"
 />
+
+{/* Rejecting somebody, with the chance to say why.
+    The reason is optional so a household is never stuck, and asked for because
+    it is the only thing the applicant will get: "we went with someone else" is
+    worth more to a person looking for work than silence. */}
+{rejecting && (
+  <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+    <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+        Not going ahead with {rejecting.househelp?.first_name || 'this applicant'}?
+      </h3>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        They will be told, and the application moves to Closed.
+      </p>
+
+      <label className="mt-4 block">
+        <span className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+          Anything you would like to tell them?{' '}
+          <span className="font-normal text-gray-400">(optional)</span>
+        </span>
+        <textarea
+          value={rejectReason}
+          onChange={(event) => setRejectReason(event.target.value)}
+          rows={3}
+          maxLength={500}
+          placeholder="We went with someone closer to us, but thank you for applying."
+          className="mt-2 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 dark:border-purple-500/30 dark:bg-[#0d0d14] dark:text-white"
+        />
+      </label>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setRejecting(null);
+            setRejectReason('');
+          }}
+          className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={confirmRejection}
+          className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-semibold text-white shadow-lg hover:bg-red-700"
+        >
+          <UserX className="h-4 w-4" />
+          Reject application
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 </div>
   );
 }

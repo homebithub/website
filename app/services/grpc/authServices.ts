@@ -1393,6 +1393,32 @@ export const listingApplicationService = {
     return payload?.data ?? payload;
   },
 
+  /**
+   * Answering an application.
+   *
+   * The household shortlists or rejects; the applicant accepts or declines.
+   * Auth decides which answers belong to which caller — the same call serves
+   * both, and the note carries a reason when one was given.
+   */
+  async respondToApplication(
+    applicationId: string | number,
+    actorProfileId: string,
+    response: 'shortlisted' | 'declined' | 'accepted',
+    note = '',
+  ): Promise<any> {
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'respond',
+        application_id: applicationId,
+        actor_profile_id: actorProfileId,
+        response,
+        note,
+      }),
+    });
+    return payload?.data ?? payload;
+  },
+
   async shortlistListing(listingId: string, serviceProviderId: string, message = ''): Promise<any> {
     const payload = await jobListingsApi('', {
       method: 'POST',

@@ -134,6 +134,20 @@ function encodeApplicationAction(body: Record<string, unknown>) {
   ]);
 }
 
+// RespondApplicationRequest: application_id, actor_profile_id, response, note.
+//
+// Both sides answer through this one call — the applicant accepting or
+// declining an invitation, the household shortlisting or rejecting an
+// application — so the note field carries a rejection reason when there is one.
+function encodeRespondApplication(body: Record<string, unknown>) {
+  return concatBytes([
+    encodeInt64Field(1, Number(body.application_id || body.applicationId || body.id || 0)),
+    encodeStringField(2, String(body.actor_profile_id || body.actorProfileId || '')),
+    encodeStringField(3, String(body.response || '')),
+    encodeStringField(4, String(body.note || '')),
+  ]);
+}
+
 function encodeUpdateJobReq(body: Record<string, unknown>) {
   const features = Array.isArray(body.features) ? body.features : [];
   // Sent explicitly rather than inferred from a non-empty list: clearing every
@@ -685,6 +699,35 @@ export async function action({ request }: { request: Request }) {
     // Each maps to one RPC and carries who acted, which is what
     // application_events records and what the contact-visibility rules read to
     // tell a household advancing a candidate from a candidate applying.
+    // One side answering the other. The household shortlists or rejects; the
+    // applicant accepts or declines. Auth decides which answers belong to which
+    // caller, so this only has to carry the answer and who gave it.
+    if (request.method === 'POST' && action === 'respond') {
+      const applicationId = Number(body.application_id || body.applicationId || body.id || 0);
+      const actorProfileId = String(body.actor_profile_id || body.actorProfileId || '');
+      const response = String(body.response || '').trim();
+      if (!applicationId || !actorProfileId || !response) {
+        return Response.json(
+          { message: 'application_id, actor_profile_id and response are required' },
+          { status: 400 },
+        );
+      }
+
+      const { body: responseBody } = await callUnaryGrpc(
+        resolveAuthGrpcBaseUrl(request),
+        '/auth.ListingService/RespondApplication',
+        encodeRespondApplication({
+          application_id: applicationId,
+          actor_profile_id: actorProfileId,
+          response,
+          note: body.note,
+        }),
+        authMetadata(request),
+      );
+
+      return Response.json({ data: responseBody.data ?? responseBody });
+    }
+
     if (request.method === 'POST' && (action === 'promote' || action === 'approve' || action === 'unshortlist')) {
       const applicationId = Number(body.application_id || body.applicationId || body.id || 0);
       const actorProfileId = String(body.actor_profile_id || body.actorProfileId || '');
