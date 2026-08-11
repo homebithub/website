@@ -185,11 +185,11 @@ const EMPTY_TAB_COPY: Record<Exclude<TabType, 'jobs'>, { title: string; body: st
   },
   shortlisted: {
     title: 'Nobody shortlisted yet',
-    // Careful with what this promises. Contact visibility is decided by what
-    // has happened to the application, not by this list, so shortlisting
-    // somebody here does not yet let them see the household. Saying it did was
-    // a promise the backend never made.
-    body: 'Shortlist an applicant to set them aside while you decide. They stay here until you reply to them or close the job.',
+    // The visibility claim is true again. Shortlisting now answers the
+    // application rather than writing a private bookmark, which records an
+    // application event with the household as the actor — which is exactly what
+    // the household_advanced check in auth's relationshipTo looks for.
+    body: 'Shortlist an applicant to set them aside while you decide. They will be able to see your household once you do.',
   },
   awaiting: {
     title: 'Nothing waiting on you',
