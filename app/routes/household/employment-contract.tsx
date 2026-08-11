@@ -230,7 +230,7 @@ export default function EmploymentContractPage() {
                 id: String(entry?.id ?? `clause-${index}`),
                 title: String(entry?.title ?? ''),
                 body: String(entry?.body ?? ''),
-                included: true,
+                included: entry?.included !== false,
               },
       ).filter((clause) => clause.title || clause.body);
       setClauses(normalised);
@@ -632,27 +632,30 @@ export default function EmploymentContractPage() {
 
         {/* ═══ CONFIGURE MODE ═══ (blocked once any party has signed) */}
         {viewMode === 'configure' && !contract?.household_signed_at && !contract?.househelp_signed_at && (
-          <div className="space-y-6">
+          // Tightened: every card was p-6 with 2.5-high fields and three-row
+          // text areas, so a form of nine inputs ran past a laptop screen and
+          // the clause list — the part that needs reading — sat below the fold.
+          <div className="space-y-4">
             {/* Contract Details */}
-            <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
+            <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-4 sm:p-5 dark:bg-purple-900/20 dark:border-purple-700/50">
               <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Contract Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Title *</label>
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Title *</label>
                   <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                    className="w-full px-3 py-2 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                     placeholder="e.g. Live-in Househelp" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Work Location</label>
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Work Location</label>
                   <input type="text" value={workLocation} onChange={e => setWorkLocation(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                    className="w-full px-3 py-2 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                     placeholder="e.g. Nairobi, Kilimani" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary (KES) *</label>
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary (KES) *</label>
                   <input type="number" value={salary} onChange={e => setSalary(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                    className="w-full px-3 py-2 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                     placeholder="e.g. 15000" />
                   {postedSalary && !contractId && (
                     <p className="mt-1 text-[11px] text-gray-500 dark:text-purple-300">
@@ -661,7 +664,7 @@ export default function EmploymentContractPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency *</label>
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency *</label>
                   <CustomSelect
                     value={salaryFrequency}
                     onChange={setSalaryFrequency}
@@ -675,34 +678,34 @@ export default function EmploymentContractPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Start Date</label>
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Start Date</label>
                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
+                    className="w-full px-3 py-2 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">End Date (optional)</label>
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">End Date (optional)</label>
                   <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
+                    className="w-full px-3 py-2 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
                 </div>
               </div>
               <div className="mt-4">
-                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Description</label>
-                <textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} rows={3}
-                  className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none"
+                <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Description</label>
+                <textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} rows={2}
+                  className="w-full px-3 py-2 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none"
                   placeholder="Describe the duties and responsibilities..." />
               </div>
               <div className="mt-4">
-                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Additional Notes</label>
+                <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Additional Notes</label>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-                  className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none"
+                  className="w-full px-3 py-2 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none"
                   placeholder="Any additional notes..." />
               </div>
             </div>
 
             {/* Contract Clauses */}
-            <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Contract Clauses</h2>
-              <p className="text-xs text-gray-500 dark:text-purple-300 mb-4">Select which clauses to include in the contract. All are included by default.</p>
+            <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-4 sm:p-5 dark:bg-purple-900/20 dark:border-purple-700/50">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Contract Clauses</h2>
+              <p className="text-xs text-gray-500 dark:text-purple-300 mb-3">Select which clauses to include in the contract. All are included by default.</p>
               <div className="space-y-3">
                 {clauses.map((clause) => (
                   <label key={clause.id} className="flex items-start gap-3 p-3 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/40 cursor-pointer transition-colors">
@@ -722,9 +725,9 @@ export default function EmploymentContractPage() {
             </div>
 
             {/* Custom Clauses */}
-            <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Additional Clauses</h2>
-              <p className="text-xs text-gray-500 dark:text-purple-300 mb-4">Add any custom clauses you'd like to include.</p>
+            <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-4 sm:p-5 dark:bg-purple-900/20 dark:border-purple-700/50">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Additional Clauses</h2>
+              <p className="text-xs text-gray-500 dark:text-purple-300 mb-3">Add any custom clauses you'd like to include.</p>
               {customClauses.map((clause, index) => (
                 <div key={index} className="flex items-start gap-2 mb-3 p-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl border border-purple-100 dark:border-purple-700/40">
                   <span className="flex-1 text-xs text-gray-800 dark:text-purple-100">{clause}</span>
@@ -739,7 +742,7 @@ export default function EmploymentContractPage() {
                   value={newCustomClause}
                   onChange={e => setNewCustomClause(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addCustomClause()}
-                  className="flex-1 px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                  className="flex-1 px-3 py-2 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                   placeholder="Type a custom clause and press Enter or click Add"
                 />
                 <button onClick={addCustomClause}
@@ -883,9 +886,9 @@ export default function EmploymentContractPage() {
 
             {/* Editable Signer Names */}
             {contract && (!contract.household_signed_at || !contract.househelp_signed_at) && (
-              <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
+              <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-4 sm:p-5 dark:bg-purple-900/20 dark:border-purple-700/50">
                 <h3 className="text-xs font-semibold text-gray-900 dark:text-white mb-1">Signer Names</h3>
-                <p className="text-xs text-gray-500 dark:text-purple-300 mb-4">
+                <p className="text-xs text-gray-500 dark:text-purple-300 mb-3">
                   These names will appear on the contract. Edit if needed before signing.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -899,7 +902,7 @@ export default function EmploymentContractPage() {
                       value={employerName}
                       onChange={e => setEmployerName(e.target.value)}
                       disabled={!!contract.household_signed_at || !isHousehold}
-                      className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="w-full px-3 py-2 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                       placeholder="Full legal name"
                     />
                     {contract.household_signed_at ? (
@@ -932,7 +935,7 @@ export default function EmploymentContractPage() {
                       value={employeeName}
                       onChange={e => setEmployeeName(e.target.value)}
                       disabled={!!contract.househelp_signed_at || !isHousehelp}
-                      className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="w-full px-3 py-2 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                       placeholder="Full legal name"
                     />
                     {contract.househelp_signed_at ? (
@@ -1006,7 +1009,7 @@ export default function EmploymentContractPage() {
                 Enter your full legal name to sign this contract. This serves as your digital signature.
               </p>
               <div className="mb-4">
-                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Full Legal Name *</label>
+                <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Full Legal Name *</label>
                 <input
                   type="text"
                   value={signerName}
@@ -1054,7 +1057,7 @@ export default function EmploymentContractPage() {
                 We'll send a copy of the signed contract to the email address below.
               </p>
               <div className="mb-5">
-                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Email Address *</label>
+                <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Email Address *</label>
                 <input
                   type="email"
                   value={emailAddress}

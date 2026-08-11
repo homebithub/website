@@ -619,6 +619,17 @@ export default function HiringHistory() {
     }
   }, [activeTab, offset]);
 
+  // The jobs are needed on every tab, not only the Jobs one.
+  //
+  // Applicant cards read what the job pays off its advert, and drawing up a
+  // contract fills the form from it. Both were written against this list while
+  // it was only ever loaded on the Jobs tab — so on "Needs your reply" it was
+  // empty, the salary read "Not specified", and the contract form opened blank
+  // beside a listing that had every one of those answers in it.
+  useEffect(() => {
+    void fetchJobs();
+  }, []);
+
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     const validTabs: TabType[] = ['jobs', 'applicants', 'shortlisted', 'awaiting', 'hired', 'closed'];
