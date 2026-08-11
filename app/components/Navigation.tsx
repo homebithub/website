@@ -73,6 +73,13 @@ export function Navigation() {
         return null;
     }, [profileType]);
 
+    // The admin button is for someone who is both an admin and a person on the
+    // website — a household or a househelp. Being an admin alone is not enough:
+    // an account with no profile yet, or a bureau account, has no business on
+    // the site's own navigation, and dashboardPath is already exactly the
+    // "household or househelp" test.
+    const canSeeAdminDashboard = Boolean(user && isAdmin && dashboardPath);
+
     const authLinks = React.useMemo(() => {
         const role = normalizeProfileRole(profileType);
         const isClient = role === 'client';
@@ -239,15 +246,29 @@ export function Navigation() {
                 if (!currentUser) {
                     setProfileType(null);
                     setUserName(null);
+                    setIsAdmin(false);
                     return;
                 }
 
                 const resolvedProfileType = currentUser.profile_type || null;
 
-                // Check admin status using the canonical current user email
+                // Check admin status using the canonical current user email.
+                // Every branch has to land on a value. This only ever set the
+                // flag on a successful answer, so when the check was skipped
+                // the previous person's answer kept showing: an admin signing
+                // out and someone else signing in without a full page load left
+                // the button on screen for them.
+                //
+                // The check no longer sits behind allowAuxiliaryAccountCalls.
+                // That flag quiets the authenticated count fetches on /profile;
+                // this is a public call that already swallows its own errors,
+                // and skipping it there only meant the button disappeared for
+                // an admin who opened their own profile.
                 const email = currentUser.email || '';
-                if (email && allowAuxiliaryAccountCalls) {
+                if (email) {
                     authService.checkIsAdmin(email).then((admin) => setIsAdmin(admin)).catch(() => setIsAdmin(false));
+                } else {
+                    setIsAdmin(false);
                 }
 
                 // Bureau users should not access regular navigation
@@ -271,12 +292,14 @@ export function Navigation() {
             } catch {
                 setProfileType(null);
                 setUserName(null);
+                setIsAdmin(false);
             }
         } else {
             setProfileType(null);
             setUserName(null);
             setInboxCount(0);
             setSavedCount(0);
+            setIsAdmin(false);
         }
     }, [user, currentUser, isInSetupMode, allowAuxiliaryAccountCalls]);
 
@@ -497,8 +520,8 @@ export function Navigation() {
                         </button>
                     )}
 
-                    {/* Admin Dashboard - visible on desktop for admins only */}
-                    {user && isAdmin && (
+                    {/* Admin Dashboard - desktop, for admins who are also on the site */}
+                    {canSeeAdminDashboard && (
                         <a
                             href="https://hba.homebit.co.ke"
                             target="_blank"
@@ -764,7 +787,7 @@ export function Navigation() {
                                                     </Link>
                                                 )}
                                             </Menu.Item>
-                                            {isAdmin && (
+                                            {canSeeAdminDashboard && (
                                                 <Menu.Item>
                                                     {({ active }) => (
                                                         <a
