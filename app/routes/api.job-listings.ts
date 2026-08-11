@@ -728,6 +728,29 @@ export async function action({ request }: { request: Request }) {
       return Response.json({ data: responseBody.data ?? responseBody });
     }
 
+    // How an application reached where it is. A read, but a POST because it
+    // carries who is asking — the history of an application is only for the two
+    // people it is about.
+    if (request.method === 'POST' && action === 'history') {
+      const applicationId = Number(body.application_id || body.applicationId || body.id || 0);
+      const actorProfileId = String(body.actor_profile_id || body.actorProfileId || '');
+      if (!applicationId || !actorProfileId) {
+        return Response.json(
+          { message: 'application_id and actor_profile_id are required' },
+          { status: 400 },
+        );
+      }
+
+      const { body: responseBody } = await callUnaryGrpc(
+        resolveAuthGrpcBaseUrl(request),
+        '/auth.ListingService/ListApplicationEvents',
+        encodeApplicationAction({ application_id: applicationId, actor_profile_id: actorProfileId }),
+        authMetadata(request),
+      );
+
+      return Response.json({ data: normalizeArray(responseBody.data ?? responseBody) });
+    }
+
     if (request.method === 'POST' && (action === 'promote' || action === 'approve' || action === 'unshortlist')) {
       const applicationId = Number(body.application_id || body.applicationId || body.id || 0);
       const actorProfileId = String(body.actor_profile_id || body.actorProfileId || '');

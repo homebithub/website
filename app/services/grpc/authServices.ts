@@ -1432,6 +1432,20 @@ export const listingApplicationService = {
     return payload?.data ?? payload;
   },
 
+  /** Every status an application has held, and who moved it. */
+  async listApplicationEvents(applicationId: string | number, actorProfileId: string): Promise<any[]> {
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'history',
+        application_id: applicationId,
+        actor_profile_id: actorProfileId,
+      }),
+    });
+    const rows = payload?.data?.data ?? payload?.data ?? payload ?? [];
+    return Array.isArray(rows) ? rows : [];
+  },
+
   async shortlistListing(listingId: string, serviceProviderId: string, message = ''): Promise<any> {
     const payload = await jobListingsApi('', {
       method: 'POST',

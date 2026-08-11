@@ -13,6 +13,7 @@ import { buildIdentifierMap, findByAnyIdentifier, getHousehelpCandidateIds } fro
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
+import { ApplicationHistory } from '~/components/hiring/ApplicationHistory';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
 
@@ -299,6 +300,9 @@ export default function HiringHistory() {
   const [shortlistedProfileIds, setShortlistedProfileIds] = useState<Set<string>>(() => new Set());
   const [rejecting, setRejecting] = useState<Interest | null>(null);
   const [terminating, setTerminating] = useState<Interest | null>(null);
+  // Which applicant's history is open. One at a time: the card is already dense,
+  // and the history is something you go looking for rather than scan.
+  const [historyFor, setHistoryFor] = useState<string | null>(null);
   // Househelp user ids whose engagement with this household has ended.
   const [endedEngagements, setEndedEngagements] = useState<Set<string>>(() => new Set());
   const [terminateReason, setTerminateReason] = useState('');
@@ -1508,6 +1512,19 @@ export default function HiringHistory() {
                     </div>
                   </div>
 
+                  {historyFor === interest.id && (
+                    <div className="mt-4 rounded-2xl border border-purple-200 bg-purple-50/50 p-4 dark:border-purple-500/20 dark:bg-purple-950/20">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-purple-700 dark:text-purple-200">
+                        History
+                      </p>
+                      <ApplicationHistory
+                        applicationId={interest.id}
+                        actorProfileId={getStoredUserProfileId() || ''}
+                        viewer="household"
+                      />
+                    </div>
+                  )}
+
                   {/* Everything you can do about this applicant, in one place.
                       Chat and Shortlist used to be pinned to the card's top
                       right corner, which cleared the text only while the card
@@ -1551,6 +1568,15 @@ export default function HiringHistory() {
                         <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
                       </button>
                       )}
+                      <button
+                        onClick={() =>
+                          setHistoryFor((current) => (current === interest.id ? null : interest.id))
+                        }
+                        className="inline-flex items-center gap-2 rounded-full border border-purple-200/60 bg-white px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/5 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                      >
+                        <Clock className="h-4 w-4" />
+                        <span>{historyFor === interest.id ? 'Hide history' : 'History'}</span>
+                      </button>
                       {isHired && (
                         <>
                           <button

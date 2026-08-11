@@ -5,6 +5,7 @@ import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { ListingDetails, listingSalary } from '~/components/listing/ListingDetails';
+import { ApplicationHistory } from '~/components/hiring/ApplicationHistory';
 import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { buildIdentifierMap, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
@@ -1194,6 +1195,18 @@ export default function HousehelpHiringHistory() {
                   <ListingDetails
                     listing={selectedInterest.listing}
                     emptyMessage="The household has not filled in the details for this job yet."
+                  />
+                </div>
+
+                {/* How it got here. */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">
+                    History
+                  </h4>
+                  <ApplicationHistory
+                    applicationId={selectedInterest.id}
+                    actorProfileId={getStoredUserProfileId() || ''}
+                    viewer="househelp"
                   />
                 </div>
 
