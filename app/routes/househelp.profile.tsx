@@ -27,6 +27,7 @@ import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 import { IdentityVerificationPrompt } from '~/components/verification/IdentityVerificationPrompt';
 import { useIdentityVerification } from '~/hooks/useIdentityVerification';
 import { VerifiedBadge } from '~/components/VerifiedBadge';
+import { OpenForWorkButton } from '~/components/OpenForWorkButton';
 import { CertificationDocuments } from '~/components/profile/CertificationDocuments';
 import { PHOTO_ACCEPT_ATTRIBUTE, selectPhotosForUpload, uploadDocuments } from '~/utils/documentUploads';
 
@@ -435,6 +436,9 @@ export default function HousehelpProfile() {
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your professional information</p>
           </div>
           <div className="flex items-center gap-2 self-start">
+            {/* On the profile too: this is the page somebody lands on to get
+                themselves ready to be hired. */}
+            <OpenForWorkButton />
             {profile?.id && (
               <button
                 onClick={() => setShowViewsModal(true)}

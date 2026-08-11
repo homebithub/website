@@ -748,6 +748,14 @@ export async function action({ request }: { request: Request }) {
         features: Array.isArray(body.features) ? body.features : [],
         ward_id: wardId,
       }),
+      // The caller's token, without which nothing could be posted at all.
+      //
+      // CreateListing checks that the profile being posted under belongs to
+      // whoever is asking — it reads the caller from this token, and there is no
+      // field in the request to name them. Sent without it, the handler had
+      // nobody to compare against and refused every listing. UpdateJob and
+      // RenewListing next to it already passed it; this one never did.
+      authMetadata(request),
     );
 
     const listing = responseBody.data ?? responseBody;

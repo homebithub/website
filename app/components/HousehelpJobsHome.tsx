@@ -39,6 +39,7 @@ import { SubscriptionRequiredModal } from "~/components/subscriptions/Subscripti
 import { IdentityVerificationPrompt } from "~/components/verification/IdentityVerificationPrompt";
 import { useIdentityVerification } from "~/hooks/useIdentityVerification";
 import { formatListingPlace, formatPlaceOrFallback } from "~/utils/place";
+import { OpenForWorkButton } from "~/components/OpenForWorkButton";
 import { humanizeFeatureName, listingHighlights, remainingFeatureGroups } from "~/utils/listingFeatures";
 
 interface JobListing {
@@ -991,6 +992,11 @@ export default function HousehelpJobsHome() {
                 </p>
               </div>
 
+
+              {/* Always on screen while browsing. A househelp reading job
+                  adverts is exactly the person who should be told they can be
+                  found instead. */}
+              <OpenForWorkButton className="hidden shrink-0 sm:inline-flex" />
 
               <label className="min-w-0 flex-1 sm:flex-none">
                 <span className="sr-only">Sort job openings</span>
