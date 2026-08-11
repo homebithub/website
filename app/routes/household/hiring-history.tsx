@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { humanizeFeatureName } from '~/utils/listingFeatures';
 import { formatListingPlace } from '~/utils/place';
-import { hireRequestService, hireContractService, employmentContractService, shortlistService, jobService, listingApplicationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
-import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart } from 'lucide-react';
+import { hireRequestService, hireContractService, employmentContractService, shortlistService, jobService, listingApplicationService, employmentService, profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart, Star } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import ConfirmDialog from '~/components/ConfirmDialog';
@@ -332,6 +332,10 @@ export default function HiringHistory() {
   const [shortlistLoadingInterestId, setShortlistLoadingInterestId] = useState<string | null>(null);
   const [shortlistedProfileIds, setShortlistedProfileIds] = useState<Set<string>>(() => new Set());
   const [rejecting, setRejecting] = useState<Interest | null>(null);
+  const [terminating, setTerminating] = useState<Interest | null>(null);
+  // Househelp user ids whose engagement with this household has ended.
+  const [endedEngagements, setEndedEngagements] = useState<Set<string>>(() => new Set());
+  const [terminateReason, setTerminateReason] = useState('');
   const [rejectReason, setRejectReason] = useState('');
   // Map all known househelp identifiers to the matching employment contract.
   const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, any>>({});
@@ -350,6 +354,32 @@ export default function HiringHistory() {
   // Ids arrive as strings from the shortlist service and are read off records
   // that have carried them as numbers, so both sides are keyed the same way
   // before being compared.
+  const refreshEngagements = useCallback(async () => {
+    const userId = getStoredUserId();
+    if (!userId) return;
+    try {
+      const raw = await employmentService.listByHousehold(userId, 100, 0);
+      const rows = raw?.data?.data ?? raw?.data ?? raw ?? [];
+      const ended = new Set<string>();
+      for (const row of Array.isArray(rows) ? rows : []) {
+        const status = String(row?.status ?? '').toLowerCase();
+        const househelp = row?.househelp_user_id;
+        if (househelp && ['terminated', 'completed', 'ended'].includes(status)) {
+          ended.add(String(househelp));
+        }
+      }
+      setEndedEngagements(ended);
+    } catch {
+      // Not fatal. Without it the tabs fall back to application status alone,
+      // which is where they were before: a hire that has ended still reads as
+      // current, and nothing else breaks.
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshEngagements();
+  }, [refreshEngagements]);
+
   const isShortlistedProfile = useCallback(
     (profileId?: string | null) =>
       Boolean(profileId) && shortlistedProfileIds.has(String(profileId)),
@@ -858,24 +888,19 @@ export default function HiringHistory() {
       applicants: [], shortlisted: [], awaiting: [], hired: [], closed: [],
     };
     for (const row of applicants) {
-      // Shortlisting comes first, because it is a decision the household made
-      // about this person and the statuses below are things that happened to
-      // the application.
+      // A hire that has ended belongs with the finished work, not with the
+      // current work, whatever the application still says.
       //
-      // The tab used to be filled from the application status alone, and no
-      // applicant could ever reach it: "shortlisted" there means a candidate
-      // the household invited who has not applied yet, and the state machine
-      // has no way back to it from "initiated". Meanwhile the Shortlist button
-      // wrote to the saved list, truthfully reported "Added to shortlist", and
-      // the tab beside it stayed empty. Two different things wearing one name.
-      //
-      // Both belong here: somebody you invited and somebody you set aside are
-      // both people you are still deciding about.
-      const shortlistedByHousehold =
-        isShortlistedProfile(row.househelp_id || row.househelp?.id);
-
-      if (shortlistedByHousehold && !['approved', 'declined'].includes(row.status)) {
-        groups.shortlisted.push(row);
+      // "approved" records that the hire happened, not that it is still
+      // happening — that lives on the engagement. Read from the application
+      // alone, a finished job sits under Hired for good.
+      const househelpUserID = row.househelp?.user_id;
+      if (
+        row.status === 'approved' &&
+        househelpUserID &&
+        endedEngagements.has(String(househelpUserID))
+      ) {
+        groups.closed.push(row);
         continue;
       }
 
@@ -887,7 +912,7 @@ export default function HiringHistory() {
       }
     }
     return groups;
-  }, [applicants, isShortlistedProfile]);
+  }, [applicants, endedEngagements]);
 
   // The nav badge counts what needs the household's attention: new applicants
   // plus anyone who has accepted and is waiting on their approval.
@@ -1040,6 +1065,54 @@ export default function HiringHistory() {
     } finally {
       setShortlistLoadingInterestId(null);
     }
+  };
+
+  // Ending a job that is under way.
+  //
+  // The reason is required here, unlike a rejection. Somebody is losing work
+  // they had, and "no reason given" is not something to make easy — it also has
+  // to hold up if either of them ever needs to say what happened.
+  const confirmTermination = async () => {
+    if (!terminating) return;
+    const interest = terminating;
+    const reason = terminateReason.trim();
+    if (!reason) return;
+
+    const househelpUserId = interest.househelp?.user_id;
+    if (!househelpUserId) {
+      setError('We could not tell whose engagement this is. Please reload and try again.');
+      return;
+    }
+
+    setTerminating(null);
+    setTerminateReason('');
+    setShortlistLoadingInterestId(interest.id);
+    setError(null);
+    try {
+      await employmentService.terminate(househelpUserId, reason);
+      await Promise.all([fetchApplicants(), refreshEngagements()]);
+      window.dispatchEvent(new Event('hiring-updated'));
+      setShortlistSuccess('The engagement has ended, and we have told them why.');
+    } catch (err: any) {
+      setError(err?.message || 'We could not end this engagement. Please try again.');
+    } finally {
+      setShortlistLoadingInterestId(null);
+    }
+  };
+
+  // Reviewing is done on the person's profile, where the reviews live and where
+  // the eligibility rule is enforced. Sending them there beats a second copy of
+  // the form that could disagree with it.
+  const openReview = (interest: Interest) => {
+    const userId = interest.househelp?.user_id || '';
+    if (!userId) {
+      setError('We could not open a review for this person.');
+      return;
+    }
+    navigate(
+      `/household/househelp/profile?userId=${encodeURIComponent(userId)}&review=1` +
+        `&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`,
+    );
   };
 
   const handleShortlistApplicant = (interest: Interest) =>
@@ -1309,6 +1382,11 @@ export default function HiringHistory() {
               // The application's own status, not a bookmark somewhere else.
               const isShortlisted = interest.status === 'shortlisted';
               const isClosed = ['declined', 'approved'].includes(interest.status);
+              // Approved means the work is on. Ending it and reviewing them are
+              // the two things left to do about this person.
+              const isHired =
+                interest.status === 'approved' &&
+                !endedEngagements.has(String(interest.househelp?.user_id ?? ''));
               const chatLoading = chatLoadingInterestId === interest.id;
               const shortlistLoading = shortlistLoadingInterestId === interest.id;
               // Where the household has a next step of its own.
@@ -1494,6 +1572,27 @@ export default function HiringHistory() {
                         )}
                         <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
                       </button>
+                      {isHired && (
+                        <>
+                          <button
+                            onClick={() => openReview(interest)}
+                            title="Leave a review for this person"
+                            className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm transition-colors hover:bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20"
+                          >
+                            <Star className="h-4 w-4" />
+                            <span>Leave a review</span>
+                          </button>
+                          <button
+                            onClick={() => setTerminating(interest)}
+                            disabled={shortlistLoading}
+                            title="End this engagement"
+                            className="inline-flex items-center gap-2 rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                          >
+                            <Ban className="h-4 w-4" />
+                            <span>End engagement</span>
+                          </button>
+                        </>
+                      )}
                       {!isClosed && (
                         <button
                           onClick={() => handleRejectApplicant(interest)}
@@ -1965,6 +2064,56 @@ export default function HiringHistory() {
     The reason is optional so a household is never stuck, and asked for because
     it is the only thing the applicant will get: "we went with someone else" is
     worth more to a person looking for work than silence. */}
+{/* Ending a job that is under way.
+    The reason is required, unlike a rejection: somebody is losing work they
+    had, and it has to hold up if either of them ever needs to say what
+    happened. */}
+{terminating && (
+  <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+    <div className="w-full max-w-md rounded-t-3xl border border-red-200 bg-white p-6 shadow-2xl dark:border-red-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+        End the engagement with {terminating.househelp?.first_name || 'this person'}?
+      </h3>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        The contract ends today. They will be told, with the reason you give here.
+      </p>
+
+      <label className="mt-4 block">
+        <span className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+          Why is it ending? <span className="font-normal text-red-500">(required)</span>
+        </span>
+        <textarea
+          value={terminateReason}
+          onChange={(event) => setTerminateReason(event.target.value)}
+          rows={3}
+          maxLength={500}
+          placeholder="We are moving house and no longer need help."
+          className="mt-2 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 dark:border-purple-500/30 dark:bg-[#0d0d14] dark:text-white"
+        />
+      </label>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => { setTerminating(null); setTerminateReason(''); }}
+          className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={confirmTermination}
+          disabled={!terminateReason.trim()}
+          className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-semibold text-white shadow-lg hover:bg-red-700 disabled:opacity-50"
+        >
+          <Ban className="h-4 w-4" />
+          End engagement
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 {rejecting && (
   <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
     <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#1b1524] sm:rounded-3xl">

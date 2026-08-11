@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { hireRequestService, hireContractService, employmentContractService, jobService, listingApplicationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { hireRequestService, hireContractService, employmentContractService, employmentService, jobService, listingApplicationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -314,14 +314,48 @@ export default function HousehelpHiringHistory() {
     }
   };
 
+  // Work history: every job this person has actually done.
+  //
+  // This read hire contracts alone — the legacy record, which the current flow
+  // no longer creates. So a job taken through an application, worked, and ended
+  // left no trace here: somebody could finish months of work and their history
+  // would show nothing. Engagements are what the current flow writes and what
+  // termination marks, so they are read too.
   const fetchContracts = async () => {
     setContractsLoading(true);
     setError(null);
     try {
-      const raw = await hireContractService.listHireContracts('', 'househelp');
-      const items = extractEnvelopeArray<HireContract>(raw);
+      const [legacy, engagements] = await Promise.all([
+        hireContractService
+          .listHireContracts('', 'househelp')
+          .then((raw) => extractEnvelopeArray<HireContract>(raw))
+          .catch(() => [] as HireContract[]),
+        employmentService
+          .listByHousehelp(getStoredUserId() || '', 100, 0)
+          .then((raw) => {
+            const rows = raw?.data?.data ?? raw?.data ?? raw ?? [];
+            return (Array.isArray(rows) ? rows : []).map((row: any): HireContract => ({
+              id: String(row?.id ?? ''),
+              household_id: String(row?.household_profile_id ?? ''),
+              job_type: row?.engagement_type || row?.job_type,
+              start_date: row?.start_date,
+              end_date: row?.end_date || row?.ended_at,
+              salary: Number(row?.salary ?? 0),
+              salary_frequency: String(row?.salary_frequency ?? ''),
+              status: String(row?.status ?? ''),
+              created_at: String(row?.created_at ?? ''),
+            }));
+          })
+          .catch(() => [] as HireContract[]),
+      ]);
+
+      // An engagement and a legacy contract can describe the same job, so the
+      // newer record wins and the older one is only kept when nothing else
+      // covers it.
+      const seen = new Set(engagements.map((row) => row.id));
+      const items = [...engagements, ...legacy.filter((row) => !seen.has(row.id))];
       setContracts(items);
-      setContractsTotal(extractTotal(raw, items.length));
+      setContractsTotal(items.length);
     } catch (err: any) {
       setError(err.message || 'Failed to load work history');
     } finally {

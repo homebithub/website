@@ -1227,6 +1227,19 @@ export const employmentService = {
     const res = await grpcCall((cb) => employmentClient.listByHousehelp(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
+  /**
+   * Ending an engagement early.
+   *
+   * Either party may do it — the reason goes to the other one, so a household
+   * ending a job and a househelp leaving one both explain themselves.
+   */
+  async terminate(househelpUserId: string, reason: string, userId?: string): Promise<void> {
+    const req = new auth_pb.TerminateEmploymentReq();
+    req.setUserId(resolveUserId(userId || ''));
+    req.setHousehelpUserId(String(househelpUserId));
+    req.setReason(String(reason || ''));
+    await grpcCall((cb) => employmentClient.terminate(req, getMetadata(), cb));
+  },
   async getCurrentStatus(id: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => employmentClient.getCurrentStatus(buildIdRequest(id, userId), getMetadata(), cb));
     return jsonResponseToJs(res);
