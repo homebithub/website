@@ -59,11 +59,9 @@ interface JobListing {
   pet_type_ids?: number[] | string[];
   children_age_range_id?: number | string;
   children_capacity_id?: number | string;
-  salary_range?: { min?: number; max?: number; currency?: string; frequency?: string };
   max_applicants?: number;
   status?: string;
   created_at?: string;
-  household_id?: string;
   has_applied?: boolean;
   fit_score?: number;
   match_reasons?: string[];
@@ -139,8 +137,7 @@ const DEFAULT_JOB_FILTERS = {
  * GetListing response and both reach these cards.
  */
 const householdProfileKey = (job: JobListing): string | undefined =>
-  job.household_id
-  || (job as any).household_profile_id
+  (job as any).household_profile_id
   || (job as any).user_profile_id
   || (job as any).owner_profile_id
   || undefined;
@@ -157,13 +154,6 @@ const formatDate = (value?: string) => {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "Flexible";
   return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-};
-const formatSalaryRange = (range?: JobListing["salary_range"]) => {
-  if (!range) return "Not specified";
-  const min = range.min ? `KES ${range.min.toLocaleString()}` : "";
-  const max = range.max ? `KES ${range.max.toLocaleString()}` : "";
-  if (min && max) return `${min} - ${max}`;
-  return min || max || "Not specified";
 };
 const isJobOpen = (job: { status?: string }) => {
   // A listing's status is "active" — the value the service writes and the one
@@ -198,12 +188,49 @@ const compareNumbers = (a: number | null, b: number | null, direction: "asc" | "
   return direction === "asc" ? a - b : b - a;
 };
 
+/**
+ * What a job pays, as one comparable number, for the budget sorts.
+ *
+ * This read job.salary_range.max — a field no listing carries. Every job
+ * therefore scored null, every comparison tied, and "Highest budget" and
+ * "Lowest budget" quietly returned the list in the order it arrived. Nothing
+ * looked broken; the sort simply did nothing, which is the worst way for a sort
+ * to fail.
+ *
+ * A listing carries its pay as the SalaryRange feature, already written for
+ * display: "daily: 500-1,000 KES", "monthly: 25,000+ KES". The top of the range
+ * is used, matching what the old code intended with max.
+ *
+ * Frequencies are normalised to a month so the two are comparable at all —
+ * 1,000 a day is more than 25,000 a month, and a sort that put them the other
+ * way round would be worse than the one that did nothing. The multipliers are a
+ * working month, not a legal definition, and they only ever decide an ordering.
+ */
+const MONTHLY_EQUIVALENT: Record<string, number> = {
+  hourly: 8 * 26,
+  daily: 26,
+  weekly: 4.33,
+  monthly: 1,
+  yearly: 1 / 12,
+};
+
 const getJobBudgetValue = (job: JobListing): number | null => {
-  const max = typeof job.salary_range?.max === "number" ? job.salary_range?.max : null;
-  const min = typeof job.salary_range?.min === "number" ? job.salary_range?.min : null;
-  if (max != null) return max;
-  if (min != null) return min;
-  return null;
+  const salary = listingHighlights(job).salary;
+  if (!salary) return null;
+
+  const frequency = Object.keys(MONTHLY_EQUIVALENT).find((key) =>
+    salary.toLowerCase().startsWith(key),
+  );
+
+  // Every number in the string, commas stripped. The last is the top of a
+  // range ("500-1,000") and the only one for an open-ended figure ("25,000+").
+  const amounts = (salary.replace(/,/g, "").match(/\d+(?:\.\d+)?/g) || [])
+    .map(Number)
+    .filter((value) => Number.isFinite(value));
+  if (amounts.length === 0) return null;
+
+  const top = Math.max(...amounts);
+  return top * (frequency ? MONTHLY_EQUIVALENT[frequency] : 1);
 };
 
 const extractArray = <T,>(raw: any): T[] => {
@@ -1711,7 +1738,7 @@ export default function HousehelpJobsHome() {
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">{selectedJob.title || "Household Job"}</h2>
                 <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
                   <p>📍 {formatListingPlace(selectedJob)}</p>
-                  <p>💰 {formatSalaryRange(selectedJob.salary_range)}</p>
+                  <p>💰 {listingHighlights(selectedJob).salary || "Not specified"}</p>
                   <p>🗓️ Start {formatDate(selectedJob.start_date)}</p>
                 </div>
               </div>

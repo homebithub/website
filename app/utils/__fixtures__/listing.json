@@ -1,0 +1,216 @@
+{
+  "county": "Bungoma",
+  "county_id": 39,
+  "created_at": "2026-08-06T10:07:38.339142Z",
+  "description": "I am  located in ruaka and need a mama fua to come twice a month",
+  "expires_at": "2026-08-28T06:53:36.394159Z",
+  "has_applied": false,
+  "id": 2,
+  "job_type_id": 3,
+  "listing_feature_groups": [
+    {
+      "feature_id": 2,
+      "feature_name": "Chore",
+      "properties": [
+        "General Cleaning",
+        "Laundry & Ironing",
+        "Cooking",
+        "Dishwashing"
+      ]
+    },
+    {
+      "feature_id": 6,
+      "feature_name": "SalaryRange",
+      "properties": [
+        "daily: 500-1,000 KES"
+      ]
+    },
+    {
+      "feature_id": 25,
+      "feature_name": "StartTiming",
+      "properties": [
+        "Immediately"
+      ]
+    },
+    {
+      "feature_id": 26,
+      "feature_name": "EngagementFrequency",
+      "properties": [
+        "As needed"
+      ]
+    },
+    {
+      "feature_id": 27,
+      "feature_name": "EngagementDuration",
+      "properties": [
+        "One-off task"
+      ]
+    },
+    {
+      "feature_id": 28,
+      "feature_name": "WorkArrangement",
+      "properties": [
+        "Day worker"
+      ]
+    },
+    {
+      "feature_id": 29,
+      "feature_name": "PreferredDays",
+      "properties": [
+        "Saturday"
+      ]
+    },
+    {
+      "feature_id": 30,
+      "feature_name": "ShiftWindow",
+      "properties": [
+        "Early morning",
+        "Morning",
+        "Afternoon"
+      ]
+    }
+  ],
+  "listing_features": [
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 2,
+      "feature_property_id": 3,
+      "id": 4,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "General Cleaning",
+      "weight": 9
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 2,
+      "feature_property_id": 4,
+      "id": 5,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "Laundry & Ironing",
+      "weight": 9
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 2,
+      "feature_property_id": 5,
+      "id": 6,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "Cooking",
+      "weight": 9
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 2,
+      "feature_property_id": 6,
+      "id": 7,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "Dishwashing",
+      "weight": 9
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 6,
+      "feature_property_id": 102,
+      "id": 8,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "daily: 500-1,000 KES",
+      "weight": 8
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 25,
+      "feature_property_id": 182,
+      "id": 9,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "Immediately",
+      "weight": 6
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 26,
+      "feature_property_id": 193,
+      "id": 10,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "As needed",
+      "weight": 7
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 27,
+      "feature_property_id": 194,
+      "id": 11,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "One-off task",
+      "weight": 5
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 28,
+      "feature_property_id": 203,
+      "id": 12,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "Day worker",
+      "weight": 7
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 29,
+      "feature_property_id": 212,
+      "id": 13,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "Saturday",
+      "weight": 6
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 30,
+      "feature_property_id": 215,
+      "id": 14,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "Early morning",
+      "weight": 6
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 30,
+      "feature_property_id": 216,
+      "id": 15,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "Morning",
+      "weight": 6
+    },
+    {
+      "created_at": "2026-08-06T10:07:38.343602Z",
+      "feature_id": 30,
+      "feature_property_id": 217,
+      "id": 16,
+      "listing_id": 2,
+      "updated_at": "2026-08-06T10:07:38.343602Z",
+      "value": "Afternoon",
+      "weight": 6
+    }
+  ],
+  "owner_first_name": "Nahashon",
+  "owner_last_name": "Njenga",
+  "owner_user_id": "dec587d9-b634-46e9-ab62-f6196c37f1e3",
+  "status": "active",
+  "subcounty": "Cheptais",
+  "subcounty_id": 226,
+  "title": "Mama Fua needed",
+  "updated_at": "2026-08-07T06:53:36.394159Z",
+  "user_profile_id": "2bb41d12-9a1d-402d-852c-872941c1715b",
+  "ward": "Chesikaki Ward",
+  "ward_id": 1085
+}

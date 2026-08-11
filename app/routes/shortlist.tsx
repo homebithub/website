@@ -60,12 +60,12 @@ type ShortlistedJob = {
   created_at?: string;
   start_date?: string;
   max_applicants?: number;
-  salary_range?: { min?: number; max?: number };
   has_applied?: boolean;
-  household_id?: string;
   user_id?: string;
   user_profile_id?: string;
   household_profile_id?: string;
+  /** What ListJobs calls the poster of a listing. */
+  owner_user_id?: string;
   household?: {
     id?: string;
     user_id?: string;
@@ -250,7 +250,10 @@ export default function ShortlistPage() {
               {(Array.isArray(items) ? items : [])
                 .map((job) => {
                   const jobId = String(job.id || '');
-                  const householdUserId = job.household?.user_id || job.household_id || job.user_id;
+                  // owner_user_id is what ListJobs calls the poster. household_id
+                  // is not a field a listing carries, so the old first choice was
+                  // always undefined and this fell through to job.user_id.
+                  const householdUserId = job.household?.user_id || job.owner_user_id || job.user_id;
                   const householdProfileId = job.household?.profile_id || job.household?.id || job.household_profile_id || job.user_profile_id;
                   const isOpen = isJobOpen(job || {});
                   const hasApplied = Boolean(job?.has_applied);
