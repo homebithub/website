@@ -228,7 +228,7 @@ export default function ShortlistPage() {
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className={`flex-1 py-8 ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-6xl flex-col px-4 sm:px-6 lg:px-8">
             <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">Saved</h1>
 
             {(!items || items.length === 0) && !loading && !error && (
@@ -240,7 +240,13 @@ export default function ShortlistPage() {
 
             {error && <ErrorAlert message={error} className="mb-4" />}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* One column, like the job board.
+                This was a two-column grid, so a single saved job sat at half the
+                width of the page with empty space beside it — and saved lists are
+                usually short, which is exactly when that looks most wrong. The
+                cards carry the same content as the board's, so they get the same
+                shape. */}
+            <div className="space-y-4">
               {(Array.isArray(items) ? items : [])
                 .map((job) => {
                   const jobId = String(job.id || '');

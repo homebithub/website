@@ -13,6 +13,7 @@ import NotificationsModal from "~/components/notifications/NotificationsModal";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { hireRequestService, listingApplicationService } from '~/services/grpc/authServices';
 import notificationsService from '~/services/grpc/notifications.service';
+import { shortlistService } from '~/services/grpc/authServices';
 import authService from '~/services/grpc/auth.service';
 import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
@@ -47,6 +48,7 @@ export function Navigation() {
     const [userName, setUserName] = useState<string | null>(null);
     const [inboxCount, setInboxCount] = useState<number>(0);
     const [hireRequestCount, setHireRequestCount] = useState<number>(0);
+    const [savedCount, setSavedCount] = useState<number>(0);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const { unreadCount } = useNotifications({ pollingMs: 30000, pageSize: 20, enabled: allowAuxiliaryAccountCalls });
@@ -85,15 +87,19 @@ export function Navigation() {
             // "Saved" rather than "Shortlist": this holds what someone bookmarked
             // while browsing. A household shortlisting a candidate who applied to
             // its job is a different act, and lives on the hiring page.
-            // No badge on Saved. It holds what someone chose to keep, not work
-            // waiting on them, and a number that never reaches zero teaches
-            // people to stop reading the badges that do mean something.
-            { name: 'Saved', href: shortlistHref, count: 0 },
+            // Saved now carries a count, by request.
+            //
+            // It was deliberately left without one: the other badges mean "this
+            // is waiting on you" and go back to zero when dealt with, while a
+            // saved-items count is a total that mostly grows. Recorded because
+            // it is the thing to watch — if people start ignoring the Inbox and
+            // Hiring numbers, this is the first place to look.
+            { name: 'Saved', href: shortlistHref, count: savedCount },
             { name: 'Inbox', href: '/inbox', count: inboxCount },
             { name: hiringLabel, href: hiringHistoryHref, count: hireRequestCount },
             { name: 'Blog', href: '/blog', count: 0 },
         ];
-    }, [profileType, inboxCount, hireRequestCount]);
+    }, [profileType, inboxCount, hireRequestCount, savedCount]);
 
     const profileRole = normalizeProfileRole(profileType);
     const accountProfileHref = profileRole === 'client'
@@ -170,6 +176,26 @@ export function Navigation() {
         }
     }, []);
 
+    // How many things are saved.
+    //
+    // GetShortlistCount runs the same query over saved_items that the Saved page
+    // lists from, so the badge and the page cannot disagree — counting client
+    // side from a fetched list would have been a second definition of the same
+    // number, and those drift.
+    const fetchSavedCount = React.useCallback(async () => {
+        try {
+            if (!getAccessTokenFromCookies()) return;
+            const raw: any = await shortlistService.getShortlistCount('');
+            const count = Number(raw?.count ?? raw?.data?.count ?? 0);
+            setSavedCount(Number.isFinite(count) && count > 0 ? count : 0);
+        } catch (error) {
+            setSavedCount(0);
+            if (!shouldSilenceGatewayError(error)) {
+                console.error("Failed to fetch saved count:", error);
+            }
+        }
+    }, []);
+
     // One place that refreshes both badges, called by everything below.
     //
     // The counts used to move only on a 60-second timer, so a badge could be a
@@ -198,6 +224,7 @@ export function Navigation() {
             lastRefreshRef.current = Date.now();
             fetchHireRequestCount();
             fetchInboxCount();
+            fetchSavedCount();
         }, wait);
     }, [fetchHireRequestCount, fetchInboxCount]);
 
@@ -239,6 +266,7 @@ export function Navigation() {
                 if (!isInSetupMode && allowAuxiliaryAccountCalls) {
                     fetchHireRequestCount(resolvedProfileType);
                     fetchInboxCount();
+                    fetchSavedCount();
                 }
             } catch {
                 setProfileType(null);
@@ -248,6 +276,7 @@ export function Navigation() {
             setProfileType(null);
             setUserName(null);
             setInboxCount(0);
+            setSavedCount(0);
         }
     }, [user, currentUser, isInSetupMode, allowAuxiliaryAccountCalls]);
 
@@ -264,13 +293,23 @@ export function Navigation() {
             if (getAccessTokenFromCookies()) fetchInboxCount();
         };
 
+        // Every place that saves or unsaves already dispatches this — the two
+        // home pages, the jobs board and the Saved page itself. Nothing was
+        // listening, which is the same gap the inbox badge had: the number was
+        // correct on load and then stood still while the heart was clicked.
+        const handleShortlistUpdate = () => {
+            if (getAccessTokenFromCookies()) fetchSavedCount();
+        };
+
         window.addEventListener('hiring-updated', handleHiringUpdate);
         window.addEventListener('inbox-updated', handleInboxUpdate);
+        window.addEventListener('shortlist-updated', handleShortlistUpdate);
         return () => {
             window.removeEventListener('hiring-updated', handleHiringUpdate);
             window.removeEventListener('inbox-updated', handleInboxUpdate);
+            window.removeEventListener('shortlist-updated', handleShortlistUpdate);
         };
-    }, [isInSetupMode, allowAuxiliaryAccountCalls, fetchHireRequestCount, fetchInboxCount]);
+    }, [isInSetupMode, allowAuxiliaryAccountCalls, fetchHireRequestCount, fetchInboxCount, fetchSavedCount]);
 
     const badgesAreLive = Boolean(user) && !isInSetupMode && allowAuxiliaryAccountCalls;
 
