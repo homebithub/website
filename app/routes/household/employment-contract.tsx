@@ -65,6 +65,11 @@ export default function EmploymentContractPage() {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
   const [resolvedHousehelpProfileId, setResolvedHousehelpProfileId] = useState<string>(househelpId || '');
+  // What the advert said about pay, when it named a band rather than a figure.
+  // Shown beside the salary field instead of being guessed at: picking an end of
+  // somebody's posted range and calling it their wage is not a default to make
+  // quietly.
+  const postedSalary = searchParams.get('posted_salary') || '';
 
   const [viewMode, setViewMode] = useState<ViewMode>(contractId ? 'view' : 'configure');
   const [contract, setContract] = useState<EmploymentContract | null>(null);
@@ -97,16 +102,28 @@ export default function EmploymentContractPage() {
   useEffect(() => {
     if (!contractId) {
       fetchDefaultClauses();
-      // Pre-fill from URL params (when coming from hire request)
+      // Pre-filled from the job the contract is for.
+      //
+      // The household wrote all of this when they posted the advert — the
+      // title, where the work is, when it starts, what it involves — and the
+      // form asked for every word of it again. Retyping is not just tedious: a
+      // second description of the same job can disagree with the one the
+      // househelp answered, and it is the contract that binds.
       const paramJobType = searchParams.get('job_type');
       const paramSalary = searchParams.get('salary');
       const paramSalaryFreq = searchParams.get('salary_frequency');
       const paramStartDate = searchParams.get('start_date');
+      const paramEndDate = searchParams.get('end_date');
+      const paramLocation = searchParams.get('work_location');
+      const paramDescription = searchParams.get('job_description');
       const paramNotes = searchParams.get('notes');
       if (paramJobType && !jobTitle) setJobTitle(paramJobType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
       if (paramSalary && !salary) setSalary(paramSalary);
       if (paramSalaryFreq) setSalaryFrequency(paramSalaryFreq);
       if (paramStartDate && !startDate) setStartDate(paramStartDate);
+      if (paramEndDate && !endDate) setEndDate(paramEndDate);
+      if (paramLocation && !workLocation) setWorkLocation(paramLocation);
+      if (paramDescription && !jobDescription) setJobDescription(paramDescription);
       if (paramNotes && !notes) setNotes(paramNotes);
     }
   }, []);
@@ -599,6 +616,11 @@ export default function EmploymentContractPage() {
                   <input type="number" value={salary} onChange={e => setSalary(e.target.value)}
                     className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                     placeholder="e.g. 15000" />
+                  {postedSalary && !contractId && (
+                    <p className="mt-1 text-[11px] text-gray-500 dark:text-purple-300">
+                      Your advert said {postedSalary}. Enter the figure you agreed.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency *</label>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { ListingDetails } from '~/components/listing/ListingDetails';
 import { formatListingPlace } from '~/utils/place';
+import { listingHighlights } from '~/utils/listingFeatures';
 import { hireRequestService, hireContractService, employmentContractService, shortlistService, jobService, listingApplicationService, employmentService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart, Star } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -714,11 +715,47 @@ export default function HiringHistory() {
         application_id: interest.id,
       });
       const contractId = contract?.id || contract?.data?.id || '';
+
+      // The contract form opens knowing who it is for and what the job is.
+      //
+      // It was opened with the contract id alone, so the form had no househelp
+      // and refused to save with "job title, salary, and househelp are
+      // required" — on a form the household had just filled in by hand. The
+      // legacy path passed these; the application path was written without
+      // them.
+      //
+      // The rest comes off the advert, which the household already wrote. Asking
+      // for it again is not only retyping: a second description of the same job
+      // can disagree with the one the househelp answered, and it is the contract
+      // that binds.
+      const listing = jobs.find(
+        (job) => String(job.id) === String((interest as any).listing_id ?? ''),
+      );
       const params = new URLSearchParams({
         backTo: backToPath,
         backLabel: 'Back to Hiring',
       });
       if (contractId) params.set('hire_contract_id', String(contractId));
+      if (interest.househelp_id) params.set('househelp_id', String(interest.househelp_id));
+
+      if (listing) {
+        const posted = listingHighlights(listing).salary;
+        if (listing.title) params.set('job_type', String(listing.title));
+        if (listing.description) params.set('job_description', String(listing.description));
+        const place = formatListingPlace(listing);
+        if (place) params.set('work_location', place);
+        // Frequency reads straight off the advert's "monthly: …" prefix. The
+        // figure does not: a posted band is a band, and choosing an end of it
+        // for somebody is not a default to set quietly, so it is shown beside
+        // the field for the household to settle.
+        const frequency = posted.split(':')[0]?.trim().toLowerCase();
+        if (['hourly', 'daily', 'weekly', 'monthly'].includes(frequency)) {
+          params.set('salary_frequency', frequency);
+        }
+        if (posted) params.set('posted_salary', posted);
+        if (listing.start_date) params.set('start_date', String(listing.start_date).split('T')[0]);
+      }
+
       navigate(`/household/employment-contract?${params.toString()}`);
     } catch (err: any) {
       setError(err?.message || 'We could not draw up a contract. Please try again.');
