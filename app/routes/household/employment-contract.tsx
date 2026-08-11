@@ -7,7 +7,7 @@ import {
   FileText, CheckCircle, XCircle, Download, Mail, Send,
   ChevronLeft, Edit3, Check, AlertCircle, Plus, Trash2
 } from 'lucide-react';
-import { resolveHousehelpProfile, resolveHousehelpProfileId } from '~/utils/househelpProfiles';
+import { resolveHousehelpProfile, resolveHousehelpUserId } from '~/utils/househelpProfiles';
 import { FormPageSkeleton } from "~/components/ShimmerLoader";
 import CustomSelect from '~/components/ui/CustomSelect';
 import { contractPdfBytes, downloadContractPdf } from '~/utils/contractDocument';
@@ -147,9 +147,18 @@ export default function EmploymentContractPage() {
 
       try {
         const profile = await resolveHousehelpProfile(targetId, { identifierType: 'auto' });
-        const profileId = resolveHousehelpProfileId(profile) || targetId;
+        // Auth matches this against user_profile.id or user_profile.user_id, so
+        // send one of those — the id we were handed already is one, since it
+        // comes off the application's applicant_profile_id.
+        //
+        // This preferred resolveHousehelpProfileId, which returns `profile_id`
+        // first: the profile record, which matches neither. So a perfectly good
+        // id was swapped for one that resolves to nothing, and the contract
+        // stopped with "we could not find the househelp this contract is for"
+        // about the applicant whose card had just been used to open it.
+        const resolved = resolveHousehelpUserId(profile) || targetId;
         if (!cancelled) {
-          setResolvedHousehelpProfileId(profileId);
+          setResolvedHousehelpProfileId(resolved);
         }
       } catch {
         if (!cancelled) {
