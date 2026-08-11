@@ -56,6 +56,13 @@ export default function ProfileReviews({
   const [totalReviews, setTotalReviews] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  // A review the viewer has written about this person that is not public yet.
+  //
+  // Reviews are held until an admin verifies them — verified defaults false and
+  // the public list only returns verified ones. Nothing told the author that, so
+  // somebody who had just written one was shown "No reviews yet. Be the first to
+  // leave a review!" about the review they had left.
+  const [myPendingReview, setMyPendingReview] = useState<any | null>(null);
   const [busyReviewId, setBusyReviewId] = useState<string | null>(null);
   const [responseDrafts, setResponseDrafts] = useState<Record<string, string>>({});
   const [actionError, setActionError] = useState('');
@@ -73,6 +80,7 @@ export default function ProfileReviews({
   useEffect(() => {
     loadReviewStats();
     loadReviews(currentPage);
+    void loadMyPendingReview();
   }, [profileId, profileType, isOwnProfile, currentPage]);
 
   const loadReviewStats = async () => {
@@ -166,6 +174,22 @@ export default function ProfileReviews({
     };
   }, [profileId, isOwnProfile]);
 
+  const loadMyPendingReview = async () => {
+    if (!getStoredUserId() || isOwnProfile) return;
+    try {
+      const mine = await reviewService.getMyReviews(getStoredUserId(), 1, 50);
+      const rows = (mine as any)?.data?.data ?? (mine as any)?.data ?? mine ?? [];
+      const forThisProfile = (Array.isArray(rows) ? rows : []).find(
+        (row: any) =>
+          String(row?.reviewee_id ?? row?.reviewee_user_id ?? '') === String(profileId) &&
+          !(row?.verified ?? false),
+      );
+      setMyPendingReview(forThisProfile || null);
+    } catch {
+      // Nothing to add if we cannot read them; the public list still stands.
+    }
+  };
+
   const handleMarkHelpful = async (review: Review) => {
     if (!getStoredUserId()) {
       setActionError('Sign in to mark a review as helpful.');
@@ -230,7 +254,8 @@ export default function ProfileReviews({
       });
       setShowReviewForm(false);
       setReviewForm({ rating: 5, title: '', content: '' });
-      setActionSuccess('Review submitted. It will appear after moderation.');
+      setActionSuccess('Review submitted. It will appear publicly once it has been checked.');
+      void loadMyPendingReview();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Could not submit your review.');
     } finally {
@@ -472,7 +497,9 @@ export default function ProfileReviews({
         ) : reviews.length === 0 ? (
           <div className="bg-purple-50 dark:bg-purple-900/10 rounded-3xl border-2 border-purple-200 dark:border-purple-500/30 p-12 text-center">
             <Star className="w-16 h-16 text-purple-300 dark:text-purple-600 mx-auto mb-4" />
-            <p className="text-gray-700 dark:text-gray-300 font-semibold text-base">No reviews yet</p>
+            <p className="text-gray-700 dark:text-gray-300 font-semibold text-base">
+              {myPendingReview ? 'No public reviews yet' : 'No reviews yet'}
+            </p>
             <p className="text-gray-600 dark:text-gray-400 text-xs mt-2">Be the first to leave a review!</p>
           </div>
         ) : (
