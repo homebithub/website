@@ -185,7 +185,11 @@ const EMPTY_TAB_COPY: Record<Exclude<TabType, 'jobs'>, { title: string; body: st
   },
   shortlisted: {
     title: 'Nobody shortlisted yet',
-    body: 'Shortlist an applicant to keep them here while you decide. They will be able to see your household once you do.',
+    // Careful with what this promises. Contact visibility is decided by what
+    // has happened to the application, not by this list, so shortlisting
+    // somebody here does not yet let them see the household. Saying it did was
+    // a promise the backend never made.
+    body: 'Shortlist an applicant to set them aside while you decide. They stay here until you reply to them or close the job.',
   },
   awaiting: {
     title: 'Nothing waiting on you',
@@ -341,6 +345,15 @@ export default function HiringHistory() {
     setSearchParams(nextSearchParams, { replace: true });
   };
 
+  // Ids arrive as strings from the shortlist service and are read off records
+  // that have carried them as numbers, so both sides are keyed the same way
+  // before being compared.
+  const isShortlistedProfile = useCallback(
+    (profileId?: string | null) =>
+      Boolean(profileId) && shortlistedProfileIds.has(String(profileId)),
+    [shortlistedProfileIds],
+  );
+
   const removeHousehelpFromShortlist = async (profileId?: string | null) => {
     if (!profileId) return;
     try {
@@ -459,7 +472,7 @@ export default function HiringHistory() {
     try {
       const raw = await shortlistService.listByHousehold('');
       const shortlistItems = extractEnvelopeArray<{ profile_id?: string }>(raw);
-      setShortlistedProfileIds(new Set(shortlistItems.map((item) => item.profile_id).filter((id): id is string => Boolean(id))));
+      setShortlistedProfileIds(new Set(shortlistItems.map((item) => (item.profile_id ? String(item.profile_id) : '')).filter(Boolean)));
     } catch (err) {
       console.error('Failed to fetch shortlist for applicants view:', err);
     }
@@ -817,6 +830,27 @@ export default function HiringHistory() {
       applicants: [], shortlisted: [], awaiting: [], hired: [], closed: [],
     };
     for (const row of applicants) {
+      // Shortlisting comes first, because it is a decision the household made
+      // about this person and the statuses below are things that happened to
+      // the application.
+      //
+      // The tab used to be filled from the application status alone, and no
+      // applicant could ever reach it: "shortlisted" there means a candidate
+      // the household invited who has not applied yet, and the state machine
+      // has no way back to it from "initiated". Meanwhile the Shortlist button
+      // wrote to the saved list, truthfully reported "Added to shortlist", and
+      // the tab beside it stayed empty. Two different things wearing one name.
+      //
+      // Both belong here: somebody you invited and somebody you set aside are
+      // both people you are still deciding about.
+      const shortlistedByHousehold =
+        isShortlistedProfile(row.househelp_id || row.househelp?.id);
+
+      if (shortlistedByHousehold && !['approved', 'declined'].includes(row.status)) {
+        groups.shortlisted.push(row);
+        continue;
+      }
+
       for (const [tab, statuses] of Object.entries(TAB_STATUSES)) {
         if (statuses.includes(row.status)) {
           groups[tab].push(row);
@@ -825,7 +859,7 @@ export default function HiringHistory() {
       }
     }
     return groups;
-  }, [applicants]);
+  }, [applicants, isShortlistedProfile]);
 
   // The nav badge counts what needs the household's attention: new applicants
   // plus anyone who has accepted and is waiting on their approval.
@@ -954,27 +988,36 @@ export default function HiringHistory() {
       return;
     }
 
-    if (shortlistedProfileIds.has(profileId)) {
-      setShortlistSuccess('Already in your shortlist.');
-      return;
-    }
+    const alreadyShortlisted = isShortlistedProfile(profileId);
 
     setShortlistLoadingInterestId(interest.id);
     setShortlistError(null);
     setShortlistSuccess(null);
     try {
+      // A toggle, because shortlisting now moves somebody into a tab of their
+      // own. Pressing it a second time used to report "Already in your
+      // shortlist" and leave them there with no way back.
+      if (alreadyShortlisted) {
+        await shortlistService.deleteShortlist(String(profileId));
+        setShortlistedProfileIds((prev) => {
+          const next = new Set(prev);
+          next.delete(String(profileId));
+          return next;
+        });
+        window.dispatchEvent(new CustomEvent('shortlist-updated'));
+        await refreshShortlistedProfiles();
+        setShortlistSuccess('Removed from your shortlist.');
+        return;
+      }
+
       await shortlistService.createShortlist('', 'household', {
         profile_id: profileId,
         profile_type: 'househelp',
       });
-      setShortlistedProfileIds((prev) => {
-        const next = new Set(prev);
-        next.add(profileId);
-        return next;
-      });
+      setShortlistedProfileIds((prev) => new Set(prev).add(String(profileId)));
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
       await refreshShortlistedProfiles();
-      setShortlistSuccess('Added to shortlist.');
+      setShortlistSuccess('Added to your shortlist. They are in the Shortlisted tab.');
     } catch (err: any) {
       console.error('Failed to shortlist applicant:', err);
       setShortlistError(err?.message || 'Failed to add to shortlist.');
@@ -1229,7 +1272,7 @@ export default function HiringHistory() {
                   ? formatDate(profile.availability_date)
                   : 'Flexible';
               const isNew = !interest.viewed_at;
-              const isShortlisted = Boolean(profileId && shortlistedProfileIds.has(profileId));
+              const isShortlisted = isShortlistedProfile(profileId);
               const chatLoading = chatLoadingInterestId === interest.id;
               const shortlistLoading = shortlistLoadingInterestId === interest.id;
               const canActOnInterest = interest.status === 'pending' || interest.status === 'viewed';
@@ -1383,7 +1426,12 @@ export default function HiringHistory() {
                       </button>
                       <button
                         onClick={() => handleShortlistApplicant(interest)}
-                        disabled={shortlistLoading || isShortlisted}
+                        disabled={shortlistLoading}
+                        title={
+                          isShortlisted
+                            ? 'Take them off your shortlist'
+                            : 'Keep them aside while you decide'
+                        }
                         className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors ${
                           isShortlisted
                             ? 'border-green-500 bg-green-500/90 text-white dark:bg-green-500/70'
@@ -1428,7 +1476,7 @@ export default function HiringHistory() {
                         className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-1.5 text-xs font-semibold text-white shadow-lg transition-colors hover:from-purple-700 hover:via-pink-700 hover:to-rose-500"
                       >
                         <Eye className="h-4 w-4" />
-                        View More
+                        View profile
                       </button>
                     </div>
                   </div>
