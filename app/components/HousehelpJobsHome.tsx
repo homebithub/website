@@ -705,7 +705,15 @@ export default function HousehelpJobsHome() {
     return () => {
       cancelled = true;
     };
-  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored, householdFilterId]);
+  // househelpProfileId is a dependency because the score depends on it.
+  //
+  // It is resolved by a separate effect, so on a fresh load it is still "" when
+  // this first runs: match_for is omitted, the service returns the list
+  // unranked, and — without this dependency — nothing re-ran when the id
+  // arrived a moment later. The board therefore showed no match scores at all
+  // until something else happened to change, such as touching a filter, which
+  // is why the percentages looked like they came and went at random.
+  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored, householdFilterId, househelpProfileId]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -917,8 +925,16 @@ export default function HousehelpJobsHome() {
         // househelp into that household's hiring funnel, listed among the
         // candidates it had shortlisted. Removing it already went through
         // shortlistService, so the pair was mismatched either way.
+        // String, not the raw id.
+        //
+        // The interface calls JobListing.id a string and the service returns a
+        // number — TypeScript cannot see that, because the listing comes back
+        // from an untyped API response. Sent as-is it crosses the wire as a
+        // protobuf NumberValue, and the handler reads that field with a string
+        // type assertion, which fails and leaves it empty: "profile_id is
+        // required", for a request that carried one.
         await shortlistService.createShortlist('', 'househelp', {
-          profile_id: job.id,
+          profile_id: String(job.id),
           profile_type: 'job',
         });
 
@@ -1226,6 +1242,32 @@ export default function HousehelpJobsHome() {
                             )}
                           </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatListingPlace(job)}</p>
+                          {/* What earned the score, on the card.
+                              A percentage on its own is a number nobody can
+                              argue with or learn from — it invites people to
+                              either over-trust it or ignore it. The matching
+                              service already returns its reasons; showing the
+                              first few here turns the score into something a
+                              person can act on, and the rest are in the job
+                              detail. */}
+                          {typeof job.fit_score === "number" && job.fit_score > 0 && (job.match_reasons?.length ?? 0) > 0 && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              {job.match_reasons!.slice(0, 3).map((reason) => (
+                                <span
+                                  key={reason}
+                                  className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium capitalize text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200"
+                                >
+                                  <span aria-hidden>✓</span>
+                                  {reason.replace(/_/g, " ")}
+                                </span>
+                              ))}
+                              {(job.match_reasons?.length ?? 0) > 3 && (
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                  +{job.match_reasons!.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          )}
                           {householdName && (
                             <p className="mt-1 text-xs font-semibold text-purple-600 dark:text-purple-300">Hosted by {householdName}</p>
                           )}
