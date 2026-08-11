@@ -474,6 +474,58 @@ export default function HousehelpHiringHistory() {
     }
   };
 
+  // Answering an offer on an application.
+  //
+  // The accept and decline above act on hire requests, a separate legacy record.
+  // An application had no answer at all on this side: a household could invite
+  // somebody and they could only look at it. The offer sat at "initiated" and
+  // the household waited for a reply that the page gave no way to send.
+  const [answeringInterest, setAnsweringInterest] = useState<any | null>(null);
+  const [declineNote, setDeclineNote] = useState('');
+
+  const answerInterest = async (
+    interest: any,
+    response: 'accepted' | 'declined',
+    note = '',
+  ) => {
+    const actorProfileId = getStoredUserProfileId();
+    if (!actorProfileId) {
+      setError('We could not tell which profile you are. Please sign in again.');
+      return;
+    }
+    setActionLoading(interest.id);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      await listingApplicationService.respondToApplication(
+        interest.id,
+        actorProfileId,
+        response,
+        note,
+      );
+      await fetchInterests();
+      window.dispatchEvent(new Event('hiring-updated'));
+      setSuccessMessage(
+        response === 'accepted'
+          ? 'Accepted. The household will send you a contract to sign.'
+          : 'Declined. The household has been told.',
+      );
+    } catch (err: any) {
+      setError(err?.message || 'We could not send your answer. Please try again.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const confirmDeclineInterest = async () => {
+    if (!answeringInterest) return;
+    const interest = answeringInterest;
+    const note = declineNote.trim();
+    setAnsweringInterest(null);
+    setDeclineNote('');
+    await answerInterest(interest, 'declined', note);
+  };
+
   const handleDeclineRequest = async () => {
     if (!selectedRequest) {
       return;
@@ -957,6 +1009,27 @@ export default function HousehelpHiringHistory() {
                         <button onClick={() => { setSelectedInterest(interest); setShowInterestModal(true); }} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Details
                         </button>
+                        {/* An offer is waiting for an answer. "initiated" is
+                            reached both by applying and by a household inviting
+                            you; either way the next word is yours. */}
+                        {interest.status === 'initiated' && (
+                          <>
+                            <button
+                              onClick={() => answerInterest(interest, 'accepted')}
+                              disabled={actionLoading === interest.id}
+                              className="inline-flex items-center gap-2 px-4 py-1 text-xs font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                            >
+                              <CheckCircle className="w-4 h-4" /> Accept
+                            </button>
+                            <button
+                              onClick={() => setAnsweringInterest(interest)}
+                              disabled={actionLoading === interest.id}
+                              className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                            >
+                              <XCircle className="w-4 h-4" /> Decline
+                            </button>
+                          </>
+                        )}
                         {interest.status === 'pending' && (
                           <button onClick={() => openWithdrawConfirm(interest.id)} disabled={actionLoading === interest.id} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
                             <XCircle className="w-4 h-4" /> Withdraw
@@ -1140,6 +1213,56 @@ export default function HousehelpHiringHistory() {
         variant="danger"
         isLoading={actionLoading !== null}
       />
+
+      {/* Declining an offer, with the chance to say why.
+          Optional, and asked for: a household left with silence learns nothing,
+          and "the hours do not work for me" is what stops them offering the
+          same thing again. */}
+      {answeringInterest && (
+        <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+              Decline this offer?
+            </h3>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              The household will be told. You can still apply to their other jobs.
+            </p>
+
+            <label className="mt-4 block">
+              <span className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                Anything you would like to tell them?{' '}
+                <span className="font-normal text-gray-400">(optional)</span>
+              </span>
+              <textarea
+                value={declineNote}
+                onChange={(event) => setDeclineNote(event.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder="The hours do not work for me, but thank you for the offer."
+                className="mt-2 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 dark:border-purple-500/30 dark:bg-[#0d0d14] dark:text-white"
+              />
+            </label>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => { setAnsweringInterest(null); setDeclineNote(''); }}
+                className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeclineInterest}
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-semibold text-white shadow-lg hover:bg-red-700"
+              >
+                <XCircle className="h-4 w-4" />
+                Decline offer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

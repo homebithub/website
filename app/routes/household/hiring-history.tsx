@@ -677,6 +677,32 @@ export default function HiringHistory() {
     }
   };
 
+  // Drawing up the contract once somebody has accepted.
+  //
+  // The helper below builds one from a hire request, a record the newer flow no
+  // longer creates. An accepted application is the same agreement in the tables
+  // that are actually written now, so it gets its own way through.
+  const createContractFromApplication = async (interest: Interest) => {
+    setContractCreating(interest.id);
+    setError(null);
+    try {
+      const contract = await hireContractService.createFromHireRequest('', {
+        application_id: interest.id,
+      });
+      const contractId = contract?.id || contract?.data?.id || '';
+      const params = new URLSearchParams({
+        backTo: backToPath,
+        backLabel: 'Back to Hiring',
+      });
+      if (contractId) params.set('hire_contract_id', String(contractId));
+      navigate(`/household/employment-contract?${params.toString()}`);
+    } catch (err: any) {
+      setError(err?.message || 'We could not draw up a contract. Please try again.');
+    } finally {
+      setContractCreating(null);
+    }
+  };
+
   const createContract = async (request: HireRequest) => {
     setContractCreating(request.id);
     try {
@@ -1294,8 +1320,11 @@ export default function HiringHistory() {
               // never once appeared.
               const canActOnInterest =
                 interest.status === 'shortlisted' || interest.status === 'accepted';
+              // What the next step actually is, named as the household would
+              // name it: an offer to somebody set aside, a contract to somebody
+              // who has already said yes.
               const advanceLabel =
-                interest.status === 'accepted' ? 'Approve & hire' : 'Invite to apply';
+                interest.status === 'accepted' ? 'Send contract' : 'Send offer';
               const statusLabel = interest.status
                 ? interest.status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
                 : 'Pending';
@@ -1479,7 +1508,12 @@ export default function HiringHistory() {
                       {canActOnInterest ? (
                         <>
                           <button
-                            onClick={() => handleAcceptInterest(interest)}
+                            onClick={() =>
+                              interest.status === 'accepted'
+                                ? createContractFromApplication(interest)
+                                : handleAcceptInterest(interest)
+                            }
+                            disabled={contractCreating === interest.id}
                             className="inline-flex items-center gap-2 rounded-xl bg-green-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-green-600"
                           >
                             <UserCheck className="h-4 w-4" />
