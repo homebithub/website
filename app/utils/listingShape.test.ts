@@ -212,3 +212,40 @@ describe("budget ordering", () => {
     expect(budgetOf("negotiable")).toBeNull();
   });
 });
+
+/**
+ * The listing survives the trip onto an application.
+ *
+ * The household's page and the househelp's page each described the same job.
+ * They drifted: the household saw chores, salary range, start timing, frequency,
+ * duration, work arrangement, days and shift window, and the househelp — looking
+ * at their own application for that job — saw the message they had written and
+ * "Salary Expected: Not specified".
+ *
+ * Nothing was missing from the API. The listing was fetched to resolve the
+ * household behind each application and then dropped, everything but the title,
+ * on the way into the row. That is what this checks: a rendering rule is hard to
+ * state in a source scan without an allowlist that rots, but "the thing we
+ * fetched is still attached" is exact.
+ */
+describe("an application carries the job it is for", () => {
+  it("keeps the listing, not only its title", () => {
+    const { readFileSync } = require("node:fs");
+    const source = readFileSync("app/routes/househelp/hiring-history.tsx", "utf8");
+    expect(source, "the fetched listing is being discarded again").toMatch(
+      /\n\s+listing,\n/,
+    );
+  });
+
+  it("shows the job's salary rather than a field an application never carries", () => {
+    const { readFileSync } = require("node:fs");
+    const source = readFileSync("app/routes/househelp/hiring-history.tsx", "utf8");
+    expect(source).toMatch(/listingSalary\(interest\.listing\)/);
+    // salary_expectation described an interest's asking rate and is always 0 on
+    // an application, so rendering it read "Not specified" on every row.
+    expect(
+      /formatSalary\(interest\.salary_expectation/.test(source),
+      "the row is back to reading a salary an application does not carry",
+    ).toBe(false);
+  });
+});

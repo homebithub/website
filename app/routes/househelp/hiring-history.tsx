@@ -4,6 +4,7 @@ import { hireRequestService, hireContractService, employmentContractService, emp
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { ListingDetails, listingSalary } from '~/components/listing/ListingDetails';
 import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { buildIdentifierMap, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
@@ -64,6 +65,8 @@ interface Interest {
   id: string;
   househelp_id: string;
   household_id: string;
+  /** The job this application is against, as the household posted it. */
+  listing?: Record<string, any> | null;
   salary_expectation: number;
   salary_frequency: string;
   available_from?: string;
@@ -455,9 +458,15 @@ export default function HousehelpHiringHistory() {
         }
       }
 
-      // Presented in the shape this tab already renders. The salary fields have no
-      // application equivalent — they described an interest's asking rate — so they
-      // are left empty rather than invented.
+      // The listing is kept, not just its title.
+      //
+      // Every one of these was fetched above and then thrown away except for the
+      // name: the salary the household posted, the chores, when it starts, how
+      // often, how long, day worker or live-in — all discarded on the way into
+      // the row. So the person deciding whether to take the work was shown their
+      // own covering message and "Salary Expected: Not specified", while the
+      // household looked at the full advert. Nothing was missing from the API;
+      // it was being dropped here.
       const items: Interest[] = rows.map((application) => {
         const listingId = String(application.listing_id ?? application.listingId ?? '');
         const listing = listingById.get(listingId) as any;
@@ -473,6 +482,7 @@ export default function HousehelpHiringHistory() {
           created_at: String(application.created_at ?? application.createdAt ?? ''),
           household: householdById.get(householdProfileId),
           job_type: listing?.title ? String(listing.title) : undefined,
+          listing,
         } as Interest;
       });
       setInterests(items);
@@ -1025,7 +1035,17 @@ export default function HousehelpHiringHistory() {
                           </div>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                             {interest.job_type && <div><span className="text-gray-500 dark:text-purple-300">Job Type</span><p className="font-medium text-gray-900 dark:text-white capitalize">{interest.job_type.replace('-', ' ')}</p></div>}
-                            <div><span className="text-gray-500 dark:text-purple-300">Salary Expected</span><p className="font-medium text-gray-900 dark:text-white">{formatSalary(interest.salary_expectation, interest.salary_frequency)}</p></div>
+                            {/* What the job pays, as the household wrote it.
+                                This said "Salary Expected" and read a field an
+                                application does not carry, so it always showed
+                                "Not specified" — on the same job whose advert
+                                states a range. */}
+                            <div>
+                              <span className="text-gray-500 dark:text-purple-300">Salary</span>
+                              <p className="font-medium text-gray-900 dark:text-white">
+                                {listingSalary(interest.listing) || 'Not specified'}
+                              </p>
+                            </div>
                             {interest.available_from && <div><span className="text-gray-500 dark:text-purple-300">Available From</span><p className="font-medium text-gray-900 dark:text-white">{formatDate(interest.available_from)}</p></div>}
                             <div><span className="text-gray-500 dark:text-purple-300">Sent</span><p className="font-medium text-gray-900 dark:text-white">{formatDate(interest.created_at)}</p></div>
                           </div>
@@ -1156,9 +1176,30 @@ export default function HousehelpHiringHistory() {
 
               {/* Content */}
               <div className="p-6 space-y-6">
+                {/* The job itself, first.
+                    This modal opened on the covering message the applicant had
+                    written and nothing else — so the one screen for deciding
+                    whether to take a job showed them their own words back and
+                    none of the household's. What the work is comes first now;
+                    what they said about it comes after. */}
+                <div>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">
+                    The job
+                  </h4>
+                  {selectedInterest.job_type && (
+                    <p className="mb-3 text-base font-semibold text-gray-900 dark:text-white">
+                      {selectedInterest.job_type}
+                    </p>
+                  )}
+                  <ListingDetails
+                    listing={selectedInterest.listing}
+                    emptyMessage="The household has not filled in the details for this job yet."
+                  />
+                </div>
+
                 {/* Interest Details */}
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">Your Interest Details</h4>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">Your application</h4>
                   <div className="grid grid-cols-2 gap-4">
                     {selectedInterest.job_type && (
                       <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">

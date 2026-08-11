@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { humanizeFeatureName } from '~/utils/listingFeatures';
+import { ListingDetails } from '~/components/listing/ListingDetails';
 import { formatListingPlace } from '~/utils/place';
 import { hireRequestService, hireContractService, employmentContractService, shortlistService, jobService, listingApplicationService, employmentService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart, Star } from 'lucide-react';
@@ -80,40 +80,6 @@ interface JobPosting {
   }>;
   listing_features?: Array<Record<string, any>>;
 }
-
-const normalizeListingFeatureGroups = (job: JobPosting) => {
-  if (Array.isArray(job.listing_feature_groups) && job.listing_feature_groups.length > 0) {
-    return job.listing_feature_groups
-      .map((group) => ({
-        featureName: humanizeFeatureName(group.feature_name || group.name) || 'Feature',
-        properties: Array.isArray(group.properties) ? group.properties.filter(Boolean) : [],
-      }))
-      .filter((group) => group.properties.length > 0);
-  }
-
-  const groups = new Map<string, { featureName: string; properties: string[] }>();
-  for (const row of job.listing_features || []) {
-    const feature = row.feature && typeof row.feature === 'object' ? row.feature as Record<string, any> : {};
-    const property = row.property && typeof row.property === 'object' ? row.property as Record<string, any> : {};
-    const featureId = String(row.feature_id || row.featureId || feature.id || 'feature');
-    const featureName = humanizeFeatureName(feature.name || feature.title || row.feature_name) || `Feature #${featureId}`;
-    const propertyName = String(
-      row.value ||
-      property.name ||
-      property.title ||
-      row.property_name ||
-      row.feature_property_name ||
-      (row.feature_property_id || row.featurePropertyId ? `Property #${row.feature_property_id || row.featurePropertyId}` : ''),
-    );
-
-    if (!propertyName) continue;
-    const group = groups.get(featureId) || { featureName, properties: [] };
-    if (!group.properties.includes(propertyName)) group.properties.push(propertyName);
-    groups.set(featureId, group);
-  }
-
-  return Array.from(groups.values()).filter((group) => group.properties.length > 0);
-};
 
 // Tabs are application statuses, because that is what the hiring process
 // actually is. "awaiting" is the bucket that needs the household to act, kept
@@ -1229,7 +1195,6 @@ export default function HiringHistory() {
         {!loading && activeTab === 'jobs' && jobs.length > 0 && (
           <div className="space-y-4">
             {jobs.map((job) => {
-              const featureGroups = normalizeListingFeatureGroups(job);
 
               return (
                 <div
@@ -1256,27 +1221,10 @@ export default function HiringHistory() {
                     </span>
                   </div>
 
-                  {featureGroups.length > 0 && (
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {featureGroups.map((group) => (
-                        <div key={group.featureName} className="rounded-2xl border border-purple-500/20 bg-purple-950/20 p-3">
-                          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-purple-200">
-                            {group.featureName}
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {group.properties.map((property) => (
-                              <span
-                                key={property}
-                                className="rounded-full bg-purple-500/20 px-2.5 py-1 text-xs font-semibold text-purple-50 ring-1 ring-purple-400/30"
-                              >
-                                {property}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  {/* The same renderer the househelp sees. Two copies of this
+                      was how the two sides came to describe one job
+                      differently. */}
+                  <ListingDetails listing={job} className="mt-4" emptyMessage="" />
 
                   {(job.max_applicants || (job.status === 'active' && job.expires_at)) ? (
                     <div className="mt-3 flex flex-wrap gap-2">

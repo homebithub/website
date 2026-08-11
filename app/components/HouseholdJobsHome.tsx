@@ -25,7 +25,7 @@ import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
 import { Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
-import { humanizeFeatureName } from "~/utils/listingFeatures";
+import { humanizeFeatureName, readFeatureGroups } from "~/utils/listingFeatures";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 
@@ -394,12 +394,12 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
 
 const normalizeOpenForWorkListing = (raw: unknown, fallbackId: string): OpenForWorkListing => {
   const listing = toRecord(raw) || {};
-  const featureGroups = Array.isArray(listing.listing_feature_groups)
-    ? listing.listing_feature_groups
-    : [];
-  const flattenedFeatureValues = featureGroups.flatMap((group: any) => (
-    Array.isArray(group?.properties) ? group.properties.map((property: unknown) => formatTextValue(property)) : []
-  )).filter(Boolean);
+  // Through the shared reader rather than reaching into the shape here. It is
+  // the one place that knows how a listing's picks arrive, and every copy of
+  // that knowledge is somewhere the two sides can start disagreeing.
+  const flattenedFeatureValues = readFeatureGroups(listing)
+    .flatMap((group) => group.properties.map((property) => formatTextValue(property)))
+    .filter(Boolean);
   const jobTypeName = firstString(
     listing.job_type_name,
     toRecord(listing.job_type)?.name,
@@ -426,7 +426,11 @@ const normalizeOpenForWorkListing = (raw: unknown, fallbackId: string): OpenForW
     salary_frequency: formatTextValue(listing.salary_frequency) || undefined,
     fit_score: toFiniteNumber(listing.fit_score),
     match_reasons: toStringArray(listing.match_reasons),
-    listing_feature_groups: featureGroups,
+    // Passed through untouched, so anything downstream reads the same shape
+    // the service sent rather than one this function invented.
+    listing_feature_groups: Array.isArray(listing.listing_feature_groups)
+      ? listing.listing_feature_groups
+      : [],
     listing_features: Array.isArray(listing.listing_features) ? listing.listing_features : [],
     househelp: normalizeHousehelp(
       listing.househelp || listing.user_profile || listing.userProfile,
