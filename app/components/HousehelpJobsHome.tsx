@@ -329,19 +329,6 @@ export default function HousehelpJobsHome() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // One household's jobs, when arriving from "See their jobs" on their profile.
-  //
-  // Read from the URL rather than held in state so the filter survives a
-  // reload and can be linked to, and so clearing it is a navigation rather
-  // than a hidden mode the board remembers.
-  const householdFilterId = useMemo(
-    () => new URLSearchParams(location.search).get("household") || "",
-    [location.search],
-  );
-  const householdFilterName = useMemo(
-    () => new URLSearchParams(location.search).get("householdName") || "",
-    [location.search],
-  );
   const { user: authUser } = useAuth();
   const memoizedStoredUser = useMemo(() => getStoredUser(), []);
   const resolvedUser = (authUser as any)?.user ?? memoizedStoredUser ?? null;
@@ -636,13 +623,6 @@ export default function HousehelpJobsHome() {
         // showed "Available for work", posted by another househelp, with an
         // Apply button under it.
         payload.owner = "household";
-        // One household's jobs, when arriving from their profile.
-        //
-        // The board took no parameters at all, so "See their jobs" could only
-        // ever drop somebody on the unfiltered board and hope. user_profile_id
-        // is the poster's profile, which is what the listing carries and what
-        // the service already filters on.
-        if (householdFilterId) payload.user_profile_id = householdFilterId;
         if (filters.jobType) payload.job_type_id = Number(filters.jobType);
         if (filters.wardId) payload.ward_id = Number(filters.wardId);
         else if (filters.subcountyId) payload.subcounty_id = Number(filters.subcountyId);
@@ -713,7 +693,7 @@ export default function HousehelpJobsHome() {
   // arrived a moment later. The board therefore showed no match scores at all
   // until something else happened to change, such as touching a filter, which
   // is why the percentages looked like they came and went at random.
-  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored, householdFilterId, househelpProfileId]);
+  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored, househelpProfileId]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -978,25 +958,9 @@ export default function HousehelpJobsHome() {
           <section className="sticky top-[65px] z-30 mb-5 h-16 border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[73px] sm:h-[72px]">
             <div className="flex h-full items-center gap-2 sm:gap-3 px-8 sm:px-16 lg:px-32">
               <div className="hidden min-w-0 flex-1 sm:block">
-                <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-                  {householdFilterId
-                    ? `Jobs from ${householdFilterName || "this household"}`
-                    : "Latest job openings"}
-                </h1>
+                <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">Latest job openings</h1>
                 <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                   {sortedJobs.length} {sortedJobs.length === 1 ? "role" : "roles"} available
-                  {/* A filter nobody can see is a board that looks broken. Made
-                      obvious, and clearable in one click, because arriving here
-                      from a profile is the only way to turn it on. */}
-                  {householdFilterId && (
-                    <button
-                      type="button"
-                      onClick={() => navigate("/")}
-                      className="ml-2 rounded-full border border-purple-200 px-2 py-0.5 text-[11px] font-semibold text-purple-700 hover:bg-purple-50 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-500/10"
-                    >
-                      Show all jobs
-                    </button>
-                  )}
                 </p>
               </div>
 
