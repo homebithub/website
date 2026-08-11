@@ -78,14 +78,14 @@ export function VerifiedBadge({
           event.stopPropagation();
           setOpen((value) => !value);
         }}
-        className="inline-flex cursor-help items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+        className="inline-flex cursor-help items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
         title={summary}
       >
         <svg width={dimension} height={dimension} viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#7c3aed" />
-              <stop offset="100%" stopColor="#2563eb" />
+              <stop offset="0%" stopColor="#9333ea" />
+              <stop offset="100%" stopColor="#db2777" />
             </linearGradient>
           </defs>
           {/* The scalloped disc that reads as "verified" everywhere else. */}
@@ -104,7 +104,7 @@ export function VerifiedBadge({
       </button>
 
       {showLabel ? (
-        <span className="text-xs font-medium text-violet-700 dark:text-violet-300">Verified</span>
+        <span className="text-xs font-medium text-purple-700 dark:text-purple-300">Verified</span>
       ) : null}
 
       {open ? (
@@ -114,7 +114,7 @@ export function VerifiedBadge({
           // Centred on the badge and clamped to the viewport width, because
           // these sit at the end of a name and would otherwise run off the
           // right edge of a phone.
-          className="absolute left-1/2 top-full z-50 mt-2 w-[min(17rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-violet-200 bg-white p-3 text-left shadow-lg dark:border-violet-500/30 dark:bg-[#161622]"
+          className="absolute left-1/2 top-full z-50 mt-2 w-[min(17rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-purple-200 bg-white p-3 text-left shadow-lg dark:border-purple-500/30 dark:bg-[#161622]"
         >
           <span className="block text-xs font-semibold text-gray-900 dark:text-white">
             Identity verified

@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router";
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { profileService as grpcProfileService, documentService, openForWorkService, shortlistService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
+import { VerifiedBadge } from "~/components/VerifiedBadge";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import ImageViewModal from '~/components/ImageViewModal';
@@ -48,6 +49,9 @@ interface HousehelpData {
   user?: UserData;
   first_name?: string;
   last_name?: string;
+  /** Set by auth from the KYC record; only ever true for an approved one. */
+  identity_verified?: boolean;
+  identity_verified_at?: string;
   years_of_experience?: number;
   languages?: string[];
   salary_expectation?: number;
@@ -442,6 +446,13 @@ export default function HousehelpPublicProfile() {
   const resolvedFirstName = profile?.first_name || profile?.user?.first_name || user?.first_name;
   const resolvedLastName = profile?.last_name || profile?.user?.last_name || user?.last_name;
   const displayName = [resolvedFirstName, resolvedLastName].filter(Boolean).join(' ').trim();
+  // Compared to true rather than checked for truthiness: this is a claim about
+  // somebody's identity, and a stringly "false" from some future endpoint must
+  // not be able to assert it.
+  const isIdentityVerified =
+    profile?.identity_verified === true || (profile?.user as any)?.identity_verified === true;
+  const identityVerifiedAt =
+    typeof profile?.identity_verified_at === 'string' ? profile.identity_verified_at : undefined;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -466,8 +477,15 @@ export default function HousehelpPublicProfile() {
                       </button>
                     )}
                     <div>
-                      <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+                      <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                         {displayName || 'Househelp Profile'}
+                        {/* Beside the name rather than in the details below:
+                            somebody deciding whether to trust this person reads
+                            the name first, and a tick further down the page is
+                            found only by those already looking for it. */}
+                        {isIdentityVerified && (
+                          <VerifiedBadge verifiedAt={identityVerifiedAt} showLabel />
+                        )}
                       </h1>
                     </div>
                   </div>
