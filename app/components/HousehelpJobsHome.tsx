@@ -32,7 +32,7 @@ import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionRemind
 import CustomSelect from "~/components/ui/CustomSelect";
 import LocationPicker, { type LocationSelection } from "~/components/ui/LocationPicker";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
-import { Heart, ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, SlidersHorizontal, X } from "lucide-react";
+import { Heart, ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, SlidersHorizontal, X } from "lucide-react";
 import { useAuth } from "~/contexts/useAuth";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
@@ -122,6 +122,33 @@ const DEFAULT_JOB_FILTERS = {
   childrenCapacityId: "",
 };
 
+
+/**
+ * The household that posted a job, as the listing actually names it.
+ *
+ * job.household_id was read in eight places on this page — the poster's name,
+ * their profile, the preview card, the detail sheet, and View profile — and set
+ * in none. ListJobs returns owner_user_id and user_profile_id; nothing in the
+ * response is called household_id, so every one of those reads was undefined
+ * and the whole household side of this screen quietly did nothing. View profile
+ * was the only one that said so out loud: "We couldn't open this household's
+ * profile right now."
+ *
+ * Kept as two functions over the raw field names rather than a normalisation
+ * step, because the listing shape differs between ListJobs and the hydrated
+ * GetListing response and both reach these cards.
+ */
+const householdProfileKey = (job: JobListing): string | undefined =>
+  job.household_id
+  || (job as any).household_profile_id
+  || (job as any).user_profile_id
+  || (job as any).owner_profile_id
+  || undefined;
+
+const householdUserKey = (job: JobListing): string | undefined =>
+  (job as any).owner_user_id
+  || (job as any).household_user_id
+  || undefined;
 
 const normalizeToken = (value?: string) => (value || "").trim().toLowerCase();
 
@@ -345,7 +372,7 @@ export default function HousehelpJobsHome() {
   const [applyError, setApplyError] = useState<string | null>(null);
   const [householdProfiles, setHouseholdProfiles] = useState<Record<string, HouseholdProfileLike | null>>({});
   const renderHouseholdName = useCallback((job: JobListing) => {
-    const profileId = job.household_id;
+    const profileId = householdProfileKey(job);
     const profile = profileId ? householdProfiles[profileId] : null;
     return profile?.display_name || profile?.household_name || profile?.name || null;
   }, [householdProfiles]);
@@ -471,13 +498,6 @@ export default function HousehelpJobsHome() {
     }
     return items;
   }, [filteredJobs, sortBy]);
-
-  const topMatches = useMemo(() => (
-    [...jobs]
-      .filter((job) => isJobOpen(job) && (job.fit_score ?? 0) > 0)
-      .sort((a, b) => compareNumbers(a.fit_score ?? null, b.fit_score ?? null, "desc"))
-      .slice(0, 6)
-  ), [jobs]);
 
   // Refetches, because location is a server-side filter. Guarded against
   // no-op reports: the picker emits on every internal change, including the
@@ -678,7 +698,7 @@ export default function HousehelpJobsHome() {
 
   useEffect(() => {
     const missingIds = jobs
-      .map((job) => job.household_id)
+      .map((job) => householdProfileKey(job))
       .filter((id): id is string => Boolean(id))
       .filter((id) => !(id in householdProfiles));
 
@@ -718,15 +738,18 @@ export default function HousehelpJobsHome() {
   }, [jobs, householdProfiles]);
 
   const getHouseholdProfileId = (job: JobListing): string | undefined => {
-    const lookupId = job.household_id;
+    const lookupId = householdProfileKey(job);
     const profile = lookupId ? householdProfiles[lookupId] : null;
     return profile?.id || profile?.profile_id || lookupId;
   };
 
   const getHouseholdUserId = (job: JobListing): string | undefined => {
-    const lookupId = job.household_id;
+    const lookupId = householdProfileKey(job);
     const profile = lookupId ? householdProfiles[lookupId] : null;
-    return resolveHouseholdOwnerUserId(profile) || profile?.user_id || undefined;
+    // The listing's own owner_user_id is the fallback that matters: the profile
+    // lookup can fail or still be in flight, and the public profile route can
+    // be opened with just the user id.
+    return resolveHouseholdOwnerUserId(profile) || profile?.user_id || householdUserKey(job);
   };
 
   const handleOpenApplyModal = (job: JobListing, options?: { template?: "experience" | "availability" }) => {
@@ -1109,112 +1132,6 @@ export default function HousehelpJobsHome() {
             )}
 
 
-            {topMatches.length > 0 && (
-              <section className="mb-8">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Top matches</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Curated roles based on your profile.</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{topMatches.length} roles</span>
-                    <div className="flex items-center gap-2 text-[11px]">
-                      <span className="text-gray-500 dark:text-gray-300">Quick apply:</span>
-                      <button
-                        type="button"
-                        onClick={() => topMatches[0] && handleOpenApplyModal(topMatches[0], { template: "experience" })}
-                        className="px-3 py-1 rounded-full border border-purple-200/70 dark:border-purple-500/30 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10"
-                      >
-                        Experience
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => topMatches[0] && handleOpenApplyModal(topMatches[0], { template: "availability" })}
-                        className="px-3 py-1 rounded-full border border-purple-200/70 dark:border-purple-500/30 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10"
-                      >
-                        Availability
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {topMatches.map((job) => {
-                    const householdProfile = job.household_id ? householdProfiles[job.household_id] : null;
-                    const responseBadge = deriveHouseholdResponsivenessBadge(householdProfile);
-                    return (
-                      <div
-                        key={job.id}
-                        className="w-full rounded-2xl border border-purple-200/50 bg-white/90 p-4 text-left shadow-sm transition hover:border-purple-300/70 hover:shadow-md dark:border-purple-500/25 dark:bg-[#151025]/80 sm:flex sm:items-center sm:gap-4"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleOpenJobDetail(job)}
-                          className="min-w-0 flex-1 text-left"
-                        >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
-                              Match {job.fit_score}%
-                            </p>
-                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-1 line-clamp-2">
-                              {job.title || "Household Job"}
-                            </h3>
-                          </div>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${isJobOpen(job)
-                              ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200"
-                              : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300"}`}
-                          >
-                            {isJobOpen(job) ? "Open" : "Closed"}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">📍 {formatListingPlace(job)}</p>
-                        {job.match_reasons && job.match_reasons.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {job.match_reasons.slice(0, 2).map((reason) => (
-                              <span
-                                key={reason}
-                                className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] dark:bg-emerald-500/10 dark:text-emerald-200"
-                              >
-                                {humanizeFeatureName(reason)}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        {responseBadge && (
-                          <div className="mt-2 space-y-1 text-left">
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
-                              {responseBadge.label}
-                            </span>
-                            {responseBadge.detail && (
-                              <p className="text-[11px] text-gray-500 dark:text-gray-400">{responseBadge.detail}</p>
-                            )}
-                          </div>
-                        )}
-                        </button>
-                        <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-semibold sm:mt-0 sm:w-[220px] sm:shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenApplyModal(job, { template: "experience" })}
-                            className="rounded-xl border border-green-200/60 dark:border-green-500/30 text-green-700 dark:text-green-200 px-3 py-1 hover:bg-green-50 dark:hover:bg-green-500/10"
-                          >
-                            Quick apply
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenApplyModal(job, { template: "availability" })}
-                            className="rounded-xl border border-purple-200/60 dark:border-purple-500/30 text-purple-700 dark:text-purple-200 px-3 py-1 hover:bg-purple-50 dark:hover:bg-purple-500/10"
-                          >
-                            Fast pitch
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
             {error && <ErrorAlert message={error} className="mb-6" onClose={() => setError(null)} />}
             {success && <SuccessAlert message={success} className="mb-6" onClose={() => setSuccess(null)} />}
 
@@ -1237,7 +1154,8 @@ export default function HousehelpJobsHome() {
                   const householdName = renderHouseholdName(job);
                   const shortlisted = shortlistedJobIds.has(job.id);
                   const hasApplied = appliedJobIds.has(job.id) || Boolean(job.has_applied);
-                  const householdProfile = job.household_id ? householdProfiles[job.household_id] : null;
+                  const householdKey = householdProfileKey(job);
+                    const householdProfile = householdKey ? householdProfiles[householdKey] : null;
                   const responseBadge = deriveHouseholdResponsivenessBadge(householdProfile);
                   const highlights = listingHighlights(job);
                   return (
@@ -1318,16 +1236,6 @@ export default function HousehelpJobsHome() {
                               ) : (
                                 <Heart className={`w-4 h-4 ${shortlisted ? 'fill-current' : ''}`} />
                               )}
-                            </button>
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleViewProfile(job);
-                              }}
-                              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition"
-                              aria-label="View household profile"
-                            >
-                              <Eye className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
@@ -1445,7 +1353,8 @@ export default function HousehelpJobsHome() {
       <Footer />
 
       {previewProfileJob && (() => {
-        const profile = previewProfileJob.household_id ? householdProfiles[previewProfileJob.household_id] : null;
+        const previewKey = householdProfileKey(previewProfileJob);
+        const profile = previewKey ? householdProfiles[previewKey] : null;
         const profileData = (profile ?? {}) as Record<string, any>;
         const householdName = profile?.display_name || profile?.household_name || profile?.name || profileData["display_name"] || "Verified household";
         const shortName = householdName.split(" ")[0] || householdName;
@@ -1547,7 +1456,8 @@ export default function HousehelpJobsHome() {
           hasScheduleSlot(selectedJobDetail.work_schedule, "afternoon") && "Afternoon",
           hasScheduleSlot(selectedJobDetail.work_schedule, "evening") && "Evening",
         ].filter(Boolean) as string[];
-        const householdProfile = selectedJobDetail.household_id ? householdProfiles[selectedJobDetail.household_id] : null;
+        const detailKey = householdProfileKey(selectedJobDetail);
+        const householdProfile = detailKey ? householdProfiles[detailKey] : null;
         const responseBadge = deriveHouseholdResponsivenessBadge(householdProfile);
         const detailHighlights = listingHighlights(selectedJobDetail);
         // Salary and start timing already have their own cells above, so they
@@ -1588,6 +1498,37 @@ export default function HousehelpJobsHome() {
                 <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">
                   {selectedJobDetail.description}
                 </p>
+              )}
+
+              {/* What produced the match score.
+                  The percentage on the card is a number with no argument behind
+                  it, which invites people to either over-trust it or ignore it.
+                  The matching service already returns why it scored what it did;
+                  it was simply never rendered. Shown here rather than on the card
+                  because it is a list, and a card has room for a number. */}
+              {typeof selectedJobDetail.fit_score === "number" && selectedJobDetail.fit_score > 0 && (
+                <div className="mt-4 rounded-xl border border-purple-200/60 dark:border-purple-500/25 bg-purple-50/60 dark:bg-purple-500/5 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-purple-600 dark:text-purple-300">
+                    Why this is a {selectedJobDetail.fit_score}% match
+                  </p>
+                  {(selectedJobDetail.match_reasons?.length ?? 0) > 0 ? (
+                    <ul className="mt-2 space-y-1">
+                      {selectedJobDetail.match_reasons!.map((reason) => (
+                        <li key={reason} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-200">
+                          <span aria-hidden className="mt-[3px] text-purple-500">✓</span>
+                          <span className="capitalize">{reason.replace(/_/g, " ")}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    // The score is computed from the profile either way, so an
+                    // empty reason list means the service matched on things it
+                    // does not name rather than that nothing matched.
+                    <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
+                      Based on your location, availability and the chores on your profile.
+                    </p>
+                  )}
+                </div>
               )}
 
               <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
