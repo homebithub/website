@@ -842,6 +842,8 @@ export default function HouseholdJobsHome() {
         household_user_id: currentUserId,
         househelp_user_id: househelpUserId,
         househelp_profile_id: househelpProfileId,
+        // The open-for-work post being answered, so this thread belongs to it.
+        listing_id: listing.id,
       });
       navigate(getInboxRoute(convId));
     } catch (err) {
@@ -901,6 +903,10 @@ export default function HouseholdJobsHome() {
       };
       if (currentHouseholdProfileId) payload.household_profile_id = currentHouseholdProfileId;
       if (selectedInviteListing.househelp?.id) payload.househelp_profile_id = selectedInviteListing.househelp.id;
+      // The open-for-work post being answered. A household approaching the same
+      // househelp about a different post gets a separate thread, which is what
+      // keeps "which job was this about" answerable later.
+      if (selectedInviteListing.id) payload.listing_id = selectedInviteListing.id;
 
       const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
       if (!convId) throw new Error("We couldn't open a conversation just yet.");

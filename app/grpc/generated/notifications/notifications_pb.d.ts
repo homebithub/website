@@ -1262,6 +1262,9 @@ export class StartConversationRequest extends jspb.Message {
   getHousehelpProfileId(): string;
   setHousehelpProfileId(value: string): StartConversationRequest;
 
+  getListingId(): number;
+  setListingId(value: number): StartConversationRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartConversationRequest.AsObject;
   static toObject(includeInstance: boolean, msg: StartConversationRequest): StartConversationRequest.AsObject;
@@ -1276,6 +1279,7 @@ export namespace StartConversationRequest {
     househelpUserId: string;
     householdProfileId: string;
     househelpProfileId: string;
+    listingId: number;
   };
 }
 

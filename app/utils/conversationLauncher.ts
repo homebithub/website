@@ -7,6 +7,16 @@ export type StartConversationPayload = {
   househelp_user_id: string;
   household_profile_id?: string;
   househelp_profile_id?: string;
+  /**
+   * The job this conversation is about.
+   *
+   * A thread belongs to one listing, the way a ride has its own chat: the same
+   * two people hiring again start a new thread, both stay readable, and closing
+   * a job closes exactly its own conversation. Omitted, the service puts them
+   * on the legacy one-thread-per-pair row, which is what every caller did
+   * before there was a listing to name.
+   */
+  listing_id?: string | number;
 };
 
 async function resolveConversationIdFromList(
@@ -14,7 +24,16 @@ async function resolveConversationIdFromList(
 ): Promise<string | undefined> {
   try {
     const data = await notificationsService.listConversations('', 0, 100);
-    const conversations: any[] = data?.conversations || [];
+    let conversations: any[] = data?.conversations || [];
+
+    // Narrowed to the job first, when there is one. Without this the fallback
+    // matches on the two people alone and would hand back the thread from a
+    // different job — which is exactly the conflation job-scoped threads exist
+    // to stop, and it would do it silently.
+    if (payload.listing_id) {
+      const wanted = String(payload.listing_id);
+      conversations = conversations.filter((c) => String(c?.listing_id ?? '') === wanted);
+    }
 
     // 1. Try matching by profile IDs first
     if (payload.household_profile_id && payload.househelp_profile_id) {
@@ -62,6 +81,7 @@ export async function startOrGetConversation(
       househelpUserId: payload.househelp_user_id,
       householdProfileId: payload.household_profile_id || '',
       househelpProfileId: payload.househelp_profile_id || '',
+      listingId: payload.listing_id ? String(payload.listing_id) : '',
     });
 
     const conversationId = data?.id;

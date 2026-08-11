@@ -80,6 +80,189 @@ proto.client_profile.ClientProfileServicePromiseClient =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.client_profile.SaveFilterRequest,
+ *   !proto.shared.GenericResponse>}
+ */
+const methodDescriptor_ClientProfileService_SaveFilter = new grpc.web.MethodDescriptor(
+  '/client_profile.ClientProfileService/SaveFilter',
+  grpc.web.MethodType.UNARY,
+  proto.client_profile.SaveFilterRequest,
+  shared_shared_pb.GenericResponse,
+  /**
+   * @param {!proto.client_profile.SaveFilterRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  shared_shared_pb.GenericResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.client_profile.SaveFilterRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.shared.GenericResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.shared.GenericResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.client_profile.ClientProfileServiceClient.prototype.saveFilter =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/client_profile.ClientProfileService/SaveFilter',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_SaveFilter,
+      callback);
+};
+
+
+/**
+ * @param {!proto.client_profile.SaveFilterRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.shared.GenericResponse>}
+ *     Promise that resolves to the response
+ */
+proto.client_profile.ClientProfileServicePromiseClient.prototype.saveFilter =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/client_profile.ClientProfileService/SaveFilter',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_SaveFilter);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.client_profile.SavedFilterRequest,
+ *   !proto.shared.GenericResponse>}
+ */
+const methodDescriptor_ClientProfileService_ListSavedFilters = new grpc.web.MethodDescriptor(
+  '/client_profile.ClientProfileService/ListSavedFilters',
+  grpc.web.MethodType.UNARY,
+  proto.client_profile.SavedFilterRequest,
+  shared_shared_pb.GenericResponse,
+  /**
+   * @param {!proto.client_profile.SavedFilterRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  shared_shared_pb.GenericResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.client_profile.SavedFilterRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.shared.GenericResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.shared.GenericResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.client_profile.ClientProfileServiceClient.prototype.listSavedFilters =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/client_profile.ClientProfileService/ListSavedFilters',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_ListSavedFilters,
+      callback);
+};
+
+
+/**
+ * @param {!proto.client_profile.SavedFilterRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.shared.GenericResponse>}
+ *     Promise that resolves to the response
+ */
+proto.client_profile.ClientProfileServicePromiseClient.prototype.listSavedFilters =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/client_profile.ClientProfileService/ListSavedFilters',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_ListSavedFilters);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.client_profile.SavedFilterRequest,
+ *   !proto.shared.GenericResponse>}
+ */
+const methodDescriptor_ClientProfileService_DeleteSavedFilter = new grpc.web.MethodDescriptor(
+  '/client_profile.ClientProfileService/DeleteSavedFilter',
+  grpc.web.MethodType.UNARY,
+  proto.client_profile.SavedFilterRequest,
+  shared_shared_pb.GenericResponse,
+  /**
+   * @param {!proto.client_profile.SavedFilterRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  shared_shared_pb.GenericResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.client_profile.SavedFilterRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.shared.GenericResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.shared.GenericResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.client_profile.ClientProfileServiceClient.prototype.deleteSavedFilter =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/client_profile.ClientProfileService/DeleteSavedFilter',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_DeleteSavedFilter,
+      callback);
+};
+
+
+/**
+ * @param {!proto.client_profile.SavedFilterRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.shared.GenericResponse>}
+ *     Promise that resolves to the response
+ */
+proto.client_profile.ClientProfileServicePromiseClient.prototype.deleteSavedFilter =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/client_profile.ClientProfileService/DeleteSavedFilter',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_DeleteSavedFilter);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.client_profile.CreateJobTypeRequest,
  *   !proto.shared.GenericResponse>}
  */

@@ -371,6 +371,9 @@ export class ListRequest extends jspb.Message {
   clearPropertyIdsList(): ListRequest;
   addPropertyIds(value: number, index?: number): ListRequest;
 
+  getOwnerProfileType(): string;
+  setOwnerProfileType(value: string): ListRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListRequest): ListRequest.AsObject;
@@ -390,6 +393,7 @@ export namespace ListRequest {
     wardId: number;
     jobTypeId: number;
     propertyIdsList: Array<number>;
+    ownerProfileType: string;
   };
 }
 
@@ -484,6 +488,32 @@ export class BoolResponse extends jspb.Message {
 export namespace BoolResponse {
   export type AsObject = {
     value: boolean;
+  };
+}
+
+export class AdminDeviceActivityRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): AdminDeviceActivityRequest;
+
+  getDeviceId(): string;
+  setDeviceId(value: string): AdminDeviceActivityRequest;
+
+  getLimit(): number;
+  setLimit(value: number): AdminDeviceActivityRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminDeviceActivityRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminDeviceActivityRequest): AdminDeviceActivityRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminDeviceActivityRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminDeviceActivityRequest;
+  static deserializeBinaryFromReader(message: AdminDeviceActivityRequest, reader: jspb.BinaryReader): AdminDeviceActivityRequest;
+}
+
+export namespace AdminDeviceActivityRequest {
+  export type AsObject = {
+    userId: string;
+    deviceId: string;
+    limit: number;
   };
 }
 
@@ -4192,6 +4222,32 @@ export namespace AdminDocument {
     url: string;
     status: string;
     uploadedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class AdminReviewKYCRequest extends jspb.Message {
+  getId(): string;
+  setId(value: string): AdminReviewKYCRequest;
+
+  getDecision(): string;
+  setDecision(value: string): AdminReviewKYCRequest;
+
+  getReason(): string;
+  setReason(value: string): AdminReviewKYCRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminReviewKYCRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminReviewKYCRequest): AdminReviewKYCRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminReviewKYCRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminReviewKYCRequest;
+  static deserializeBinaryFromReader(message: AdminReviewKYCRequest, reader: jspb.BinaryReader): AdminReviewKYCRequest;
+}
+
+export namespace AdminReviewKYCRequest {
+  export type AsObject = {
+    id: string;
+    decision: string;
+    reason: string;
   };
 }
 

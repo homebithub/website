@@ -604,6 +604,15 @@ export default function InboxPage() {
   }, [activeConversationId, deduplicatedItems, isDesktopLayout, selectedConversationId, setSearchParams]);
 
   const selectedConversation = items.find(c => c.id === activeConversationId);
+
+  // A thread whose job has ended.
+  //
+  // The service refuses the message either way; this is so somebody is told
+  // before they type one rather than after. Compared to a present value rather
+  // than a truthy one, because "locked_at" absent and "locked_at" null both
+  // mean open and only a real timestamp means closed.
+  const conversationLocked = Boolean((selectedConversation as any)?.locked_at);
+  const conversationLockedReason = String((selectedConversation as any)?.locked_reason || '');
   const lockMessages = shouldRestrictMessaging && !!selectedConversation;
 
   const otherUserId = useMemo(() => {
@@ -2328,6 +2337,22 @@ export default function InboxPage() {
               >
                 Accept terms of use to start messaging
               </button>
+            </div>
+          ) : conversationLocked ? (
+            /* Closed, not broken. The history stays exactly where it was — it
+               is theirs, and it is the record of what was agreed — and the only
+               thing removed is the ability to add to it. */
+            <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
+              <svg className="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <p className="text-xs text-gray-600 dark:text-gray-300">
+                {conversationLockedReason === 'job_expired'
+                  ? 'This job has expired, so the conversation is closed. You can still read it.'
+                  : 'This job has closed, so the conversation is closed. You can still read it.'}
+                {' '}
+                A new hire between you will open a fresh conversation.
+              </p>
             </div>
           ) : (
           <form onSubmit={handleSend} className="flex items-end gap-2">

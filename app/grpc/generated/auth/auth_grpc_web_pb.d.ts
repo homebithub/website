@@ -66,6 +66,13 @@ export class AdminServiceClient {
                response: google_protobuf_empty_pb.Empty) => void
   ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
+  adminReviewKYC(
+    request: auth_auth_pb.AdminReviewKYCRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
   adminGetKYCStats(
     request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | undefined,
@@ -156,6 +163,13 @@ export class AdminServiceClient {
     callback: (err: grpcWeb.RpcError,
                response: auth_auth_pb.AdminPlatformTrendResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminPlatformTrendResponse>;
+
+  adminGetDeviceActivity(
+    request: auth_auth_pb.AdminDeviceActivityRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
   adminGetPlatformSettings(
     request: google_protobuf_empty_pb.Empty,
@@ -2472,6 +2486,11 @@ export class AdminServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<google_protobuf_empty_pb.Empty>;
 
+  adminReviewKYC(
+    request: auth_auth_pb.AdminReviewKYCRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
   adminGetKYCStats(
     request: google_protobuf_empty_pb.Empty,
     metadata?: grpcWeb.Metadata
@@ -2536,6 +2555,11 @@ export class AdminServicePromiseClient {
     request: auth_auth_pb.AdminPlatformTrendRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.AdminPlatformTrendResponse>;
+
+  adminGetDeviceActivity(
+    request: auth_auth_pb.AdminDeviceActivityRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
 
   adminGetPlatformSettings(
     request: google_protobuf_empty_pb.Empty,

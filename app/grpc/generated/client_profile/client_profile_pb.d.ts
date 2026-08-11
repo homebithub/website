@@ -201,6 +201,58 @@ export namespace FeaturePickInput {
   };
 }
 
+export class SaveFilterRequest extends jspb.Message {
+  getUserProfileId(): string;
+  setUserProfileId(value: string): SaveFilterRequest;
+
+  getName(): string;
+  setName(value: string): SaveFilterRequest;
+
+  getFilters(): string;
+  setFilters(value: string): SaveFilterRequest;
+
+  getNotify(): boolean;
+  setNotify(value: boolean): SaveFilterRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SaveFilterRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: SaveFilterRequest): SaveFilterRequest.AsObject;
+  static serializeBinaryToWriter(message: SaveFilterRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SaveFilterRequest;
+  static deserializeBinaryFromReader(message: SaveFilterRequest, reader: jspb.BinaryReader): SaveFilterRequest;
+}
+
+export namespace SaveFilterRequest {
+  export type AsObject = {
+    userProfileId: string;
+    name: string;
+    filters: string;
+    notify: boolean;
+  };
+}
+
+export class SavedFilterRequest extends jspb.Message {
+  getUserProfileId(): string;
+  setUserProfileId(value: string): SavedFilterRequest;
+
+  getName(): string;
+  setName(value: string): SavedFilterRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SavedFilterRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: SavedFilterRequest): SavedFilterRequest.AsObject;
+  static serializeBinaryToWriter(message: SavedFilterRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SavedFilterRequest;
+  static deserializeBinaryFromReader(message: SavedFilterRequest, reader: jspb.BinaryReader): SavedFilterRequest;
+}
+
+export namespace SavedFilterRequest {
+  export type AsObject = {
+    userProfileId: string;
+    name: string;
+  };
+}
+
 export class MatchListingsRequest extends jspb.Message {
   getUserProfileId(): string;
   setUserProfileId(value: string): MatchListingsRequest;

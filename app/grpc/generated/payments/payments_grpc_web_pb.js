@@ -568,6 +568,67 @@ proto.payments.PaymentsServicePromiseClient.prototype.checkSubscriptionAccess =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.payments.GetSubscriptionStatusesRequest,
+ *   !proto.payments.GetSubscriptionStatusesResponse>}
+ */
+const methodDescriptor_PaymentsService_GetSubscriptionStatuses = new grpc.web.MethodDescriptor(
+  '/payments.PaymentsService/GetSubscriptionStatuses',
+  grpc.web.MethodType.UNARY,
+  proto.payments.GetSubscriptionStatusesRequest,
+  proto.payments.GetSubscriptionStatusesResponse,
+  /**
+   * @param {!proto.payments.GetSubscriptionStatusesRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.payments.GetSubscriptionStatusesResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.payments.GetSubscriptionStatusesRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.payments.GetSubscriptionStatusesResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.payments.GetSubscriptionStatusesResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.payments.PaymentsServiceClient.prototype.getSubscriptionStatuses =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/payments.PaymentsService/GetSubscriptionStatuses',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_GetSubscriptionStatuses,
+      callback);
+};
+
+
+/**
+ * @param {!proto.payments.GetSubscriptionStatusesRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.payments.GetSubscriptionStatusesResponse>}
+ *     Promise that resolves to the response
+ */
+proto.payments.PaymentsServicePromiseClient.prototype.getSubscriptionStatuses =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/payments.PaymentsService/GetSubscriptionStatuses',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_GetSubscriptionStatuses);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.payments.PauseSubscriptionRequest,
  *   !proto.payments.PauseSubscriptionResponse>}
  */

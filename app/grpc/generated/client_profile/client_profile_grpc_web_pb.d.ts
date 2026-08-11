@@ -9,6 +9,27 @@ export class ClientProfileServiceClient {
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: any; });
 
+  saveFilter(
+    request: client_profile_client_profile_pb.SaveFilterRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: shared_shared_pb.GenericResponse) => void
+  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+
+  listSavedFilters(
+    request: client_profile_client_profile_pb.SavedFilterRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: shared_shared_pb.GenericResponse) => void
+  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+
+  deleteSavedFilter(
+    request: client_profile_client_profile_pb.SavedFilterRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: shared_shared_pb.GenericResponse) => void
+  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+
   createJobType(
     request: client_profile_client_profile_pb.CreateJobTypeRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -113,6 +134,21 @@ export class ClientProfileServicePromiseClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: any; });
+
+  saveFilter(
+    request: client_profile_client_profile_pb.SaveFilterRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<shared_shared_pb.GenericResponse>;
+
+  listSavedFilters(
+    request: client_profile_client_profile_pb.SavedFilterRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<shared_shared_pb.GenericResponse>;
+
+  deleteSavedFilter(
+    request: client_profile_client_profile_pb.SavedFilterRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<shared_shared_pb.GenericResponse>;
 
   createJobType(
     request: client_profile_client_profile_pb.CreateJobTypeRequest,

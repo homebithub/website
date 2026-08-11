@@ -599,6 +599,72 @@ export namespace CheckSubscriptionAccessResponse {
   };
 }
 
+export class GetSubscriptionStatusesRequest extends jspb.Message {
+  getUserIdsList(): Array<string>;
+  setUserIdsList(value: Array<string>): GetSubscriptionStatusesRequest;
+  clearUserIdsList(): GetSubscriptionStatusesRequest;
+  addUserIds(value: string, index?: number): GetSubscriptionStatusesRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetSubscriptionStatusesRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: GetSubscriptionStatusesRequest): GetSubscriptionStatusesRequest.AsObject;
+  static serializeBinaryToWriter(message: GetSubscriptionStatusesRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetSubscriptionStatusesRequest;
+  static deserializeBinaryFromReader(message: GetSubscriptionStatusesRequest, reader: jspb.BinaryReader): GetSubscriptionStatusesRequest;
+}
+
+export namespace GetSubscriptionStatusesRequest {
+  export type AsObject = {
+    userIdsList: Array<string>;
+  };
+}
+
+export class SubscriptionStatusEntry extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): SubscriptionStatusEntry;
+
+  getHasAccess(): boolean;
+  setHasAccess(value: boolean): SubscriptionStatusEntry;
+
+  getIsTrial(): boolean;
+  setIsTrial(value: boolean): SubscriptionStatusEntry;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SubscriptionStatusEntry.AsObject;
+  static toObject(includeInstance: boolean, msg: SubscriptionStatusEntry): SubscriptionStatusEntry.AsObject;
+  static serializeBinaryToWriter(message: SubscriptionStatusEntry, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SubscriptionStatusEntry;
+  static deserializeBinaryFromReader(message: SubscriptionStatusEntry, reader: jspb.BinaryReader): SubscriptionStatusEntry;
+}
+
+export namespace SubscriptionStatusEntry {
+  export type AsObject = {
+    userId: string;
+    hasAccess: boolean;
+    isTrial: boolean;
+  };
+}
+
+export class GetSubscriptionStatusesResponse extends jspb.Message {
+  getStatusesList(): Array<SubscriptionStatusEntry>;
+  setStatusesList(value: Array<SubscriptionStatusEntry>): GetSubscriptionStatusesResponse;
+  clearStatusesList(): GetSubscriptionStatusesResponse;
+  addStatuses(value?: SubscriptionStatusEntry, index?: number): SubscriptionStatusEntry;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetSubscriptionStatusesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetSubscriptionStatusesResponse): GetSubscriptionStatusesResponse.AsObject;
+  static serializeBinaryToWriter(message: GetSubscriptionStatusesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetSubscriptionStatusesResponse;
+  static deserializeBinaryFromReader(message: GetSubscriptionStatusesResponse, reader: jspb.BinaryReader): GetSubscriptionStatusesResponse;
+}
+
+export namespace GetSubscriptionStatusesResponse {
+  export type AsObject = {
+    statusesList: Array<SubscriptionStatusEntry.AsObject>;
+  };
+}
+
 export class CreateSubscriptionCheckoutRequest extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): CreateSubscriptionCheckoutRequest;

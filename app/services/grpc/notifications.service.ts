@@ -113,12 +113,20 @@ export const notificationsService = {
     househelpUserId: string;
     householdProfileId?: string;
     househelpProfileId?: string;
+    /** The job the thread is about. Empty puts it on the legacy pair row. */
+    listingId?: string;
   }): Promise<any> {
     const request = new notifications_pb.StartConversationRequest();
     request.setHouseholdUserId(payload.householdUserId);
     request.setHousehelpUserId(payload.househelpUserId);
     request.setHouseholdProfileId(payload.householdProfileId || '');
     request.setHousehelpProfileId(payload.househelpProfileId || '');
+    // Numeric on the wire; the caller holds it as a string because that is what
+    // a listing id looks like everywhere else in the browser.
+    const listingId = Number(payload.listingId || 0);
+    if (Number.isFinite(listingId) && listingId > 0) {
+      request.setListingId(listingId);
+    }
     const res = await grpcCall((cb) => notificationsClient.startConversation(request, getMetadata(), cb));
     return jsonResponseToJs(res);
   },

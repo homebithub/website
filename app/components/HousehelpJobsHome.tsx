@@ -900,6 +900,9 @@ export default function HousehelpJobsHome() {
       const householdProfileId = getHouseholdProfileId(job);
       if (householdProfileId) payload.household_profile_id = householdProfileId;
       if (househelpProfileId) payload.househelp_profile_id = househelpProfileId;
+      // The job this chat is about, so it gets its own thread rather than
+      // joining whatever these two last talked about.
+      if (job.id) payload.listing_id = job.id;
 
       const conversationId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
       navigate(getInboxRoute(conversationId));

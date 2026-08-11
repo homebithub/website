@@ -580,6 +580,67 @@ proto.auth.AdminServicePromiseClient.prototype.adminRejectKYC =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.AdminReviewKYCRequest,
+ *   !proto.google.protobuf.Empty>}
+ */
+const methodDescriptor_AdminService_AdminReviewKYC = new grpc.web.MethodDescriptor(
+  '/auth.AdminService/AdminReviewKYC',
+  grpc.web.MethodType.UNARY,
+  proto.auth.AdminReviewKYCRequest,
+  google_protobuf_empty_pb.Empty,
+  /**
+   * @param {!proto.auth.AdminReviewKYCRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  google_protobuf_empty_pb.Empty.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.AdminReviewKYCRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminServiceClient.prototype.adminReviewKYC =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminService/AdminReviewKYC',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminReviewKYC,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.AdminReviewKYCRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.google.protobuf.Empty>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminServicePromiseClient.prototype.adminReviewKYC =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminService/AdminReviewKYC',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminReviewKYC);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.google.protobuf.Empty,
  *   !proto.auth.AdminKYCStatsResponse>}
  */
@@ -1367,6 +1428,67 @@ proto.auth.AdminServicePromiseClient.prototype.adminGetPlatformTrend =
       request,
       metadata || {},
       methodDescriptor_AdminService_AdminGetPlatformTrend);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.AdminDeviceActivityRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_AdminService_AdminGetDeviceActivity = new grpc.web.MethodDescriptor(
+  '/auth.AdminService/AdminGetDeviceActivity',
+  grpc.web.MethodType.UNARY,
+  proto.auth.AdminDeviceActivityRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.AdminDeviceActivityRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.AdminDeviceActivityRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminServiceClient.prototype.adminGetDeviceActivity =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminService/AdminGetDeviceActivity',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetDeviceActivity,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.AdminDeviceActivityRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminServicePromiseClient.prototype.adminGetDeviceActivity =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminService/AdminGetDeviceActivity',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetDeviceActivity);
 };
 
 

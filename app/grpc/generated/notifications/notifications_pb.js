@@ -11378,7 +11378,8 @@ proto.notifications.StartConversationRequest.toObject = function(includeInstance
 householdUserId: jspb.Message.getFieldWithDefault(msg, 1, ""),
 househelpUserId: jspb.Message.getFieldWithDefault(msg, 2, ""),
 householdProfileId: jspb.Message.getFieldWithDefault(msg, 3, ""),
-househelpProfileId: jspb.Message.getFieldWithDefault(msg, 4, "")
+househelpProfileId: jspb.Message.getFieldWithDefault(msg, 4, ""),
+listingId: jspb.Message.getFieldWithDefault(msg, 5, 0)
   };
 
   if (includeInstance) {
@@ -11430,6 +11431,10 @@ proto.notifications.StartConversationRequest.deserializeBinaryFromReader = funct
     case 4:
       var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setHousehelpProfileId(value);
+      break;
+    case 5:
+      var value = /** @type {number} */ (reader.readInt64());
+      msg.setListingId(value);
       break;
     default:
       reader.skipField();
@@ -11485,6 +11490,13 @@ proto.notifications.StartConversationRequest.serializeBinaryToWriter = function(
   if (f.length > 0) {
     writer.writeString(
       4,
+      f
+    );
+  }
+  f = message.getListingId();
+  if (f !== 0) {
+    writer.writeInt64(
+      5,
       f
     );
   }
@@ -11560,6 +11572,24 @@ proto.notifications.StartConversationRequest.prototype.getHousehelpProfileId = f
  */
 proto.notifications.StartConversationRequest.prototype.setHousehelpProfileId = function(value) {
   return jspb.Message.setProto3StringField(this, 4, value);
+};
+
+
+/**
+ * optional int64 listing_id = 5;
+ * @return {number}
+ */
+proto.notifications.StartConversationRequest.prototype.getListingId = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.notifications.StartConversationRequest} returns this
+ */
+proto.notifications.StartConversationRequest.prototype.setListingId = function(value) {
+  return jspb.Message.setProto3IntField(this, 5, value);
 };
 
 
