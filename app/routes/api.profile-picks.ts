@@ -5,6 +5,7 @@ import {
   encodeMessageField,
   encodeStringField,
   resolveAuthGrpcBaseUrl,
+  authMetadata,
 } from '~/utils/grpcRaw.server';
 
 function encodePick(featurePropertyId: number, weight = 1): Uint8Array {
@@ -39,6 +40,8 @@ export async function action({ request }: { request: Request }) {
       resolveAuthGrpcBaseUrl(request),
       '/profile.UserProfileService/AddPicks',
       encodePicksRequest(userProfileId, picks),
+      // Writing to a profile: auth refuses unless the caller owns it.
+      authMetadata(request),
     );
 
     return Response.json({ data: responseBody.data ?? responseBody });

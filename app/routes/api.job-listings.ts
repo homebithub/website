@@ -300,16 +300,6 @@ async function getJobListing(baseUrl: string, id: number, callUnaryGrpc: any) {
 
 // Scores every open listing for one service provider — how much of what they
 // asked for each job offers.
-// authMetadata forwards the caller's access token to auth as gRPC metadata.
-//
-// Returns an empty object when there is no token rather than throwing: the
-// match calls already degrade to an unranked list, and a signed-out visitor
-// browsing listings should still get listings.
-function authMetadata(request: Request): Record<string, string> {
-  const token = getAccessTokenFromCookies(request.headers.get('cookie'));
-  return token ? { authorization: `Bearer ${token}` } : {};
-}
-
 async function matchListingsFor(
   baseUrl: string,
   userProfileId: string,
@@ -425,7 +415,7 @@ async function enrichListingsWithFeatures(baseUrl: string, listings: Record<stri
 
 export async function loader({ request }: { request: Request }) {
   try {
-    const { callUnaryGrpc, callUnaryGrpcJson, resolveAuthGrpcBaseUrl } = await import('~/utils/grpcRaw.server');
+    const { callUnaryGrpc, callUnaryGrpcJson, resolveAuthGrpcBaseUrl, authMetadata } = await import('~/utils/grpcRaw.server');
     const url = new URL(request.url);
     const baseUrl = resolveAuthGrpcBaseUrl(request);
     const requestedId = Number(url.searchParams.get('id') || url.searchParams.get('listing_id') || 0);
@@ -572,7 +562,7 @@ export async function action({ request }: { request: Request }) {
   }
 
   try {
-    const { callUnaryGrpc, resolveAuthGrpcBaseUrl } = await import('~/utils/grpcRaw.server');
+    const { callUnaryGrpc, resolveAuthGrpcBaseUrl, authMetadata } = await import('~/utils/grpcRaw.server');
     const body = await request.json();
     const action = String(body.action || '').trim();
     const id = String(body.id || '').trim();
@@ -589,6 +579,11 @@ export async function action({ request }: { request: Request }) {
       const rpcPath = action === 'shortlist'
         ? '/auth.ListingService/ShortlistListing'
         : '/auth.ListingService/InitiateListing';
+      // The caller's token goes with it. Both RPCs now check who is asking —
+      // an applicant owns the service profile, a household headhunting owns the
+      // listing — and neither question can be answered by an anonymous request.
+      // This was the only POST here that did not forward it, which stopped
+      // mattering only for as long as the handler asked nobody anything.
       const { body: responseBody } = await callUnaryGrpc(
         resolveAuthGrpcBaseUrl(request),
         rpcPath,
@@ -597,6 +592,7 @@ export async function action({ request }: { request: Request }) {
           service_provider_id: serviceProviderId,
           message: body.message,
         }),
+        authMetadata(request),
       );
 
       return Response.json({ data: responseBody.data ?? responseBody });

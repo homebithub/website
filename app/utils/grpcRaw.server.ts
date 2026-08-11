@@ -23,6 +23,8 @@ const GRPC_CODE_NAMES: Record<string, string> = {
   '16': 'UNAUTHENTICATED',
 };
 
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+
 export function resolveAuthGrpcBaseUrl(request: Request): string {
   if (process.env.AUTH_GRPC_BASE_URL) {
     return process.env.AUTH_GRPC_BASE_URL.replace(/\/+$/, '');
@@ -364,4 +366,22 @@ export async function callUnaryGrpcMessage(
 
     stream.end(createGrpcFrame(requestBytes));
   });
+}
+
+/**
+ * Forwards the caller's access token to auth as gRPC metadata.
+ *
+ * Lives here rather than in one route because every route that changes
+ * something needs it, and the copy that used to sit privately in the
+ * job-listings route was the reason the others went without: an ownership check
+ * added to an RPC then refused every caller, applicant and household alike,
+ * because the request arrived with nobody attached to it.
+ *
+ * Returns an empty object when there is no token rather than throwing. Several
+ * reads behind this are deliberately public, and a signed-out visitor browsing
+ * listings should still get listings.
+ */
+export function authMetadata(request: Request): Record<string, string> {
+  const token = getAccessTokenFromCookies(request.headers.get('cookie'));
+  return token ? { authorization: `Bearer ${token}` } : {};
 }

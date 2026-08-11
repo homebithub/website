@@ -3,6 +3,7 @@ import {
   concatBytes,
   encodeStringField,
   resolveAuthGrpcBaseUrl,
+  authMetadata,
 } from '~/utils/grpcRaw.server';
 
 function encodeCreateApplication(body: Record<string, unknown>) {
@@ -42,6 +43,10 @@ export async function action({ request }: { request: Request }) {
       baseUrl,
       '/auth.ListingService/ShortlistListing',
       requestBytes,
+      // Who is asking. The RPC checks that the caller either owns the profile
+      // being put forward or owns the listing, and neither is answerable
+      // without this.
+      authMetadata(request),
     );
 
     return Response.json({ data: responseBody.data ?? responseBody });
