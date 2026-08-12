@@ -51,6 +51,7 @@ interface HireContract {
   id: string;
   listing_id?: string;
   household_id: string;
+  household_profile_id?: string;
   job_type?: string;
   start_date?: string;
   end_date?: string;
@@ -84,6 +85,7 @@ interface EmploymentContract {
   application_id?: string;
   listing_id?: string;
   household_id: string;
+  household_profile_id?: string;
   househelp_id: string;
   status?: string;
   job_title?: string;
@@ -145,6 +147,38 @@ const extractEnvelopeArray = <T = any,>(raw: any): T[] => {
   if (Array.isArray(raw?.items)) return raw.items as T[];
   return [];
 };
+
+// Employment contracts and engagement history carry the household profile id,
+// but not a nested household. Resolve that identity once for each fetch so
+// every Hiring list shows a real name and photo instead of a row of identical
+// "Household" placeholders.
+async function decorateHouseholdRows<T extends {
+  household_id?: string;
+  household_profile_id?: string;
+  household?: HouseholdSummary;
+}>(rows: T[]): Promise<T[]> {
+  const profileIds = Array.from(new Set(rows.map((row) => String(
+    row.household_profile_id || row.household_id || row.household?.id || '',
+  )).filter(Boolean)));
+  if (profileIds.length === 0) return rows;
+
+  try {
+    const response = await grpcProfileService.searchMultipleWithUser('', 'household', { profile_ids: profileIds });
+    const byId = new Map<string, HouseholdSummary>();
+    for (const profile of extractEnvelopeArray<any>(response)) {
+      const id = String(profile?.id || profile?.profile_id || '');
+      if (id) byId.set(id, profile as HouseholdSummary);
+    }
+    return rows.map((row) => {
+      const id = String(row.household_profile_id || row.household_id || row.household?.id || '');
+      const resolved = byId.get(id);
+      return resolved ? { ...row, household: resolved } : row;
+    });
+  } catch (error) {
+    console.error('Failed to resolve household identities for hiring history:', error);
+    return rows;
+  }
+}
 
 const extractTotal = (raw: any, fallbackLength: number): number => {
   const payload: any = extractEnvelopeObject(raw);
@@ -391,7 +425,10 @@ export default function HousehelpHiringHistory() {
       // newer record wins and the older one is only kept when nothing else
       // covers it.
       const seen = new Set(engagements.map((row) => row.id));
-      const items = [...engagements, ...legacy.filter((row) => !seen.has(row.id))];
+      const items = await decorateHouseholdRows([
+        ...engagements,
+        ...legacy.filter((row) => !seen.has(row.id)),
+      ]);
       setContracts(items);
       setContractsTotal(items.length);
     } catch (err: any) {
@@ -407,7 +444,7 @@ export default function HousehelpHiringHistory() {
     setError(null);
     try {
       const raw = await employmentContractService.listEmploymentContracts('', undefined, limit, offset);
-      const items = extractEnvelopeArray<EmploymentContract>(raw);
+      const items = await decorateHouseholdRows(extractEnvelopeArray<EmploymentContract>(raw));
       const uniqueItems = collapseApplicationContracts(items);
       setEmploymentContracts(uniqueItems);
       setEmploymentContractsTotal(uniqueItems.length);

@@ -81,6 +81,32 @@ export function buildApplicationContractMap<T extends Record<string, any>>(items
   return result;
 }
 
+/**
+ * Contracts created by the older form do not always retain application_id.
+ * They still carry the listing and househelp, which together identify the
+ * exact relationship without preventing the household from hiring a different
+ * person for the same advert.
+ */
+export function buildListingHousehelpContractMap<T extends Record<string, any>>(items: T[]): Record<string, T> {
+  const result: Record<string, T> = {};
+  const rank = (item: T) => {
+    const status = String(item.storage_status || item.status || '').toLowerCase();
+    if (['active', 'signed_by_both', 'fully_signed'].includes(status)) return 4;
+    if (['forwarded', 'partially_signed', 'pending_househelp'].includes(status)) return 3;
+    if (status === 'draft') return 2;
+    return 1;
+  };
+  for (const item of items) {
+    const listingId = normalizeId(item.listing_id);
+    if (!listingId) continue;
+    for (const househelpId of getHousehelpCandidateIds(item)) {
+      const key = `listing-househelp:${listingId}:${househelpId}`;
+      if (!result[key] || rank(item) > rank(result[key])) result[key] = item;
+    }
+  }
+  return result;
+}
+
 export function collapseApplicationContracts<T extends Record<string, any>>(items: T[]): T[] {
   const applicationContracts = buildApplicationContractMap(items);
   const selected = new Set(Object.values(applicationContracts));

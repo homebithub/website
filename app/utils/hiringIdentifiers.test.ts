@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildApplicationContractMap, collapseApplicationContracts } from './hiringIdentifiers';
+import { buildApplicationContractMap, buildListingHousehelpContractMap, collapseApplicationContracts } from './hiringIdentifiers';
 
 describe('application contract relationships', () => {
   it('prefers the signed legacy row linked to the application draft', () => {
@@ -22,4 +22,9 @@ describe('application contract relationships', () => {
 
     expect(collapseApplicationContracts(rows).map((row) => row.id)).toEqual(['active', 'standalone']);
   });
+});
+
+it('links a legacy contract by listing and househelp when application_id is absent', () => {
+  const rows = [{ id: 'contract', listing_id: 'listing', househelp_user_id: 'person', storage_status: 'active' }];
+  expect(buildListingHousehelpContractMap(rows)['listing-househelp:listing:person']?.id).toBe('contract');
 });

@@ -9,7 +9,7 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import JobPostModal from '~/components/modals/JobPostModal';
 import { useSSEContextSafe } from '~/contexts/SSEContext';
-import { buildApplicationContractMap, buildIdentifierMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
+import { buildApplicationContractMap, buildIdentifierMap, buildListingHousehelpContractMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
@@ -468,6 +468,7 @@ export default function HiringHistory() {
         const items = extractEnvelopeArray<any>(raw);
         const next = buildIdentifierMap(items, getHousehelpCandidateIds);
         Object.assign(next, buildApplicationContractMap(items));
+        Object.assign(next, buildListingHousehelpContractMap(items));
         setEmploymentContractMap(next);
       } catch (err) {
         // Non-critical
@@ -935,9 +936,12 @@ export default function HiringHistory() {
       applicants: [], shortlisted: [], awaiting: [], hired: [], closed: [],
     };
     for (const row of applicants) {
-      const linkedContract = employmentContractMap[`application:${row.id}`];
+      const listingId = String((row as any).listing_id || '');
+      const househelpUserId = househelpUserIdFor(row);
+      const linkedContract = employmentContractMap[`application:${row.id}`] ||
+        employmentContractMap[`listing-househelp:${listingId}:${househelpUserId}`];
       const linkedStatus = String(linkedContract?.storage_status || linkedContract?.status || '').toLowerCase();
-      if (['active', 'signed_by_both', 'completed'].includes(linkedStatus)) {
+      if (['active', 'signed_by_both', 'fully_signed', 'completed'].includes(linkedStatus)) {
         groups.hired.push(row);
         continue;
       }
@@ -1455,17 +1459,20 @@ export default function HiringHistory() {
               // incorrectly lets a contract for another advert control this
               // card, and also fails to enforce the one-contract-per-application
               // rule. The API exposes this relationship directly.
-              const existingContract = employmentContractMap[`application:${interest.id}`];
+              const listingId = String((interest as any).listing_id || '');
+              const househelpUserId = househelpUserIdFor(interest);
+              const existingContract = employmentContractMap[`application:${interest.id}`] ||
+                employmentContractMap[`listing-househelp:${listingId}:${househelpUserId}`];
               const contractStatus = String(
                 existingContract?.storage_status || existingContract?.status || '',
               ).toLowerCase();
               const hasCurrentContract = [
                 'draft', 'forwarded', 'partially_signed', 'pending_househelp',
-                'active', 'signed_by_both',
+                'active', 'signed_by_both', 'fully_signed',
               ].includes(contractStatus);
               const isHired =
-                (interest.status === 'approved' || ['active', 'signed_by_both'].includes(contractStatus)) &&
-                !endedEngagements.has(househelpUserIdFor(interest));
+                (interest.status === 'approved' || ['active', 'signed_by_both', 'fully_signed'].includes(contractStatus)) &&
+                !endedEngagements.has(househelpUserId);
               const chatLoading = chatLoadingInterestId === interest.id;
               const shortlistLoading = shortlistLoadingInterestId === interest.id;
               // Where the household has a next step of its own.
