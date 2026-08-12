@@ -19,6 +19,7 @@ import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 import ProfileReviews from "~/components/ProfileReviews";
 import { useProfileViewTracking } from "~/hooks/useProfileViewTracking";
 import { ProfileChoicesSection } from '~/components/profile/ProfileChoicesSection';
+import { FullPageError } from '~/components/FullPageError';
 
 interface HouseholdData {
   id?: string;
@@ -37,7 +38,7 @@ interface HouseholdData {
 export default function HouseholdPublicProfile() {
   const navigate = useNavigate();
   const location = useLocation();
-  const params = new URLSearchParams(location.search);
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const isEmbed = params.get("embed") === "1" || params.get("embed") === "true";
   const queryBackTo = params.get("backTo");
   const queryBackLabel = params.get("backLabel");
@@ -54,8 +55,6 @@ export default function HouseholdPublicProfile() {
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
   const viewerProfileType = currentUser?.profile_type || getStoredProfileType() || null;
-  const hasExplicitUserId = params.has("userId") || params.has("user_id");
-  const hasExplicitProfileId = params.has("profileId") || params.has("profile_id");
   const stateSource =
     navigationState.fromInbox ? 'inbox' :
     navigationState.fromShortlist ? 'shortlist' :
@@ -71,6 +70,7 @@ export default function HouseholdPublicProfile() {
   const [profile, setProfile] = useState<HouseholdData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -118,8 +118,11 @@ export default function HouseholdPublicProfile() {
         if (!token) throw new Error("Not authenticated");
         if (!resolvedUserId) throw new Error("Missing household user id");
 
+        // Application and marketplace payloads do not use `id` consistently:
+        // some expose the owner user id and others the user_profile id. Resolve
+        // both shapes instead of trusting the query parameter's label.
         const profileData = await resolveHouseholdProfile(resolvedUserId, {
-          identifierType: hasExplicitUserId || !hasExplicitProfileId ? 'userId' : 'profileId',
+          identifierType: 'auto',
         }) as HouseholdData | null;
 
         if (!profileData) {
@@ -156,7 +159,7 @@ export default function HouseholdPublicProfile() {
     };
 
     fetchAllData();
-  }, [resolvedUserId, currentUserId, hasExplicitProfileId, hasExplicitUserId]);
+  }, [resolvedUserId, currentUserId, retryKey]);
 
   const isViewingOwn = !!currentUserId && !!profileOwnerUserId && profileOwnerUserId === currentUserId;
   useProfileViewTracking({
@@ -339,13 +342,7 @@ export default function HouseholdPublicProfile() {
   }
 
   if (error || !profile) {
-    return (
-      <div className="max-w-2xl mx-auto mt-8">
-        <div className="p-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30">
-          <p className="font-semibold text-red-800 dark:text-red-400">{error || "Profile not found"}</p>
-        </div>
-      </div>
-    );
+    return <FullPageError title="Household profile unavailable" message="We couldn't load this household profile. It may have changed, or the connection may have been interrupted." onRetry={() => setRetryKey((value) => value + 1)} backTo={navigationState.backTo || queryBackTo} backLabel={backLabel} embed={isEmbed} />;
   }
 
   const ownerFirstName = profile.owner?.first_name || profile.owner_first_name || profile.first_name;

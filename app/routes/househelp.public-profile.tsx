@@ -20,6 +20,8 @@ import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 import ProfileReviews from "~/components/ProfileReviews";
 import { useProfileViewTracking } from "~/hooks/useProfileViewTracking";
 import { ProfileChoicesSection } from '~/components/profile/ProfileChoicesSection';
+import { FullPageError } from '~/components/FullPageError';
+import { resolveHousehelpProfile } from '~/utils/househelpProfiles';
 
 interface UserData {
   id?: string;
@@ -94,10 +96,11 @@ function normalizeHousehelpData(raw: any): HousehelpData {
 export default function HousehelpPublicProfile() {
   const navigate = useNavigate();
   const location = useLocation();
-  const params = new URLSearchParams(location.search);
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const queryOpenForWorkId = params.get('openForWorkId') || params.get('open_for_work_id');
   const isEmbed = params.get('embed') === '1' || params.get('embed') === 'true';
   const queryProfileId = params.get('profileId');
+  const queryUserId = params.get('userId') || params.get('user_id');
   const queryBackTo = params.get('backTo');
   const queryBackLabel = params.get('backLabel');
   const querySource = params.get('from');
@@ -105,6 +108,7 @@ export default function HousehelpPublicProfile() {
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isViewingOther, setIsViewingOther] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -244,7 +248,7 @@ export default function HousehelpPublicProfile() {
         if (!token) throw new Error("Not authenticated");
         
         // Get profileId from query string (for iframe modal) or navigation state fallback
-        const profileId = queryProfileId || navigationState.profileId;
+        const profileId = queryProfileId || queryUserId || navigationState.profileId;
         
         // Store the profileId we're viewing
         setViewingProfileId(profileId || null);
@@ -252,7 +256,7 @@ export default function HousehelpPublicProfile() {
         // If profileId is provided, fetch that specific profile, otherwise fetch own profile
         let profileData: any;
         if (profileId) {
-          profileData = await grpcProfileService.getHousehelpByID(profileId);
+          profileData = await resolveHousehelpProfile(profileId, { identifierType: 'auto' });
         } else {
           profileData = await grpcProfileService.getCurrentHousehelpProfile('');
         }
@@ -340,7 +344,7 @@ export default function HousehelpPublicProfile() {
     };
     
     fetchProfile();
-  }, [navigationState.profileId, queryOpenForWorkId, queryProfileId]);
+  }, [navigationState.profileId, queryOpenForWorkId, queryProfileId, queryUserId, retryKey]);
 
   const targetProfileId = viewingProfileId || profile?.profile_id || profile?.id;
   const shortlistTargetId = openForWorkId || queryOpenForWorkId || null;
@@ -434,13 +438,7 @@ export default function HousehelpPublicProfile() {
   }
 
   if (error || !profile) {
-    return (
-      <div className="max-w-2xl mx-auto mt-8">
-        <div className="p-6 rounded-xl">
-          <ErrorAlert message={error || "Profile not found"} />
-        </div>
-      </div>
-    );
+    return <FullPageError title="Househelp profile unavailable" message="We couldn't load this househelp profile. It may have changed, or the connection may have been interrupted." onRetry={() => setRetryKey((value) => value + 1)} backTo={navigationState.backTo || queryBackTo} backLabel={backButtonText} embed={isEmbed} />;
   }
 
   const resolvedFirstName = profile?.first_name || profile?.user?.first_name || user?.first_name;
