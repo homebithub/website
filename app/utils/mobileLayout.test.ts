@@ -22,11 +22,14 @@ describe('mobile layout guardrails', () => {
 
   it('locks background scrolling while modal surfaces are open', () => {
     const lock = source('app/hooks/useBodyScrollLock.ts');
+    const confirmation = source('app/components/ui/ConfirmDialog.tsx');
     expect(lock).toContain("document.body.style.position = 'fixed'");
     expect(lock).toContain('lockCount += 1');
     expect(source('app/components/ProfileViewsAnalytics.tsx')).toContain('useBodyScrollLock(isOpen)');
     expect(source('app/components/ui/BaseModal.tsx')).toContain('useBodyScrollLock(isOpen)');
-    expect(source('app/components/ui/ConfirmDialog.tsx')).toContain('useBodyScrollLock(isOpen)');
+    expect(confirmation).toContain('useBodyScrollLock(isOpen)');
+    expect(confirmation).toContain('createPortal(');
+    expect(confirmation).toContain('document.body');
   });
 
   it('keeps the mobile inbox inside the dynamic viewport', () => {
@@ -81,7 +84,10 @@ describe('mobile layout guardrails', () => {
   it('manages one open-for-work listing from househelp hiring', () => {
     const button = source('app/components/OpenForWorkButton.tsx');
     const hiring = source('app/routes/househelp/hiring-history.tsx');
-    expect(button).toContain('disabled={checking || hasListing}');
+    expect(button).toContain('readOnly={Boolean(listing) && !editing}');
+    expect(button).toContain('onEdit={() => setEditing(true)}');
+    expect(button).toContain('resolveListingId(listing)');
+    expect(source('app/components/modals/OpenForWorkModal.tsx')).toContain('if (!id) throw new Error');
     expect(button).toContain('Remove Open for Work');
     expect(button).toContain('daysRemaining');
     expect(hiring).toContain('<OpenForWorkButton showStatus');

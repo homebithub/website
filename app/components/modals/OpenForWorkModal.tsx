@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { CalendarDays, Check, Pencil, Trash2 } from "lucide-react";
 import { openForWorkService, profileService } from "~/services/grpc/authServices";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
@@ -34,9 +35,27 @@ interface OpenForWorkModalProps {
   onClose: () => void;
   listing?: Record<string, any> | null;
   onSaved?: () => void;
+  readOnly?: boolean;
+  onEdit?: () => void;
+  onRemove?: () => void;
 }
 
-export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: OpenForWorkModalProps) {
+const listingId = (listing?: Record<string, any> | null): string => {
+  const candidates = [
+    listing?.listing_id,
+    listing?.listingId,
+    listing?.id,
+    listing?.data?.listing_id,
+    listing?.data?.listingId,
+    listing?.data?.id,
+  ];
+  return String(candidates.find((value) => /^\d+$/.test(String(value ?? ""))) ?? "");
+};
+
+const displayJobType = (value: string) =>
+  JOB_TYPES.find((type) => type.value === value)?.label || value.replace(/_/g, " ");
+
+export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, readOnly = false, onEdit, onRemove }: OpenForWorkModalProps) {
   useBodyScrollLock(isOpen);
   const [jobTypes, setJobTypes] = useState<string[]>([]);
   const [availableFrom, setAvailableFrom] = useState("");
@@ -142,8 +161,10 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
 
     setLoading(true);
     try {
-      if (listing?.id) {
-        await openForWorkService.updateOpenForWork(listing.id, "", payload);
+      const id = listingId(listing);
+      if (listing) {
+        if (!id) throw new Error("We could not identify this listing. Close this window and try again.");
+        await openForWorkService.updateOpenForWork(id, "", payload);
       } else {
         await openForWorkService.createOpenForWork("", payload);
       }
@@ -165,14 +186,51 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
       <div className="hb-modal-panel min-w-0 overflow-x-hidden sm:mx-4">
         <div className="sticky top-0 z-10 flex min-w-0 items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-4 dark:border-purple-500/20 dark:bg-[#13131a] sm:px-6">
           <h2 className="text-base font-bold text-gray-900 dark:text-white">
-            {listing ? "Update Open for Work" : "Go Open for Work"}
+            {readOnly ? "Your Open for Work details" : listing ? "Update Open for Work" : "Go Open for Work"}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="min-w-0 max-w-full space-y-5 overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
+        {readOnly ? (
+          <div className="min-w-0 max-w-full space-y-4 overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
+              <p className="font-semibold">Open for work is active</p>
+              <p className="mt-0.5 opacity-80">Households can find you using these availability details.</p>
+            </div>
+
+            <section>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Job types</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(Array.isArray(listing?.job_types) ? listing.job_types : []).map((type: string) => (
+                  <span key={type} className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold capitalize text-purple-800 dark:bg-purple-500/20 dark:text-purple-100">{displayJobType(type)}</span>
+                ))}
+              </div>
+            </section>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-gray-200 p-3 dark:border-white/10">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Available from</p>
+                <p className="mt-1 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white"><CalendarDays className="h-4 w-4 text-purple-500" />{toDateInputValue(listing?.available_from) ? new Date(`${toDateInputValue(listing?.available_from)}T00:00:00`).toLocaleDateString("en-KE", { day: "numeric", month: "short", year: "numeric" }) : "Flexible"}</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-3 dark:border-white/10">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Salary expectation</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{listing?.salary_min || listing?.salary_max ? `KES ${listing?.salary_min || "—"} – ${listing?.salary_max || "—"} ${listing?.salary_frequency || ""}` : "Not specified"}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-xs text-gray-700 dark:text-gray-200">
+              <p className="flex items-center gap-2"><Check className={`h-4 w-4 ${listing?.can_work_with_kids ? "text-emerald-500" : "text-gray-400"}`} />{listing?.can_work_with_kids ? "Comfortable working with kids" : "Not marked as comfortable with kids"}</p>
+              <p className="flex items-center gap-2"><Check className={`h-4 w-4 ${listing?.can_work_with_pets ? "text-emerald-500" : "text-gray-400"}`} />{listing?.can_work_with_pets ? "Comfortable working with pets" : "Not marked as comfortable with pets"}</p>
+            </div>
+
+            <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-gray-200 bg-white px-4 pt-4 dark:border-white/10 dark:bg-[#13131a] sm:-mx-6 sm:px-6">
+              <button type="button" onClick={onEdit} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-xs font-semibold text-white"><Pencil className="h-4 w-4" />Edit</button>
+              <button type="button" onClick={onRemove} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-2.5 text-xs font-semibold text-red-700 dark:text-red-200"><Trash2 className="h-4 w-4" />Remove</button>
+            </div>
+          </div>
+        ) : <form onSubmit={handleSubmit} className="min-w-0 max-w-full space-y-5 overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
           {success && <SuccessAlert message={success} />}
           <p className="rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-100">
             Open for Work makes you searchable by households using the skills, availability and preferences below. You can have one listing at a time, and it stays online only while your subscription is active.
@@ -298,7 +356,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
           >
             {loading ? "Saving..." : listing ? "Save Changes" : "Publish Listing"}
           </button>
-        </form>
+        </form>}
       </div>
     </div>,
     document.body

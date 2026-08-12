@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { BadgeCheck, Briefcase, CreditCard, Loader2, Pencil, Trash2 } from "lucide-react";
+import { BadgeCheck, Briefcase, CreditCard, Loader2 } from "lucide-react";
 
 import OpenForWorkModal from "~/components/modals/OpenForWorkModal";
 import { ConfirmDialog } from "~/components/ui/ConfirmDialog";
@@ -8,6 +8,18 @@ import { useSubscription } from "~/hooks/useSubscription";
 import { useIdentityVerification } from "~/hooks/useIdentityVerification";
 import { openForWorkService } from "~/services/grpc/authServices";
 import { getStoredUser, getStoredUserId } from "~/utils/authStorage";
+
+const resolveListingId = (listing?: Record<string, any> | null): string => {
+  const candidates = [
+    listing?.listing_id,
+    listing?.listingId,
+    listing?.id,
+    listing?.data?.listing_id,
+    listing?.data?.listingId,
+    listing?.data?.id,
+  ];
+  return String(candidates.find((value) => /^\d+$/.test(String(value ?? ""))) ?? "");
+};
 
 /**
  * Telling households you are available.
@@ -44,6 +56,7 @@ export function OpenForWorkButton({
   const [listing, setListing] = useState<Record<string, any> | null>(null);
   const [loadingListing, setLoadingListing] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [removeError, setRemoveError] = useState("");
@@ -61,8 +74,8 @@ export function OpenForWorkButton({
     }
     try {
       const raw = await openForWorkService.getOpenForWorkByHousehelp(profileId, "");
-      const found = raw?.data ?? raw ?? null;
-      setListing(found && (found.id || found.listing_id) ? found : null);
+      const found = raw?.data?.listing ?? raw?.data ?? raw?.listing ?? raw ?? null;
+      setListing(found && (found.id || found.listing_id || found.listingId) ? found : null);
     } catch {
       // Not having one is the ordinary case, and the service says so with an
       // error. Nothing to report: the button simply offers to create one.
@@ -96,11 +109,12 @@ export function OpenForWorkButton({
       navigate("/subscriptions");
       return;
     }
+    setEditing(!hasListing);
     setModalOpen(true);
   };
 
   const removeListing = async () => {
-    const listingId = String(listing?.id || listing?.listing_id || "");
+    const listingId = resolveListingId(listing);
     if (!listingId || removing) return;
     setRemoving(true);
     setRemoveError("");
@@ -153,10 +167,10 @@ export function OpenForWorkButton({
           <button
         type="button"
         onClick={handleClick}
-        disabled={checking || hasListing}
+        disabled={checking}
         title={
           hasListing
-            ? "You already have one Open for Work listing. Edit or remove it instead of creating another."
+            ? "View and manage your Open for Work listing."
             : blockedBy === "verification"
               ? "Households search these listings to decide who comes into their home, so an identity check comes first."
               : blockedBy === "subscription"
@@ -180,24 +194,6 @@ export function OpenForWorkButton({
         ) : null}
       </button>
 
-          {hasListing ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setModalOpen(true)}
-                className="inline-flex max-w-full items-center gap-2 rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10 sm:px-4"
-              >
-                <Pencil className="h-4 w-4" /> Edit availability
-              </button>
-              <button
-                type="button"
-                onClick={() => { setRemoveError(""); setRemoveOpen(true); }}
-                className="inline-flex max-w-full items-center gap-2 rounded-xl border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10 sm:px-4"
-              >
-                <Trash2 className="h-4 w-4" /> Remove Open for Work
-              </button>
-            </>
-          ) : null}
         </div>
         {removeError ? <p className="text-xs text-red-600 dark:text-red-300">{removeError}</p> : null}
       </div>
@@ -207,8 +203,16 @@ export function OpenForWorkButton({
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           listing={listing}
+          readOnly={Boolean(listing) && !editing}
+          onEdit={() => setEditing(true)}
+          onRemove={() => {
+            setModalOpen(false);
+            setRemoveError("");
+            setRemoveOpen(true);
+          }}
           onSaved={() => {
             setModalOpen(false);
+            setEditing(false);
             void loadListing();
             onChanged?.();
           }}

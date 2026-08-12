@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
 import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
@@ -47,7 +48,7 @@ export function ConfirmDialog({
 
   const styles = variantStyles[variant];
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div 
@@ -108,6 +109,7 @@ export function ConfirmDialog({
             </button>
           </div>
         </div>
-      </div>
+    </div>,
+    document.body
   );
 }
