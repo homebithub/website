@@ -244,7 +244,9 @@ export default function ShortlistPage() {
             {(!items || items.length === 0) && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-300 text-base">No saved jobs yet.</p>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">No saved jobs yet</h3>
+                <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500 dark:text-gray-400">Save jobs you like and they will stay here for easy comparison.</p>
+                <button onClick={() => navigate('/')} className="mt-6 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-sm font-semibold text-white">Browse jobs</button>
               </div>
             )}
 

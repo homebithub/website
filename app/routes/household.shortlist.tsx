@@ -341,7 +341,7 @@ export default function HouseholdShortlistPage() {
                   compare them later without searching again.
                 </p>
                 <button
-                  onClick={() => navigate('/household')}
+                  onClick={() => navigate('/')}
                   className="mt-6 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                 >
                   Browse househelps
@@ -358,17 +358,28 @@ export default function HouseholdShortlistPage() {
                   const listing = profilesById[s.profile_id] || {};
                   const househelp = listing?.househelp || {};
                   const user = househelp?.user || {};
-                  const targetProfileId = househelp?.id || househelp?.profile_id || '';
-                  const targetUserId = househelp?.user_id || user?.id || s.user_id;
-                  const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || 'Househelp';
+                  const targetProfileId = firstString(
+                    househelp?.id,
+                    househelp?.profile_id,
+                    listing?.househelp_profile_id,
+                    listing?.user_profile_id,
+                  );
+                  const targetUserId = firstString(
+                    househelp?.user_id,
+                    user?.id,
+                    listing?.househelp_user_id,
+                    listing?.owner_user_id,
+                    s.user_id,
+                  );
+                  const name = `${firstString(user.first_name, househelp.first_name, listing?.first_name)} ${firstString(user.last_name, househelp.last_name, listing?.last_name)}`.trim() || 'Househelp';
                   const initials = name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'HW';
-                  const userId = firstString(househelp.user_id, user.id, s.user_id);
+                  const userId = firstString(househelp.user_id, user.id, listing?.househelp_user_id, s.user_id);
                   const photos = toStringArray(househelp.photos);
                   const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
                   const scheduleLabel = summarizeSchedule(listing?.work_schedule);
                   const jobTypes = toStringArray(listing?.job_types);
-                  const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
-                  const experienceYears = toFiniteNumber(househelp.years_of_experience);
+                  const location = formatPlaceOrFallback(househelp.location, { town: househelp.town || listing?.town });
+                  const experienceYears = toFiniteNumber(househelp.years_of_experience ?? listing?.years_of_experience);
                   const isOpen = isOpenForWorkListingActive(listing);
                   const updatedAt = listing?.created_at || s.created_at;
                   return (

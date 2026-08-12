@@ -192,7 +192,13 @@ export function Navigation() {
     const fetchSavedCount = React.useCallback(async () => {
         try {
             if (!getAccessTokenFromCookies()) return;
-            const raw: any = await shortlistService.getShortlistCount('');
+            const role = normalizeProfileRole(profileType);
+            const savedProfileType = role === 'client' ? 'household' : role === 'service-provider' ? 'househelp' : undefined;
+            if (!savedProfileType) {
+                setSavedCount(0);
+                return;
+            }
+            const raw: any = await shortlistService.getShortlistCount('', savedProfileType);
             const count = Number(raw?.count ?? raw?.data?.count ?? 0);
             setSavedCount(Number.isFinite(count) && count > 0 ? count : 0);
         } catch (error) {
@@ -201,7 +207,7 @@ export function Navigation() {
                 console.error("Failed to fetch saved count:", error);
             }
         }
-    }, []);
+    }, [profileType]);
 
     // One place that refreshes both badges, called by everything below.
     //
