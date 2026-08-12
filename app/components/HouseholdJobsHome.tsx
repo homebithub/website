@@ -28,6 +28,7 @@ import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
 import { humanizeFeatureName, readFeatureGroups } from "~/utils/listingFeatures";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
+import { matchScoreClasses } from "~/utils/matchScore";
 
 interface HousehelpSummary {
   id?: string;
@@ -1308,8 +1309,8 @@ export default function HouseholdJobsHome() {
                                 {househelp.premium && (
                                   <PremiumBadge isTrial={househelp.premium_is_trial} />
                                 )}
-                                {typeof listing.fit_score === "number" && listing.fit_score > 0 && (
-                                  <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                                {typeof listing.fit_score === "number" && listing.fit_score >= 0 && (
+                                  <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${matchScoreClasses(listing.fit_score)}`}>
                                     Match {listing.fit_score}%
                                   </span>
                                 )}

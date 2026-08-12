@@ -41,6 +41,7 @@ import { useIdentityVerification } from "~/hooks/useIdentityVerification";
 import { formatListingPlace, formatPlaceOrFallback } from "~/utils/place";
 import { OpenForWorkButton } from "~/components/OpenForWorkButton";
 import { humanizeFeatureName, listingHighlights, remainingFeatureGroups } from "~/utils/listingFeatures";
+import { matchScoreClasses } from "~/utils/matchScore";
 
 interface JobListing {
   id: string;
@@ -1262,8 +1263,8 @@ export default function HousehelpJobsHome() {
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{job.title || "Household Job"}</h3>
-                            {typeof job.fit_score === "number" && job.fit_score > 0 && (
-                              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                            {typeof job.fit_score === "number" && job.fit_score >= 0 && (
+                              <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${matchScoreClasses(job.fit_score)}`}>
                                 Match {job.fit_score}%
                               </span>
                             )}

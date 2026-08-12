@@ -24,6 +24,7 @@ import { useSubscription } from '~/hooks/useSubscription';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 import { resolveHousehelpUserId } from '~/utils/househelpProfiles';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
+import { matchScoreClasses } from '~/utils/matchScore';
 
 interface HousehelpProfile {
   id: number | string;
@@ -965,7 +966,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                                 </p>
                               </div>
                               {typeof househelp.fit_score === 'number' && (
-                                <div className={`flex items-center gap-2 rounded-full border px-3 py-1 ${isTopMatch ? 'border-emerald-400 bg-emerald-50/70 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-200' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-200'}`}>
+                                <div className={`flex items-center gap-2 rounded-full border px-3 py-1 ${matchScoreClasses(househelp.fit_score)}`}>
                                   {isTopMatch && <span className="text-[10px] uppercase font-semibold tracking-[0.2em]">Top match</span>}
                                   <span className="text-sm font-semibold">Match {househelp.fit_score}%</span>
                                 </div>
@@ -1006,8 +1007,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                           )}
 
                           <div className="flex flex-wrap gap-2 justify-start mb-3">
-                            {typeof househelp.fit_score === 'number' && househelp.fit_score > 0 && (
-                              <span className="inline-block text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">
+                            {typeof househelp.fit_score === 'number' && househelp.fit_score >= 0 && (
+                              <span className={`inline-block rounded border px-2 py-0.5 text-xs ${matchScoreClasses(househelp.fit_score)}`}>
                                 Match {househelp.fit_score}%
                               </span>
                             )}

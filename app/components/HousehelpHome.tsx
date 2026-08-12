@@ -23,6 +23,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useSubscription } from '~/hooks/useSubscription';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
+import { matchScoreClasses } from '~/utils/matchScore';
 
 interface HouseholdItem {
   id?: string; // household user id
@@ -560,7 +561,7 @@ export default function HousehelpHome() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
+                              <p className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] ${matchScoreClasses(Number(household.fit_score))}`}>
                                 Match {household.fit_score}%
                               </p>
                               <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-1 line-clamp-2">
@@ -767,8 +768,8 @@ export default function HousehelpHome() {
                           )}
 
                           <div className="flex flex-wrap gap-2 justify-start mb-3">
-                            {typeof r.fit_score === 'number' && r.fit_score > 0 && (
-                              <span className="inline-block text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">
+                            {typeof r.fit_score === 'number' && r.fit_score >= 0 && (
+                              <span className={`inline-block rounded border px-2 py-0.5 text-xs ${matchScoreClasses(r.fit_score)}`}>
                                 Match {r.fit_score}%
                               </span>
                             )}
