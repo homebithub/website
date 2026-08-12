@@ -311,7 +311,7 @@ export default function ProfileReviews({
           <Star
             key={star}
             className={`${starSize} ${
-              star <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+              star <= rating ? 'fill-purple-500 text-pink-500' : 'text-gray-300'
             }`}
           />
         ))}
@@ -328,7 +328,7 @@ export default function ProfileReviews({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Only what happened on the page itself. While the review form is open
           its own failures belong inside it, next to the button that caused
           them — not out here, behind the modal, where the person cannot see
@@ -404,7 +404,7 @@ export default function ProfileReviews({
                     <Star
                       className={`h-7 w-7 ${
                         rating <= reviewForm.rating
-                          ? 'fill-yellow-400 text-yellow-400'
+                          ? 'fill-purple-500 text-pink-500'
                           : 'text-gray-300 dark:text-gray-600'
                       }`}
                     />
@@ -509,33 +509,33 @@ export default function ProfileReviews({
       )}
       {/* Review Statistics */}
       {stats && stats.total_reviews > 0 && (
-        <div className="bg-white dark:bg-[#13131a] rounded-3xl shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 p-8">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Review Summary</h3>
+        <div className="rounded-2xl border border-purple-200 bg-white p-4 shadow-lg dark:border-purple-500/30 dark:bg-[#13131a] sm:p-5">
+          <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">Review Summary</h3>
           
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid items-center gap-4 md:grid-cols-[0.8fr_1.2fr]">
             {/* Overall Rating */}
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-32 h-32 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl shadow-xl mb-4">
-                <div className="text-4xl font-bold text-white">
+              <div className="mb-2 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
+                <div className="text-2xl font-bold text-white">
                   {stats.average_rating.toFixed(1)}
                 </div>
               </div>
-              <div className="flex justify-center mb-3">
-                {renderStars(Math.round(stats.average_rating), 'lg')}
+              <div className="mb-2 flex justify-center">
+                {renderStars(Math.round(stats.average_rating))}
               </div>
-              <p className="text-gray-600 dark:text-gray-400 font-medium">
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
                 Based on {stats.total_reviews} {stats.total_reviews === 1 ? 'review' : 'reviews'}
               </p>
             </div>
 
             {/* Rating Breakdown */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               {getRatingBreakdown().map((item) => (
                 <div key={item.stars} className="flex items-center gap-3">
                   <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 w-14">{item.stars} star</span>
-                  <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                     <div
-                      className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-3 rounded-full transition-all duration-500 shadow-sm"
+                      className="h-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-500 shadow-sm"
                       style={{ width: `${item.percentage}%` }}
                     />
                   </div>
@@ -566,15 +566,15 @@ export default function ProfileReviews({
           </div>
         ) : (
           reviews.map((review) => (
-            <div key={review.id} className="bg-white dark:bg-[#13131a] rounded-3xl shadow-xl border-2 border-purple-200 dark:border-purple-500/30 p-6 hover:shadow-2xl transition-all duration-200">
+            <div key={review.id} className="rounded-2xl border border-purple-200 bg-white p-4 shadow-lg transition-all duration-200 hover:shadow-xl dark:border-purple-500/30 dark:bg-[#13131a] sm:p-5">
               {/* Review Header */}
-              <div className="flex items-start justify-between mb-4">
+              <div className="mb-3 flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     {review.reviewer_profile && (
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                          <span className="text-white font-bold text-base">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-md">
+                          <span className="text-xs font-bold text-white">
                             {review.reviewer_profile.first_name[0]}
                             {review.reviewer_profile.last_name[0]}
                           </span>
@@ -599,18 +599,18 @@ export default function ProfileReviews({
               </div>
 
               {/* Review Content */}
-              <h4 className="font-bold text-base text-gray-900 dark:text-white mb-3">{review.title}</h4>
-              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">{review.content}</p>
+              <h4 className="mb-2 text-sm font-semibold text-gray-900 dark:text-white">{review.title}</h4>
+              <p className="mb-3 text-sm leading-6 text-gray-700 dark:text-gray-300">{review.content}</p>
 
               {/* Review Images */}
               {review.images && review.images.length > 0 && (
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="mb-3 grid grid-cols-3 gap-2">
                   {review.images.map((img, idx) => (
                     <img
                       key={idx}
                       src={img.image_url}
                       alt={img.caption || `Review image ${idx + 1}`}
-                      className="w-full h-32 object-cover rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 hover:scale-105 transition-transform duration-200 cursor-pointer"
+                      className="h-24 w-full cursor-pointer rounded-xl border border-purple-200 object-cover transition-transform duration-200 hover:scale-[1.02] dark:border-purple-500/30"
                     />
                   ))}
                 </div>
@@ -618,7 +618,7 @@ export default function ProfileReviews({
 
               {/* Response */}
               {review.response && (
-                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-5 mt-4 border-l-4 border-purple-500">
+                <div className="mt-3 rounded-xl border-l-4 border-purple-500 bg-purple-50 p-3 dark:bg-purple-900/20">
                   <div className="flex items-center gap-2 mb-3">
                     <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                     <span className="font-bold text-xs text-purple-700 dark:text-purple-300">Response from owner</span>
@@ -676,7 +676,7 @@ export default function ProfileReviews({
               )}
 
               {/* Actions */}
-              <div className="flex items-center gap-4 mt-6 pt-4 border-t-2 border-gray-100 dark:border-gray-800">
+              <div className="mt-4 flex items-center gap-4 border-t border-gray-100 pt-3 dark:border-gray-800">
                 <button
                   onClick={() => void handleMarkHelpful(review)}
                   disabled={busyReviewId === review.id}

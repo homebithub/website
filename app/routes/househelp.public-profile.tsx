@@ -23,6 +23,7 @@ import { ProfileChoicesSection } from '~/components/profile/ProfileChoicesSectio
 import { FullPageError } from '~/components/FullPageError';
 import { resolveHousehelpProfile } from '~/utils/househelpProfiles';
 import { ContractKYCRecord } from '~/components/profile/ContractKYCRecord';
+import { PremiumBadge } from '~/components/PremiumBadge';
 
 interface UserData {
   id?: string;
@@ -172,6 +173,8 @@ export default function HousehelpPublicProfile() {
     enabled: Boolean((viewingProfileId || profile?.id) && isViewingOther),
   });
   const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
+  const viewedHousehelpUserId = profile?.user_id || profile?.user?.user_id || profile?.user?.id || user?.user_id || user?.id || null;
+  const viewedSubscription = useSubscription(isViewingOther ? viewedHousehelpUserId : currentUserId);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -486,6 +489,9 @@ export default function HousehelpPublicProfile() {
                             found only by those already looking for it. */}
                         {isIdentityVerified && (
                           <VerifiedBadge verifiedAt={identityVerifiedAt} showLabel />
+                        )}
+                        {viewedSubscription.isActive && (
+                          <PremiumBadge isTrial={viewedSubscription.status === 'trial'} showLabel />
                         )}
                       </h1>
                     </div>

@@ -110,7 +110,7 @@ export default function AccountReviewsPage() {
                             key={value}
                             className={`h-4 w-4 ${
                               value <= review.rating
-                                ? "fill-yellow-400 text-yellow-400"
+                                ? "fill-purple-500 text-pink-500"
                                 : "text-gray-300 dark:text-gray-600"
                             }`}
                           />

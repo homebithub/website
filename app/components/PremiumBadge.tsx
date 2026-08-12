@@ -32,7 +32,7 @@ export function PremiumBadge({
   const [open, setOpen] = useState(false);
 
   const dimension = size === "sm" ? 14 : 18;
-  const summary = "Premium member — active HomeBit subscription";
+  const summary = "Active member — active HomeBit subscription";
 
   return (
     <span
@@ -58,20 +58,23 @@ export function PremiumBadge({
         <svg width={dimension} height={dimension} viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#f59e0b" />
-              <stop offset="100%" stopColor="#d97706" />
+              <stop offset="0%" stopColor="#fbbf24" />
+              <stop offset="52%" stopColor="#a855f7" />
+              <stop offset="100%" stopColor="#db2777" />
             </linearGradient>
           </defs>
-          {/* A star, not a tick. The tick is spoken for. */}
+          {/* A faceted membership medallion. Rating owns the star shape and
+              identity verification owns the tick. */}
           <path
-            d="M12 2.4l2.86 5.79 6.39.93-4.62 4.5 1.09 6.36L12 16.98l-5.72 3l1.09-6.36-4.62-4.5 6.39-.93L12 2.4z"
+            d="M12 1.8l2.3 2.05 3.05-.2.9 2.92 2.65 1.53-.9 2.92 1.38 2.73-2.43 1.86-.4 3.04-3.06.17L12 21.4l-2.49-2.58-3.06-.17-.4-3.04-2.43-1.86L5 11.02 4.1 8.1l2.65-1.53.9-2.92 3.05.2L12 1.8z"
             fill={`url(#${gradientId})`}
           />
+          <path d="M9 12.1l1.85 1.85L15.4 9.4" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
 
       {showLabel ? (
-        <span className="text-xs font-medium text-amber-700 dark:text-amber-300">Premium</span>
+        <span className="bg-gradient-to-r from-amber-500 via-purple-500 to-pink-500 bg-clip-text text-xs font-semibold text-transparent">Active member</span>
       ) : null}
 
       {open ? (

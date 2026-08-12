@@ -16,7 +16,7 @@ export function ListingRating({ rating, reviewCount, className = "" }: ListingRa
 
   return (
     <p className={`inline-flex items-center gap-1 text-[11px] font-medium text-gray-700 dark:text-gray-200 ${className}`}>
-      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden />
+      <Star className="h-3.5 w-3.5 fill-purple-500 text-pink-500" aria-hidden />
       <span>{value.toFixed(1)}</span>
       <span className="text-gray-500 dark:text-gray-400">({count} {count === 1 ? "review" : "reviews"})</span>
     </p>
