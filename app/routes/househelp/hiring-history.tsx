@@ -5,6 +5,7 @@ import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { ListingDetails, listingSalary } from '~/components/listing/ListingDetails';
+import { listingHighlights } from '~/utils/listingFeatures';
 import { ApplicationHistory } from '~/components/hiring/ApplicationHistory';
 import { OpenForWorkButton } from '~/components/OpenForWorkButton';
 import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
@@ -18,6 +19,8 @@ import {
 
 interface HireRequest {
   id: string;
+  listing_id?: string;
+  listing?: Record<string, any> | null;
   household_id: string;
   job_type?: string;
   start_date?: string;
@@ -315,7 +318,48 @@ export default function HousehelpHiringHistory() {
     setError(null);
     try {
       const raw = await hireRequestService.listHireRequests('', 'househelp');
-      const items = extractEnvelopeArray<HireRequest>(raw);
+      const rows = extractEnvelopeArray<any>(raw);
+      const listingIds = Array.from(new Set(rows.map((row) => String(row.listing_id ?? '')).filter(Boolean)));
+      const listingEntries = await Promise.all(listingIds.map(async (listingId) => {
+        try {
+          const response = await jobService.getJob(listingId);
+          return [listingId, response?.data ?? response] as const;
+        } catch {
+          return [listingId, null] as const;
+        }
+      }));
+      const listingById = new Map(listingEntries);
+      const householdIds = Array.from(new Set(rows.map((row) => String(row.household_profile_id ?? '')).filter(Boolean)));
+      const householdById = new Map<string, any>();
+      if (householdIds.length > 0) {
+        try {
+          const response = await grpcProfileService.searchMultipleWithUser('', 'household', { profile_ids: householdIds });
+          for (const profile of extractEnvelopeArray<any>(response)) {
+            const profileId = String(profile?.id ?? profile?.profile_id ?? '');
+            if (profileId) householdById.set(profileId, profile);
+          }
+        } catch {
+          // The request remains usable if profile decoration is unavailable.
+        }
+      }
+      const items: HireRequest[] = rows.map((row) => {
+        const listingId = String(row.listing_id ?? '');
+        const householdId = String(row.household_profile_id ?? row.household_id ?? '');
+        const listing = listingById.get(listingId) as any;
+        const salaryText = listingSalary(listing);
+        const frequency = salaryText.includes(':') ? salaryText.split(':')[0].trim().toLowerCase() : '';
+        return {
+          ...row,
+          id: String(row.id ?? ''),
+          listing_id: listingId,
+          listing,
+          household_id: householdId,
+          household: householdById.get(householdId),
+          job_type: row.job_type || row.listing_title || listing?.title,
+          salary_offered: Number(row.salary_offered ?? row.salary ?? 0),
+          salary_frequency: String(row.salary_frequency || frequency),
+        };
+      });
       setHireRequests(items);
       setRequestsTotal(extractTotal(raw, items.length));
     } catch (err: any) {
@@ -791,10 +835,15 @@ export default function HousehelpHiringHistory() {
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-purple-800/40">
                 {(Array.isArray(hireRequests) ? hireRequests : []).map((request) => {
-                  const matchingEmploymentContract = findByAnyIdentifier(
-                    employmentContractMap,
-                    getHouseholdCandidateIds(request),
-                  );
+                  const matchingEmploymentContract = employmentContractMap[`application:${request.id}`]
+                    || findByAnyIdentifier(employmentContractMap, getHouseholdCandidateIds(request));
+                  const highlights = listingHighlights(request.listing);
+                  const salary = highlights.salary
+                    || (request.salary_offered > 0
+                      ? formatSalary(request.salary_offered, request.salary_frequency)
+                      : 'Negotiable');
+                  const starts = highlights.startTiming
+                    || (request.start_date ? formatDate(request.start_date) : 'Flexible');
 
                   return (
                   <div key={request.id} className="p-6 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors">
@@ -817,8 +866,8 @@ export default function HousehelpHiringHistory() {
                           </div>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                             <div><span className="text-gray-500 dark:text-purple-300">Job Type</span><p className="font-medium text-gray-900 dark:text-white capitalize">{formatJobType(request as any)}</p></div>
-                            <div><span className="text-gray-500 dark:text-purple-300">Salary</span><p className="font-medium text-gray-900 dark:text-white">{formatSalary(request.salary_offered, request.salary_frequency)}</p></div>
-                            <div><span className="text-gray-500 dark:text-purple-300">Start Date</span><p className="font-medium text-gray-900 dark:text-white">{request.start_date ? formatDate(request.start_date) : 'Not specified'}</p></div>
+                            <div><span className="text-gray-500 dark:text-purple-300">Salary</span><p className="font-medium text-gray-900 dark:text-white">{salary}</p></div>
+                            <div><span className="text-gray-500 dark:text-purple-300">Start timing</span><p className="font-medium text-gray-900 dark:text-white">{starts}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Requested</span><p className="font-medium text-gray-900 dark:text-white">{formatDate(request.created_at)}</p></div>
                           </div>
                           {request.special_requirements && (
@@ -827,6 +876,11 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
+                        {request.listing && (
+                          <button type="button" onClick={() => openJobListing(request.listing_id, request.listing)} className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-1 text-xs font-medium text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30">
+                            <Briefcase className="h-4 w-4" /> View job listing
+                          </button>
+                        )}
                         <button onClick={() => navigate(buildHouseholdProfileLink({ household: request.household, fallbackProfileId: request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: request.household?.id || request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Profile
                         </button>
