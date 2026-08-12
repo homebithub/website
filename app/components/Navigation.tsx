@@ -36,7 +36,7 @@ function normalizeProfileRole(profileType?: string | null): 'client' | 'service-
     return null;
 }
 
-export function Navigation() {
+function NavigationContent() {
     const { user, logout, loading } = useAuth();
     const { isInSetupMode } = useAccountChoiceStatus();
     const location = useLocation();
@@ -825,4 +825,22 @@ export function Navigation() {
         <div className="h-[56px] shrink-0 sm:h-[60px]" aria-hidden="true" />
         </>
     );
+}
+
+/**
+ * The root route owns the real navigation instance so it survives child route
+ * transitions. Existing pages still render <Navigation /> while they are
+ * migrated away from the old page-owned layout; keeping this compatibility
+ * component empty prevents 69 duplicate mounts without a risky all-routes
+ * rewrite.
+ */
+export function Navigation() {
+    return null;
+}
+
+export function PersistentNavigation() {
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    if (params.get('embed') === '1' || params.get('embed') === 'true') return null;
+    return <NavigationContent />;
 }
