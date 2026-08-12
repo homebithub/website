@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { ListingDetails } from '~/components/listing/ListingDetails';
 import { formatListingPlace } from '~/utils/place';
 import { listingHighlights } from '~/utils/listingFeatures';
 import { hireRequestService, hireContractService, employmentContractService, shortlistService, jobService, listingApplicationService, employmentService, profileService as grpcProfileService } from '~/services/grpc/authServices';
@@ -1271,15 +1270,16 @@ export default function HiringHistory() {
         {!loading && activeTab === 'jobs' && jobs.length > 0 && (
           <div className="space-y-4">
             {jobs.map((job) => {
+              const highlights = listingHighlights(job);
 
               return (
                 <div
                   key={job.id}
-                  className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border dark:bg-purple-950/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl dark:border-purple-800/40"
+                  className="rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                         {job.title || 'Untitled role'}
                       </h3>
                       {/* Where the job is. This is now the only place a
@@ -1290,20 +1290,38 @@ export default function HiringHistory() {
                         📍 {formatListingPlace(job)}
                       </p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
+                    <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
                       ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
                       : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'}`}>
                       {job.status || 'open'}
                     </span>
                   </div>
 
-                  {/* The same renderer the househelp sees. Two copies of this
-                      was how the two sides came to describe one job
-                      differently. */}
-                  <ListingDetails listing={job} className="mt-4" emptyMessage="" />
+                  {job.description ? (
+                    <p className="mt-3 line-clamp-3 text-sm text-gray-600 dark:text-gray-300">
+                      {job.description}
+                    </p>
+                  ) : null}
 
-                  {(job.max_applicants || (job.status === 'active' && job.expires_at)) ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {(job.job_types || []).map((type) => (
+                      <span
+                        key={type}
+                        className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
+                      >
+                        {type.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                    {highlights.salary ? (
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                        {highlights.salary}
+                      </span>
+                    ) : null}
+                    {highlights.startTiming ? (
+                      <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                        Start {highlights.startTiming}
+                      </span>
+                    ) : null}
                       {job.max_applicants ? (
                         <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
                           Max {job.max_applicants} applicants
@@ -1320,20 +1338,23 @@ export default function HiringHistory() {
                           {describeExpiry(job.expires_at)}
                         </span>
                       ) : null}
-                    </div>
-                  ) : null}
+                  </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-xs text-gray-400">
+                      {job.created_at ? `Posted ${formatDate(job.created_at)}` : 'Posted recently'}
+                    </span>
+                    <div className="flex flex-wrap gap-2 sm:justify-end">
                     <button
                       onClick={() => { setEditingJob(job); setShowJobModal(true); }}
-                      className="px-3 py-1 text-xs font-semibold rounded-lg border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+                      className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleToggleJobStatus(job)}
                       disabled={jobActionLoading === job.id}
-                      className="px-3 py-1 text-xs font-semibold rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50"
+                      className="rounded-xl border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-white/5"
                     >
                       {job.status === 'closed' ? 'Reopen' : 'Close'}
                     </button>
@@ -1343,7 +1364,7 @@ export default function HiringHistory() {
                       <button
                         onClick={() => handleRenewJob(job)}
                         disabled={jobActionLoading === job.id}
-                        className="px-3 py-1 text-xs font-semibold rounded-lg border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10 disabled:opacity-50"
+                        className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 disabled:opacity-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
                       >
                         {jobActionLoading === job.id ? 'Keeping open…' : 'Keep open'}
                       </button>
@@ -1351,10 +1372,11 @@ export default function HiringHistory() {
                     <button
                       onClick={() => setJobToDelete(job)}
                       disabled={jobActionLoading === job.id}
-                      className="px-3 py-1 text-xs font-semibold rounded-lg border border-red-300 text-red-600 dark:text-red-300 dark:border-red-500/40 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50"
+                      className="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10"
                     >
                       Delete
                     </button>
+                    </div>
                   </div>
                 </div>
               );
