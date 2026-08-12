@@ -35,7 +35,10 @@ describe('mobile layout guardrails', () => {
     expect(css).toContain('.hb-content-rail');
     expect(css).toContain('font-size: 14px');
     expect(navigation).toContain('hb-content-rail');
-    expect(househelpHome).toContain('w-full max-w-6xl rounded-b-2xl');
-    expect(householdHome).toContain('w-full max-w-6xl rounded-b-2xl');
+    expect(navigation).toContain('border-b border-primary-200/60');
+    expect(househelpHome).toContain('hb-filter-panel');
+    expect(householdHome).toContain('hb-filter-panel');
+    expect(househelpHome).toContain('hb-content-rail flex flex-col');
+    expect(householdHome).toContain('hb-content-rail flex flex-col');
   });
 });

@@ -252,10 +252,14 @@ body > * {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* One compact content rail for navigation, discovery controls and page bodies.
-   It keeps the app visually coherent instead of letting chrome run edge to edge
-   while the content below occupies a narrower, unrelated width. */
+/* Full-width app chrome with one shared inner rail. The backgrounds and dividers
+   reach the viewport edges, while the logo, account menu, filter controls and
+   cards all begin and end on the same lines. */
 .hb-content-rail {
+  @apply mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-6;
+}
+
+.hb-filter-panel > * {
   @apply mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-6;
 }
 

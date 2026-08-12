@@ -449,8 +449,8 @@ export function Navigation() {
     }
 
     return (
-        <nav className="sticky top-0 z-40 overflow-visible bg-transparent transition-all duration-300">
-            <div className="hb-content-rail flex min-h-[56px] items-center justify-between rounded-b-2xl border-x border-b border-primary-200/60 bg-gradient-to-br from-primary-100 via-white to-purple-200 shadow-lg shadow-purple-200/40 dark:border-purple-500/20 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] dark:shadow-glow-sm sm:min-h-[60px]">
+        <nav className="sticky top-0 z-40 overflow-visible border-b border-primary-200/60 bg-gradient-to-br from-primary-100 via-white to-purple-200 shadow-lg shadow-purple-200/40 transition-all duration-300 dark:border-purple-500/20 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] dark:shadow-glow-sm">
+            <div className="hb-content-rail flex min-h-[56px] items-center justify-between sm:min-h-[60px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
   <Link to="/" prefetch="intent" className="relative rounded-xl px-2 py-1 text-lg font-extrabold drop-shadow-md transition-all duration-300 hover:bg-primary-50 hover:shadow-lg hover:shadow-purple-300/50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md sm:text-xl">

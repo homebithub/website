@@ -1000,8 +1000,8 @@ export default function HousehelpJobsHome() {
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className="flex-1 pb-10">
-          <section className="sticky top-[56px] z-30 mx-auto mb-4 h-14 w-full max-w-6xl rounded-b-2xl border-x border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[60px] sm:h-16">
-            <div className="flex h-full items-center gap-2 px-3 sm:gap-3 sm:px-5 lg:px-6">
+          <section className="sticky top-[56px] z-30 mb-4 h-14 w-full border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[60px] sm:h-16">
+            <div className="hb-content-rail flex h-full items-center gap-2 sm:gap-3">
               <div className="hidden min-w-0 flex-1 sm:block">
                 <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">Latest job openings</h1>
                 <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
@@ -1056,7 +1056,7 @@ export default function HousehelpJobsHome() {
             {filtersOpen && (
               <div
                 id="househelp-job-filters"
-                className="absolute left-0 right-0 top-full max-h-[calc(100vh-120px)] overflow-y-auto rounded-b-2xl border-x border-b border-purple-200/60 bg-white/95 px-3 pb-4 shadow-2xl backdrop-blur-xl dark:border-purple-500/30 dark:bg-[#141020]/95 sm:px-5 lg:px-6"
+                className="hb-filter-panel absolute left-0 right-0 top-full max-h-[calc(100vh-120px)] overflow-y-auto border-b border-purple-200/60 bg-white/95 pb-4 shadow-2xl backdrop-blur-xl dark:border-purple-500/30 dark:bg-[#141020]/95"
               >
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -1189,7 +1189,7 @@ export default function HousehelpJobsHome() {
               </div>
             )}
           </section>
-          <div className="mx-auto flex max-w-6xl flex-col px-4 sm:px-6 lg:px-8">
+          <div className="hb-content-rail flex flex-col">
             <IdentityVerificationPrompt verification={identityVerification} />
 
             {profileCompletionReminder.shouldShow && (
