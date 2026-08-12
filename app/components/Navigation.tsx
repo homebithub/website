@@ -139,7 +139,10 @@ function NavigationContent() {
             const userId = getStoredUserId() || '';
             if (!role || !userId) return;
             const total = await cachedRequest(`nav:hiring:${userId}:${role}`, async () => {
-                const { hireRequestService, listingApplicationService } = await import('~/services/grpc/authServices');
+                const {
+                    marketplaceHireRequestService: hireRequestService,
+                    marketplaceListingApplicationService: listingApplicationService,
+                } = await import('~/services/grpc/marketplace.service');
                 if (role === 'client') {
                     const ownerProfileId = getStoredUserProfileId() || '';
                     if (!ownerProfileId) return 0;
@@ -206,7 +209,7 @@ function NavigationContent() {
             const userId = getStoredUserId() || '';
             if (!userId) return;
             const count = await cachedRequest(`nav:saved:${userId}:${savedProfileType}`, async () => {
-                const { shortlistService } = await import('~/services/grpc/authServices');
+                const { marketplaceShortlistService: shortlistService } = await import('~/services/grpc/marketplace.service');
                 const raw: any = await shortlistService.getShortlistCount('', savedProfileType);
                 return Number(raw?.count ?? raw?.data?.count ?? 0);
             }, { maxAgeMs: NAV_COUNT_STALE_MS, force });

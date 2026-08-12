@@ -8,7 +8,12 @@ import { ShimmerListPlaceholder } from "~/components/ShimmerLoader";
 import { VerifiedBadge } from "~/components/VerifiedBadge";
 import { PremiumBadge } from "~/components/PremiumBadge";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { jobService, listingApplicationService, shortlistService, profileService as grpcProfileService } from "~/services/grpc/authServices";
+import {
+  marketplaceJobService as jobService,
+  marketplaceListingApplicationService as listingApplicationService,
+  marketplaceShortlistService as shortlistService,
+} from "~/services/grpc/marketplace.service";
+import { profileReadService as grpcProfileService } from "~/services/grpc/profileRead.service";
 import { notificationsService } from "~/services/grpc/notifications.service";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { useProfilePhotos } from "~/hooks/useProfilePhotos";

@@ -7,11 +7,11 @@ import { Footer } from "~/components/Footer";
 import { ShimmerListPlaceholder } from "~/components/ShimmerLoader";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import {
-  jobService,
-  listingApplicationService,
-  profileService as grpcProfileService,
-  shortlistService,
-} from "~/services/grpc/authServices";
+  marketplaceJobService as jobService,
+  marketplaceListingApplicationService as listingApplicationService,
+  marketplaceShortlistService as shortlistService,
+} from "~/services/grpc/marketplace.service";
+import { profileReadService as grpcProfileService } from "~/services/grpc/profileRead.service";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { formatTimeAgo } from "~/utils/timeAgo";
