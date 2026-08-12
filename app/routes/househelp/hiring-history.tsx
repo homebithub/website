@@ -238,9 +238,11 @@ export default function HousehelpHiringHistory() {
   const currentProfileType = (getStoredUser() as any)?.profile_type || getStoredProfileType();
   const profileRole = normalizeHiringProfileRole(currentProfileType);
   const isClientProfile = profileRole === 'client';
-  // Both roles land on their own requests. What is on offer in the market is
-  // the home page's job; this page is about one person's hiring over time.
-  const defaultTab: TabType = 'requests';
+  // A service provider's normal journey starts with an application, then
+  // converges with inbound requests into contracts and finally work history.
+  // Preserve Requests as the legacy client default when this shared route is
+  // reached with a household profile.
+  const defaultTab: TabType = isClientProfile ? 'requests' : 'interests';
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tabParam = searchParams.get('tab');
     const validTabs: TabType[] = ['requests', 'work-history', 'employment-contracts', 'interests'];
@@ -740,10 +742,10 @@ export default function HousehelpHiringHistory() {
   };
 
   const tabs: { key: TabType; label: string; count?: number }[] = [
+    { key: 'interests', label: 'Applications' },
     { key: 'requests', label: 'Requests', count: pendingCount > 0 ? pendingCount : undefined },
     { key: 'employment-contracts', label: 'Contracts' },
     { key: 'work-history', label: 'Work History' },
-    { key: 'interests', label: 'Applications' },
   ];
 
   const pageTitle = 'Hiring';
