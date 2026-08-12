@@ -42,6 +42,7 @@ import { formatListingPlace, formatPlaceOrFallback } from "~/utils/place";
 import { OpenForWorkButton } from "~/components/OpenForWorkButton";
 import { humanizeFeatureName, listingHighlights, remainingFeatureGroups } from "~/utils/listingFeatures";
 import { matchScoreClasses } from "~/utils/matchScore";
+import { ListingRating } from "~/components/ui/ListingRating";
 
 interface JobListing {
   id: string;
@@ -67,6 +68,8 @@ interface JobListing {
   has_applied?: boolean;
   fit_score?: number;
   match_reasons?: string[];
+  owner_rating?: number;
+  owner_review_count?: number;
 }
 
 interface HousehelpSummary {
@@ -1299,6 +1302,11 @@ export default function HousehelpJobsHome() {
                           {householdName && (
                             <p className="mt-1 text-xs font-semibold text-purple-600 dark:text-purple-300">Hosted by {householdName}</p>
                           )}
+                          <ListingRating
+                            rating={householdProfile?.rating ?? job.owner_rating}
+                            reviewCount={householdProfile?.review_count ?? job.owner_review_count}
+                            className="mt-1"
+                          />
                           {responseBadge && (
                             <div className="mt-2 space-y-1">
                               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>

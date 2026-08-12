@@ -64,6 +64,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
   const [salaryFrequency, setSalaryFrequency] = useState("monthly");
+  const [description, setDescription] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -80,6 +81,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
     setSalaryFrequency(listing?.salary_frequency || "monthly");
     setSalaryMin(toSalaryInputValue(listing?.salary_min, listing?.salary_frequency));
     setSalaryMax(toSalaryInputValue(listing?.salary_max, listing?.salary_frequency));
+    setDescription(String(listing?.description || ""));
     setProfileHighlights({
       languages: Array.isArray(listing?.languages) ? listing.languages : [],
       skills: Array.isArray(listing?.skills) ? listing.skills : [],
@@ -151,6 +153,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
       languages: profileHighlights.languages || [],
       skills: profileHighlights.skills || [],
       certifications: profileHighlights.certifications || [],
+      description: description.trim(),
     };
 
     if (salaryMin || salaryMax) {
@@ -207,6 +210,13 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
                   <span key={type} className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold capitalize text-purple-800 dark:bg-purple-500/20 dark:text-purple-100">{displayJobType(type)}</span>
                 ))}
               </div>
+            </section>
+
+            <section>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">About me</p>
+              <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-gray-800 dark:text-gray-200">
+                {listing?.description || "No introduction added yet."}
+              </p>
             </section>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -269,6 +279,23 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
               onChange={(e) => setAvailableFrom(e.target.value)}
               className="mt-2 h-11 min-w-0 max-w-full w-full px-3 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-[16px] text-gray-900 dark:text-gray-100 sm:px-4 sm:text-sm"
             />
+          </div>
+
+          <div>
+            <label htmlFor="open-for-work-description" className="text-xs font-semibold text-gray-700 dark:text-gray-200">About me / cover letter</label>
+            <textarea
+              id="open-for-work-description"
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              rows={4}
+              maxLength={1000}
+              placeholder="Introduce yourself, your experience, the work you enjoy, and what a household can expect from you."
+              className="mt-2 min-h-28 w-full min-w-0 resize-y rounded-xl border border-gray-200 bg-white px-3 py-3 text-[16px] text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 dark:border-purple-500/30 dark:bg-[#0f0b1a] dark:text-gray-100 sm:px-4 sm:text-sm"
+            />
+            <div className="mt-1 flex items-start justify-between gap-3 text-[11px] text-gray-500 dark:text-gray-400">
+              <span>This appears on your Open for Work listing as your introduction.</span>
+              <span className="shrink-0">{description.length}/1000</span>
+            </div>
           </div>
 
           {Object.values(profileHighlights).some((values) => values.length > 0) ? (

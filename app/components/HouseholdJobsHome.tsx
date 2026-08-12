@@ -29,6 +29,7 @@ import { humanizeFeatureName, readFeatureGroups } from "~/utils/listingFeatures"
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 import { matchScoreClasses } from "~/utils/matchScore";
+import { ListingRating } from "~/components/ui/ListingRating";
 
 interface HousehelpSummary {
   id?: string;
@@ -134,6 +135,8 @@ interface OpenForWorkListing {
   fit_score?: number;
   match_reasons?: string[];
   househelp?: HousehelpSummary;
+  owner_rating?: number;
+  owner_review_count?: number;
 }
 
 type SalaryRangeOption = {
@@ -352,6 +355,8 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
       identity_verified_at: ownerVerifiedAt,
       premium: ownerPremium,
       premium_is_trial: ownerPremiumTrial,
+      rating: toFiniteNumber(owner?.rating ?? owner?.owner_rating),
+      review_count: toFiniteNumber(owner?.review_count ?? owner?.owner_review_count),
     };
   }
 
@@ -371,6 +376,8 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
     identity_verified_at: formatTextValue(househelp.identity_verified_at) || ownerVerifiedAt,
     premium: househelp.premium === true || ownerPremium,
     premium_is_trial: househelp.premium_is_trial === true || ownerPremiumTrial,
+    rating: toFiniteNumber(househelp.rating ?? owner?.rating ?? owner?.owner_rating),
+    review_count: toFiniteNumber(househelp.review_count ?? owner?.review_count ?? owner?.owner_review_count),
     avatar_url: formatTextValue(househelp.avatar_url) || undefined,
     photos: toStringArray(househelp.photos),
     town: formatTextValue(househelp.town) || undefined,
@@ -435,7 +442,11 @@ const normalizeOpenForWorkListing = (raw: unknown, fallbackId: string): OpenForW
     listing_features: Array.isArray(listing.listing_features) ? listing.listing_features : [],
     househelp: normalizeHousehelp(
       listing.househelp || listing.user_profile || listing.userProfile,
-      listing,
+      {
+        ...listing,
+        rating: listing.rating ?? listing.owner_rating,
+        review_count: listing.review_count ?? listing.owner_review_count,
+      },
     ),
   };
 };
@@ -1317,6 +1328,9 @@ export default function HouseholdJobsHome() {
                               </div>
                               {!isServiceProvider && (
                                 <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
+                              )}
+                              {!isServiceProvider && (
+                                <ListingRating rating={househelp.rating} reviewCount={househelp.review_count} className="mt-1" />
                               )}
                               {isServiceProvider && listing.description && (
                                 <p className="mt-1 line-clamp-2 text-sm text-gray-500 dark:text-gray-300">{listing.description}</p>
