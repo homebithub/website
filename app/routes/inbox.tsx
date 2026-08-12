@@ -2632,12 +2632,12 @@ export default function InboxPage() {
                 setShowHireWizard(false);
                 setHousehelpProfileIdForHire(null);
               }}
-              onHired={(contractId) => {
+              onHired={(requestId) => {
                 setShowHireWizard(false);
                 setHousehelpProfileIdForHire(null);
                 setHireRequestStatus('pending');
-                setHireRequestId(contractId);
-                const body = `I've sent you an offer for this job. Have a read, and sign when you're happy — nothing is agreed until you do.`;
+                setHireRequestId(requestId);
+                const body = `I've sent you a hire request with the job details. Have a look and let me know if you'd like to proceed.`;
                 notificationsService.sendMessage(activeConversationId!, body)
                   .then((data) => {
                     const msg = normalizeMessage(data || {});
@@ -2650,11 +2650,6 @@ export default function InboxPage() {
                     }
                   })
                   .catch(console.error);
-                // Straight to the contract, which is where the next thing
-                // happens: the household signs, then forwards it.
-                if (contractId) {
-                  navigate(`/household/employment-contract?id=${encodeURIComponent(contractId)}`);
-                }
               }}
             />
           </div>

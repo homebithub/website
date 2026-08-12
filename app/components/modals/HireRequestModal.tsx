@@ -1,414 +1,224 @@
-import React, { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { XMarkIcon } from '@heroicons/react/24/outline';
-import { hireRequestService } from '~/services/grpc/authServices';
-import CustomSelect from '~/components/ui/CustomSelect';
-import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { Briefcase, ChevronDown, Loader2, Pencil, Plus, X } from 'lucide-react';
+
+import JobPostModal from '~/components/modals/JobPostModal';
 import { FormError } from '~/components/FormError';
+import { hireRequestService, jobService } from '~/services/grpc/authServices';
+import { getStoredUserProfileId } from '~/utils/authStorage';
 
-interface AvailabilitySchedule {
-  monday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
-  tuesday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
-  wednesday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
-  thursday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
-  friday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
-  saturday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
-  sunday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
-}
-
-interface HireRequestModalProps {
+type HireRequestModalProps = {
   isOpen: boolean;
   onClose: () => void;
   househelpId: string;
   househelpName: string;
-  househelpSalaryExpectation?: number;
-  househelpSalaryFrequency?: string;
-  househelpOffersLiveIn?: boolean;
-  househelpOffersDayWorker?: boolean;
-  househelpAvailability?: AvailabilitySchedule;
-  househelpAvailableFrom?: string;
-  househelpLocation?: string;
-  househelpSkills?: string[];
-  househelpLanguages?: string[];
-  househelpYearsOfExperience?: number;
-}
-
-interface WorkSchedule {
-  monday: { morning: boolean; afternoon: boolean; evening: boolean };
-  tuesday: { morning: boolean; afternoon: boolean; evening: boolean };
-  wednesday: { morning: boolean; afternoon: boolean; evening: boolean };
-  thursday: { morning: boolean; afternoon: boolean; evening: boolean };
-  friday: { morning: boolean; afternoon: boolean; evening: boolean };
-  saturday: { morning: boolean; afternoon: boolean; evening: boolean };
-  sunday: { morning: boolean; afternoon: boolean; evening: boolean };
-}
-
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-const TIME_SLOTS = ['morning', 'afternoon', 'evening'] as const;
-
-type DayKey = typeof DAYS[number];
-type TimeSlotKey = typeof TIME_SLOTS[number];
-type DayScheduleState = WorkSchedule[DayKey];
-
-const DAY_LABELS: Record<DayKey, string> = {
-  monday: "Monday",
-  tuesday: "Tuesday",
-  wednesday: "Wednesday",
-  thursday: "Thursday",
-  friday: "Friday",
-  saturday: "Saturday",
-  sunday: "Sunday",
+  initialListingId?: string | number;
+  onSent?: (request: Record<string, any>) => void;
+  // Kept optional for callers compiled against the former profile-based form.
+  [key: string]: unknown;
 };
 
-const HireRequestModal: React.FC<HireRequestModalProps> = ({
+function rowsFrom(payload: any): Record<string, any>[] {
+  const value = payload?.data?.data ?? payload?.data ?? payload ?? [];
+  return Array.isArray(value) ? value : [];
+}
+
+function featureGroups(listing?: Record<string, any>): Array<{ name: string; values: string[] }> {
+  const groups = listing?.listing_feature_groups || listing?.feature_groups || [];
+  if (!Array.isArray(groups)) return [];
+  return groups.map((group: any) => ({
+    name: String(group.feature_name || group.name || group.title || 'Detail'),
+    values: (group.properties || group.values || group.options || [])
+      .map((item: any) => String(item?.name || item?.value || item?.title || item || ''))
+      .filter(Boolean),
+  })).filter((group: { values: string[] }) => group.values.length > 0);
+}
+
+export default function HireRequestModal({
   isOpen,
   onClose,
   househelpId,
   househelpName,
-  househelpSalaryExpectation,
-  househelpSalaryFrequency,
-  househelpOffersLiveIn,
-  househelpOffersDayWorker,
-  househelpAvailability,
-  househelpAvailableFrom,
-  househelpLocation,
-  househelpSkills,
-  househelpLanguages,
-  househelpYearsOfExperience,
-}) => {
-  // Derive default job type from househelp profile
-  const deriveDefaultJobType = (): string => {
-    if (househelpOffersLiveIn && !househelpOffersDayWorker) return 'live-in';
-    if (househelpOffersDayWorker && !househelpOffersLiveIn) return 'day-worker';
-    return 'live-in';
-  };
-
-  // Derive work schedule from househelp availability
-  const deriveWorkSchedule = (): WorkSchedule => {
-    const defaultSlot = { morning: true, afternoon: true, evening: false };
-    const defaultSchedule: WorkSchedule = {
-      monday: { ...defaultSlot }, tuesday: { ...defaultSlot }, wednesday: { ...defaultSlot },
-      thursday: { ...defaultSlot }, friday: { ...defaultSlot },
-      saturday: { morning: false, afternoon: false, evening: false },
-      sunday: { morning: false, afternoon: false, evening: false },
-    };
-    if (!househelpAvailability) return defaultSchedule;
-    const schedule: WorkSchedule = { ...defaultSchedule };
-    for (const day of DAYS) {
-      const avail = househelpAvailability[day];
-      if (avail) {
-        schedule[day] = {
-          morning: avail.morning ?? false,
-          afternoon: avail.afternoon ?? false,
-          evening: avail.evening ?? false,
-        };
-      }
-    }
-    return schedule;
-  };
-
-  const [jobType, setJobType] = useState<string>(deriveDefaultJobType());
-  const [startDate, setStartDate] = useState(househelpAvailableFrom || '');
-  const [salaryOffered, setSalaryOffered] = useState<string>(
-    househelpSalaryExpectation ? String(househelpSalaryExpectation) : ''
-  );
-  const [salaryFrequency, setSalaryFrequency] = useState(househelpSalaryFrequency || 'monthly');
-  const [specialRequirements, setSpecialRequirements] = useState('');
-  const [workSchedule, setWorkSchedule] = useState<WorkSchedule>(deriveWorkSchedule());
-  
-  const [loading, setLoading] = useState(false);
+  initialListingId,
+  onSent,
+}: HireRequestModalProps) {
+  const [listings, setListings] = useState<Record<string, any>[]>([]);
+  const [selectedListingId, setSelectedListingId] = useState(String(initialListingId || ''));
+  const [notes, setNotes] = useState('');
+  const [loadingListings, setLoadingListings] = useState(false);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [jobModalOpen, setJobModalOpen] = useState(false);
+  const [editingListing, setEditingListing] = useState<Record<string, any> | null>(null);
+  const [createdForRequest, setCreatedForRequest] = useState(false);
+  const [sentRequest, setSentRequest] = useState<Record<string, any> | null>(null);
+  const [publishing, setPublishing] = useState(false);
 
-  // Determine which job types the househelp offers
-  const availableJobTypes = (() => {
-    const types: string[] = [];
-    if (househelpOffersLiveIn) types.push('live-in');
-    if (househelpOffersDayWorker) types.push('day-worker');
-    // Always include part-time as an option
-    types.push('part-time');
-    // If no specific offerings, show all
-    if (!househelpOffersLiveIn && !househelpOffersDayWorker) return ['live-in', 'day-worker', 'part-time'];
-    return types;
-  })();
-
-  // Reset form when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setJobType(deriveDefaultJobType());
-      setStartDate(househelpAvailableFrom || '');
-      setSalaryOffered(househelpSalaryExpectation ? String(househelpSalaryExpectation) : '');
-      setSalaryFrequency(househelpSalaryFrequency || 'monthly');
-      setWorkSchedule(deriveWorkSchedule());
-      setSpecialRequirements('');
-      setError('');
-      setSuccess(false);
-    }
-  }, [isOpen, househelpSalaryExpectation, househelpSalaryFrequency, househelpOffersLiveIn, househelpOffersDayWorker, househelpAvailability, househelpAvailableFrom]);
-
-  const toggleTimeSlot = (day: DayKey, slot: TimeSlotKey) => {
-    setWorkSchedule(prev => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        [slot]: !prev[day][slot],
-      },
-    }));
-  };
-
-  const toggleDaySlots = (day: DayKey) => {
-    const allSelected = TIME_SLOTS.every(slot => workSchedule[day][slot]);
-    setWorkSchedule(prev => ({
-      ...prev,
-      [day]: TIME_SLOTS.reduce((acc, slot) => {
-        acc[slot] = !allSelected;
-        return acc;
-      }, { ...prev[day] } as DayScheduleState),
-    }));
-  };
-
-  const toggleTimeColumn = (slot: TimeSlotKey) => {
-    const allSelected = DAYS.every(day => workSchedule[day][slot]);
-    setWorkSchedule(prev => {
-      const updated = { ...prev };
-      DAYS.forEach(day => {
-        updated[day] = {
-          ...updated[day],
-          [slot]: !allSelected,
-        };
+  const loadListings = useCallback(async (preferredId?: string) => {
+    setLoadingListings(true);
+    try {
+      const response = await jobService.listJobs(100, 0, getStoredUserProfileId(), 'active');
+      const active = rowsFrom(response);
+      setListings(active);
+      const requested = String(preferredId || initialListingId || '');
+      setSelectedListingId((current) => {
+        if (requested && active.some((listing) => String(listing.id) === requested)) return requested;
+        if (current && active.some((listing) => String(listing.id) === current)) return current;
+        return active.length === 1 ? String(active[0].id) : '';
       });
-      return updated;
-    });
-  };
+      if (active.length === 0) {
+        setEditingListing(null);
+        setJobModalOpen(true);
+      }
+    } catch (loadError: any) {
+      setError(loadError?.message || 'We could not load your job listings.');
+    } finally {
+      setLoadingListings(false);
+    }
+  }, [initialListingId]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    if (!isOpen) return;
     setError('');
+    setNotes('');
+    setSentRequest(null);
+    setCreatedForRequest(false);
+    void loadListings();
+  }, [isOpen, loadListings]);
 
-    // Validation
-    const salaryValue = parseFloat(salaryOffered);
-    if (Number.isNaN(salaryValue) || salaryValue <= 0) {
-      setError('Salary offered must be greater than zero');
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
+  }, [isOpen]);
+
+  const selectedListing = useMemo(
+    () => listings.find((listing) => String(listing.id) === selectedListingId),
+    [listings, selectedListingId],
+  );
+  const details = featureGroups(selectedListing);
+
+  const sendRequest = async () => {
+    if (!selectedListingId) {
+      setError('Choose the job listing this request is for.');
       return;
     }
-
-    setLoading(true);
-
+    setSending(true);
+    setError('');
     try {
-      await hireRequestService.createHireRequest('', 'household', {
-        househelp_id: househelpId,
-        job_type: jobType,
-        start_date: startDate || null,
-        salary_offered: salaryValue,
-        salary_frequency: salaryFrequency,
-        work_schedule: workSchedule,
-        special_requirements: specialRequirements,
-        terms_accepted: true,
+      const request = await hireRequestService.createHireRequest('', 'household', {
+        househelp_profile_id: househelpId,
+        listing_id: Number(selectedListingId),
+        message: notes.trim(),
+        publish_listing: !createdForRequest,
       });
-
-      setSuccess(true);
-      setTimeout(() => {
+      const normalized = (request?.data ?? request ?? {}) as Record<string, any>;
+      onSent?.(normalized);
+      if (createdForRequest) {
+        setSentRequest(normalized);
+      } else {
         onClose();
-      }, 2000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to send hire request');
+      }
+    } catch (sendError: any) {
+      setError(sendError?.message || 'We could not send this hire request.');
     } finally {
-      setLoading(false);
+      setSending(false);
+    }
+  };
+
+  const publishListing = async () => {
+    setPublishing(true);
+    setError('');
+    try {
+      await jobService.reopenJob(selectedListingId);
+      onClose();
+    } catch (publishError: any) {
+      setError(publishError?.message || 'The request was sent, but we could not publish the listing.');
+    } finally {
+      setPublishing(false);
     }
   };
 
   if (!isOpen) return null;
 
-  const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-2xl sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
-          {/* Header */}
-          <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Send Hire Request
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            >
-              <XMarkIcon className="w-6 h-6" />
-            </button>
-          </div>
+  const content = (
+    <>
+      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 backdrop-blur-sm sm:items-center sm:p-5" onClick={onClose}>
+        <section onClick={(event) => event.stopPropagation()} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#13131a] sm:max-w-2xl sm:rounded-2xl">
+          <header className="sticky top-0 z-10 flex items-center justify-between border-b border-purple-200 bg-white px-5 py-4 dark:border-purple-500/20 dark:bg-[#13131a]">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Send hire request</h2>
+              <p className="mt-0.5 text-xs text-gray-500">Choose the exact job details to send to {househelpName}.</p>
+            </div>
+            <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-2 text-gray-500 hover:bg-purple-500/10"><X className="h-5 w-5" /></button>
+          </header>
 
-          {/* Success Message */}
-          {success && (
-            <div className="mx-6 mt-4">
-              <SuccessAlert message={`Hire request sent successfully to ${househelpName}!`} />
+          {sentRequest ? (
+            <div className="space-y-5 p-5 sm:p-6">
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Hire request sent</h3>
+                <p className="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">This listing is currently private and is only being used for the request sent to {househelpName}. Would you also like other househelps to find and apply to it?</p>
+              </div>
+              <FormError message={error} />
+              <div className="grid grid-cols-2 gap-3">
+                <button type="button" onClick={onClose} className="rounded-xl border border-purple-300 px-4 py-2.5 text-xs font-semibold text-purple-700 dark:text-purple-200">Keep private</button>
+                <button type="button" onClick={() => void publishListing()} disabled={publishing} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-60">{publishing ? 'Publishing…' : 'Publish listing'}</button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-5 p-5 sm:p-6">
+              <div>
+                <label htmlFor="hire-listing" className="mb-2 block text-xs font-semibold text-gray-800 dark:text-gray-200">Job listing <span className="text-pink-500">*</span></label>
+                {loadingListings ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-purple-200 px-4 py-3 text-xs text-gray-500 dark:border-purple-500/30"><Loader2 className="h-4 w-4 animate-spin" /> Loading your listings…</div>
+                ) : listings.length > 0 ? (
+                  <div className="relative">
+                    <select id="hire-listing" value={selectedListingId} onChange={(event) => { setSelectedListingId(event.target.value); setCreatedForRequest(false); }} className="w-full appearance-none rounded-xl border border-purple-300 bg-white px-4 py-3 pr-10 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-purple-500 dark:border-purple-500/40 dark:bg-[#0d0d14] dark:text-white">
+                      <option value="">Select a job listing…</option>
+                      {listings.map((listing) => <option key={String(listing.id)} value={String(listing.id)}>{String(listing.title || `Job #${listing.id}`)}</option>)}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-3.5 h-4 w-4 text-gray-500" />
+                  </div>
+                ) : (
+                  <p className="rounded-xl bg-purple-500/10 p-4 text-xs leading-5 text-gray-600 dark:text-gray-300">You do not have an active job listing yet. Create the job details first; the request will use exactly what you enter.</p>
+                )}
+              </div>
+
+              {selectedListing && (
+                <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-4 dark:border-purple-500/25 dark:bg-purple-500/5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div><h3 className="text-sm font-semibold text-gray-900 dark:text-white">{String(selectedListing.title || 'Job listing')}</h3><p className="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">{String(selectedListing.description || '')}</p></div>
+                    <button type="button" onClick={() => { setEditingListing(selectedListing); setJobModalOpen(true); }} className="inline-flex shrink-0 items-center gap-1 rounded-full border border-purple-300 px-3 py-1.5 text-[11px] font-semibold text-purple-700 dark:text-purple-200"><Pencil className="h-3 w-3" /> Edit</button>
+                  </div>
+                  {details.length > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-2">{details.map((group) => <p key={group.name} className="text-xs"><span className="font-semibold text-gray-700 dark:text-gray-300">{group.name}:</span> <span className="text-gray-500 dark:text-gray-400">{group.values.join(', ')}</span></p>)}</div>}
+                </div>
+              )}
+
+              <button type="button" onClick={() => { setEditingListing(null); setJobModalOpen(true); }} className="inline-flex items-center gap-2 text-xs font-semibold text-purple-600 dark:text-purple-300"><Plus className="h-4 w-4" /> Create different job details</button>
+
+              <div><label htmlFor="hire-notes" className="mb-2 block text-xs font-semibold text-gray-800 dark:text-gray-200">Message <span className="font-normal text-gray-400">(optional)</span></label><textarea id="hire-notes" value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder="Add anything specific you discussed with them…" className="w-full resize-none rounded-xl border border-purple-300 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 dark:border-purple-500/40 dark:bg-[#0d0d14] dark:text-white" /></div>
+              <FormError message={error} />
+              <div className="grid grid-cols-2 gap-3"><button type="button" onClick={onClose} className="rounded-xl border border-purple-300 px-4 py-2.5 text-xs font-semibold text-purple-700 dark:text-purple-200">Cancel</button><button type="button" onClick={() => void sendRequest()} disabled={sending || !selectedListingId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50"><Briefcase className="h-4 w-4" /> {sending ? 'Sending…' : 'Send request'}</button></div>
             </div>
           )}
-
-          {/* Error Message */}
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Househelp Info */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Hiring</p>
-                  <p className="text-base font-semibold text-gray-900 dark:text-white">{househelpName}</p>
-                </div>
-                {househelpYearsOfExperience != null && househelpYearsOfExperience > 0 && (
-                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-800/40 text-purple-700 dark:text-purple-300">
-                    {househelpYearsOfExperience} yr{househelpYearsOfExperience !== 1 ? 's' : ''} exp
-                  </span>
-                )}
-              </div>
-              {/* Profile summary chips */}
-              <div className="flex flex-wrap gap-2 mt-3">
-                {househelpOffersLiveIn && (
-                  <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">Live In</span>
-                )}
-                {househelpOffersDayWorker && (
-                  <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Day Worker</span>
-                )}
-                {househelpLocation && (
-                  <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{househelpLocation}</span>
-                )}
-                {househelpSalaryExpectation && househelpSalaryFrequency && (
-                  <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">
-                    Expects KES {househelpSalaryExpectation.toLocaleString()} / {househelpSalaryFrequency}
-                  </span>
-                )}
-              </div>
-              {househelpSkills && househelpSkills.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {househelpSkills.slice(0, 6).map((skill) => (
-                    <span key={skill} className="text-xs px-2 py-0.5 rounded-full bg-white/60 dark:bg-purple-800/30 text-gray-600 dark:text-purple-300">{skill}</span>
-                  ))}
-                  {househelpSkills.length > 6 && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/60 dark:bg-purple-800/30 text-gray-500 dark:text-purple-400">+{househelpSkills.length - 6} more</span>
-                  )}
-                </div>
-              )}
-              {househelpLanguages && househelpLanguages.length > 0 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Languages: {househelpLanguages.join(', ')}</p>
-              )}
-            </div>
-
-            {/* Job Type */}
-            <div>
-              <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                Job Type *
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {availableJobTypes.map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setJobType(type)}
-                    className={`px-4 py-1.5 rounded-xl border-2 font-semibold capitalize transition-all ${
-                      jobType === type
-                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent shadow-lg'
-                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-purple-400'
-                    }`}
-                  >
-                    {type.replace('-', ' ')}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Start Date */}
-            <div>
-              <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                Preferred Start Date (Optional)
-              </label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
-              />
-            </div>
-
-            {/* Salary */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                  Salary Offered (KES) *
-                </label>
-                <input
-                  type="number"
-                  value={salaryOffered}
-                  onChange={(e) => setSalaryOffered(e.target.value)}
-                  min="0"
-                  step="100"
-                  required
-                  className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                  Frequency *
-                </label>
-                <CustomSelect
-                  value={salaryFrequency}
-                  onChange={(value) => setSalaryFrequency(value)}
-                  options={[
-                    { value: 'daily', label: 'Daily' },
-                    { value: 'weekly', label: 'Weekly' },
-                    { value: 'monthly', label: 'Monthly' },
-                    { value: 'yearly', label: 'Yearly' },
-                  ]}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Special Requirements */}
-            <div>
-              <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                Special Requirements (Optional)
-              </label>
-              <textarea
-                value={specialRequirements}
-                onChange={(e) => setSpecialRequirements(e.target.value)}
-                rows={4}
-                placeholder="Any specific requirements or expectations..."
-                className="w-full text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
-              />
-            </div>
-
-            <FormError message={error} />
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={loading}
-                className="flex-1 px-6 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Sending...' : 'Send Hire Request'}
-              </button>
-            </div>
-          </form>
-        </div>
+        </section>
       </div>
+
+      <JobPostModal
+        isOpen={jobModalOpen}
+        onClose={() => setJobModalOpen(false)}
+        job={editingListing}
+        titleOverride={editingListing ? 'Adjust job details' : 'Create job details'}
+        submitLabel={editingListing ? 'Use updated details' : 'Use these details'}
+        onSaved={async (listing) => {
+          const savedId = String(listing?.id || editingListing?.id || '');
+          if (!editingListing) setCreatedForRequest(true);
+          await loadListings(savedId);
+        }}
+      />
+    </>
   );
 
-  return createPortal(modalContent, document.body);
-};
-
-export default HireRequestModal;
+  return createPortal(content, document.body);
+}

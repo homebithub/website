@@ -25,7 +25,9 @@ type JobPostModalProps = {
   isOpen: boolean;
   onClose: () => void;
   job?: Record<string, any> | null;
-  onSaved?: () => void | Promise<void>;
+  onSaved?: (listing?: Record<string, any>) => void | Promise<void>;
+  titleOverride?: string;
+  submitLabel?: string;
 };
 
 type JobType = {
@@ -152,7 +154,7 @@ function startTimingDefault(value: unknown): string {
   return 'Flexible';
 }
 
-export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostModalProps) {
+export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverride, submitLabel }: JobPostModalProps) {
   const editing = Boolean(job?.id);
   const [mounted, setMounted] = useState(false);
   const [title, setTitle] = useState("");
@@ -528,8 +530,9 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
 
     setSaving(true);
     try {
+      let savedListing: Record<string, any> | undefined;
       if (editing) {
-        await jobService.updateJob(String(job?.id), "", {
+        savedListing = await jobService.updateJob(String(job?.id), "", {
           title: trimmedTitle,
           description: trimmedDescription,
           ward_id: location?.wardId,
@@ -540,7 +543,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
           replace_features: true,
         });
       } else {
-        await jobService.createListing("", {
+        savedListing = await jobService.createListing("", {
           user_profile_id: userProfileId,
           title: trimmedTitle,
           description: trimmedDescription,
@@ -551,7 +554,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
       }
 
       setSuccess(editing ? "Listing updated." : "Listing created.");
-      await onSaved?.();
+      await onSaved?.(savedListing);
       window.setTimeout(onClose, 450);
     } catch (err: any) {
       setError(err?.message || "Unable to save listing");
@@ -583,7 +586,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
       >
         <div className="flex items-start justify-between border-b border-purple-100 px-6 py-4 dark:border-purple-500/25">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{editing ? "Edit Job Posting" : "Create Job Posting"}</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">{titleOverride || (editing ? "Edit Job Posting" : "Create Job Posting")}</h2>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
               {editing ? "Update the listing details." : "Add the role, then choose the details clients need to know."}
             </p>
@@ -779,7 +782,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
               disabled={saving || loadingJobTypes || loadingFeatures}
               className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-7 py-2.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {saving ? "Saving..." : editing ? "Save Changes" : "Create Listing"}
+              {saving ? "Saving..." : submitLabel || (editing ? "Save Changes" : "Create Listing")}
             </button>
           </div>
         </form>
