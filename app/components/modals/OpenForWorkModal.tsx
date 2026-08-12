@@ -40,7 +40,6 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
   const [availableFrom, setAvailableFrom] = useState("");
   const [canWorkWithKids, setCanWorkWithKids] = useState(false);
   const [canWorkWithPets, setCanWorkWithPets] = useState(false);
-  const [status, setStatus] = useState("active");
   const [salaryMin, setSalaryMin] = useState("");
   const [salaryMax, setSalaryMax] = useState("");
   const [salaryFrequency, setSalaryFrequency] = useState("monthly");
@@ -57,7 +56,6 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
     setAvailableFrom(toDateInputValue(listing?.available_from));
     setCanWorkWithKids(Boolean(listing?.can_work_with_kids));
     setCanWorkWithPets(Boolean(listing?.can_work_with_pets));
-    setStatus(listing?.status || "active");
     setSalaryFrequency(listing?.salary_frequency || "monthly");
     setSalaryMin(toSalaryInputValue(listing?.salary_min, listing?.salary_frequency));
     setSalaryMax(toSalaryInputValue(listing?.salary_max, listing?.salary_frequency));
@@ -137,7 +135,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
       available_from: availableFrom || null,
       can_work_with_kids: canWorkWithKids,
       can_work_with_pets: canWorkWithPets,
-      status,
+      status: "active",
       languages: profileHighlights.languages || [],
       skills: profileHighlights.skills || [],
       certifications: profileHighlights.certifications || [],
@@ -183,6 +181,9 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
 
         <form onSubmit={handleSubmit} className="space-y-5 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
           {success && <SuccessAlert message={success} />}
+          <p className="rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-100">
+            Open for Work makes you searchable by households using the skills, availability and preferences below. You can have one listing at a time, and it stays online only while your subscription is active.
+          </p>
           {prefilled && !listing?.id ? (
             <p className="rounded-xl bg-purple-50 px-3 py-2 text-xs text-purple-800 dark:bg-purple-500/10 dark:text-purple-100">
               We started with your profile preferences. Changes here apply only to this Open for Work listing.
@@ -250,18 +251,6 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
               />
               Comfortable with pets
             </label>
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Status</label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="mt-2 w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
           </div>
 
           <div>

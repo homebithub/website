@@ -6,6 +6,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { ListingDetails, listingSalary } from '~/components/listing/ListingDetails';
 import { ApplicationHistory } from '~/components/hiring/ApplicationHistory';
+import { OpenForWorkButton } from '~/components/OpenForWorkButton';
 import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { buildIdentifierMap, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
@@ -662,7 +663,7 @@ export default function HousehelpHiringHistory() {
   const pageEyebrow = isClientProfile ? 'Client • Hiring' : 'Service Provider • Hiring';
   const pageDescription = isClientProfile
     ? 'Manage your hiring activity and view its status'
-    : 'Manage your requests, contracts, work history and applications';
+    : 'Manage your availability, requests, contracts, work history and applications';
 
   const loading = activeTab === 'requests' ? requestsLoading : activeTab === 'work-history' ? contractsLoading : activeTab === 'employment-contracts' ? employmentContractsLoading : interestsLoading;
 
@@ -672,7 +673,7 @@ export default function HousehelpHiringHistory() {
       <div className="bg-white dark:bg-purple-950/40 rounded-2xl shadow-lg border border-purple-100 dark:border-purple-800/40 overflow-hidden">
         {/* Header */}
         <div className="px-6 pt-6 pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">
                 {pageEyebrow}
@@ -680,6 +681,7 @@ export default function HousehelpHiringHistory() {
               <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{pageTitle}</h1>
               <p className="text-gray-600 dark:text-gray-400 text-xs">{pageDescription}</p>
             </div>
+            {!isClientProfile ? <OpenForWorkButton showStatus className="sm:justify-center" /> : null}
           </div>
         </div>
 

@@ -62,4 +62,13 @@ describe('mobile layout guardrails', () => {
     expect(contract).toContain('Preparing PDF…');
     expect(contract).toContain('Email Contract');
   });
+
+  it('manages one open-for-work listing from househelp hiring', () => {
+    const button = source('app/components/OpenForWorkButton.tsx');
+    const hiring = source('app/routes/househelp/hiring-history.tsx');
+    expect(button).toContain('disabled={checking || hasListing}');
+    expect(button).toContain('Remove Open for Work');
+    expect(button).toContain('daysRemaining');
+    expect(hiring).toContain('<OpenForWorkButton showStatus');
+  });
 });
