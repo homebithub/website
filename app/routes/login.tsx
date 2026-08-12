@@ -123,9 +123,11 @@ export default function LoginPage() {
             user: userData,
             provider: "google",
           });
-          registerCurrentDevice(userData.user_id).catch((deviceError) => {
+          try {
+            await registerCurrentDevice(userData.user_id);
+          } catch (deviceError) {
             console.warn('Device registration failed:', deviceError);
-          });
+          }
           const profileType: string = userData.profile_type || '';
 
           // If user has no phone number, redirect to add-phone page

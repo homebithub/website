@@ -268,9 +268,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Registered before navigating, as the verify-otp path did: this is the
       // moment a new device becomes known, and it is what a pending-approval
       // decision is later taken about.
-      registerCurrentDevice(authId).catch((deviceError) => {
+      // Finish device registration before mounting the authenticated app. The
+      // revocation watcher runs as soon as that tree mounts; letting this call
+      // race it meant a returning browser could be compared with its previous
+      // revoked row and immediately sign out an otherwise valid new session.
+      // Registration failure remains non-fatal (auth has already accepted the
+      // password), but the ordering must be deterministic when it succeeds.
+      try {
+        await registerCurrentDevice(authId);
+      } catch (deviceError) {
         console.warn('Device registration failed:', deviceError);
-      });
+      }
       migratePreferences().catch((err) => console.error('Failed to migrate preferences:', err));
 
       // Bureau accounts have their own landing page; everyone else goes home,
