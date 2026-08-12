@@ -66,10 +66,10 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       const [subscriptionResult, accessResult] = await cachedRequest(
         `subscription:${userId}`,
         async () => {
-          const { paymentsService } = await import('~/services/grpc/payments.service');
+          const { subscriptionReadService } = await import('~/services/grpc/subscriptionRead.service');
           return Promise.allSettled([
-            paymentsService.getMySubscription(userId),
-            paymentsService.checkSubscriptionAccess(userId),
+            subscriptionReadService.getMySubscription(userId),
+            subscriptionReadService.checkSubscriptionAccess(userId),
           ]);
         },
         { maxAgeMs: SUBSCRIPTION_STALE_MS, force },

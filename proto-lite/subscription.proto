@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package payments;
+
+import "google/protobuf/timestamp.proto";
+
+// Browser-only subset of PaymentsService used by the persistent shell.
+// Method paths and field numbers intentionally match payments.proto.
+service PaymentsService {
+  rpc GetMySubscription(GetMySubscriptionRequest) returns (GetMySubscriptionResponse);
+  rpc CheckSubscriptionAccess(CheckSubscriptionAccessRequest) returns (CheckSubscriptionAccessResponse);
+}
+
+message SubscriptionPlan {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  int64 price_amount = 4;
+  string billing_cycle = 5;
+  string profile_type = 6;
+  int32 trial_days = 7;
+  int32 display_order = 8;
+  bool is_active = 9;
+  int32 max_profiles = 10;
+  int32 max_applications = 11;
+  int32 max_hires = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+message Subscription {
+  string id = 1;
+  string user_id = 2;
+  string profile_id = 3;
+  string profile_type = 4;
+  string plan_id = 5;
+  string status = 6;
+  google.protobuf.Timestamp current_period_start = 7;
+  google.protobuf.Timestamp current_period_end = 8;
+  google.protobuf.Timestamp trial_end = 9;
+  bool cancel_at_period_end = 10;
+  google.protobuf.Timestamp cancelled_at = 11;
+  SubscriptionPlan plan = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+message GetMySubscriptionRequest { string user_id = 1; }
+message GetMySubscriptionResponse { Subscription subscription = 1; }
+
+message CheckSubscriptionAccessRequest { string user_id = 1; }
+message CheckSubscriptionAccessResponse {
+  bool has_access = 1;
+  string status = 2;
+  string subscription_id = 3;
+  google.protobuf.Timestamp expires_at = 4;
+  bool is_trial = 5;
+  bool is_early_adopter = 6;
+  int32 days_remaining = 7;
+  string message = 8;
+}
