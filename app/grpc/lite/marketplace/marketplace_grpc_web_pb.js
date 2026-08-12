@@ -435,5 +435,127 @@ proto.auth.HireRequestServicePromiseClient.prototype.listHireRequests =
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_HireRequestService_AcceptHireRequest = new grpc.web.MethodDescriptor(
+  '/auth.HireRequestService/AcceptHireRequest',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.HireRequestServiceClient.prototype.acceptHireRequest =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.HireRequestService/AcceptHireRequest',
+      request,
+      metadata || {},
+      methodDescriptor_HireRequestService_AcceptHireRequest,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.HireRequestServicePromiseClient.prototype.acceptHireRequest =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.HireRequestService/AcceptHireRequest',
+      request,
+      metadata || {},
+      methodDescriptor_HireRequestService_AcceptHireRequest);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_HireRequestService_DeclineHireRequest = new grpc.web.MethodDescriptor(
+  '/auth.HireRequestService/DeclineHireRequest',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.HireRequestServiceClient.prototype.declineHireRequest =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.HireRequestService/DeclineHireRequest',
+      request,
+      metadata || {},
+      methodDescriptor_HireRequestService_DeclineHireRequest,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.HireRequestServicePromiseClient.prototype.declineHireRequest =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.HireRequestService/DeclineHireRequest',
+      request,
+      metadata || {},
+      methodDescriptor_HireRequestService_DeclineHireRequest);
+};
+
+
 module.exports = proto.auth;
 

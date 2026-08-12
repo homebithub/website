@@ -1,12 +1,13 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router";
 import { useAuth } from "~/contexts/useAuth";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { profileService as grpcProfileService, hireRequestService } from '~/services/grpc/authServices';
+import { profileReadService as grpcProfileService } from '~/services/grpc/profileRead.service';
+import { marketplaceHireRequestService as hireRequestService } from '~/services/grpc/marketplace.service';
 import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
-import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
+import type { EmojiClickData } from 'emoji-picker-react';
 import ConversationHire from '~/components/hiring/ConversationHire';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
 import { useWebSocketContext } from '~/contexts/WebSocketContext';
@@ -22,6 +23,8 @@ import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/au
 import { resolveHouseholdProfile } from '~/utils/householdProfiles';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 import { InboxPageSkeleton, ShimmerLine, ShimmerSection } from "~/components/ShimmerLoader";
+
+const EmojiPicker = lazy(() => import('~/components/chat/LazyEmojiPicker'));
 
 type Conversation = {
   id: string;
@@ -1945,6 +1948,7 @@ export default function InboxPage() {
                       )}
                       {!interactionsDisabled && openReactPickerMsgId === m.id && (
                         <div ref={reactionPickerRef} className={`absolute ${mine ? 'right-0' : 'left-0'} bottom-full mb-2 z-50`}>
+                          <Suspense fallback={<div className="h-[380px] w-[320px] animate-pulse rounded-lg bg-purple-100 dark:bg-purple-950/40" />}>
                           <EmojiPicker
                             onEmojiClick={(emojiData) => {
                               // Extract emoji with fallback to unified code points
@@ -1967,11 +1971,11 @@ export default function InboxPage() {
                               toggleReaction(m, emoji);
                               setOpenReactPickerMsgId(null);
                             }}
-                            theme={Theme.AUTO}
                             width={320}
                             height={380}
                             lazyLoadEmojis
                           />
+                          </Suspense>
                         </div>
                       )}
                       {/* Reply snippet inside bubble */}
@@ -2239,9 +2243,9 @@ export default function InboxPage() {
               messages.length < 10 ? 'top-20' : 'bottom-24'
             }`}
           >
+            <Suspense fallback={<div className="h-[400px] w-[320px] animate-pulse rounded-lg bg-purple-100 dark:bg-purple-950/40" />}>
             <EmojiPicker
               onEmojiClick={addEmoji}
-              theme={Theme.AUTO}
               searchPlaceHolder="Search emojis..."
               width={320}
               height={400}
@@ -2249,6 +2253,7 @@ export default function InboxPage() {
               skinTonesDisabled={false}
               lazyLoadEmojis={true}
             />
+            </Suspense>
           </div>
         )}
 

@@ -90,6 +90,18 @@ export const marketplaceHireRequestService = {
     request.setOffset(0);
     return responseData(await call(callback => hireRequestClient.listHireRequests(request, metadata(), callback)));
   },
+  async acceptHireRequest(id: string, userId = ''): Promise<any> {
+    const request = new pb.IdRequest();
+    request.setId(id);
+    request.setUserId(resolveUserId(userId));
+    return responseData(await call(callback => hireRequestClient.acceptHireRequest(request, metadata(), callback)));
+  },
+  async declineHireRequest(id: string, userId = ''): Promise<any> {
+    const request = new pb.IdRequest();
+    request.setId(id);
+    request.setUserId(resolveUserId(userId));
+    return responseData(await call(callback => hireRequestClient.declineHireRequest(request, metadata(), callback)));
+  },
 };
 
 export const marketplaceJobService = {
