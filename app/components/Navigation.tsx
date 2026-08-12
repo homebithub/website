@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router";
-import React, { Suspense, lazy, useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
@@ -19,6 +19,24 @@ const NAV_COUNT_STALE_MS = 2 * 60_000;
 const NAV_ADMIN_STALE_MS = 10 * 60_000;
 
 const NotificationsModal = lazy(() => import('~/components/notifications/NotificationsModal'));
+
+function useCoalescedRefresh(callback: () => void, delayMs = 250) {
+    const timerRef = useRef<number | null>(null);
+    const latestRef = useRef(callback);
+    latestRef.current = callback;
+
+    useEffect(() => () => {
+        if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    }, []);
+
+    return React.useCallback(() => {
+        if (timerRef.current !== null) return;
+        timerRef.current = window.setTimeout(() => {
+            timerRef.current = null;
+            latestRef.current();
+        }, delayMs);
+    }, [delayMs]);
+}
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -222,6 +240,12 @@ function NavigationContent() {
         }
     }, [profileType]);
 
+    // One user action can be echoed by a local event, SSE notification and a
+    // WebSocket event. Coalesce that burst into one forced read per badge.
+    const refreshHiring = useCoalescedRefresh(() => void fetchHireRequestCount(undefined, true));
+    const refreshInbox = useCoalescedRefresh(() => void fetchInboxCount(true));
+    const refreshSaved = useCoalescedRefresh(() => void fetchSavedCount(true));
+
     // Parse user profile type and name from localStorage
     useEffect(() => {
         if (user) {
@@ -296,12 +320,12 @@ function NavigationContent() {
         if (isInSetupMode || !allowAuxiliaryAccountCalls) return;
 
         const handleHiringUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchHireRequestCount(undefined, true);
+            if (getAccessTokenFromCookies()) refreshHiring();
         };
         // The inbox page has dispatched this on every read since it was written;
         // nothing was listening, so the badge stayed put until the next poll.
         const handleInboxUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchInboxCount(true);
+            if (getAccessTokenFromCookies()) refreshInbox();
         };
 
         // Every place that saves or unsaves already dispatches this — the two
@@ -309,7 +333,7 @@ function NavigationContent() {
         // listening, which is the same gap the inbox badge had: the number was
         // correct on load and then stood still while the heart was clicked.
         const handleShortlistUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchSavedCount(true);
+            if (getAccessTokenFromCookies()) refreshSaved();
         };
 
         window.addEventListener('hiring-updated', handleHiringUpdate);
@@ -320,16 +344,13 @@ function NavigationContent() {
             window.removeEventListener('inbox-updated', handleInboxUpdate);
             window.removeEventListener('shortlist-updated', handleShortlistUpdate);
         };
-    }, [isInSetupMode, allowAuxiliaryAccountCalls, fetchHireRequestCount, fetchInboxCount, fetchSavedCount]);
+    }, [isInSetupMode, allowAuxiliaryAccountCalls, refreshHiring, refreshInbox, refreshSaved]);
 
     const badgesAreLive = Boolean(user) && !isInSetupMode && allowAuxiliaryAccountCalls;
 
     // Realtime updates invalidate only the count they can change. A hiring
     // event previously reloaded hiring, inbox and saved data, then the related
     // notification caused the same three reads again.
-    const refreshHiring = React.useCallback(() => {
-        void fetchHireRequestCount(undefined, true);
-    }, [fetchHireRequestCount]);
     useSSESubscriptionSafe('hiring.application.submitted', refreshHiring, badgesAreLive);
     useSSESubscriptionSafe('hiring.application.accepted', refreshHiring, badgesAreLive);
     useSSESubscriptionSafe('hiring.application.declined', refreshHiring, badgesAreLive);
@@ -343,10 +364,10 @@ function NavigationContent() {
         if (!badgesAreLive || !webSocket) return;
 
         const unsubscribers = ['new_message', 'message_read'].map((type) =>
-            webSocket.addEventListener(type, () => void fetchInboxCount(true)),
+            webSocket.addEventListener(type, refreshInbox),
         );
         return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
-    }, [badgesAreLive, webSocket, fetchInboxCount]);
+    }, [badgesAreLive, webSocket, refreshInbox]);
 
     // Coming back to the tab, and moving between pages.
     //
