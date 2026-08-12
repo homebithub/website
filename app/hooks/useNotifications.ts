@@ -8,6 +8,9 @@ import {
   getStoredUser,
   getStoredUserId,
 } from "~/utils/authStorage";
+import { cachedRequest, invalidateCached } from "~/utils/requestCache";
+
+const NOTIFICATION_STALE_MS = 2 * 60_000;
 
 interface UseNotificationsOptions {
   pollingMs?: number;
@@ -91,7 +94,7 @@ export function useNotifications({
     );
   }, [search]);
 
-  const fetchLatest = useCallback(async () => {
+  const fetchLatest = useCallback(async (force = false) => {
     if (!enabled) {
       setItems([]);
       setUnreadCount(0);
@@ -116,8 +119,12 @@ export function useNotifications({
       const userId = getCurrentUserId();
       if (!userId) return;
 
-      const response = responsePayload(
-        await notificationsService.listNotificationsByUser(userId, pageSize, 0)
+      const response = await cachedRequest(
+        `notifications:${userId}:${pageSize}:0`,
+        async () => responsePayload(
+          await notificationsService.listNotificationsByUser(userId, pageSize, 0)
+        ),
+        { maxAgeMs: NOTIFICATION_STALE_MS, force },
       );
       const rawItems: NotificationApiItem[] = Array.isArray(response?.notifications)
         ? response.notifications
@@ -198,7 +205,7 @@ export function useNotifications({
         ));
       }
       if (typeof detail?.unreadCount === "number") setUnreadCount(detail.unreadCount);
-      void fetchLatest();
+      void fetchLatest(true);
     };
     window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, handleUpdated);
     return () => window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, handleUpdated);
@@ -207,7 +214,7 @@ export function useNotifications({
   const refreshFromRealtime = useCallback(() => {
     if (!enabled) return;
     unavailableUntilRef.current = 0;
-    void fetchLatest();
+    void fetchLatest(true);
   }, [enabled, fetchLatest]);
 
   useSSESubscriptionSafe("notifications.snapshot", refreshFromRealtime, enabled);
@@ -220,6 +227,7 @@ export function useNotifications({
     if (!userId) return;
     try {
       await notificationsService.markAllNotificationsAsClicked(userId);
+      invalidateCached(`notifications:${userId}:`);
       unavailableUntilRef.current = 0;
       setUnreadCount(0);
       setItems((previous) => previous.map((item) => ({ ...item, clicked: true, status: "read" })));
@@ -238,6 +246,8 @@ export function useNotifications({
   const markOneAsRead = useCallback(async (id: string) => {
     try {
       await notificationsService.markNotificationAsClicked(id, "");
+      const userId = getCurrentUserId();
+      if (userId) invalidateCached(`notifications:${userId}:`);
       unavailableUntilRef.current = 0;
       setUnreadCount((previous) => Math.max(0, previous - 1));
       setItems((previous) => previous.map((item) =>
@@ -253,7 +263,7 @@ export function useNotifications({
         console.error("[useNotifications] Failed to mark notification as read", markError);
       }
     }
-  }, []);
+  }, [getCurrentUserId]);
 
   return {
     items,
@@ -263,7 +273,7 @@ export function useNotifications({
     loading,
     loadingMore,
     hasMore,
-    refresh: fetchLatest,
+    refresh: () => fetchLatest(true),
     loadMore,
     markAllAsRead,
     markOneAsRead,

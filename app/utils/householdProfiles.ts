@@ -1,4 +1,5 @@
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { cachedRequest } from '~/utils/requestCache';
 
 export type HouseholdProfileLike = {
   id?: string;
@@ -47,6 +48,18 @@ export async function resolveHouseholdProfile(identifier: string, options?: {
   if (!identifier) {
     return null;
   }
+
+  return cachedRequest(
+    `profile:household:${identifierType}:${identifier}`,
+    () => fetchHouseholdProfile(identifier, identifierType),
+    { maxAgeMs: 5 * 60_000 },
+  );
+}
+
+async function fetchHouseholdProfile(
+  identifier: string,
+  identifierType: 'userId' | 'profileId' | 'auto',
+): Promise<HouseholdProfileLike | null> {
 
   if (identifierType === 'userId') {
     return grpcProfileService.getHouseholdByUserID(identifier);

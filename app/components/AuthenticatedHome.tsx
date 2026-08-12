@@ -1,6 +1,6 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useSearchParams, useLocation, useNavigate } from "react-router";
+import { Link, useSearchParams, useLocation, useNavigate } from "react-router";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -22,7 +22,7 @@ import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/au
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSubscription } from '~/hooks/useSubscription';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
-import { resolveHousehelpUserId } from '~/utils/househelpProfiles';
+import { resolveHousehelpProfile, resolveHousehelpUserId } from '~/utils/househelpProfiles';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { matchScoreClasses } from '~/utils/matchScore';
 
@@ -1071,12 +1071,18 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                             <div className="text-xs text-gray-400">
                               {househelp.created_at ? `Joined ${new Date(househelp.created_at).toLocaleDateString()}` : ''}
                             </div>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleViewProfile(String(househelp.profile_id)); }}
+                            <Link
+                              to={`/househelp/public-profile?profileId=${encodeURIComponent(String(househelp.profile_id || ''))}`}
+                              state={{ profileId: househelp.profile_id }}
+                              prefetch="intent"
+                              onPointerEnter={() => {
+                                if (househelp.profile_id) void resolveHousehelpProfile(String(househelp.profile_id), { identifierType: 'auto' });
+                              }}
+                              onClick={(e) => e.stopPropagation()}
                               className={`px-4 py-1 ${isHome3 ? 'text-xs' : 'text-xs'} bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition`}
                             >
                               View more
-                            </button>
+                            </Link>
                           </div>
                         </div>
                       </div>

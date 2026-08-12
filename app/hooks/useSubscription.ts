@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { paymentsService } from '~/services/grpc/payments.service';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { useSubscriptionSSE } from './useSubscriptionSSE';
 import { extractSubscription, extractSubscriptionAccess } from '~/utils/subscriptionData';
+import { cachedRequest } from '~/utils/requestCache';
+
+const SUBSCRIPTION_STALE_MS = 2 * 60_000;
 
 export type SubscriptionStatus = 'loading' | 'active' | 'trial' | 'none' | 'expired' | 'error';
 
@@ -49,7 +51,7 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   const [accessMessage, setAccessMessage] = useState<string | null>(null);
   const [isEarlyAdopter, setIsEarlyAdopter] = useState(false);
 
-  const fetchSubscription = useCallback(async () => {
+  const fetchSubscription = useCallback(async (force = false) => {
     if (!userId) {
       setStatus('none');
       setIsEarlyAdopter(false);
@@ -61,10 +63,17 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       setLoading(true);
       setError(null);
 
-      const [subscriptionResult, accessResult] = await Promise.allSettled([
-        paymentsService.getMySubscription(userId),
-        paymentsService.checkSubscriptionAccess(userId),
-      ]);
+      const [subscriptionResult, accessResult] = await cachedRequest(
+        `subscription:${userId}`,
+        async () => {
+          const { paymentsService } = await import('~/services/grpc/payments.service');
+          return Promise.allSettled([
+            paymentsService.getMySubscription(userId),
+            paymentsService.checkSubscriptionAccess(userId),
+          ]);
+        },
+        { maxAgeMs: SUBSCRIPTION_STALE_MS, force },
+      );
 
       const sub =
         subscriptionResult.status === 'fulfilled'
@@ -137,43 +146,33 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   }, [userId]);
 
   useEffect(() => {
-    fetchSubscription();
+    void fetchSubscription();
+  }, [fetchSubscription]);
+
+  const refreshSubscription = useCallback(() => {
+    void fetchSubscription(true);
   }, [fetchSubscription]);
 
   // SSE for real-time subscription updates
   useSubscriptionSSE(
     // onActivated
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onSuspended
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onReactivated
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onPastDue
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onTrialStarted
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onExpiryWarning
     useCallback(() => {
       // Could show a toast notification here
     }, []),
     // onLapsed
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onCancelled
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription])
+    refreshSubscription
   );
 
   const isActive = status === 'active' || status === 'trial';
@@ -188,6 +187,6 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
     accessMessage,
     loading,
     error,
-    refetch: fetchSubscription,
+    refetch: refreshSubscription,
   };
 }

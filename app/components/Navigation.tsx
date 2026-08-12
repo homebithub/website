@@ -11,12 +11,13 @@ import { useSSESubscriptionSafe } from "~/hooks/useSSESubscription";
 import { useWebSocketContextSafe } from "~/contexts/WebSocketContext";
 import NotificationsModal from "~/components/notifications/NotificationsModal";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { hireRequestService, listingApplicationService } from '~/services/grpc/authServices';
 import notificationsService from '~/services/grpc/notifications.service';
-import { shortlistService } from '~/services/grpc/authServices';
-import authService from '~/services/grpc/auth.service';
 import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
+import { cachedRequest } from '~/utils/requestCache';
+
+const NAV_COUNT_STALE_MS = 2 * 60_000;
+const NAV_ADMIN_STALE_MS = 10 * 60_000;
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -51,7 +52,7 @@ export function Navigation() {
     const [savedCount, setSavedCount] = useState<number>(0);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-    const { unreadCount } = useNotifications({ pollingMs: 30000, pageSize: 20, enabled: allowAuxiliaryAccountCalls });
+    const { unreadCount } = useNotifications({ pollingMs: 5 * 60_000, pageSize: 20, enabled: allowAuxiliaryAccountCalls });
     const navigate = useNavigate();
 
 
@@ -129,28 +130,29 @@ export function Navigation() {
     //   household  → applicants to review ('initiated'), plus candidates who
     //                accepted and now need their approval ('accepted')
     //   househelp  → hire requests received and unanswered
-    const fetchHireRequestCount = React.useCallback(async (overrideProfileType?: string | null) => {
+    const fetchHireRequestCount = React.useCallback(async (overrideProfileType?: string | null, force = false) => {
         try {
             if (!getAccessTokenFromCookies()) return;
             const pt = overrideProfileType ?? profileType;
             const role = normalizeProfileRole(pt);
-            let total = 0;
-
-            if (role === 'client') {
-                const ownerProfileId = getStoredUserProfileId() || '';
-                if (ownerProfileId) {
+            const userId = getStoredUserId() || '';
+            if (!role || !userId) return;
+            const total = await cachedRequest(`nav:hiring:${userId}:${role}`, async () => {
+                const { hireRequestService, listingApplicationService } = await import('~/services/grpc/authServices');
+                if (role === 'client') {
+                    const ownerProfileId = getStoredUserProfileId() || '';
+                    if (!ownerProfileId) return 0;
                     const raw = await listingApplicationService.listApplications({
                         ownerProfileId,
                         statuses: ['initiated', 'accepted'],
                         limit: 200,
                     });
                     const rows = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
-                    total = raw?.total ?? rows.length;
+                    return Number(raw?.total ?? rows.length);
                 }
-            } else if (role === 'service-provider') {
                 const data = await hireRequestService.listHireRequests('', '', 'pending');
-                total = data?.total || (Array.isArray(data?.data) ? data.data.length : 0);
-            }
+                return Number(data?.total || (Array.isArray(data?.data) ? data.data.length : 0));
+            }, { maxAgeMs: NAV_COUNT_STALE_MS, force });
 
             setHireRequestCount(total);
         } catch (error) {
@@ -163,17 +165,19 @@ export function Navigation() {
 
     // Unread messages. inboxCount existed and was never once populated, so the
     // badge could not appear however many messages were waiting.
-    const fetchInboxCount = React.useCallback(async () => {
+    const fetchInboxCount = React.useCallback(async (force = false) => {
         try {
             if (!getAccessTokenFromCookies()) return;
             const userId = getStoredUserId() || '';
             if (!userId) return;
-            const raw = await notificationsService.listConversations(userId, 0, 100);
-            const rows = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
-            const unread = rows.reduce(
-                (sum: number, conversation: any) => sum + Number(conversation?.unread_count || 0),
-                0,
-            );
+            const unread = await cachedRequest(`nav:inbox:${userId}`, async () => {
+                const raw = await notificationsService.listConversations(userId, 0, 100);
+                const rows = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
+                return rows.reduce(
+                    (sum: number, conversation: any) => sum + Number(conversation?.unread_count || 0),
+                    0,
+                );
+            }, { maxAgeMs: NAV_COUNT_STALE_MS, force });
             setInboxCount(unread);
         } catch (error) {
             setInboxCount(0);
@@ -189,7 +193,7 @@ export function Navigation() {
     // lists from, so the badge and the page cannot disagree — counting client
     // side from a fetched list would have been a second definition of the same
     // number, and those drift.
-    const fetchSavedCount = React.useCallback(async () => {
+    const fetchSavedCount = React.useCallback(async (force = false) => {
         try {
             if (!getAccessTokenFromCookies()) return;
             const role = normalizeProfileRole(profileType);
@@ -198,8 +202,13 @@ export function Navigation() {
                 setSavedCount(0);
                 return;
             }
-            const raw: any = await shortlistService.getShortlistCount('', savedProfileType);
-            const count = Number(raw?.count ?? raw?.data?.count ?? 0);
+            const userId = getStoredUserId() || '';
+            if (!userId) return;
+            const count = await cachedRequest(`nav:saved:${userId}:${savedProfileType}`, async () => {
+                const { shortlistService } = await import('~/services/grpc/authServices');
+                const raw: any = await shortlistService.getShortlistCount('', savedProfileType);
+                return Number(raw?.count ?? raw?.data?.count ?? 0);
+            }, { maxAgeMs: NAV_COUNT_STALE_MS, force });
             setSavedCount(Number.isFinite(count) && count > 0 ? count : 0);
         } catch (error) {
             setSavedCount(0);
@@ -208,42 +217,6 @@ export function Navigation() {
             }
         }
     }, [profileType]);
-
-    // One place that refreshes both badges, called by everything below.
-    //
-    // The counts used to move only on a 60-second timer, so a badge could be a
-    // minute behind what the person was looking at — which reads as "the number
-    // is wrong" and is why refreshing the page appeared to be the only way to
-    // update it.
-    //
-    // Bursts are collapsed: a conversation delivering six messages should cost
-    // one refresh, not six. The floor keeps a busy stretch from turning into a
-    // stream of requests, and the trailing edge is what makes the badge settle
-    // on the right number rather than the number as of the first event.
-    const refreshDebounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lastRefreshRef = React.useRef<number>(0);
-    const minRefreshGapMs = 4000;
-
-    const refreshCounts = React.useCallback(() => {
-        if (!getAccessTokenFromCookies()) return;
-
-        if (refreshDebounceRef.current) clearTimeout(refreshDebounceRef.current);
-
-        const sinceLast = Date.now() - lastRefreshRef.current;
-        const wait = Math.max(400, minRefreshGapMs - sinceLast);
-
-        refreshDebounceRef.current = setTimeout(() => {
-            refreshDebounceRef.current = null;
-            lastRefreshRef.current = Date.now();
-            fetchHireRequestCount();
-            fetchInboxCount();
-            fetchSavedCount();
-        }, wait);
-    }, [fetchHireRequestCount, fetchInboxCount]);
-
-    useEffect(() => () => {
-        if (refreshDebounceRef.current) clearTimeout(refreshDebounceRef.current);
-    }, []);
 
     // Parse user profile type and name from localStorage
     useEffect(() => {
@@ -272,7 +245,12 @@ export function Navigation() {
                 // an admin who opened their own profile.
                 const email = currentUser.email || '';
                 if (email) {
-                    authService.checkIsAdmin(email).then((admin) => setIsAdmin(admin)).catch(() => setIsAdmin(false));
+                    cachedRequest(`nav:admin:${email.toLowerCase()}`, async () => {
+                        const { default: authService } = await import('~/services/grpc/auth.service');
+                        return authService.checkIsAdmin(email);
+                    }, {
+                        maxAgeMs: NAV_ADMIN_STALE_MS,
+                    }).then((admin) => setIsAdmin(admin)).catch(() => setIsAdmin(false));
                 } else {
                     setIsAdmin(false);
                 }
@@ -314,12 +292,12 @@ export function Navigation() {
         if (isInSetupMode || !allowAuxiliaryAccountCalls) return;
 
         const handleHiringUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchHireRequestCount();
+            if (getAccessTokenFromCookies()) fetchHireRequestCount(undefined, true);
         };
         // The inbox page has dispatched this on every read since it was written;
         // nothing was listening, so the badge stayed put until the next poll.
         const handleInboxUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchInboxCount();
+            if (getAccessTokenFromCookies()) fetchInboxCount(true);
         };
 
         // Every place that saves or unsaves already dispatches this — the two
@@ -327,7 +305,7 @@ export function Navigation() {
         // listening, which is the same gap the inbox badge had: the number was
         // correct on load and then stood still while the heart was clicked.
         const handleShortlistUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchSavedCount();
+            if (getAccessTokenFromCookies()) fetchSavedCount(true);
         };
 
         window.addEventListener('hiring-updated', handleHiringUpdate);
@@ -342,28 +320,16 @@ export function Navigation() {
 
     const badgesAreLive = Boolean(user) && !isInSetupMode && allowAuxiliaryAccountCalls;
 
-    // Live updates.
-    //
-    // Anything that changes a badge also produces a notification for the same
-    // person — an application to review, a hire request answered, a message
-    // arriving — and that notification is already pushed over SSE, which is how
-    // the bell updates the moment something happens. Listening to the same
-    // signal puts Inbox and Hiring on equal footing with it.
-    //
-    // The snapshot arrives on connect, including after a reconnect, so a badge
-    // that went stale while the laptop was asleep corrects itself as soon as
-    // the stream is back rather than at the next poll.
-    useSSESubscriptionSafe('notifications.created', refreshCounts, badgesAreLive);
-    useSSESubscriptionSafe('notifications.snapshot', refreshCounts, badgesAreLive);
-
-    // The hiring events themselves, which arrive a moment before the
-    // notification written from them. Both paths end in the same debounced
-    // refresh, so listening to both costs one request and means the badge does
-    // not depend on the notification having been written yet.
-    useSSESubscriptionSafe('hiring.application.submitted', refreshCounts, badgesAreLive);
-    useSSESubscriptionSafe('hiring.application.accepted', refreshCounts, badgesAreLive);
-    useSSESubscriptionSafe('hiring.application.declined', refreshCounts, badgesAreLive);
-    useSSESubscriptionSafe('hiring.application.approved', refreshCounts, badgesAreLive);
+    // Realtime updates invalidate only the count they can change. A hiring
+    // event previously reloaded hiring, inbox and saved data, then the related
+    // notification caused the same three reads again.
+    const refreshHiring = React.useCallback(() => {
+        void fetchHireRequestCount(undefined, true);
+    }, [fetchHireRequestCount]);
+    useSSESubscriptionSafe('hiring.application.submitted', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.accepted', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.declined', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.approved', refreshHiring, badgesAreLive);
 
     // Messages come over the WebSocket rather than SSE, so the inbox badge
     // needs its own subscription: 'new_message' for one arriving, 'message_read'
@@ -373,10 +339,10 @@ export function Navigation() {
         if (!badgesAreLive || !webSocket) return;
 
         const unsubscribers = ['new_message', 'message_read'].map((type) =>
-            webSocket.addEventListener(type, () => refreshCounts()),
+            webSocket.addEventListener(type, () => void fetchInboxCount(true)),
         );
         return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
-    }, [badgesAreLive, webSocket, refreshCounts]);
+    }, [badgesAreLive, webSocket, fetchInboxCount]);
 
     // Coming back to the tab, and moving between pages.
     //
@@ -389,21 +355,26 @@ export function Navigation() {
         if (!badgesAreLive) return;
 
         const onVisible = () => {
-            if (document.visibilityState === 'visible') refreshCounts();
+            if (document.visibilityState === 'visible') {
+                void fetchHireRequestCount();
+                void fetchInboxCount();
+                void fetchSavedCount();
+            }
+        };
+
+        const onFocus = () => {
+            void fetchHireRequestCount();
+            void fetchInboxCount();
+            void fetchSavedCount();
         };
 
         document.addEventListener('visibilitychange', onVisible);
-        window.addEventListener('focus', refreshCounts);
+        window.addEventListener('focus', onFocus);
         return () => {
             document.removeEventListener('visibilitychange', onVisible);
-            window.removeEventListener('focus', refreshCounts);
+            window.removeEventListener('focus', onFocus);
         };
-    }, [badgesAreLive, refreshCounts]);
-
-    useEffect(() => {
-        if (!badgesAreLive || !profileType) return;
-        refreshCounts();
-    }, [location.pathname, badgesAreLive, profileType, refreshCounts]);
+    }, [badgesAreLive, fetchHireRequestCount, fetchInboxCount, fetchSavedCount]);
 
     // A slow backstop, for a session that loses its stream without noticing.
     useEffect(() => {
@@ -412,11 +383,12 @@ export function Navigation() {
         const pollCounts = () => {
             fetchHireRequestCount();
             fetchInboxCount();
+            fetchSavedCount();
         };
 
-        const intervalId = setInterval(pollCounts, 60_000);
+        const intervalId = setInterval(pollCounts, 5 * 60_000);
         return () => clearInterval(intervalId);
-    }, [user, profileType, isInSetupMode, allowAuxiliaryAccountCalls, fetchHireRequestCount, fetchInboxCount]);
+    }, [user, profileType, isInSetupMode, allowAuxiliaryAccountCalls, fetchHireRequestCount, fetchInboxCount, fetchSavedCount]);
 
     // Badge helper: 0 = null (hidden), 1-9 = number, >9 = "9+"
     const renderBadge = (count: number, gradient = 'from-purple-600 to-pink-600', shadow = 'shadow-purple-500/50') => {

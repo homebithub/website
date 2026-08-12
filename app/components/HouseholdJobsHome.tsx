@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSavedFilters } from '~/hooks/useSavedFilters';
 import { SavedFilterBar } from '~/components/SavedFilterBar';
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { ShimmerListPlaceholder } from "~/components/ShimmerLoader";
@@ -30,6 +30,7 @@ import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
+import { resolveHousehelpProfile } from '~/utils/househelpProfiles';
 
 interface HousehelpSummary {
   id?: string;
@@ -1480,19 +1481,26 @@ export default function HouseholdJobsHome() {
                       <div className="mt-4 flex items-center justify-between">
                         <span className="text-xs text-gray-400">Updated {formatTimeAgo(listing.created_at)}</span>
                         <div className="flex gap-2">
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              if (isServiceProvider) {
-                                handleOpenListingModal(listing);
-                              } else {
-                                handleViewProfile(listing);
-                              }
-                            }}
-                            className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
-                          >
-                            {isServiceProvider ? "View Details" : "View Profile"}
-                          </button>
+                          {isServiceProvider ? (
+                            <button
+                              onClick={(event) => { event.stopPropagation(); handleOpenListingModal(listing); }}
+                              className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                            >
+                              View Details
+                            </button>
+                          ) : (
+                            <Link
+                              to={`/househelp/public-profile?profileId=${encodeURIComponent(String(listing.househelp?.id || ''))}&openForWorkId=${encodeURIComponent(String(listing.id))}`}
+                              prefetch="intent"
+                              onPointerEnter={() => {
+                                if (listing.househelp?.id) void resolveHousehelpProfile(String(listing.househelp.id), { identifierType: 'auto' });
+                              }}
+                              onClick={(event) => event.stopPropagation()}
+                              className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                            >
+                              View Profile
+                            </Link>
+                          )}
                           {!isServiceProvider && (
                             <>
                               <button
@@ -1701,12 +1709,16 @@ export default function HouseholdJobsHome() {
               <div className="mt-6 flex flex-wrap gap-3">
                 {!isServiceProvider && (
                   <>
-                    <button
-                      onClick={() => handleViewProfile(selectedListing)}
+                    <Link
+                      to={`/househelp/public-profile?profileId=${encodeURIComponent(String(selectedListing.househelp?.id || ''))}&openForWorkId=${encodeURIComponent(String(selectedListing.id))}`}
+                      prefetch="intent"
+                      onPointerEnter={() => {
+                        if (selectedListing.househelp?.id) void resolveHousehelpProfile(String(selectedListing.househelp.id), { identifierType: 'auto' });
+                      }}
                       className="px-4 py-2 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
                     >
                       View Profile
-                    </button>
+                    </Link>
                     <button
                       onClick={() => handleMessage(selectedListing)}
                       className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"

@@ -1,6 +1,6 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -24,6 +24,7 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useSubscription } from '~/hooks/useSubscription';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 import { matchScoreClasses } from '~/utils/matchScore';
+import { resolveHouseholdProfile } from '~/utils/householdProfiles';
 
 interface HouseholdItem {
   id?: string; // household user id
@@ -553,10 +554,17 @@ export default function HousehelpHome() {
                       const frequencyLabel = household.salary_frequency ? ` / ${household.salary_frequency}` : "";
                       const townLabel = household.town?.trim() || "Location not specified";
                       return (
-                        <button
+                        <Link
                           key={household.profile_id}
-                          type="button"
-                          onClick={() => handleViewMore(household)}
+                          to={household.id
+                            ? `/household/public-profile?userId=${encodeURIComponent(household.id)}&backTo=${encodeURIComponent('/')}&backLabel=${encodeURIComponent('Back to results')}`
+                            : `/household/public-profile?profileId=${encodeURIComponent(household.profile_id)}&backTo=${encodeURIComponent('/')}&backLabel=${encodeURIComponent('Back to results')}`}
+                          state={{ profileId: household.profile_id || household.id, backTo: '/', backLabel: 'Back to results' }}
+                          prefetch="intent"
+                          onPointerEnter={() => {
+                            const identifier = household.id || household.profile_id;
+                            if (identifier) void resolveHouseholdProfile(String(identifier), { identifierType: 'auto' });
+                          }}
                           className="min-w-[250px] max-w-[280px] text-left rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/90 dark:bg-[#151025]/80 p-4 shadow-sm hover:shadow-lg transition snap-start"
                         >
                           <div className="flex items-start justify-between gap-2">
@@ -616,7 +624,7 @@ export default function HousehelpHome() {
                               </span>
                             )}
                           </div>
-                        </button>
+                        </Link>
                       );
                     })}
                   </div>
@@ -827,12 +835,21 @@ export default function HousehelpHome() {
                             <div className="text-xs font-semibold tracking-wide uppercase text-gray-400">
                               {formatTimeAgo(r.created_at)}
                             </div>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleViewMore(r); }}
+                            <Link
+                              to={r.id
+                                ? `/household/public-profile?userId=${encodeURIComponent(r.id)}&backTo=${encodeURIComponent('/')}&backLabel=${encodeURIComponent('Back to results')}`
+                                : `/household/public-profile?profileId=${encodeURIComponent(r.profile_id)}&backTo=${encodeURIComponent('/')}&backLabel=${encodeURIComponent('Back to results')}`}
+                              state={{ profileId: r.profile_id || r.id, backTo: '/', backLabel: 'Back to results' }}
+                              prefetch="intent"
+                              onPointerEnter={() => {
+                                const identifier = r.id || r.profile_id;
+                                if (identifier) void resolveHouseholdProfile(String(identifier), { identifierType: 'auto' });
+                              }}
+                              onClick={(e) => e.stopPropagation()}
                               className="ml-auto px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                             >
                               View more
-                            </button>
+                            </Link>
                           </div>
                         </div>
                       </div>
