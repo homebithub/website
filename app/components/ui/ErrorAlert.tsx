@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { transformErrorMessage } from '~/utils/errorMessages';
 
 export interface ErrorAlertProps {
   message: string;
@@ -16,6 +17,7 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
   durationMs = 10000,
 }) => {
   const [visible, setVisible] = useState(true);
+  const safeMessage = transformErrorMessage(message);
 
   useEffect(() => {
     setVisible(true);
@@ -43,7 +45,7 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
           {title && (
             <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-0.5">{title}</p>
           )}
-          <p className="text-xs font-medium text-red-700 dark:text-red-300">{message}</p>
+          <p className="text-xs font-medium text-red-700 dark:text-red-300">{safeMessage}</p>
         </div>
       </div>
     </div>

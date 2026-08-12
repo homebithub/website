@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
+import { transformErrorMessage } from "~/utils/errorMessages";
 
 type FullPageErrorProps = {
   title?: string;
@@ -38,7 +39,7 @@ export function FullPageError({
               <AlertTriangle className="h-6 w-6" aria-hidden />
             </span>
             <h1 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">{title}</h1>
-            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-gray-600 dark:text-gray-300">{message}</p>
+            <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-gray-600 dark:text-gray-300">{transformErrorMessage(message)}</p>
             <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
               {onRetry && (
                 <button type="button" onClick={onRetry} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-sm font-semibold text-white">

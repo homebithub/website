@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { AlertCircle } from "lucide-react";
+import { transformErrorMessage } from "~/utils/errorMessages";
 
 /**
  * The reason a form would not submit, shown where the person is looking.
@@ -24,7 +25,8 @@ export function FormError({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const text = typeof message === "string" ? message.trim() : "";
+  const rawText = typeof message === "string" ? message.trim() : "";
+  const text = rawText ? transformErrorMessage(rawText) : "";
 
   useEffect(() => {
     if (!text) return;

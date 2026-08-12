@@ -168,6 +168,14 @@ const CONTEXT_SPECIFIC_ERRORS: { [context: string]: FieldErrorMap } = {
 export function transformErrorMessage(errorMessage: string, context?: string): string {
   if (!errorMessage) return 'An error occurred. Please try again.';
 
+  const lower = errorMessage.toLowerCase();
+  if (
+    lower.includes('reviews_one_per_engagement_reviewer') ||
+    (lower.includes('engagement_id') && lower.includes('reviewer_user_id'))
+  ) {
+    return 'You have already reviewed this work engagement. You can leave another review after a new Homebit hire has ended.';
+  }
+
   // First check context-specific errors if context is provided
   if (context && CONTEXT_SPECIFIC_ERRORS[context]) {
     const contextErrors = CONTEXT_SPECIFIC_ERRORS[context];
@@ -204,13 +212,21 @@ export function transformErrorMessage(errorMessage: string, context?: string): s
 
   // If message is a vague internal error, show a helpful generic message.
   // Only catch truly unhelpful messages; preserve anything actionable.
-  const lower = errorMessage.toLowerCase();
   if (
     lower === 'signup failed' ||
     lower === 'login failed' ||
     lower === 'failed' ||
     lower === 'internal server error' ||
-    lower === 'an internal error occurred'
+    lower === 'an internal error occurred' ||
+    lower.includes('sqlstate') ||
+    lower.includes('duplicate key') ||
+    lower.includes('unique constraint') ||
+    lower.includes('foreign key constraint') ||
+    lower.includes('violates constraint') ||
+    lower.includes('a record with the same value for') ||
+    lower.includes('no such column') ||
+    lower.includes('no such table') ||
+    lower.includes('stack trace')
   ) {
     return 'Something went wrong. Please try again or contact support if the problem persists.';
   }

@@ -282,7 +282,7 @@ export default function ProfileReviews({
       setShowReviewForm(false);
       setReviewForm({ rating: 5, title: '', content: '' });
       setReviewImages([]);
-      setActionSuccess('Review submitted. It will appear publicly once it has been checked.');
+      setActionSuccess('Your review has been published.');
       void loadMyPendingReview();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Could not submit your review.');

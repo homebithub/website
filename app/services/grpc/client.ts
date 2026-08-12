@@ -100,6 +100,26 @@ function isTechnicalErrorMessage(message: string): boolean {
   );
 }
 
+function userSafeBackendMessage(message: string): string {
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('reviews_one_per_engagement_reviewer') ||
+    (lower.includes('engagement_id') && lower.includes('reviewer_user_id'))
+  ) {
+    return 'You have already reviewed this work engagement. You can leave another review after a new Homebit hire has ended.';
+  }
+  if (
+    lower.includes('a record with the same value for') ||
+    lower.includes('duplicate key') ||
+    lower.includes('unique constraint') ||
+    lower.includes('foreign key constraint') ||
+    lower.includes('violates constraint')
+  ) {
+    return GENERIC_ERROR_MESSAGE;
+  }
+  return message;
+}
+
 function friendlyError(
   message: string,
   cause: unknown,
@@ -133,6 +153,7 @@ export function handleGrpcError(error: any): Error {
   const parsed = parseGrpcErrorMessage(rawMessage);
   if (parsed) {
     const parsedCode = parsed.code.toUpperCase();
+    const safeMessage = userSafeBackendMessage(parsed.message);
     if (parsedCode === 'UNAVAILABLE') {
       return friendlyError(SERVICE_UNAVAILABLE_MESSAGE, error, parsed.code);
     }
@@ -140,11 +161,11 @@ export function handleGrpcError(error: any): Error {
       parsedCode === 'INTERNAL' ||
       parsedCode === 'UNKNOWN' ||
       parsedCode === 'DATA_LOSS' ||
-      isTechnicalErrorMessage(parsed.message)
+      isTechnicalErrorMessage(parsed.message) || safeMessage === GENERIC_ERROR_MESSAGE
     ) {
       return friendlyError(GENERIC_ERROR_MESSAGE, error, parsed.code);
     }
-    return friendlyError(parsed.message || GENERIC_ERROR_MESSAGE, error, parsed.code, parsed.field);
+    return friendlyError(safeMessage || GENERIC_ERROR_MESSAGE, error, parsed.code, parsed.field);
   }
 
   // Fallback: map numeric gRPC status codes to friendly messages
