@@ -467,7 +467,7 @@ function NavigationContent() {
 
                 {/* Public Navigation Links - Show on non-app hosts for all users */}
                 {!isAppHost && (
-                    <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 lg:flex">
+                    <div className="absolute left-[43%] hidden -translate-x-1/2 items-center gap-2 xl:left-[45%] lg:flex">
                         {(user ? authLinks : navigation).map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
@@ -489,7 +489,7 @@ function NavigationContent() {
 
                 {/* App navigation for authenticated users on app subdomain */}
                 {isAppHost && user && (
-                    <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 lg:flex">
+                    <div className="absolute left-[43%] hidden -translate-x-1/2 items-center gap-2 xl:left-[45%] lg:flex">
                         {authLinks.map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
