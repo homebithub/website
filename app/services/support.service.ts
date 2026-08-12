@@ -8,7 +8,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Support is temporarily unavailable');
+  if (!response.ok) {
+    const message = typeof data?.error === 'string'
+      ? data.error
+      : data?.error?.message || data?.message;
+    throw new Error(message || 'Support is temporarily unavailable. Please try again.');
+  }
   return data as T;
 }
 
