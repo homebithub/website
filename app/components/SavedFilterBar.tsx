@@ -81,7 +81,7 @@ export function SavedFilterBar<T>({
               {item.name}
             </button>
             {item.notify ? (
-              <Bell className="h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-300" aria-label={`Notifying about ${notifySubject}`} />
+              <Bell className="h-3 w-3 shrink-0 text-pink-500" aria-label={`Notifying about ${notifySubject}`} />
             ) : (
               <BellOff className="h-3 w-3 shrink-0 text-gray-400" aria-hidden="true" />
             )}
@@ -129,7 +129,7 @@ export function SavedFilterBar<T>({
               type="button"
               onClick={() => void submit()}
               disabled={!name.trim() || busy}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-purple-600 px-3 text-xs font-semibold text-white transition hover:bg-purple-700 disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 text-xs font-semibold text-white transition hover:brightness-110 disabled:opacity-50"
             >
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
               {existing ? 'Update' : 'Save'}
@@ -149,7 +149,7 @@ export function SavedFilterBar<T>({
               type="checkbox"
               checked={notify}
               onChange={(event) => setNotify(event.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+              className="mt-0.5 h-4 w-4 rounded border-purple-400 accent-purple-600 focus:ring-purple-500"
             />
             <span>
               Tell me about {notifySubject} that match this search. You will get a notification here, and

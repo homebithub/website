@@ -123,6 +123,7 @@ const DEFAULT_JOB_FILTERS = {
   petTypeId: "",
   childrenAgeRangeId: "",
   childrenCapacityId: "",
+  minRating: "",
 };
 
 
@@ -526,8 +527,14 @@ export default function HousehelpJobsHome() {
     // Discovery only contains actionable roles. Applied jobs remain available
     // under Hiring, where their status and history belong, instead of making
     // this feed grow into a mixture of opportunities and past actions.
-    () => jobs.filter((job) => isJobOpen(job) && !appliedJobIds.has(jobKey(job)) && !job.has_applied),
-    [appliedJobIds, jobs],
+    () => jobs
+      .filter((job) => isJobOpen(job) && !appliedJobIds.has(jobKey(job)) && !job.has_applied)
+      .filter((job) => {
+        const minimum = Number(filters.minRating || 0);
+        const rating = Number(job.owner_rating ?? 0);
+        return !minimum || rating >= minimum;
+      }),
+    [appliedJobIds, jobs, filters.minRating],
   );
   const sortedJobs = useMemo(() => {
     if (!sortBy) return filteredJobs;
@@ -1059,7 +1066,7 @@ export default function HousehelpJobsHome() {
                     : 'Filters'}
                 </span>
                 {filtersOpen && activeFilterCount > 0 && (
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-600 px-1 text-[10px] text-white">
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-1 text-[10px] text-white shadow-sm">
                     {activeFilterCount}
                   </span>
                 )}
@@ -1166,6 +1173,22 @@ export default function HousehelpJobsHome() {
                       placeholder="Any capacity"
                     />
                   </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Minimum household rating
+                    <CustomSelect
+                      value={filters.minRating}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, minRating: value }))}
+                      options={[
+                        { value: "", label: "Any rating" },
+                        { value: "4", label: "4★ and above" },
+                        { value: "3", label: "3★ and above" },
+                        { value: "2", label: "2★ and above" },
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any rating"
+                    />
+                  </label>
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -1177,7 +1200,7 @@ export default function HousehelpJobsHome() {
                       {jobs.length} total roles
                     </span>
                     {hasActiveFilters && (
-                      <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200 font-semibold">
+                      <span className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 font-semibold text-white">
                         {filteredJobs.length} match your filters
                       </span>
                     )}
