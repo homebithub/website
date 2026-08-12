@@ -36,6 +36,7 @@ import {
   extractPlans,
   extractSubscription,
   extractSubscriptionAccess,
+  resolvePaymentReference,
   type NormalizedPayment,
   type NormalizedSubscription,
   type NormalizedSubscriptionAccess,
@@ -1008,9 +1009,7 @@ export default function SubscriptionsPage() {
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
                               {formatDate(resolvePaymentTimestamp(payment))}
-                              {payment.mpesa_receipt_number && (
-                                <span className="ml-2">• Receipt: {payment.mpesa_receipt_number}</span>
-                              )}
+                              <span className="ml-2">• Ref: {resolvePaymentReference(payment)}</span>
                             </p>
                             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                               {payment.payment_method ? payment.payment_method.toUpperCase() : 'PAYMENT'}
@@ -1266,6 +1265,13 @@ export default function SubscriptionsPage() {
                           <span className="text-xs text-gray-600 dark:text-gray-400">Transaction ID</span>
                           <span className="text-xs font-medium text-gray-900 dark:text-white font-mono text-right break-all">
                             {selectedPayment.id}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between gap-4">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Payment Reference</span>
+                          <span className="text-xs font-semibold text-gray-900 dark:text-white font-mono text-right break-all">
+                            {resolvePaymentReference(selectedPayment)}
                           </span>
                         </div>
 
