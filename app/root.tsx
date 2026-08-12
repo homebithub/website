@@ -10,6 +10,7 @@ import { WebSocketProvider } from "~/contexts/WebSocketContext";
 import { SSEProvider } from "~/contexts/SSEContext";
 import { GlobalLoaderOverlay } from "~/components/ShimmerLoader";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
+import SupportChat from "~/components/support/SupportChat";
 import "./tailwind.css";
 
 export const meta: Route.MetaFunction = () => [
@@ -166,6 +167,7 @@ export default function App() {
                                     <ProfileSetupGuard>
                                         <Outlet/>
                                         <GlobalLoaderOverlay />
+                                        <SupportChat />
                                     </ProfileSetupGuard>
                                 </ProfileSetupProvider>
                             </WebSocketProvider>
