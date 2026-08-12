@@ -748,13 +748,20 @@ export default function EmploymentContractPage() {
               <p className="text-xs text-gray-500 dark:text-purple-300 mb-3">Select which clauses to include in the contract. All are included by default.</p>
               <div className="space-y-1">
                 {clauses.map((clause) => (
-                  <label key={clause.id} className="flex items-start gap-2.5 p-2 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/40 cursor-pointer transition-colors">
+                  <label key={clause.id} className={`group flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-all ${
+                    clause.included
+                      ? 'border-purple-300 bg-purple-50/80 shadow-sm dark:border-purple-500/40 dark:bg-purple-500/10'
+                      : 'border-transparent hover:border-purple-200 hover:bg-purple-50/50 dark:hover:border-purple-500/30 dark:hover:bg-purple-900/30'
+                  }`}>
                     <input
                       type="checkbox"
                       checked={clause.included}
                       onChange={() => toggleClause(clause.id)}
-                      className="mt-0.5 w-3.5 h-3.5 text-purple-600 border-purple-300 dark:border-purple-500/50 rounded focus:ring-purple-500"
+                      className="peer sr-only"
                     />
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 border-purple-300 bg-white text-transparent shadow-sm transition-all group-hover:border-purple-500 peer-checked:border-transparent peer-checked:bg-gradient-to-br peer-checked:from-purple-600 peer-checked:to-pink-500 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-purple-500 peer-focus-visible:ring-offset-2 dark:border-purple-500/60 dark:bg-[#13131a] dark:peer-focus-visible:ring-offset-[#21102f]">
+                      <Check className="h-3.5 w-3.5 stroke-[3]" />
+                    </span>
                     <div className="flex-1">
                       <span className="text-xs font-semibold text-gray-900 dark:text-white">{clause.title}</span>
                       <p className="text-xs text-gray-600 dark:text-purple-200 mt-1">{clause.body}</p>
