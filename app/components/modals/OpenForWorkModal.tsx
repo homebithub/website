@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { openForWorkService } from "~/services/grpc/authServices";
+import { openForWorkService, profileService } from "~/services/grpc/authServices";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
 import { FormError } from '~/components/FormError';
@@ -48,6 +48,8 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [prefilled, setPrefilled] = useState(false);
+  const [profileHighlights, setProfileHighlights] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     if (!isOpen) return;
@@ -59,9 +61,49 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
     setSalaryFrequency(listing?.salary_frequency || "monthly");
     setSalaryMin(toSalaryInputValue(listing?.salary_min, listing?.salary_frequency));
     setSalaryMax(toSalaryInputValue(listing?.salary_max, listing?.salary_frequency));
+    setProfileHighlights({
+      languages: Array.isArray(listing?.languages) ? listing.languages : [],
+      skills: Array.isArray(listing?.skills) ? listing.skills : [],
+      certifications: Array.isArray(listing?.certifications) ? listing.certifications : [],
+    });
     setError("");
     setSuccess("");
   }, [isOpen, listing]);
+
+  useEffect(() => {
+    if (!isOpen || listing?.id) return;
+    let cancelled = false;
+    profileService.getCurrentHousehelpProfile('')
+      .then((raw) => {
+        if (cancelled) return;
+        const profile = raw?.data ?? raw ?? {};
+        const arrangements = [
+          (profile.live_in ?? profile.offers_live_in) ? 'live_in' : '',
+          (profile.day_worker ?? profile.offers_day_worker) ? 'day_worker' : '',
+        ].filter(Boolean);
+        if (arrangements.length > 0) setJobTypes(arrangements);
+        setAvailableFrom(toDateInputValue(profile.available_from));
+        setCanWorkWithKids(Boolean(profile.work_with_kids ?? profile.can_work_with_kids));
+        setCanWorkWithPets(Boolean(profile.work_with_pets ?? profile.can_work_with_pets));
+        setSalaryFrequency(String(profile.salary_frequency || 'monthly'));
+        const expectation = toSalaryInputValue(profile.salary_expectation, profile.salary_frequency);
+        if (expectation) {
+          setSalaryMin(expectation);
+          setSalaryMax(expectation);
+        }
+        setProfileHighlights({
+          languages: Array.isArray(profile.languages) ? profile.languages : [],
+          skills: Array.isArray(profile.skills) ? profile.skills : [],
+          certifications: Array.isArray(profile.certifications) ? profile.certifications : [],
+        });
+        setPrefilled(true);
+      })
+      .catch(() => {
+        // A listing can still be created when an older profile has no reusable
+        // details; the form simply remains empty.
+      });
+    return () => { cancelled = true; };
+  }, [isOpen, listing?.id]);
 
   useEffect(() => {
     if (isOpen) {
@@ -96,6 +138,9 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
       can_work_with_kids: canWorkWithKids,
       can_work_with_pets: canWorkWithPets,
       status,
+      languages: profileHighlights.languages || [],
+      skills: profileHighlights.skills || [],
+      certifications: profileHighlights.certifications || [],
     };
 
     if (salaryMin || salaryMax) {
@@ -138,6 +183,11 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {success && <SuccessAlert message={success} />}
+          {prefilled && !listing?.id ? (
+            <p className="rounded-xl bg-purple-50 px-3 py-2 text-xs text-purple-800 dark:bg-purple-500/10 dark:text-purple-100">
+              We started with your profile preferences. Changes here apply only to this Open for Work listing.
+            </p>
+          ) : null}
           <div>
             <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Job Types</label>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -168,6 +218,18 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
               className="mt-2 w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
             />
           </div>
+
+          {Object.values(profileHighlights).some((values) => values.length > 0) ? (
+            <div className="rounded-xl border border-purple-100 p-3 dark:border-purple-500/20">
+              <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">Included from your profile</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {Object.values(profileHighlights).flat().slice(0, 10).map((value, index) => (
+                  <span key={`${value}-${index}`} className="rounded-full bg-purple-100 px-2.5 py-1 text-[11px] font-semibold text-purple-700 dark:bg-purple-500/20 dark:text-purple-100">{value}</span>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">Edit your profile preferences to change these reusable details.</p>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-200">

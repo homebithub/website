@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
-import { clientProfileService, jobService } from "~/services/grpc/authServices";
+import { clientProfileService, jobService, petsService, profileService } from "~/services/grpc/authServices";
 import { getStoredUserProfileId } from "~/utils/authStorage";
 import { useModalDismiss } from "~/hooks/useModalDismiss";
 import {
@@ -17,6 +17,9 @@ import LocationPicker, { type LocationSelection } from "~/components/ui/Location
 import { MODAL_Z_INDEX } from "~/components/ui/layers";
 import { humanizeFeatureName } from "~/utils/listingFeatures";
 import { FormError } from '~/components/FormError';
+import { FeatureOptionPicker } from '~/components/preferences/FeatureOptionPicker';
+import { PreferenceAccordion } from '~/components/preferences/PreferenceAccordion';
+import { allowedPropertyNames, featureKey, isSingleSelectFeature, propertyAllowed } from '~/utils/preferenceRules';
 
 type JobPostModalProps = {
   isOpen: boolean;
@@ -95,6 +98,10 @@ function featureName(bundle: FeatureBundle): string {
   ) || "Feature";
 }
 
+function catalogueFeatureName(bundle: FeatureBundle): string {
+  return String(bundle.feature?.name || bundle.feature?.title || bundle.name || bundle.title || '').replace(/\s+/g, '');
+}
+
 function featureProperties(bundle: FeatureBundle): FeatureProperty[] {
   return asArray(bundle.properties || bundle.feature_properties || bundle.options);
 }
@@ -121,6 +128,30 @@ function freeFormKey(featureID: number, propertyID: number): string {
   return `${featureID}:${propertyID || 0}`;
 }
 
+function salaryPropertyMatches(property: FeatureProperty, profile: Record<string, any>): boolean {
+  const name = propertyName(property).toLowerCase();
+  const frequency = String(profile.salary_frequency || '').toLowerCase();
+  if (frequency && !name.startsWith(`${frequency}:`)) return false;
+  const amounts = name.match(/[\d,]+/g)?.map((value) => Number(value.replace(/,/g, ''))) || [];
+  const minimum = Number(profile.budget_min || 0);
+  const maximum = Number(profile.budget_max || 0);
+  if (!minimum && !maximum) return false;
+  if (amounts.length === 1) return minimum >= amounts[0] || maximum >= amounts[0];
+  return amounts.length >= 2 && (!minimum || minimum >= amounts[0]) && (!maximum || maximum <= amounts[1]);
+}
+
+function startTimingDefault(value: unknown): string {
+  if (!value) return '';
+  const target = new Date(String(value));
+  if (Number.isNaN(target.getTime())) return '';
+  const days = Math.ceil((target.getTime() - Date.now()) / 86_400_000);
+  if (days <= 0) return 'Immediately';
+  if (days <= 7) return 'Within a week';
+  if (days <= 14) return 'Within two weeks';
+  if (days <= 31) return 'Within a month';
+  return 'Flexible';
+}
+
 export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostModalProps) {
   const editing = Boolean(job?.id);
   const [mounted, setMounted] = useState(false);
@@ -137,6 +168,9 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [location, setLocation] = useState<LocationSelection | null>(null);
+  const [profileDefaults, setProfileDefaults] = useState<Record<string, any> | null>(null);
+  const [defaultsAppliedFor, setDefaultsAppliedFor] = useState('');
+  const [detailsOpen, setDetailsOpen] = useState(true);
   const { panelRef, onOverlayClick } = useModalDismiss(isOpen, onClose);
 
   useEffect(() => {
@@ -162,9 +196,32 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
     setSelectedJobTypeId(String(job?.job_type_id || job?.jobTypeId || ""));
     setSelectedProperties({});
     setFreeFormValues({});
+    setDefaultsAppliedFor('');
     setError("");
     setSuccess("");
   }, [isOpen, job]);
+
+  useEffect(() => {
+    if (!isOpen || editing) return;
+    let cancelled = false;
+    Promise.allSettled([
+      profileService.getCurrentHouseholdProfile(''),
+      petsService.listMyPets(''),
+    ]).then(([profileResult, petsResult]) => {
+      if (cancelled) return;
+      const profile = profileResult.status === 'fulfilled'
+        ? (profileResult.value?.data ?? profileResult.value ?? {})
+        : {};
+      const petsPayload = petsResult.status === 'fulfilled'
+        ? (petsResult.value?.data ?? petsResult.value ?? [])
+        : [];
+      setProfileDefaults({
+        ...profile,
+        pets: Array.isArray(petsPayload) ? petsPayload : [],
+      });
+    });
+    return () => { cancelled = true; };
+  }, [editing, isOpen]);
 
   // Only the create form offers a choice of job type. On an edit it is fixed —
   // the job type decides which features a listing can answer at all, so changing
@@ -231,6 +288,44 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
     setFreeFormValues({});
   }, [isOpen, editing, selectedJobTypeId]);
 
+  // A new listing starts with compatible facts the household already supplied.
+  // Exact catalogue-name matching avoids inventing an answer when old profile
+  // text does not correspond to a current option.
+  useEffect(() => {
+    if (!isOpen || editing || !profileDefaults || featureBundles.length === 0) return;
+    if (defaultsAppliedFor === selectedJobTypeId) return;
+
+    const wantedByFeature: Record<string, string[]> = {
+      chore: Array.isArray(profileDefaults.chores) ? profileDefaults.chores : [],
+      housesize: profileDefaults.house_size ? [String(profileDefaults.house_size)] : [],
+      pettypeoption: Array.isArray(profileDefaults.pets)
+        ? profileDefaults.pets.map((pet: any) => String(pet.type || pet.pet_type || pet.name || ''))
+        : [],
+      workarrangement: profileDefaults.needs_live_in
+        ? ['Live-in']
+        : profileDefaults.needs_day_worker ? ['Day worker'] : [],
+    };
+
+    const next: Record<number, number[]> = {};
+    featureBundles.forEach((bundle) => {
+      const key = featureKey(catalogueFeatureName(bundle));
+      const wanted = wantedByFeature[key] || [];
+      const properties = featureProperties(bundle);
+      const startDefault = key === 'starttiming' ? startTimingDefault(profileDefaults.available_from) : '';
+      const ids = properties
+        .filter((property) =>
+          wanted.some((value) => value.trim().toLowerCase() === propertyName(property).trim().toLowerCase()) ||
+          (key === 'salaryrange' && salaryPropertyMatches(property, profileDefaults)) ||
+          (startDefault && propertyName(property) === startDefault)
+        )
+        .map(propertyId)
+        .filter(Boolean);
+      if (ids.length > 0) next[featureId(bundle)] = isSingleSelectFeature(catalogueFeatureName(bundle)) ? ids.slice(0, 1) : ids;
+    });
+    setSelectedProperties(next);
+    setDefaultsAppliedFor(selectedJobTypeId);
+  }, [defaultsAppliedFor, editing, featureBundles, isOpen, profileDefaults, selectedJobTypeId]);
+
   // Restore what the household previously answered, so the form opens showing
   // the listing as it stands rather than blank. Without this an edit would read
   // as "nothing was ever filled in", and saving would make that true.
@@ -295,10 +390,43 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
 
     setSelectedProperties((current) => {
       const ids = current[fId] || [];
-      const nextIds = ids.includes(pId) ? ids.filter((id) => id !== pId) : [...ids, pId];
-      return { ...current, [fId]: nextIds };
+      const single = isSingleSelectFeature(catalogueFeatureName(bundle));
+      const nextIds = ids.includes(pId) ? ids.filter((id) => id !== pId) : single ? [pId] : [...ids, pId];
+      const next = { ...current, [fId]: nextIds };
+
+      if (catalogueFeatureName(bundle) === 'WorkArrangement' && propertyName(property) === 'Live-in' && !ids.includes(pId)) {
+        const frequency = featureBundles.find((item) => catalogueFeatureName(item) === 'EngagementFrequency');
+        const daily = frequency && featureProperties(frequency).find((item) => propertyName(item) === 'Daily');
+        if (frequency && daily) next[featureId(frequency)] = [propertyId(daily)];
+      }
+      if (catalogueFeatureName(bundle) === 'EngagementFrequency' && propertyName(property) === 'One-off' && !ids.includes(pId)) {
+        const duration = featureBundles.find((item) => catalogueFeatureName(item) === 'EngagementDuration');
+        const oneOff = duration && featureProperties(duration).find((item) => propertyName(item) === 'One-off task');
+        if (duration && oneOff) next[featureId(duration)] = [propertyId(oneOff)];
+      }
+      return next;
     });
   };
+
+  const selectedPropertyName = (feature: string) => {
+    const bundle = featureBundles.find((item) => catalogueFeatureName(item) === feature);
+    if (!bundle) return '';
+    const id = selectedProperties[featureId(bundle)]?.[0];
+    const property = featureProperties(bundle).find((item) => propertyId(item) === id);
+    return property ? propertyName(property) : '';
+  };
+
+  const arrangement = selectedPropertyName('WorkArrangement');
+  const frequency = selectedPropertyName('EngagementFrequency');
+  const visibleFeatureBundles = [...featureBundles]
+    .filter((bundle) => !(catalogueFeatureName(bundle) === 'EngagementFrequency' && arrangement === 'Live-in'))
+    .filter((bundle) => !(catalogueFeatureName(bundle) === 'EngagementDuration' && frequency === 'One-off'))
+    .sort((a, b) => {
+      const order = ['WorkArrangement', 'EngagementFrequency', 'EngagementDuration', 'PreferredDays', 'ShiftWindow', 'SalaryRange', 'StartTiming'];
+      const left = order.indexOf(catalogueFeatureName(a));
+      const right = order.indexOf(catalogueFeatureName(b));
+      return (left < 0 ? 99 : left) - (right < 0 ? 99 : right);
+    });
 
   const buildFeaturePayload = () => {
     return featureBundles.flatMap((bundle) => {
@@ -356,6 +484,24 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
 
     if (!editing && !selectedJobTypeId) {
       setError("Select a job type.");
+      return;
+    }
+
+    const missingRequired = featureBundles.find((bundle) => {
+      const required = Boolean(
+        (bundle as { is_required?: boolean; isRequired?: boolean }).is_required ??
+          (bundle as { isRequired?: boolean }).isRequired
+      );
+      if (!required) return false;
+      const fId = featureId(bundle);
+      if (featureHasOptions(bundle)) return (selectedProperties[fId] || []).length === 0;
+      const properties = featureProperties(bundle);
+      const prompts = properties.length > 0 ? properties : [{ id: 0 }];
+      return !prompts.some((property) => freeFormValues[freeFormKey(fId, propertyId(property))]?.trim());
+    });
+    if (missingRequired) {
+      setDetailsOpen(true);
+      setError(`Choose ${featureName(missingRequired).toLowerCase()} before creating this listing.`);
       return;
     }
 
@@ -535,24 +681,28 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
             </section>
 
             {selectedJobTypeId && (
-              <section className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 dark:border-purple-500/25 dark:bg-purple-950/15">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-base font-bold text-gray-900 dark:text-white">Listing Details</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {loadingFeatures ? "Loading options..." : `${selectedFeatureCount} feature${selectedFeatureCount === 1 ? "" : "s"} filled`}
-                    </p>
-                  </div>
-                </div>
+              <PreferenceAccordion
+                title="Listing details"
+                summary={loadingFeatures ? "Loading options..." : `${selectedFeatureCount} feature${selectedFeatureCount === 1 ? "" : "s"} filled`}
+                complete={selectedFeatureCount > 0}
+                open={detailsOpen}
+                onToggle={() => setDetailsOpen((current) => !current)}
+              >
+                {!editing && profileDefaults ? (
+                  <p className="mb-4 rounded-xl bg-purple-100/70 px-3 py-2 text-xs text-purple-800 dark:bg-purple-500/15 dark:text-purple-100">
+                    Compatible details from your household profile have been selected. You can change them for this job.
+                  </p>
+                ) : null}
 
                 {!loadingFeatures && featureBundles.length === 0 && (
                   <p className="text-sm text-gray-500 dark:text-gray-400">No additional details are required for this job type.</p>
                 )}
 
                 <div className="space-y-4">
-                  {featureBundles.map((bundle) => {
+                  {visibleFeatureBundles.map((bundle) => {
                     const fId = featureId(bundle);
-                    const properties = featureProperties(bundle);
+                    const allowed = allowedPropertyNames(catalogueFeatureName(bundle), arrangement, frequency);
+                    const properties = featureProperties(bundle).filter((property) => propertyAllowed(propertyName(property), allowed));
                     const hasOptions = featureHasOptions(bundle);
                     const required = Boolean(
                       (bundle as { is_required?: boolean; isRequired?: boolean }).is_required ??
@@ -567,35 +717,19 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
                         </h4>
 
                         {hasOptions ? (
-                          <div className="flex flex-wrap gap-2">
-                            {properties.map((property) => {
-                              const pId = propertyId(property);
-                              const selected = Boolean(fId && pId && selectedProperties[fId]?.includes(pId));
-                              return (
-                                <button
-                                  key={pId || propertyName(property)}
-                                  type="button"
-                                  onClick={() => toggleProperty(bundle, property)}
-                                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                                    selected
-                                      ? "border-purple-300 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25"
-                                      : "border-purple-200 bg-white text-gray-700 hover:border-purple-400 dark:border-slate-600 dark:bg-slate-950/45 dark:text-gray-200 dark:hover:border-purple-400"
-                                  }`}
-                                >
-                                  <span
-                                    className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${
-                                      selected
-                                        ? "bg-purple-700/70 text-white"
-                                        : "bg-purple-100 text-purple-700 dark:bg-purple-700/70 dark:text-white"
-                                    }`}
-                                  >
-                                    {selected ? "✓" : propertyName(property).slice(0, 1).toUpperCase()}
-                                  </span>
-                                  {propertyName(property)}
-                                </button>
-                              );
-                            })}
-                          </div>
+                          <FeatureOptionPicker
+                            options={properties.map((property) => ({
+                              id: propertyId(property),
+                              label: propertyName(property),
+                              description: property.description,
+                            }))}
+                            selected={selectedProperties[fId] || []}
+                            multiple={!isSingleSelectFeature(catalogueFeatureName(bundle))}
+                            onToggle={(propertyID) => {
+                              const property = properties.find((item) => propertyId(item) === propertyID);
+                              if (property) toggleProperty(bundle, property);
+                            }}
+                          />
                         ) : (
                           <div className="grid gap-3 sm:grid-cols-2">
                             {(properties.length > 0 ? properties : [{ id: 0, name: featureName(bundle) }]).map((property) => {
@@ -624,7 +758,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
                     );
                   })}
                 </div>
-              </section>
+              </PreferenceAccordion>
             )}
           </div>
 

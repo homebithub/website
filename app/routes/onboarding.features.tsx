@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { AlertCircle, BriefcaseBusiness, Check, ClipboardCheck } from 'lucide-react';
+import { AlertCircle, BriefcaseBusiness, ClipboardCheck } from 'lucide-react';
 import { Navigation } from '~/components/Navigation';
 import { Loading } from '~/components/Loading';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -10,6 +10,9 @@ import { PurpleCard } from '~/components/ui/PurpleCard';
 import { profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 import { profileFeatureLabel } from '~/utils/profileFeatures';
 import { INPUT_CLASS, RequiredMark } from '~/components/ui/formStyles';
+import { FeatureOptionPicker } from '~/components/preferences/FeatureOptionPicker';
+import { PreferenceAccordion } from '~/components/preferences/PreferenceAccordion';
+import { isSingleSelectFeature } from '~/utils/preferenceRules';
 
 // Mirrors MaxPickValueLength in the auth service, so the field cannot submit
 // something the backend will reject.
@@ -121,6 +124,7 @@ export default function OnboardingFeaturesPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [openFeatures, setOpenFeatures] = useState<Set<number>>(() => new Set());
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -166,6 +170,9 @@ export default function OnboardingFeaturesPage() {
             if (typed) nextOtherValues[propertyId] = typed;
           });
           setFeatures(nextFeatures);
+          setOpenFeatures((current) => current.size > 0 || nextFeatures.length === 0
+            ? current
+            : new Set([nextFeatures[0].feature_id]));
           setSelected(nextSelected);
           setOtherValues(nextOtherValues);
         }
@@ -217,9 +224,11 @@ export default function OnboardingFeaturesPage() {
     setSaved(false);
     setSelected((prev) => {
       const current = prev[featureId] || [];
+      const feature = features.find((item) => item.feature_id === featureId);
+      const single = feature ? isSingleSelectFeature(String(feature.feature?.name || '')) : false;
       const next = current.includes(propertyId)
         ? current.filter((id) => id !== propertyId)
-        : [...current, propertyId];
+        : single ? [propertyId] : [...current, propertyId];
       if (!next.includes(propertyId)) {
         setOtherValues((values) => {
           const { [propertyId]: _removed, ...rest } = values;
@@ -352,89 +361,41 @@ export default function OnboardingFeaturesPage() {
 
                 <div className="max-h-[calc(100vh-220px)] overflow-y-auto px-4 py-4 sm:px-5">
                   <div className="grid gap-3">
-                    {features.map((feature, featureIndex) => {
+                    {features.map((feature) => {
                       const featureSelections = selected[feature.feature_id] || [];
                       const featureComplete = featureSelections.length > 0;
+                      const open = openFeatures.has(feature.feature_id);
 
                       return (
-                        <section
+                        <PreferenceAccordion
                           key={feature.feature_id}
-                          className={`rounded-xl border-2 bg-white/80 p-3 transition-colors dark:bg-gray-900/40 sm:p-4 ${
-                            featureComplete
-                              ? 'border-purple-300 dark:border-purple-500/60'
-                              : 'border-gray-200 dark:border-gray-700'
-                          }`}
+                          title={getFeatureName(feature)}
+                          summary={featureComplete
+                            ? `${featureSelections.length} selected`
+                            : `${(feature.properties || []).length} options`}
+                          complete={featureComplete}
+                          open={open}
+                          onToggle={() => setOpenFeatures((current) => {
+                            const next = new Set(current);
+                            if (next.has(feature.feature_id)) next.delete(feature.feature_id);
+                            else next.add(feature.feature_id);
+                            return next;
+                          })}
                         >
-                          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
-                                  featureComplete
-                                    ? 'border-purple-600 bg-purple-600 text-white'
-                                    : 'border-purple-200 text-purple-600 dark:border-purple-500/40 dark:text-purple-300'
-                                }`}
-                              >
-                                {featureComplete ? <Check className="h-3 w-3" /> : featureIndex + 1}
-                              </span>
-                              <div>
-                                <h2 className="text-sm font-bold text-gray-900 dark:text-white">
-                                  {getFeatureName(feature)}
-                                </h2>
-                                <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                                  {(feature.properties || []).length} options
-                                </p>
-                              </div>
-                            </div>
-                            <span
-                              className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
-                                featureComplete
-                                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-200'
-                                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                              }`}
-                            >
-                              {featureComplete ? `${featureSelections.length} selected` : 'Pending'}
-                            </span>
-                          </div>
-
-                          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                            {(feature.properties || []).map((property) => {
-                              const active = featureSelections.includes(Number(property.id));
-                              const freeText = allowsFreeText.has(Number(property.id));
-                              return (
-                                <div
-                                  key={property.id}
-                                  className={freeText && active ? 'sm:col-span-2 xl:col-span-3' : undefined}
-                                >
-                                <button
-                                  type="button"
-                                  onClick={() => toggleProperty(feature.feature_id, Number(property.id))}
-                                  className={`group relative min-h-[64px] rounded-xl border-2 p-3 text-left transition-all ${
-                                    active
-                                      ? 'border-purple-500 bg-purple-50 shadow-sm dark:bg-purple-900/40'
-                                      : 'border-gray-200 bg-white/80 hover:border-purple-300 hover:bg-purple-50/70 dark:border-gray-700 dark:bg-gray-950/30 dark:hover:border-purple-500/60 dark:hover:bg-purple-950/20'
-                                  }`}
-                                >
-                                  <span
-                                    className={`absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full border transition-all ${
-                                      active
-                                        ? 'border-purple-600 bg-purple-600 text-white'
-                                        : 'border-gray-300 text-transparent group-hover:border-purple-400 dark:border-gray-600'
-                                    }`}
-                                  >
-                                    <Check className="h-3 w-3" />
-                                  </span>
-                                  <span className="block pr-7 text-sm font-semibold leading-snug text-gray-900 dark:text-white">
-                                    {property.name}
-                                  </span>
-                                  {property.description && property.description !== property.name && (
-                                    <span className="mt-1 block text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                                      {property.description}
-                                    </span>
-                                  )}
-                                </button>
-
-                                {freeText && active && (
-                                  <label className="mt-2 block">
+                          <FeatureOptionPicker
+                            options={(feature.properties || []).map((property) => ({
+                              id: Number(property.id),
+                              label: property.name,
+                              description: property.description,
+                            }))}
+                            selected={featureSelections}
+                            multiple={!isSingleSelectFeature(String(feature.feature?.name || ''))}
+                            onToggle={(propertyId) => toggleProperty(feature.feature_id, propertyId)}
+                          />
+                          {(feature.properties || []).filter((property) =>
+                            featureSelections.includes(Number(property.id)) && allowsFreeText.has(Number(property.id))
+                          ).map((property) => (
+                                  <label key={property.id} className="mt-3 block">
                                     <span className="mb-1.5 block text-xs font-semibold text-purple-700 dark:text-purple-300">
                                       Tell us what it is
                                       <RequiredMark />
@@ -452,12 +413,8 @@ export default function OnboardingFeaturesPage() {
                                       Shown on your profile. It is not used for matching yet.
                                     </span>
                                   </label>
-                                )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </section>
+                          ))}
+                        </PreferenceAccordion>
                       );
                     })}
                   </div>
