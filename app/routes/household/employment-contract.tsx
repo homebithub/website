@@ -286,6 +286,14 @@ export default function EmploymentContractPage() {
       setError('Job title, salary, and househelp are required');
       return;
     }
+    if (endDate && !startDate) {
+      setError('Select a start date before choosing an end date.');
+      return;
+    }
+    if (startDate && endDate && endDate < startDate) {
+      setError('End date must be the same as or later than the start date.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -318,6 +326,14 @@ export default function EmploymentContractPage() {
 
   const handleUpdateContract = async () => {
     if (!contract) return;
+    if (endDate && !startDate) {
+      setError('Select a start date before choosing an end date.');
+      return;
+    }
+    if (startDate && endDate && endDate < startDate) {
+      setError('End date must be the same as or later than the start date.');
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
@@ -692,13 +708,24 @@ export default function EmploymentContractPage() {
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Start Date</label>
-                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+                  <input type="date" value={startDate} onChange={e => {
+                    const nextStartDate = e.target.value;
+                    setStartDate(nextStartDate);
+                    if (endDate && nextStartDate && endDate < nextStartDate) {
+                      setEndDate('');
+                      setError('The previous end date was cleared because it was before the new start date. Choose a new end date if needed.');
+                    }
+                  }}
                     className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">End Date (optional)</label>
-                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
+                  <input type="date" value={endDate} min={startDate || undefined} disabled={!startDate} onChange={e => {
+                    setEndDate(e.target.value);
+                    setError(null);
+                  }}
+                    className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:cursor-not-allowed disabled:opacity-50" />
+                  {!startDate && <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">Select a start date first.</p>}
                 </div>
               </div>
               <div className="mt-4">
