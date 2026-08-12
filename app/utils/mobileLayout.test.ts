@@ -26,4 +26,16 @@ describe('mobile layout guardrails', () => {
     expect(inbox).toContain('overflow-x-hidden overflow-y-auto');
     expect(inbox).toContain('min-w-0 max-h-[150px] flex-1');
   });
+
+  it('uses one compact rail for navigation and discovery controls', () => {
+    const css = source('app/tailwind.css');
+    const navigation = source('app/components/Navigation.tsx');
+    const househelpHome = source('app/components/HousehelpJobsHome.tsx');
+    const householdHome = source('app/components/HouseholdJobsHome.tsx');
+    expect(css).toContain('.hb-content-rail');
+    expect(css).toContain('font-size: 14px');
+    expect(navigation).toContain('hb-content-rail');
+    expect(househelpHome).toContain('w-full max-w-6xl rounded-b-2xl');
+    expect(householdHome).toContain('w-full max-w-6xl rounded-b-2xl');
+  });
 });

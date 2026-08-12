@@ -449,11 +449,11 @@ export function Navigation() {
     }
 
     return (
-        <nav className="sticky top-0 z-40 shadow-xl shadow-purple-200/50 bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f]  overflow-visible border-b border-primary-200/60 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
-            <div className="flex justify-between items-center px-8 sm:px-16 lg:px-32 min-h-[64px] sm:min-h-[72px]">
+        <nav className="sticky top-0 z-40 overflow-visible bg-transparent transition-all duration-300">
+            <div className="hb-content-rail flex min-h-[56px] items-center justify-between rounded-b-2xl border-x border-b border-primary-200/60 bg-gradient-to-br from-primary-100 via-white to-purple-200 shadow-lg shadow-purple-200/40 dark:border-purple-500/20 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] dark:shadow-glow-sm sm:min-h-[60px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
-  <Link to="/" prefetch="intent" className="relative font-extrabold text-xl sm:text-2xl px-3 py-1 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-purple-300/50 hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
+  <Link to="/" prefetch="intent" className="relative rounded-xl px-2 py-1 text-lg font-extrabold drop-shadow-md transition-all duration-300 hover:bg-primary-50 hover:shadow-lg hover:shadow-purple-300/50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md sm:text-xl">
     <span className="logo-shimmer">
       <span className="text-gray-900 dark:text-white">Home</span>
       <span className="gradient-text">Bit</span>
@@ -463,7 +463,7 @@ export function Navigation() {
 
                 {/* Public Navigation Links - Show on non-app hosts for all users */}
                 {!isAppHost && (
-                    <div className="hidden lg:flex items-center space-x-4 ml-auto">
+                    <div className="hidden lg:flex items-center gap-2 ml-auto">
                         {(user ? authLinks : navigation).map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
@@ -471,7 +471,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
+                                className={`link relative rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-md' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-md'}`}
                             >
                                 {item.name}
                                 {'count' in item && item.name === 'Inbox' && renderBadge((item as any).count)}
@@ -484,7 +484,7 @@ export function Navigation() {
 
                 {/* App navigation for authenticated users on app subdomain */}
                 {isAppHost && user && (
-                    <div className="hidden lg:flex items-center space-x-3 ml-auto">
+                    <div className="hidden lg:flex items-center gap-2 ml-auto">
                         {authLinks.map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
@@ -492,7 +492,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
+                                className={`link relative rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-md' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-md'}`}
                                 id={item.name === 'Saved' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
@@ -505,17 +505,17 @@ export function Navigation() {
                 )}
 
                 {/* Right section */}
-                <div className="flex items-center space-x-4 ml-6 relative">
+                <div className="relative ml-3 flex items-center gap-2">
 
                     {/* Notifications (logged-in only) */}
                     {user && (
                         <button
                             type="button"
                             onClick={() => setIsNotificationsOpen(true)}
-                            className="relative hidden lg:inline-flex items-center justify-center rounded-xl p-2 bg-white dark:bg-white/10 border-2 border-purple-200 dark:border-purple-500/30 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all shadow-sm dark:shadow-glow-sm"
+                            className="relative hidden items-center justify-center rounded-lg border border-purple-200 bg-white p-1.5 shadow-sm transition-all hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:hover:bg-purple-900/30 lg:inline-flex"
                             aria-label="Notifications"
                         >
-                            <BellIcon className="h-6 w-6 text-purple-700 dark:text-purple-200" />
+                            <BellIcon className="h-5 w-5 text-purple-700 dark:text-purple-200" />
                             {renderBadge(unreadCount)}
                         </button>
                     )}
@@ -629,10 +629,10 @@ export function Navigation() {
                     {/* Menu Dropdown - Only show on mobile */}
                     <Menu as="div" className="relative inline-block text-left lg:hidden">
                         <Menu.Button
-                            className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 dark:from-purple-600 dark:to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 dark:shadow-glow-sm hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-glow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:from-purple-600 dark:to-pink-600 dark:shadow-glow-sm"
                             aria-label="Open navigation menu"
                         >
-                            <Bars3Icon className="h-7 w-7" />
+                            <Bars3Icon className="h-6 w-6" />
                         </Menu.Button>
 
                         <Transition
