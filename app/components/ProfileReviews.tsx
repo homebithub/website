@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Star, ThumbsUp, MessageSquare, ChevronLeft, ChevronRight, LoaderCircle, X } from 'lucide-react';
+import { Star, ThumbsUp, MessageSquare, ChevronLeft, ChevronRight, LoaderCircle, X, ImagePlus } from 'lucide-react';
 import { reviewService } from '~/services/grpc/review.service';
 import { getStoredUserId } from '~/utils/authStorage';
 import { employmentService } from '~/services/grpc/authServices';
 import { FormError } from '~/components/FormError';
+import { PHOTO_ACCEPT_ATTRIBUTE, selectPhotosForUpload, uploadDocuments } from '~/utils/documentUploads';
+import { useSearchParams } from 'react-router';
 
 interface Review {
   id: string;
@@ -50,6 +52,7 @@ export default function ProfileReviews({
   profileType,
   isOwnProfile,
 }: ProfileReviewsProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [stats, setStats] = useState<ReviewStats | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,6 +76,7 @@ export default function ProfileReviews({
     title: '',
     content: '',
   });
+  const [reviewImages, setReviewImages] = useState<File[]>([]);
 
   const reviewsPerPage = 10;
   const totalPages = Math.ceil(totalReviews / reviewsPerPage);
@@ -174,6 +178,16 @@ export default function ProfileReviews({
     };
   }, [profileId, isOwnProfile]);
 
+  useEffect(() => {
+    if (searchParams.get('review') === '1' && canReview === 'yes' && !isOwnProfile) {
+      setActionError('');
+      setShowReviewForm(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('review');
+      setSearchParams(next, { replace: true });
+    }
+  }, [canReview, isOwnProfile, searchParams, setSearchParams]);
+
   const loadMyPendingReview = async () => {
     if (!getStoredUserId() || isOwnProfile) return;
     try {
@@ -243,6 +257,19 @@ export default function ProfileReviews({
     setActionError('');
     setActionSuccess('');
     try {
+      let images: Array<{ image_url: string; s3_key: string }> = [];
+      if (reviewImages.length > 0) {
+        const uploaded = await uploadDocuments({
+          files: reviewImages,
+          documentType: 'review_image',
+          description: 'Review image',
+        });
+        const documents = uploaded?.data ?? [];
+        images = (Array.isArray(documents) ? documents : []).map((document: any) => ({
+          image_url: document.url || document.public_url || document.signed_url || document.s3_key,
+          s3_key: document.s3_key || document.key || '',
+        }));
+      }
       await reviewService.createReview(userId, {
         reviewee_id: profileId,
         rating: reviewForm.rating,
@@ -250,10 +277,11 @@ export default function ProfileReviews({
         content: reviewForm.content.trim(),
         type: profileType,
         service_type: 'domestic_service',
-        images: [],
+        images,
       });
       setShowReviewForm(false);
       setReviewForm({ rating: 5, title: '', content: '' });
+      setReviewImages([]);
       setActionSuccess('Review submitted. It will appear publicly once it has been checked.');
       void loadMyPendingReview();
     } catch (err) {
@@ -422,6 +450,40 @@ export default function ProfileReviews({
                 {reviewForm.content.length}/1000
               </span>
             </label>
+
+            <div className="mt-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-gray-800 dark:text-gray-200">Photos (optional)</span>
+                <span className="text-[11px] text-gray-400">{reviewImages.length}/5 · max 5MB each</span>
+              </div>
+              <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-purple-300 px-4 py-3 text-xs font-semibold text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">
+                <ImagePlus className="h-4 w-4" /> Add images
+                <input
+                  className="sr-only"
+                  type="file"
+                  accept={PHOTO_ACCEPT_ATTRIBUTE}
+                  multiple
+                  onChange={(event) => {
+                    const selection = selectPhotosForUpload(event.target.files, reviewImages.length, 5);
+                    if (selection.error) setActionError(selection.error);
+                    else {
+                      setActionError('');
+                      setReviewImages((current) => [...current, ...selection.files]);
+                    }
+                    event.target.value = '';
+                  }}
+                />
+              </label>
+              {reviewImages.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {reviewImages.map((file, index) => (
+                    <button key={`${file.name}-${index}`} type="button" onClick={() => setReviewImages((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="rounded-full bg-purple-100 px-3 py-1 text-[11px] text-purple-800 dark:bg-purple-500/20 dark:text-purple-100" title="Remove image">
+                      {file.name} ×
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <FormError message={actionError} className="mt-5" />
 

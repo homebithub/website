@@ -1133,7 +1133,8 @@ export default function HiringHistory() {
       await employmentService.terminate(househelpUserId, reason);
       await Promise.all([fetchApplicants(), refreshEngagements()]);
       window.dispatchEvent(new Event('hiring-updated'));
-      setShortlistSuccess('The engagement has ended, and we have told them why.');
+      setShortlistSuccess('The engagement has ended, and we have told them why. You can now leave a review.');
+      openReview(interest);
     } catch (err: any) {
       setError(err?.message || 'We could not end this engagement. Please try again.');
     } finally {
@@ -1435,8 +1436,19 @@ export default function HiringHistory() {
               // question has been settled and offering it again is offering to
               // go backwards — which the state machine will not do anyway.
               const canShortlist = interest.status === 'initiated';
+              const existingContract = findByAnyIdentifier(
+                employmentContractMap,
+                getHousehelpCandidateIds(interest),
+              );
+              const contractStatus = String(
+                existingContract?.storage_status || existingContract?.status || '',
+              ).toLowerCase();
+              const hasCurrentContract = [
+                'draft', 'forwarded', 'partially_signed', 'pending_househelp',
+                'active', 'signed_by_both',
+              ].includes(contractStatus);
               const isHired =
-                interest.status === 'approved' &&
+                (interest.status === 'approved' || ['active', 'signed_by_both'].includes(contractStatus)) &&
                 !endedEngagements.has(househelpUserIdFor(interest));
               const chatLoading = chatLoadingInterestId === interest.id;
               const shortlistLoading = shortlistLoadingInterestId === interest.id;
@@ -1448,7 +1460,7 @@ export default function HiringHistory() {
               // false for every row ever rendered and the buttons under it had
               // never once appeared.
               const canActOnInterest =
-                interest.status === 'shortlisted' || interest.status === 'accepted';
+                (interest.status === 'shortlisted' || interest.status === 'accepted') && !hasCurrentContract;
               // What the next step actually is, named as the household would
               // name it: an offer to somebody set aside, a contract to somebody
               // who has already said yes.

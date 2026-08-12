@@ -4,7 +4,7 @@ import { getStoredProfileType } from '~/utils/authStorage';
 
 type UploadDocumentsInput = {
   files: File[];
-  documentType: 'profile_photo' | 'certificate';
+  documentType: 'profile_photo' | 'certificate' | 'review_image';
   profileId?: string;
   description?: string;
   certificationPropertyId?: number;
@@ -112,7 +112,7 @@ export function uploadDocuments({
   const form = new FormData();
   files.forEach((file) => form.append('files', file));
   form.append('document_type', documentType);
-  form.append('is_public', documentType === 'profile_photo' ? 'true' : 'false');
+  form.append('is_public', ['profile_photo', 'review_image'].includes(documentType) ? 'true' : 'false');
   if (profileId) form.append('profile_id', profileId);
   if (description) form.append('description', description);
   if (certificationPropertyId) {

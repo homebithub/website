@@ -984,6 +984,17 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
+                        {['completed', 'terminated'].includes(String(contract.status).toLowerCase()) && (
+                          <button
+                            onClick={() => {
+                              const profileLink = buildHouseholdProfileLink({ household: contract.household, fallbackProfileId: contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' });
+                              navigate(`${profileLink}&review=1`, { state: { profileId: contract.household?.id || contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } });
+                            }}
+                            className="inline-flex items-center gap-2 rounded-xl border border-amber-300 px-4 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:border-amber-500/40 dark:text-amber-200 dark:hover:bg-amber-500/10"
+                          >
+                            <Star className="h-4 w-4" /> Leave a review
+                          </button>
+                        )}
                         <button onClick={() => navigate(buildHouseholdProfileLink({ household: contract.household, fallbackProfileId: contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: contract.household?.id || contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Profile
                         </button>
