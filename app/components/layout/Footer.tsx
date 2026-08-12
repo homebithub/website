@@ -75,6 +75,7 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
     return (
       <footer
         ref={footerRef}
+        data-site-footer
         aria-label="Website information"
         className={`fixed bottom-20 right-5 z-30 hidden max-w-[420px] rounded-xl border px-3 py-2 text-[11px] shadow-lg backdrop-blur-md lg:block ${
           variant === 'light'
@@ -98,7 +99,7 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
   }
 
   return (
-    <footer ref={footerRef} className={`${baseClasses} ${themeClasses}`}>
+    <footer ref={footerRef} data-site-footer className={`${baseClasses} ${themeClasses}`}>
       <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
         <div className="mb-4 md:mb-0">
           <span className="font-bold text-base gradient-text">Homebit</span> <span className="text-gray-400">&copy; {new Date().getFullYear()}</span>

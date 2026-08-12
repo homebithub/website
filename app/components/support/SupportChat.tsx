@@ -23,6 +23,7 @@ export default function SupportChat() {
   const [replyTo, setReplyTo] = useState<SupportMessage | null>(null); const [emojiOpen, setEmojiOpen] = useState(false);
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [unread, setUnread] = useState(0);
   const [rating,setRating]=useState(0); const [ratingComment,setRatingComment]=useState('');
+  const [launcherBottom,setLauncherBottom]=useState(24);
   const fileRef = useRef<HTMLInputElement>(null); const bottomRef = useRef<HTMLDivElement>(null); const previousCount = useRef(0);
   const typingTimer = useRef<number | undefined>(undefined);
 
@@ -40,6 +41,26 @@ export default function SupportChat() {
   useEffect(() => { refresh(); if (!chat) return; const id = window.setInterval(refresh, open?1000:5000); return () => window.clearInterval(id); }, [chat?.id, open, refresh]);
   useEffect(() => { if (open) { setUnread(0); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50); } }, [open, messages.length]);
   useEffect(()=>{if(!chat||!open)return; const seen=()=>supportService.presence(chat.id,chat.access_token,false).then(p=>setChat(old=>old?{...old,...p,access_token:old.access_token}:old)).catch(()=>{});seen();const id=window.setInterval(seen,15000);return()=>window.clearInterval(id)},[chat?.id,chat?.access_token,open]);
+  useEffect(() => {
+    let frame = 0;
+    const positionLauncher = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const footer = document.querySelector<HTMLElement>('[data-site-footer]');
+        if (!footer) { setLauncherBottom(24); return; }
+        const top = footer.getBoundingClientRect().top;
+        const covered = Math.max(0, window.innerHeight - top);
+        setLauncherBottom(Math.max(24, covered + 16));
+      });
+    };
+    positionLauncher();
+    window.addEventListener('scroll', positionLauncher, { passive: true });
+    window.addEventListener('resize', positionLauncher);
+    const observer = new ResizeObserver(positionLauncher);
+    const footer = document.querySelector<HTMLElement>('[data-site-footer]');
+    if (footer) observer.observe(footer);
+    return () => { window.cancelAnimationFrame(frame); window.removeEventListener('scroll', positionLauncher); window.removeEventListener('resize', positionLauncher); observer.disconnect(); };
+  }, []);
 
   function noteTyping(value:string){setDraft(value);if(!chat)return;supportService.presence(chat.id,chat.access_token,true).catch(()=>{});window.clearTimeout(typingTimer.current);typingTimer.current=window.setTimeout(()=>supportService.presence(chat.id,chat.access_token,false).catch(()=>{}),1800)}
 
@@ -72,7 +93,7 @@ export default function SupportChat() {
 
   const remaining = CHAT_MESSAGE_LIMIT - draft.length;
   return <>
-    <button onClick={() => setOpen(true)} aria-label="Chat with Homebit Support" className="hidden lg:flex fixed bottom-6 right-6 z-50 h-14 items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-5 text-sm font-semibold text-white shadow-2xl shadow-purple-500/40 transition hover:scale-105">
+    <button style={{ bottom: launcherBottom }} onClick={() => setOpen(true)} aria-label="Chat with Homebit Support" className="fixed right-6 z-50 hidden h-14 items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-5 text-sm font-semibold text-white shadow-2xl shadow-purple-500/40 transition-[bottom,transform] duration-200 hover:scale-105 lg:flex">
       <MessageCircle className="h-5 w-5" /> Help {unread > 0 && <span className="rounded-full bg-white px-2 py-0.5 text-xs text-purple-700">{unread}</span>}
     </button>
     {open && <section aria-label="Homebit Support chat" className="fixed inset-3 z-[70] flex flex-col overflow-hidden rounded-2xl border border-purple-200 bg-white shadow-2xl dark:border-purple-500/30 dark:bg-[#13131a] sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[620px] sm:w-[390px]">
