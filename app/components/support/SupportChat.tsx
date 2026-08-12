@@ -24,7 +24,7 @@ export default function SupportChat() {
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [unread, setUnread] = useState(0);
   const [rating,setRating]=useState(0); const [ratingComment,setRatingComment]=useState('');
   const [launcherBottom,setLauncherBottom]=useState(24);
-  const fileRef = useRef<HTMLInputElement>(null); const bottomRef = useRef<HTMLDivElement>(null); const previousCount = useRef(0);
+  const fileRef = useRef<HTMLInputElement>(null); const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => { setName(account?.first_name || account?.firstName || ''); setEmail(account?.email || ''); const saved = localStorage.getItem(STORAGE_KEY); if (saved) { try { setChat(JSON.parse(saved)); } catch {} } }, [account]);
@@ -34,13 +34,8 @@ export default function SupportChat() {
     if (!chat) return;
     try {
       const data = await supportService.messages(chat.id, chat.access_token);
-      if (!open && data.messages.length > previousCount.current) {
-        const incoming = data.messages
-          .slice(previousCount.current)
-          .filter((message) => message.sender_type === 'agent').length;
-        setUnread((count) => count + incoming);
-      }
-      previousCount.current = data.messages.length; setMessages(data.messages); setChat((old) => old ? { ...old, ...data.chat, access_token: old.access_token } : old);
+      setUnread(open ? 0 : data.messages.filter((message) => message.sender_type === 'agent' && !message.read_at).length);
+      setMessages(data.messages); setChat((old) => old ? { ...old, ...data.chat, access_token: old.access_token } : old);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not refresh chat'); }
   }, [chat?.id, chat?.access_token, open]);
   useEffect(() => { refresh(); if (!chat) return; const id = window.setInterval(refresh, open?1000:5000); return () => window.clearInterval(id); }, [chat?.id, open, refresh]);
