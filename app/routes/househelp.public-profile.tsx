@@ -9,7 +9,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import ImageViewModal from '~/components/ImageViewModal';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
-import { MessageCircle, Heart, Briefcase } from 'lucide-react';
+import { MessageCircle, Briefcase } from 'lucide-react';
 import HireRequestModal from '~/components/modals/HireRequestModal';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -398,16 +398,16 @@ export default function HousehelpPublicProfile() {
       if (isShortlisted) {
         await shortlistService.deleteShortlist(shortlistTargetId);
         setIsShortlisted(false);
-        setActionSuccess('Removed from shortlist.');
+        setActionSuccess('Removed from Saved.');
       } else {
         await shortlistService.createShortlist('', 'household', { profile_id: shortlistTargetId, profile_type: 'open_for_work' });
         setIsShortlisted(true);
-        setActionSuccess('Added to shortlist.');
+        setActionSuccess('Saved for later.');
       }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (e) {
       console.error('Failed to update shortlist:', e);
-      setActionError(e instanceof Error ? e.message : 'Failed to update shortlist');
+      setActionError(e instanceof Error ? e.message : 'We could not update Saved. Please try again.');
     } finally {
       setActionLoading(null);
     }
@@ -495,14 +495,15 @@ export default function HousehelpPublicProfile() {
                       <button
                         onClick={handleShortlistToggle}
                         disabled={actionLoading === 'shortlist'}
-                        aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
-                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shadow transition-all ${
+                        aria-label={isShortlisted ? 'Unsave househelp' : 'Save househelp'}
+                        title={isShortlisted ? 'Click to unsave' : 'Save for later'}
+                        className={`h-9 rounded-xl border px-4 text-xs font-semibold shadow-sm transition-all ${
                           isShortlisted
-                            ? 'bg-pink-500 border-pink-200 text-white hover:bg-pink-600'
-                            : 'bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-200'
+                            ? 'bg-pink-500 border-pink-400 text-white hover:bg-pink-600'
+                            : 'bg-white dark:bg-white/10 border-purple-300 dark:border-purple-500/30 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10'
                         } ${actionLoading === 'shortlist' ? 'opacity-70 cursor-not-allowed' : ''}`}
                       >
-                        <Heart className="w-4 h-4" />
+                        {actionLoading === 'shortlist' ? 'Updating...' : isShortlisted ? 'Saved' : 'Save'}
                       </button>
                       <button
                         onClick={handleChat}

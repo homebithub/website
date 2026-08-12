@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Eye, Heart, MessageCircle } from "lucide-react";
+import { Eye, MessageCircle } from "lucide-react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -86,6 +86,7 @@ export default function ShortlistPage() {
   const [accessibilityMode, setAccessibilityMode] = useState(false);
   const loadingProfiles = false;
   const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
   const currentUserProfileId: string | undefined = currentUser?.user_profile_id || currentUser?.userProfileId || getStoredUserProfileId() || undefined;
@@ -187,8 +188,17 @@ export default function ShortlistPage() {
   }, [loading, hasMore]);
 
   async function handleRemove(jobId: string) {
-    setItems((prev) => prev.filter((job) => job.id !== jobId));
-    window.dispatchEvent(new CustomEvent('shortlist-updated'));
+    setRemovingId(jobId);
+    setError(null);
+    try {
+      await shortlistService.deleteShortlist(jobId);
+      setItems((prev) => prev.filter((job) => String(job.id) !== jobId));
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
+    } catch (e: any) {
+      setError(e?.message || "We couldn't remove this saved job. Please try again.");
+    } finally {
+      setRemovingId(null);
+    }
   }
 
   async function handleChatWithHousehold(targetUserId?: string, householdProfileId?: string, jobId?: string) {
@@ -318,10 +328,12 @@ export default function ShortlistPage() {
                                 event.stopPropagation();
                                 handleRemove(jobId);
                               }}
-                              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-pink-400 bg-pink-500 text-white transition"
-                              aria-label="Remove job from shortlist"
+                              disabled={removingId === jobId}
+                              className="inline-flex h-9 items-center justify-center rounded-xl border border-pink-400 bg-pink-500 px-3 text-xs font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-60"
+                              aria-label="Unsave job"
+                              title="Click to unsave"
                             >
-                              <Heart className="w-4 h-4 fill-current" />
+                              {removingId === jobId ? "Removing..." : "Saved"}
                             </button>
                             <button
                               onClick={(event) => {

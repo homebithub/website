@@ -1,7 +1,6 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Heart } from 'lucide-react';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -135,6 +134,7 @@ export default function HouseholdShortlistPage() {
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   // Load UI preferences (compact view, accessibility)
   useEffect(() => {
@@ -270,12 +270,18 @@ export default function HouseholdShortlistPage() {
   }, [items, profilesById]);
 
   async function handleRemove(profileId: string) {
+    setRemovingId(profileId);
+    setError(null);
     try {
       await shortlistService.deleteShortlist(profileId);
       setItems((prev) => (prev || []).filter((s) => s.profile_id !== profileId));
       // Trigger event to update badge count in navigation
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
-    } catch {}
+    } catch (e: any) {
+      setError(e?.message || "We couldn't remove this saved househelp. Please try again.");
+    } finally {
+      setRemovingId(null);
+    }
   }
 
   async function handleChatWithHousehelp(profileId?: string, househelpUserId?: string) {
@@ -331,7 +337,7 @@ export default function HouseholdShortlistPage() {
                   Nothing saved yet
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
-                  Tap the heart on a househelp you like and they will be kept here, so you can
+                  Use Save on a househelp you like and they will be kept here, so you can
                   compare them later without searching again.
                 </p>
                 <button
@@ -392,10 +398,12 @@ export default function HouseholdShortlistPage() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => handleRemove(s.profile_id)}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-pink-400 bg-pink-500 text-white transition"
-                                aria-label="Remove open-for-work listing from shortlist"
+                                disabled={removingId === s.profile_id}
+                                className="inline-flex h-9 items-center justify-center rounded-xl border border-pink-400 bg-pink-500 px-3 text-xs font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                aria-label="Unsave househelp"
+                                title="Click to unsave"
                               >
-                                <Heart className="h-4 w-4 fill-current" />
+                                {removingId === s.profile_id ? 'Removing...' : 'Saved'}
                               </button>
                               <span
                                 className={`px-3 py-1 text-xs font-semibold rounded-full ${
