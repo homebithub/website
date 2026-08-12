@@ -1,6 +1,7 @@
 import React, { Fragment, useRef } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 interface ModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface ModalProps {
 
 export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   const cancelButtonRef = useRef(null);
+  useBodyScrollLock(isOpen);
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>

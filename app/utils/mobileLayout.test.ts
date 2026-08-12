@@ -20,6 +20,15 @@ describe('mobile layout guardrails', () => {
     expect(source('app/components/modals/OpenForWorkModal.tsx')).toContain('hb-modal-shell');
   });
 
+  it('locks background scrolling while modal surfaces are open', () => {
+    const lock = source('app/hooks/useBodyScrollLock.ts');
+    expect(lock).toContain("document.body.style.position = 'fixed'");
+    expect(lock).toContain('lockCount += 1');
+    expect(source('app/components/ProfileViewsAnalytics.tsx')).toContain('useBodyScrollLock(isOpen)');
+    expect(source('app/components/ui/BaseModal.tsx')).toContain('useBodyScrollLock(isOpen)');
+    expect(source('app/components/ui/ConfirmDialog.tsx')).toContain('useBodyScrollLock(isOpen)');
+  });
+
   it('keeps the mobile inbox inside the dynamic viewport', () => {
     const inbox = source('app/routes/inbox.tsx');
     expect(inbox).toContain('h-[100dvh]');

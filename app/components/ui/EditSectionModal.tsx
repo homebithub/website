@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { ProfileEditorProvider } from '~/contexts/ProfileEditorContext';
 import { OnboardingOptionsProvider } from '~/contexts/OnboardingOptionsContext';
+import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 interface EditSectionModalProps {
   isOpen: boolean;
@@ -13,16 +14,7 @@ interface EditSectionModalProps {
 
 export default function EditSectionModal({ isOpen, onClose, title, profileType, children }: EditSectionModalProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
-
-  // Lock body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
+  useBodyScrollLock(isOpen);
 
   // Close on Escape key
   useEffect(() => {

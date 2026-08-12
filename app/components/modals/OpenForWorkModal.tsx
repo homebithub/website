@@ -5,6 +5,7 @@ import { openForWorkService, profileService } from "~/services/grpc/authServices
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
 import { FormError } from '~/components/FormError';
+import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 const JOB_TYPES = [
   { value: "live_in", label: "Live-in" },
@@ -36,6 +37,7 @@ interface OpenForWorkModalProps {
 }
 
 export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: OpenForWorkModalProps) {
+  useBodyScrollLock(isOpen);
   const [jobTypes, setJobTypes] = useState<string[]>([]);
   const [availableFrom, setAvailableFrom] = useState("");
   const [canWorkWithKids, setCanWorkWithKids] = useState(false);
@@ -102,15 +104,6 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
       });
     return () => { cancelled = true; };
   }, [isOpen, listing?.id]);
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
 
   if (!isOpen) return null;
 

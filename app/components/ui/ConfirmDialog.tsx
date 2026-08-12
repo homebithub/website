@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export function ConfirmDialog({
   variant = 'danger',
   isLoading = false,
 }: ConfirmDialogProps) {
+  useBodyScrollLock(isOpen);
   if (!isOpen) return null;
 
   const variantStyles = {

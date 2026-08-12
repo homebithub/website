@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Eye, TrendingUp, Clock, Calendar, Users, RefreshCw } from 'lucide-react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { profileViewService } from '~/services/grpc/profileView.service';
+import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 interface ProfileViewsAnalyticsProps {
   profileId: string;
@@ -27,15 +28,12 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {
       loadAnalytics();
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
   }, [isOpen, profileId]);
 
   useEffect(() => {
