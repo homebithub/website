@@ -25,6 +25,9 @@ describe('mobile layout guardrails', () => {
     expect(inbox).toContain('h-[100dvh]');
     expect(inbox).toContain('overflow-x-hidden overflow-y-auto');
     expect(inbox).toContain('min-w-0 max-h-[150px] flex-1');
+    expect(inbox).toContain('text-[16px]');
+    expect(inbox).toContain("mine ? 'mr-9 lg:mr-0' : 'ml-9 lg:ml-0'");
+    expect(inbox).toContain("'-right-9 lg:-right-2'");
   });
 
   it('uses one compact rail for navigation and discovery controls', () => {

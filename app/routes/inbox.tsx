@@ -1922,12 +1922,12 @@ export default function InboxPage() {
                       mine 
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100'
-                    } ${status === 'sending' ? 'opacity-70' : ''} ${m.deleted_at ? 'opacity-60 italic' : ''}`}>
+                    } ${!interactionsDisabled ? (mine ? 'mr-9 lg:mr-0' : 'ml-9 lg:ml-0') : ''} ${status === 'sending' ? 'opacity-70' : ''} ${m.deleted_at ? 'opacity-60 italic' : ''}`}>
                       {/* Bubble controls: 3-dots (always visible on mobile, hover on desktop) and quick reactions */}
                       {!interactionsDisabled && (
                         <button
                           type="button"
-                          className={`absolute -top-2 ${mine ? '-right-2' : '-left-2'} inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow lg:opacity-0 lg:group-hover:opacity-100 transition`}
+                          className={`absolute top-0 ${mine ? '-right-9 lg:-right-2' : '-left-9 lg:-left-2'} inline-flex h-7 w-7 items-center justify-center rounded-full border border-purple-200 bg-white/80 shadow transition dark:border-purple-500/30 dark:bg-[#0f0f16]/80 lg:-top-2 lg:opacity-0 lg:group-hover:opacity-100`}
                           onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
                           aria-label="Message options"
                         >
@@ -2392,7 +2392,7 @@ export default function InboxPage() {
                 }
               }}
               placeholder="Type a message..."
-              className="min-h-[40px] min-w-0 max-h-[150px] flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-3 py-2 text-base text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:px-4 sm:text-sm"
+              className="min-h-[40px] min-w-0 max-h-[150px] flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-3 py-2 text-[16px] text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:px-4 sm:text-sm"
               autoComplete="off"
               rows={1}
             />
