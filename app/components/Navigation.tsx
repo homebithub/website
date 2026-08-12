@@ -247,7 +247,7 @@ export function Navigation() {
 
                 {/* Public Navigation Links - Show on non-app hosts for all users */}
                 {!isAppHost && (
-                    <div className="hidden lg:flex items-center space-x-4 ml-auto">
+                    <div className="hidden lg:flex items-center space-x-3 ml-10 xl:ml-16 mr-auto">
                         {(user ? authLinks : navigation).map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
@@ -255,7 +255,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
+                                className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-4 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
                             >
                                 {item.name}
                                 {'count' in item && item.name === 'Shortlist' && renderBadge((item as any).count)}
@@ -269,7 +269,7 @@ export function Navigation() {
 
                 {/* App navigation for authenticated users on app subdomain */}
                 {isAppHost && user && (
-                    <div className="hidden lg:flex items-center space-x-3 ml-auto">
+                    <div className="hidden lg:flex items-center space-x-3 ml-10 xl:ml-16 mr-auto">
                         {authLinks.map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
@@ -277,7 +277,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
+                                className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-4 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
                                 id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
@@ -291,7 +291,7 @@ export function Navigation() {
                 )}
 
                 {/* Right section */}
-                <div className="flex items-center space-x-4 ml-6 relative">
+                <div className="flex shrink-0 items-center space-x-3 ml-3 relative">
 
                     {/* Notifications (logged-in only) */}
                     {user && (
