@@ -142,14 +142,14 @@ export function OpenForWorkButton({
 
   return (
     <>
-      <div className={`flex flex-col gap-2 ${showStatus ? "items-stretch" : "items-start"}`}>
+      <div className={`min-w-0 max-w-full flex flex-col gap-2 ${showStatus ? "items-stretch" : "items-start"} ${className}`}>
         {showStatus ? (
           <div className={`rounded-xl border px-3 py-2 text-xs ${isLive ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100" : "border-purple-200 bg-purple-50 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-100"}`}>
             <p className="font-semibold">{isLive ? "Households can currently find you" : "You are not currently searchable"}</p>
             <p className="mt-0.5 opacity-80">{expiryText}</p>
           </div>
         ) : null}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex min-w-0 max-w-full flex-wrap gap-2">
           <button
         type="button"
         onClick={handleClick}
@@ -163,7 +163,7 @@ export function OpenForWorkButton({
                 ? "An active subscription is needed to be listed."
                 : "Tell households what you are available for."
         }
-        className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${tone} ${className}`}
+        className={`inline-flex max-w-full items-center gap-2 rounded-xl border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${tone}`}
       >
         {checking ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -185,14 +185,14 @@ export function OpenForWorkButton({
               <button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                className="inline-flex max-w-full items-center gap-2 rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10 sm:px-4"
               >
                 <Pencil className="h-4 w-4" /> Edit availability
               </button>
               <button
                 type="button"
                 onClick={() => { setRemoveError(""); setRemoveOpen(true); }}
-                className="inline-flex items-center gap-2 rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10"
+                className="inline-flex max-w-full items-center gap-2 rounded-xl border border-red-300 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-500/40 dark:text-red-200 dark:hover:bg-red-500/10 sm:px-4"
               >
                 <Trash2 className="h-4 w-4" /> Remove Open for Work
               </button>

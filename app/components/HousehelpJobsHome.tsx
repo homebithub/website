@@ -1017,7 +1017,7 @@ export default function HousehelpJobsHome() {
               {/* Always on screen while browsing. A househelp reading job
                   adverts is exactly the person who should be told they can be
                   found instead. */}
-              <OpenForWorkButton className="hidden shrink-0 sm:inline-flex" />
+              <OpenForWorkButton className="hidden shrink-0 sm:flex" />
 
               <label className="min-w-0 flex-1 sm:flex-none">
                 <span className="sr-only">Sort job openings</span>
@@ -1198,6 +1198,9 @@ export default function HousehelpJobsHome() {
             )}
           </section>
           <div className="hb-content-rail flex flex-col">
+            <div className="mb-3 min-w-0 max-w-full sm:hidden">
+              <OpenForWorkButton className="w-full" />
+            </div>
             <IdentityVerificationPrompt verification={identityVerification} />
 
             {profileCompletionReminder.shouldShow && (

@@ -94,4 +94,12 @@ describe('mobile layout guardrails', () => {
     expect(modal).toContain('grid min-w-0 grid-cols-2');
     expect(modal.match(/min-w-0 max-w-full w-full/g)?.length).toBeGreaterThanOrEqual(4);
   });
+
+  it('keeps homepage availability actions out of the mobile filter toolbar', () => {
+    const home = source('app/components/HousehelpJobsHome.tsx');
+    const button = source('app/components/OpenForWorkButton.tsx');
+    expect(home).toContain('<OpenForWorkButton className="hidden shrink-0 sm:flex"');
+    expect(home).toContain('mb-3 min-w-0 max-w-full sm:hidden');
+    expect(button).toContain('max-w-full flex flex-col gap-2');
+  });
 });
