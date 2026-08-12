@@ -17,6 +17,20 @@ import {
   Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User, FileText
 } from 'lucide-react';
 
+interface HouseholdSummary {
+  id: string;
+  household_name?: string;
+  avatar_url?: string;
+  profile_image?: string;
+  photo_url?: string;
+  photos?: string[];
+  first_name?: string;
+  last_name?: string;
+  town?: string;
+  user?: { first_name: string; last_name: string };
+  user_id?: string;
+}
+
 interface HireRequest {
   id: string;
   listing_id?: string;
@@ -30,17 +44,7 @@ interface HireRequest {
   special_requirements?: string;
   created_at: string;
   updated_at: string;
-  household?: {
-    id: string;
-    household_name?: string;
-    avatar_url?: string;
-    town?: string;
-    user?: {
-      first_name: string;
-      last_name: string;
-    };
-    user_id?: string;
-  };
+  household?: HouseholdSummary;
 }
 
 interface HireContract {
@@ -54,17 +58,7 @@ interface HireContract {
   salary_frequency: string;
   status?: string;
   created_at: string;
-  household?: {
-    id: string;
-    household_name?: string;
-    avatar_url?: string;
-    town?: string;
-    user?: {
-      first_name: string;
-      last_name: string;
-    };
-    user_id?: string;
-  };
+  household?: HouseholdSummary;
 }
 
 interface Interest {
@@ -82,17 +76,7 @@ interface Interest {
   status?: string;
   viewed_at?: string;
   created_at: string;
-  household?: {
-    id: string;
-    household_name?: string;
-    avatar_url?: string;
-    town?: string;
-    user?: {
-      first_name: string;
-      last_name: string;
-    };
-    user_id?: string;
-  };
+  household?: HouseholdSummary;
 }
 
 interface EmploymentContract {
@@ -111,14 +95,7 @@ interface EmploymentContract {
   household_signer_name: string;
   househelp_signer_name: string;
   created_at: string;
-  household?: {
-    id: string;
-    household_name?: string;
-    avatar_url?: string;
-    town?: string;
-    user?: { first_name: string; last_name: string; };
-    user_id?: string;
-  };
+  household?: HouseholdSummary;
 }
 
 type TabType = 'requests' | 'work-history' | 'employment-contracts' | 'interests';
@@ -135,12 +112,17 @@ function normalizeHiringProfileRole(profileType?: string | null): HiringProfileR
 const getHouseholdName = (household?: HireRequest['household'] | HireContract['household'] | Interest['household']) => {
   if (!household) return 'Household';
   if (household.household_name) return household.household_name;
+  const directName = `${household.first_name || ''} ${household.last_name || ''}`.trim();
+  if (directName) return directName;
   if (household.user) {
     const name = `${household.user.first_name || ''} ${household.user.last_name || ''}`.trim();
     if (name) return name;
   }
   return 'Household';
 };
+
+const getHouseholdAvatar = (household?: HireRequest['household'] | HireContract['household'] | Interest['household']) =>
+  household?.avatar_url || household?.profile_image || household?.photo_url || household?.photos?.[0] || '';
 
 const getHouseholdInitials = (household?: HireRequest['household'] | HireContract['household'] | Interest['household']) => {
   const name = getHouseholdName(household);
@@ -850,8 +832,8 @@ export default function HousehelpHiringHistory() {
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                          {request.household?.avatar_url ? (
-                            <img src={request.household.avatar_url} alt={getHouseholdName(request.household)} className="w-full h-full object-cover" />
+                          {getHouseholdAvatar(request.household) ? (
+                            <img src={getHouseholdAvatar(request.household)} alt={getHouseholdName(request.household)} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(request.household)}</div>
                           )}
@@ -969,8 +951,8 @@ export default function HousehelpHiringHistory() {
                       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                            {ec.household?.avatar_url ? (
-                              <img src={ec.household.avatar_url} alt={getHouseholdName(ec.household)} className="w-full h-full object-cover" />
+                            {getHouseholdAvatar(ec.household) ? (
+                              <img src={getHouseholdAvatar(ec.household)} alt={getHouseholdName(ec.household)} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(ec.household)}</div>
                             )}
@@ -1042,8 +1024,8 @@ export default function HousehelpHiringHistory() {
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                          {contract.household?.avatar_url ? (
-                            <img src={contract.household.avatar_url} alt={getHouseholdName(contract.household)} className="w-full h-full object-cover" />
+                          {getHouseholdAvatar(contract.household) ? (
+                            <img src={getHouseholdAvatar(contract.household)} alt={getHouseholdName(contract.household)} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(contract.household)}</div>
                           )}
@@ -1117,8 +1099,8 @@ export default function HousehelpHiringHistory() {
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                          {interest.household?.avatar_url ? (
-                            <img src={interest.household.avatar_url} alt={getHouseholdName(interest.household)} className="w-full h-full object-cover" />
+                          {getHouseholdAvatar(interest.household) ? (
+                            <img src={getHouseholdAvatar(interest.household)} alt={getHouseholdName(interest.household)} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(interest.household)}</div>
                           )}
@@ -1286,8 +1268,8 @@ export default function HousehelpHiringHistory() {
                 </button>
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 rounded-full overflow-hidden bg-white/20 flex-shrink-0 ring-4 ring-white/30">
-                    {selectedInterest.household?.avatar_url ? (
-                      <img src={selectedInterest.household.avatar_url} alt={getHouseholdName(selectedInterest.household)} className="w-full h-full object-cover" />
+                    {getHouseholdAvatar(selectedInterest.household) ? (
+                      <img src={getHouseholdAvatar(selectedInterest.household)} alt={getHouseholdName(selectedInterest.household)} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
                         {getHouseholdInitials(selectedInterest.household)}

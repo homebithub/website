@@ -454,7 +454,7 @@ function NavigationContent() {
     return (
         <>
         <nav className="fixed inset-x-0 top-0 z-40 overflow-visible border-b border-primary-200/60 bg-gradient-to-br from-primary-100 via-white to-purple-200 shadow-lg shadow-purple-200/40 transition-all duration-300 dark:border-purple-500/20 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] dark:shadow-glow-sm">
-            <div className="hb-content-rail flex min-h-[56px] items-center justify-between sm:min-h-[60px]">
+            <div className="hb-content-rail relative flex min-h-[56px] items-center justify-between sm:min-h-[60px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
   <Link to="/" prefetch="intent" className="relative rounded-xl px-2 py-1 text-lg font-extrabold drop-shadow-md transition-all duration-300 hover:bg-primary-50 hover:shadow-lg hover:shadow-purple-300/50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md sm:text-xl">
@@ -467,7 +467,7 @@ function NavigationContent() {
 
                 {/* Public Navigation Links - Show on non-app hosts for all users */}
                 {!isAppHost && (
-                    <div className="hidden lg:flex items-center gap-2 ml-auto">
+                    <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 lg:flex">
                         {(user ? authLinks : navigation).map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
@@ -489,7 +489,7 @@ function NavigationContent() {
 
                 {/* App navigation for authenticated users on app subdomain */}
                 {isAppHost && user && (
-                    <div className="hidden lg:flex items-center gap-2 ml-auto">
+                    <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 lg:flex">
                         {authLinks.map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
@@ -511,7 +511,7 @@ function NavigationContent() {
                 )}
 
                 {/* Right section */}
-                <div className="relative ml-3 flex items-center gap-2">
+                <div className="relative ml-auto flex items-center gap-2">
 
                     {/* Notifications (logged-in only) */}
                     {user && (

@@ -1505,7 +1505,7 @@ export default function HiringHistory() {
                           <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-lg font-bold">
-                            {getHousehelpInitials(interest.househelp as any)}
+                            {displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || getHousehelpInitials(interest.househelp as any)}
                           </div>
                         )}
                       </div>
@@ -1639,12 +1639,12 @@ export default function HiringHistory() {
                       was wide: on a phone they landed on top of the applicant's
                       own name and the status beside it, covering both and
                       taking the taps meant for them. */}
-                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="mt-6 flex flex-wrap items-center gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <button
                         onClick={() => handleChatWithApplicant(interest)}
                         disabled={chatLoading}
-                        className="inline-flex items-center gap-2 rounded-full border border-purple-200/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
+                        className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-purple-200/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
                       >
                         {chatLoading ? (
                           <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
@@ -1680,7 +1680,7 @@ export default function HiringHistory() {
                         onClick={() =>
                           setHistoryFor((current) => (current === interest.id ? null : interest.id))
                         }
-                        className="inline-flex items-center gap-2 rounded-full border border-purple-200/60 bg-white px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/5 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                        className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-purple-200/60 bg-white px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/5 dark:text-purple-200 dark:hover:bg-purple-500/10"
                       >
                         <Clock className="h-4 w-4" />
                         <span>{historyFor === interest.id ? 'Hide history' : 'History'}</span>
@@ -1690,7 +1690,7 @@ export default function HiringHistory() {
                           <button
                             onClick={() => openReview(interest)}
                             title="Leave a review for this person"
-                            className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm transition-colors hover:bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20"
+                            className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm transition-colors hover:bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20"
                           >
                             <Star className="h-4 w-4" />
                             <span>Leave a review</span>
@@ -1699,7 +1699,7 @@ export default function HiringHistory() {
                             onClick={() => setTerminating(interest)}
                             disabled={shortlistLoading}
                             title="End this engagement"
-                            className="inline-flex items-center gap-2 rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                            className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
                           >
                             <Ban className="h-4 w-4" />
                             <span>End engagement</span>
@@ -1711,7 +1711,7 @@ export default function HiringHistory() {
                           onClick={() => handleRejectApplicant(interest)}
                           disabled={shortlistLoading}
                           title="Let them know you are not going ahead"
-                          className="inline-flex items-center gap-2 rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                          className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
                         >
                           <UserX className="h-4 w-4" />
                           <span>Reject</span>
@@ -1726,7 +1726,7 @@ export default function HiringHistory() {
                                 : handleAcceptInterest(interest)
                             }
                             disabled={contractCreating === interest.id}
-                            className="inline-flex items-center gap-2 rounded-xl bg-green-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-green-600"
+                            className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-green-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-green-600"
                           >
                             <UserCheck className="h-4 w-4" />
                             {advanceLabel}
@@ -1735,17 +1735,12 @@ export default function HiringHistory() {
                       ) : null}
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      {!canActOnInterest && (
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-300">
-                          Status: {statusLabel}
-                        </p>
-                      )}
+                    <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
                       {listing && (
                         <button
                           type="button"
                           onClick={() => setViewingJob(listing)}
-                          className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-1.5 text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30"
+                          className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-purple-300 px-4 py-1.5 text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30"
                         >
                           <Briefcase className="h-4 w-4" />
                           View job listing
@@ -1753,7 +1748,7 @@ export default function HiringHistory() {
                       )}
                       <button
                         onClick={() => handleViewInterest(interest)}
-                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-1.5 text-xs font-semibold text-white shadow-lg transition-colors hover:from-purple-700 hover:via-pink-700 hover:to-rose-500"
+                        className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-1.5 text-xs font-semibold text-white shadow-lg transition-colors hover:from-purple-700 hover:via-pink-700 hover:to-rose-500"
                       >
                         <Eye className="h-4 w-4" />
                         View profile

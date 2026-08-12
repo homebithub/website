@@ -45,7 +45,8 @@ export default function AccountReviewsPage() {
       })
       .catch((loadError) => {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Could not load your reviews.");
+          console.error("Could not load submitted reviews", loadError);
+          setError("We could not load your reviews right now. Please try again.");
         }
       })
       .finally(() => {

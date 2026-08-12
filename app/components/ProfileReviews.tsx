@@ -512,15 +512,15 @@ export default function ProfileReviews({
         <div className="rounded-2xl border border-purple-200 bg-white p-4 shadow-lg dark:border-purple-500/30 dark:bg-[#13131a] sm:p-5">
           <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">Review Summary</h3>
           
-          <div className="grid items-center gap-4 md:grid-cols-[0.8fr_1.2fr]">
+          <div className="grid items-center gap-4 md:grid-cols-[0.55fr_1.45fr]">
             {/* Overall Rating */}
-            <div className="text-center">
+            <div className="text-left">
               <div className="mb-2 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
                 <div className="text-2xl font-bold text-white">
                   {stats.average_rating.toFixed(1)}
                 </div>
               </div>
-              <div className="mb-2 flex justify-center">
+              <div className="mb-2 flex justify-start">
                 {renderStars(Math.round(stats.average_rating))}
               </div>
               <p className="text-xs font-medium text-gray-600 dark:text-gray-400">

@@ -2368,9 +2368,9 @@ export default function InboxPage() {
                 e.stopPropagation();
                 setShowEmojiPicker(!showEmojiPicker);
               }}
-              className="p-2 hover:bg-purple-100 dark:hover:bg-slate-800 rounded-full transition flex-shrink-0"
+              className="flex-shrink-0 rounded-full p-1.5 transition hover:bg-purple-100 dark:hover:bg-slate-800 sm:p-2"
             >
-              <FaceSmileIcon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              <FaceSmileIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 sm:h-6 sm:w-6" />
             </button>
             
             <textarea
@@ -2397,7 +2397,7 @@ export default function InboxPage() {
                 }
               }}
               placeholder="Type a message..."
-              className="min-h-[40px] min-w-0 max-h-[150px] flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-3 py-2 text-[16px] text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:px-4 sm:text-sm"
+              className="min-h-[36px] min-w-0 max-h-[150px] flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-2.5 py-1.5 text-[16px] leading-5 tracking-[-0.025em] text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:min-h-[40px] sm:px-4 sm:py-2 sm:text-sm sm:tracking-normal"
               autoComplete="off"
               rows={1}
             />
@@ -2405,9 +2405,9 @@ export default function InboxPage() {
             <button
               type="submit"
               disabled={!input.trim()}
-              className="p-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
+              className="flex-shrink-0 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 p-1.5 text-white transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50 sm:p-2"
             >
-              <PaperAirplaneIcon className="w-6 h-6" />
+              <PaperAirplaneIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
           </form>
           )}
