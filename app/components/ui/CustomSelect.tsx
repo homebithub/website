@@ -278,6 +278,7 @@ export default function CustomSelect({
       {isOpen && position && typeof document !== 'undefined' && createPortal(
         <div
           ref={panelRef}
+          data-custom-select-panel="true"
           // Fixed and portalled to the body, so no scrolling or overflow-hidden
           // ancestor can clip it. It is the topmost layer, since it may be
           // opened from inside a modal that is itself portalled to the body.

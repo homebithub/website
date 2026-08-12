@@ -693,7 +693,11 @@ export default function HouseholdJobsHome() {
       // The toggle is excluded so its own click is not counted twice: it would
       // close the panel here and immediately reopen it in the button's handler.
       const toggle = document.getElementById("household-listing-filters-toggle");
-      if (panel?.contains(target) || toggle?.contains(target)) return;
+      // CustomSelect menus are portalled to document.body to avoid clipping.
+      // Although they are outside the panel in the DOM, they are still part of
+      // this interaction and must not trigger the panel's outside-click close.
+      const insideSelectMenu = target instanceof Element && Boolean(target.closest('[data-custom-select-panel="true"]'));
+      if (panel?.contains(target) || toggle?.contains(target) || insideSelectMenu) return;
       setFiltersOpen(false);
     };
 
@@ -1035,8 +1039,12 @@ export default function HouseholdJobsHome() {
                 className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-purple-200/70 bg-white/80 px-3 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
               >
                 <SlidersHorizontal className="h-4 w-4" />
-                <span>Filters</span>
-                {activeFilterCount > 0 && (
+                <span>
+                  {!filtersOpen && activeFilterCount > 0
+                    ? `${activeFilterCount} ${activeFilterCount === 1 ? 'filter' : 'filters'} applied`
+                    : 'Filters'}
+                </span>
+                {filtersOpen && activeFilterCount > 0 && (
                   <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-600 px-1 text-[10px] text-white">
                     {activeFilterCount}
                   </span>

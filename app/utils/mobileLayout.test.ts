@@ -41,4 +41,15 @@ describe('mobile layout guardrails', () => {
     expect(househelpHome).toContain('hb-content-rail flex flex-col');
     expect(householdHome).toContain('hb-content-rail flex flex-col');
   });
+
+  it('keeps discovery filters open while choosing from portalled selects', () => {
+    const customSelect = source('app/components/ui/CustomSelect.tsx');
+    const househelpHome = source('app/components/HousehelpJobsHome.tsx');
+    const householdHome = source('app/components/HouseholdJobsHome.tsx');
+    expect(customSelect).toContain('data-custom-select-panel="true"');
+    expect(househelpHome).toContain('insideSelectMenu');
+    expect(householdHome).toContain('insideSelectMenu');
+    expect(househelpHome).toContain("'filters'} applied`");
+    expect(householdHome).toContain("'filters'} applied`");
+  });
 });
