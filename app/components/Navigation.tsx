@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from "react-router";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
@@ -9,7 +9,6 @@ import { useAccountChoiceStatus } from "~/hooks/useAccountChoiceStatus";
 import { useNotifications } from "~/hooks/useNotifications";
 import { useSSESubscriptionSafe } from "~/hooks/useSSESubscription";
 import { useWebSocketContextSafe } from "~/contexts/WebSocketContext";
-import NotificationsModal from "~/components/notifications/NotificationsModal";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import notificationsService from '~/services/grpc/notifications.service';
 import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
@@ -18,6 +17,8 @@ import { cachedRequest } from '~/utils/requestCache';
 
 const NAV_COUNT_STALE_MS = 2 * 60_000;
 const NAV_ADMIN_STALE_MS = 10 * 60_000;
+
+const NotificationsModal = lazy(() => import('~/components/notifications/NotificationsModal'));
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -816,7 +817,11 @@ function NavigationContent() {
             </div>
 
             {/* Notifications Modal */}
-            <NotificationsModal isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
+            {isNotificationsOpen && (
+                <Suspense fallback={null}>
+                    <NotificationsModal isOpen onClose={() => setIsNotificationsOpen(false)} />
+                </Suspense>
+            )}
 
         </nav>
         {/* A fixed header leaves normal document flow. Keep every route's first
