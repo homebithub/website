@@ -304,29 +304,28 @@ export default function HousehelpPublicProfile() {
         // replace, since anything set below would otherwise be dropped by
         // whichever of these resolves last.
         const targetUserId = rawUser?.id || rawProfile?.user_id;
-        if (targetUserId) {
-          try {
-            const docsData = await documentService.getUserDocuments(targetUserId, 'profile_photo');
-            const docs = docsData?.data || docsData?.documents || docsData || [];
-            const documentsArray = Array.isArray(docs) ? docs : [];
-            const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
-            if (photoUrls.length > 0) {
-              setProfile((current: any) => (current ? { ...current, photos: photoUrls } : current));
-            }
-          } catch (err) {
-            console.error('Failed to fetch profile photos:', err);
-          }
+        const photosPromise = targetUserId
+          ? documentService.getUserDocuments(targetUserId, 'profile_photo').catch((err) => {
+              console.error('Failed to fetch profile photos:', err);
+              return null;
+            })
+          : Promise.resolve(null);
+        const listingPromise = !queryOpenForWorkId && normalizedProfile.id
+          ? openForWorkService.getOpenForWorkByHousehelp(normalizedProfile.id, '').catch(() => null)
+          : Promise.resolve(null);
+
+        // Neither request depends on the other. Running them together removes a
+        // complete edge round trip from the time it takes the secondary profile
+        // controls to settle.
+        const [docsData, listing] = await Promise.all([photosPromise, listingPromise]);
+        const docs = docsData?.data || docsData?.documents || docsData || [];
+        const documentsArray = Array.isArray(docs) ? docs : [];
+        const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+        if (photoUrls.length > 0) {
+          setProfile((current: any) => (current ? { ...current, photos: photoUrls } : current));
         }
 
-        let shortlistTargetId = queryOpenForWorkId;
-        if (!shortlistTargetId && normalizedProfile.id) {
-          try {
-            const listing = await openForWorkService.getOpenForWorkByHousehelp(normalizedProfile.id, '');
-            shortlistTargetId = listing?.id || listing?.data?.id || null;
-          } catch {
-            shortlistTargetId = null;
-          }
-        }
+        const shortlistTargetId = queryOpenForWorkId || listing?.id || listing?.data?.id || null;
         setOpenForWorkId(shortlistTargetId || null);
 
         // Check if the open-for-work listing is shortlisted (only if viewing someone else's profile)
