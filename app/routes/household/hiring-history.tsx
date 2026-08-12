@@ -1166,14 +1166,15 @@ export default function HiringHistory() {
   // the eligibility rule is enforced. Sending them there beats a second copy of
   // the form that could disagree with it.
   const openReview = (interest: Interest) => {
-    const userId = househelpUserIdFor(interest);
-    if (!userId) {
+    const profileId = interest.househelp_id || interest.househelp?.id;
+    if (!profileId) {
       setError('We could not open a review for this person.');
       return;
     }
     navigate(
-      `/household/househelp/profile?userId=${encodeURIComponent(userId)}&review=1` +
+      `/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&review=1&from=hiring` +
         `&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`,
+      { state: { profileId, backTo: backToPath, backLabel: 'Back to Hiring' } },
     );
   };
 
