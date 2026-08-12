@@ -160,10 +160,10 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
   };
 
   return createPortal(
-    <div className="hb-modal-shell">
+    <div className="hb-modal-shell w-screen max-w-[100vw] overflow-x-hidden">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="hb-modal-panel sm:mx-4">
-        <div className="sticky top-0 bg-white dark:bg-[#13131a] border-b border-gray-200 dark:border-purple-500/20 px-6 py-4 flex items-center justify-between">
+      <div className="hb-modal-panel min-w-0 overflow-x-hidden sm:mx-4">
+        <div className="sticky top-0 z-10 flex min-w-0 items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-4 dark:border-purple-500/20 dark:bg-[#13131a] sm:px-6">
           <h2 className="text-base font-bold text-gray-900 dark:text-white">
             {listing ? "Update Open for Work" : "Go Open for Work"}
           </h2>
@@ -172,7 +172,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
+        <form onSubmit={handleSubmit} className="min-w-0 max-w-full space-y-5 overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
           {success && <SuccessAlert message={success} />}
           <p className="rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-100">
             Open for Work makes you searchable by households using the skills, availability and preferences below. You can have one listing at a time, and it stays online only while your subscription is active.
@@ -184,13 +184,13 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
           ) : null}
           <div>
             <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Job Types</label>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               {JOB_TYPES.map((type) => (
                 <button
                   key={type.value}
                   type="button"
                   onClick={() => toggleJobType(type.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition shadow-sm ${
+                  className={`min-w-0 w-full px-2 py-1.5 rounded-full text-xs font-semibold border transition shadow-sm sm:w-auto sm:px-3 ${
                     jobTypes.includes(type.value)
                       ? "bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-600 text-white border-transparent shadow-[0_0_12px_rgba(168,85,247,0.45)]"
                       : "bg-white/80 dark:bg-[#100a1c] text-gray-600 dark:text-gray-300 border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/10"
@@ -209,7 +209,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
               value={availableFrom}
               min={todayInputValue()}
               onChange={(e) => setAvailableFrom(e.target.value)}
-              className="mt-2 w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
+              className="mt-2 h-11 min-w-0 max-w-full w-full px-3 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-[16px] text-gray-900 dark:text-gray-100 sm:px-4 sm:text-sm"
             />
           </div>
 
@@ -248,8 +248,8 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
 
           <div>
             <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Salary Expectation</label>
-            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
+            <div className="mt-2 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="min-w-0">
                 <span className="block text-[11px] text-gray-500 dark:text-gray-400 mb-1">Minimum</span>
                 <input
                   type="number"
@@ -257,10 +257,10 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
                   value={salaryMin}
                   onChange={(e) => setSalaryMin(e.target.value)}
                   placeholder="KES"
-                  className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
+                  className="h-11 min-w-0 max-w-full w-full px-3 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-[16px] text-gray-900 dark:text-gray-100 sm:px-4 sm:text-sm"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="block text-[11px] text-gray-500 dark:text-gray-400 mb-1">Maximum</span>
                 <input
                   type="number"
@@ -268,15 +268,15 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
                   value={salaryMax}
                   onChange={(e) => setSalaryMax(e.target.value)}
                   placeholder="KES"
-                  className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
+                  className="h-11 min-w-0 max-w-full w-full px-3 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-[16px] text-gray-900 dark:text-gray-100 sm:px-4 sm:text-sm"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="block text-[11px] text-gray-500 dark:text-gray-400 mb-1">Rate</span>
                 <select
                   value={salaryFrequency}
                   onChange={(e) => setSalaryFrequency(e.target.value)}
-                  className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
+                  className="h-11 min-w-0 max-w-full w-full px-3 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-[16px] text-gray-900 dark:text-gray-100 sm:px-4 sm:text-sm"
                 >
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>

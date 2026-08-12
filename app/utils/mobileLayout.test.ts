@@ -86,4 +86,12 @@ describe('mobile layout guardrails', () => {
     expect(button).toContain('daysRemaining');
     expect(hiring).toContain('<OpenForWorkButton showStatus');
   });
+
+  it('constrains every open-for-work control to the mobile sheet', () => {
+    const modal = source('app/components/modals/OpenForWorkModal.tsx');
+    expect(modal).toContain('w-screen max-w-[100vw] overflow-x-hidden');
+    expect(modal).toContain('hb-modal-panel min-w-0 overflow-x-hidden');
+    expect(modal).toContain('grid min-w-0 grid-cols-2');
+    expect(modal.match(/min-w-0 max-w-full w-full/g)?.length).toBeGreaterThanOrEqual(4);
+  });
 });
