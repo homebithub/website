@@ -32,7 +32,7 @@ import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionRemind
 import CustomSelect from "~/components/ui/CustomSelect";
 import LocationPicker, { type LocationSelection } from "~/components/ui/LocationPicker";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
-import { Heart, ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, SlidersHorizontal, X } from "lucide-react";
 import { useAuth } from "~/contexts/useAuth";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
@@ -519,9 +519,11 @@ export default function HousehelpJobsHome() {
   // Open-only stays local: it reads status, which the response does carry, and
   // the toggle is meant to feel instant.
   const filteredJobs = useMemo(
-    // Only open roles. A closed job is not a result anyone wants.
-    () => jobs.filter(isJobOpen),
-    [jobs],
+    // Discovery only contains actionable roles. Applied jobs remain available
+    // under Hiring, where their status and history belong, instead of making
+    // this feed grow into a mixture of opportunities and past actions.
+    () => jobs.filter((job) => isJobOpen(job) && !appliedJobIds.has(jobKey(job)) && !job.has_applied),
+    [appliedJobIds, jobs],
   );
   const sortedJobs = useMemo(() => {
     if (!sortBy) return filteredJobs;
@@ -1280,7 +1282,7 @@ export default function HousehelpJobsHome() {
                               {job.match_reasons!.slice(0, 3).map((reason) => (
                                 <span
                                   key={reason}
-                                  className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium capitalize text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200"
+                                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium capitalize text-gray-800 dark:bg-white/10 dark:text-gray-100"
                                 >
                                   <span aria-hidden>✓</span>
                                   {reason.replace(/_/g, " ")}
@@ -1309,7 +1311,7 @@ export default function HousehelpJobsHome() {
                         </div>
                         <div className="flex items-start gap-2">
                           <span className={`px-3 py-1 text-xs font-semibold rounded-full ${isJobOpen(job)
-                            ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200"
+                            ? "bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-white"
                             : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300"}`}
                           >
                             {job.status || "open"}
@@ -1344,23 +1346,6 @@ export default function HousehelpJobsHome() {
                             >
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleShortlistJob(job);
-                              }}
-                              disabled={shortlistLoadingId === job.id}
-                              className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition ${shortlisted
-                                ? "border-pink-400 bg-pink-500 text-white"
-                                : "border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10"} disabled:opacity-60`}
-                              aria-label={shortlisted ? "Remove job from saved" : "Save job"}
-                            >
-                              {shortlistLoadingId === job.id ? (
-                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                              ) : (
-                                <Heart className={`w-4 h-4 ${shortlisted ? 'fill-current' : ''}`} />
-                              )}
-                            </button>
                           </div>
                         </div>
                       </div>
@@ -1386,7 +1371,7 @@ export default function HousehelpJobsHome() {
                           ))
                           : null}
                         {highlights.salary ? (
-                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-white">
                             {highlights.salary}
                           </span>
                         ) : null}
@@ -1401,25 +1386,6 @@ export default function HousehelpJobsHome() {
                           </span>
                         ) : null}
                       </div>
-
-                      {job.match_reasons && job.match_reasons.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {job.match_reasons.slice(0, 3).map((reason) => (
-                            <span
-                              key={reason}
-                              className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] dark:bg-emerald-500/10 dark:text-emerald-200"
-                            >
-                              {reason}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-
-                      {hasApplied && (
-                        <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200">
-                          You have already applied to this job.
-                        </div>
-                      )}
 
                       <div className="mt-4 flex items-center justify-between">
                         <span className="text-xs text-gray-400">Posted {formatTimeAgo(job.created_at)}</span>

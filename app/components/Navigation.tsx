@@ -475,6 +475,7 @@ export function Navigation() {
                                 className={`link relative rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-md' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-md'}`}
                             >
                                 {item.name}
+                                {'count' in item && item.name === 'Saved' && renderBadge((item as any).count)}
                                 {'count' in item && item.name === 'Inbox' && renderBadge((item as any).count)}
                                 {'count' in item && (item.href === '/household/hiring' || item.href === '/househelp/hiring') && renderBadge((item as any).count)}
                             </Link>
@@ -497,6 +498,7 @@ export function Navigation() {
                                 id={item.name === 'Saved' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
+                                {item.name === 'Saved' && renderBadge(savedCount)}
                                 {item.name === 'Inbox' && renderBadge(inboxCount)}
                                 {(item.href === '/household/hiring' || item.href === '/househelp/hiring') && renderBadge(hireRequestCount)}
                             </Link>
@@ -732,6 +734,11 @@ export function Navigation() {
                                                         <Menu.Item key={item.name}>{({ active }) => (
                                                             <Link to={item.href} className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-1 text-xs relative`}>
                                                                 <span>{item.name}</span>
+                                                                {item.name === 'Saved' && savedCount > 0 && (
+                                                                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
+                                                                        {savedCount > 9 ? '9+' : savedCount}
+                                                                    </span>
+                                                                )}
                                                                 {item.name === 'Inbox' && inboxCount > 0 && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
                                                                         {inboxCount > 9 ? '9+' : inboxCount}

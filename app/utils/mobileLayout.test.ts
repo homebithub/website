@@ -102,4 +102,12 @@ describe('mobile layout guardrails', () => {
     expect(home).toContain('mb-3 min-w-0 max-w-full sm:hidden');
     expect(button).toContain('max-w-full flex flex-col gap-2');
   });
+
+  it('keeps the jobs feed focused on unapplied opportunities with one save action', () => {
+    const home = source('app/components/HousehelpJobsHome.tsx');
+    const navigation = source('app/components/Navigation.tsx');
+    expect(home).toContain('!appliedJobIds.has(jobKey(job)) && !job.has_applied');
+    expect(home).not.toContain('<Heart');
+    expect(navigation).toContain("item.name === 'Saved' && renderBadge(savedCount)");
+  });
 });
