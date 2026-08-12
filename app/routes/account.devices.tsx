@@ -52,7 +52,96 @@ function deviceIcon(type: string) {
  * Unknown types fall back to the raw value with its underscores removed, so a
  * new event added later is legible rather than invisible.
  */
-function activityLabel(eventType: string): string {
+function parseActivityMetadata(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  if (typeof value !== "string" || !value.trim()) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function words(value: string): string {
+  return value
+    .replace(/Service$/i, "")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_./-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function mutationLabel(service: string, action: string): string {
+  const serviceName = words(service).replace(/^(homebit|auth)\s+/, "");
+  const actionName = words(action);
+  const exact: Record<string, string> = {
+    "mark helpful": "Marked a review as helpful",
+    "unmark helpful": "Removed a helpful mark from a review",
+    "terminate contract": "Ended an employment contract",
+    "terminate engagement": "Ended an engagement",
+    "create review": "Submitted a review",
+    "submit review": "Submitted a review",
+    "respond review": "Responded to a review",
+    "update profile": "Updated profile",
+    "change password": "Changed password",
+    "upload document": "Uploaded a verification document",
+    "submit kyc": "Submitted identity verification",
+  };
+  if (exact[actionName]) return exact[actionName];
+
+  const verbs: Array<[string, string]> = [
+    ["unshortlist", "Removed from shortlist"],
+    ["shortlist", "Shortlisted"],
+    ["withdraw", "Withdrew"],
+    ["terminate", "Ended"],
+    ["unmark", "Removed"],
+    ["respond", "Responded to"],
+    ["submit", "Submitted"],
+    ["approve", "Approved"],
+    ["reject", "Declined"],
+    ["accept", "Accepted"],
+    ["reopen", "Reopened"],
+    ["publish", "Published"],
+    ["complete", "Completed"],
+    ["transition", "Changed"],
+    ["update", "Updated"],
+    ["create", "Created"],
+    ["delete", "Deleted"],
+    ["remove", "Removed"],
+    ["upload", "Uploaded"],
+    ["invite", "Sent"],
+    ["cancel", "Cancelled"],
+    ["change", "Changed"],
+    ["revoke", "Revoked"],
+    ["close", "Closed"],
+    ["answer", "Answered"],
+    ["save", "Saved"],
+    ["mark", "Marked"],
+    ["set", "Changed"],
+    ["add", "Added"],
+    ["join", "Joined"],
+    ["leave", "Left"],
+    ["hire", "Hired"],
+  ];
+  for (const [prefix, pastTense] of verbs) {
+    if (actionName === prefix || actionName.startsWith(`${prefix} `)) {
+      const subject = actionName.slice(prefix.length).trim() || serviceName;
+      return `${pastTense}${subject ? ` ${subject}` : " account details"}`;
+    }
+  }
+  return actionName
+    ? actionName.charAt(0).toUpperCase() + actionName.slice(1)
+    : "Account settings changed";
+}
+
+function activityLabel(item: any): string {
+  const eventType = String(item?.activityType || item?.action || item?.eventType || "");
   const labels: Record<string, string> = {
     registered: "Signed in from this device",
     confirmed: "You approved this device",
@@ -65,6 +154,14 @@ function activityLabel(eventType: string): string {
     activity: "Used this device",
   };
   if (labels[eventType]) return labels[eventType];
+  if (eventType === "account_mutation") {
+    const metadata = parseActivityMetadata(item?.metadata || item?.metadataJson || item?.details);
+    const rpc = String(metadata.rpc || "");
+    const rpcParts = rpc.split("/").filter(Boolean);
+    const service = String(metadata.service || rpcParts.at(-2) || "");
+    const action = String(metadata.action || rpcParts.at(-1) || "");
+    return mutationLabel(service, action);
+  }
   const cleaned = String(eventType || "").replace(/_/g, " ").trim();
   return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : "Account activity";
 }
@@ -418,9 +515,7 @@ export default function DevicesPage() {
                                   className="flex flex-col justify-between gap-1 rounded-xl bg-purple-50/70 px-3 py-2 text-xs dark:bg-purple-500/10 sm:flex-row"
                                 >
                                   <span className="font-medium text-gray-800 dark:text-gray-200">
-                                    {activityLabel(
-                                      item.activityType || item.action || item.eventType || "",
-                                    )}
+                                    {activityLabel(item)}
                                   </span>
                                   <span className="text-gray-500 dark:text-gray-400">
                                     {[occurredAt?.toLocaleString(), item.ipAddress, item.location].filter(Boolean).join(" · ")}
