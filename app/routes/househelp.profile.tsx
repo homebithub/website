@@ -477,7 +477,7 @@ export default function HousehelpProfile() {
         />
       )}
 
-      <ReferralCodeCard className="rounded-2xl border border-purple-200/40 dark:border-purple-500/30" />
+      <ReferralCodeCard className="mb-4 rounded-2xl border border-purple-200/40 dark:border-purple-500/30" />
 
       {/* Profile Photos */}
       <div id="profile-photos" className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
