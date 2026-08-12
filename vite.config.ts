@@ -21,7 +21,7 @@ function grpcCjsPlugin(): Plugin {
     transform(code, id) {
       // Only run in dev serve — production build uses Rollup's commonjsOptions instead
       if (isBuild) return null;
-      if (!id.includes('/grpc/generated/') || !id.endsWith('.js')) return null;
+      if ((!id.includes('/grpc/generated/') && !id.includes('/grpc/lite/')) || !id.endsWith('.js')) return null;
 
       // Collect all require() calls and replace with ESM import references
       const imports: string[] = [];
@@ -73,7 +73,7 @@ export default defineConfig({
     target: "es2022",
     minify: "esbuild",
     commonjsOptions: {
-      include: [/node_modules/, /app\/grpc\/generated/],
+      include: [/node_modules/, /app\/grpc\/(?:generated|lite)/],
       transformMixedEsModules: true,
     },
     rollupOptions: {

@@ -1,4 +1,4 @@
-import { profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { profileReadService as grpcProfileService } from '~/services/grpc/profileRead.service';
 import { cachedRequest } from '~/utils/requestCache';
 
 export type HouseholdProfileLike = {

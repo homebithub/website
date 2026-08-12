@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package auth;
+
+import "google/protobuf/struct.proto";
+
+// Browser-only wire contract for public profile reads. It deliberately mirrors
+// the relevant methods in auth.proto without importing the 1.4 MB monolithic
+// generated message module.
+service ProfileService {
+  rpc GetCurrentHouseholdProfile(UserIdRequest) returns (JsonResponse);
+  rpc GetHouseholdByUserID(UserIdRequest) returns (JsonResponse);
+  rpc SearchHouseholds(SearchRequest) returns (JsonResponse);
+  rpc GetCurrentHousehelpProfile(UserIdRequest) returns (JsonResponse);
+  rpc GetHousehelpByID(IdRequest) returns (JsonResponse);
+  rpc GetHousehelpByUserID(UserIdRequest) returns (JsonResponse);
+  rpc GetHousehelpProfileWithUser(IdRequest) returns (JsonResponse);
+  rpc SearchHousehelps(SearchRequest) returns (JsonResponse);
+}
+
+message IdRequest {
+  string id = 1;
+  string user_id = 2;
+}
+
+message UserIdRequest {
+  string user_id = 1;
+  string profile_type = 2;
+}
+
+message SearchRequest {
+  string user_id = 1;
+  string profile_type = 2;
+  google.protobuf.Struct filters = 3;
+}
+
+message JsonResponse {
+  google.protobuf.Struct data = 1;
+}
