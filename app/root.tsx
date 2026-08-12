@@ -82,6 +82,17 @@ export async function action() {
 
 export default function App() {
     const { ENV } = useLoaderData<typeof loader>() || { ENV: { GOOGLE_CLIENT_ID: "", GATEWAY_API_BASE_URL: "" } };
+    const apiOrigins = Array.from(new Set([
+        ENV.GATEWAY_API_BASE_URL,
+        ENV.AUTH_API_BASE_URL,
+        ENV.NOTIFICATIONS_API_BASE_URL,
+    ].filter(Boolean).map((value) => {
+        try {
+            return new URL(value).origin;
+        } catch {
+            return '';
+        }
+    }).filter(Boolean)));
     return (
         <html lang="en" className="h-full" suppressHydrationWarning>
             <head>
@@ -89,8 +100,15 @@ export default function App() {
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <Meta/>
                 <Links/>
-                {/* Google Identity Services */}
-                <script src="https://accounts.google.com/gsi/client" async defer></script>
+                {/* Open the API connection while the browser parses the page.
+                    Authenticated screens request it immediately after hydration,
+                    so DNS/TCP/TLS should not sit on their critical path. */}
+                {apiOrigins.map((origin) => (
+                    <React.Fragment key={origin}>
+                        <link rel="dns-prefetch" href={origin} />
+                        <link rel="preconnect" href={origin} crossOrigin="anonymous" />
+                    </React.Fragment>
+                ))}
                 <link rel="icon" type="image/x-icon" href="/favicon.ico" />
                 <link rel="icon" href="/logos/logo-dark.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" />
                 <link rel="icon" href="/logos/logo-light.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" />
