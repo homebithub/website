@@ -941,8 +941,12 @@ export default function HiringHistory() {
       const linkedContract = employmentContractMap[`application:${row.id}`] ||
         employmentContractMap[`listing-househelp:${listingId}:${househelpUserId}`];
       const linkedStatus = String(linkedContract?.storage_status || linkedContract?.status || '').toLowerCase();
-      if (['active', 'signed_by_both', 'fully_signed', 'completed'].includes(linkedStatus)) {
+      if (['active', 'signed_by_both', 'fully_signed'].includes(linkedStatus)) {
         groups.hired.push(row);
+        continue;
+      }
+      if (['completed', 'terminated', 'ended', 'expired', 'cancelled'].includes(linkedStatus)) {
+        groups.closed.push(row);
         continue;
       }
       // A hire that has ended belongs with the finished work, not with the
@@ -1466,10 +1470,11 @@ export default function HiringHistory() {
               const contractStatus = String(
                 existingContract?.storage_status || existingContract?.status || '',
               ).toLowerCase();
-              const hasCurrentContract = [
-                'draft', 'forwarded', 'partially_signed', 'pending_househelp',
-                'active', 'signed_by_both', 'fully_signed',
-              ].includes(contractStatus);
+              // A contract is unique to this application/relationship for its
+              // entire lifecycle. Ending or completing it must not resurrect
+              // "Send contract" on the same application; a new engagement
+              // starts from a new listing/request, just as a new order would.
+              const hasExistingContract = Boolean(existingContract);
               const isHired =
                 (interest.status === 'approved' || ['active', 'signed_by_both', 'fully_signed'].includes(contractStatus)) &&
                 !endedEngagements.has(househelpUserId);
@@ -1483,7 +1488,7 @@ export default function HiringHistory() {
               // false for every row ever rendered and the buttons under it had
               // never once appeared.
               const canActOnInterest =
-                (interest.status === 'shortlisted' || interest.status === 'accepted') && !hasCurrentContract;
+                (interest.status === 'shortlisted' || interest.status === 'accepted') && !hasExistingContract;
               // What the next step actually is, named as the household would
               // name it: an offer to somebody set aside, a contract to somebody
               // who has already said yes.
