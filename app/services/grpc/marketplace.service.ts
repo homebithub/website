@@ -4,6 +4,10 @@ import structPb from 'google-protobuf/google/protobuf/struct_pb.js';
 
 import { GRPC_WEB_BASE_URL, callWithAuthRetry } from './client';
 import { getStoredAccessToken, getStoredProfileType, getStoredUserId } from '~/utils/authStorage';
+import { cachedRequest, invalidateCached } from '~/utils/requestCache';
+
+const BROWSE_STALE_MS = 30_000;
+const SAVED_STALE_MS = 2 * 60_000;
 
 const pb = (marketplacePbModule as any).default ?? marketplacePbModule;
 const grpc = (marketplaceGrpcModule as any).default ?? marketplaceGrpcModule;
@@ -63,16 +67,26 @@ export const marketplaceShortlistService = {
     request.setUserId(resolveUserId(userId));
     request.setProfileType(profileType);
     request.setData(StructClass.fromJavaScript(data));
-    return responseData(await call(callback => shortlistClient.createShortlist(request, metadata(), callback)));
+    const response = responseData(await call(callback => shortlistClient.createShortlist(request, metadata(), callback)));
+    invalidateCached(`marketplace:shortlist:${resolveUserId(userId)}:`);
+    invalidateCached('nav:saved:');
+    return response;
   },
   async deleteShortlist(id: string, userId = ''): Promise<void> {
     const request = new pb.IdRequest();
     request.setId(id);
     request.setUserId(resolveUserId(userId));
     await call(callback => shortlistClient.deleteShortlist(request, metadata(), callback));
+    invalidateCached(`marketplace:shortlist:${resolveUserId(userId)}:`);
+    invalidateCached('nav:saved:');
   },
   async listByHousehold(userId: string, profileType = ''): Promise<any> {
-    return responseData(await call(callback => shortlistClient.listByHousehold(userRequest(userId, profileType), metadata(), callback)));
+    const resolved = resolveUserId(userId);
+    return cachedRequest(
+      `marketplace:shortlist:${resolved}:${profileType}`,
+      async () => responseData(await call(callback => shortlistClient.listByHousehold(userRequest(resolved, profileType), metadata(), callback))),
+      { maxAgeMs: SAVED_STALE_MS },
+    );
   },
   async getShortlistCount(userId: string, profileType = ''): Promise<{ count: number }> {
     const response: any = await call(callback => shortlistClient.getShortlistCount(userRequest(userId, profileType), metadata(), callback));
@@ -126,14 +140,22 @@ export const marketplaceJobService = {
     if (filters?.match_candidates_for_profile) {
       params.set('match_candidates_for_profile', String(filters.match_candidates_for_profile));
     }
-    const payload = await jobListingsApi(`?${params.toString()}`);
-    return { data: normalizeArray(payload.data ?? payload) };
+    const query = params.toString();
+    return cachedRequest(
+      `marketplace:search:${query}`,
+      async () => {
+        const payload = await jobListingsApi(`?${query}`);
+        return { data: normalizeArray(payload.data ?? payload) };
+      },
+      { maxAgeMs: BROWSE_STALE_MS },
+    );
   },
   async applyForJob(id: string, serviceProviderId = '', message = ''): Promise<any> {
     const payload = await jobListingsApi('', {
       method: 'POST',
       body: JSON.stringify({ action: 'apply', id, service_provider_id: serviceProviderId, message }),
     });
+    invalidateCached('marketplace:search:');
     return payload.data ?? payload;
   },
 };
