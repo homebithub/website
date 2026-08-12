@@ -311,7 +311,7 @@ export function ProfileAccountSummary({
           </div>
         </div>
 
-        <div className="min-w-[220px]">
+        {(!progress || completionPercent < 100) && <div className="min-w-[220px]">
           <div className="mb-2 flex items-center justify-between text-xs font-semibold text-purple-700 dark:text-purple-300">
             <span>Profile completion</span>
             <span>
@@ -329,7 +329,7 @@ export function ProfileAccountSummary({
               ? 'Profile completion is temporarily unavailable'
               : `${completedItems} of ${totalItems} profile requirements complete`}
           </p>
-        </div>
+        </div>}
       </div>
 
       {saveMessage ? (

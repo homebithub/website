@@ -703,6 +703,16 @@ export default function HouseholdProfile() {
         fallbackProfileType="household"
       />
 
+      {progress && Number(progress.completion_percentage) < 100 && (
+        <ProfileRequirementsChecklist
+          missing={progress.missing || []}
+          completedItems={progress.completed_items}
+          totalItems={progress.total_items}
+          percentage={progress.completion_percentage}
+          onResolve={handleResolveRequirement}
+        />
+      )}
+
       <ReferralCodeCard distinguishFrom="household code" />
 
       {/* Household Invitation Code */}
@@ -1071,13 +1081,6 @@ export default function HouseholdProfile() {
         )}
       </div>
 
-      <ProfileRequirementsChecklist
-        missing={progress?.missing || []}
-        completedItems={progress?.completed_items}
-        totalItems={progress?.total_items}
-        percentage={progress?.completion_percentage}
-        onResolve={handleResolveRequirement}
-      />
     </div>
       </main>
       </PurpleThemeWrapper>

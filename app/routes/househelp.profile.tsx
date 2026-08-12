@@ -467,6 +467,18 @@ export default function HousehelpProfile() {
         fallbackProfileType="househelp"
       />
 
+      {progress && Number(progress.completion_percentage) < 100 && (
+        <ProfileRequirementsChecklist
+          missing={progress.missing || []}
+          completedItems={progress.completed_items}
+          totalItems={progress.total_items}
+          percentage={progress.completion_percentage}
+          onResolve={handleResolveRequirement}
+        />
+      )}
+
+      <ReferralCodeCard className="rounded-2xl border border-purple-200/40 dark:border-purple-500/30" />
+
       {/* Profile Photos */}
       <div id="profile-photos" className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
@@ -600,14 +612,6 @@ export default function HousehelpProfile() {
 
       <CertificationDocuments profileId={profile.id} />
 
-      <ProfileRequirementsChecklist
-        missing={progress?.missing || []}
-        completedItems={progress?.completed_items}
-        totalItems={progress?.total_items}
-        percentage={progress?.completion_percentage}
-        onResolve={handleResolveRequirement}
-      />
-
       {profile.user_id && (
         <section className="border-t border-purple-200/40 bg-white p-6 dark:border-purple-500/30 dark:bg-[#13131a]">
           <h2 className="mb-4 text-sm font-semibold text-purple-700 dark:text-purple-300">
@@ -620,8 +624,6 @@ export default function HousehelpProfile() {
           />
         </section>
       )}
-
-      <ReferralCodeCard className="rounded-2xl border border-purple-200/40 dark:border-purple-500/30" />
 
       <EditSectionModal
         isOpen={editingLocation}

@@ -1,4 +1,3 @@
-import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import { ArrowRightIcon } from '@heroicons/react/24/outline';
 import type { MissingRequirement } from '~/hooks/useOnboardingProgress';
 import { profileFeatureLabel } from '~/utils/profileFeatures';
@@ -29,6 +28,10 @@ export function ProfileRequirementsChecklist({
 }: ProfileRequirementsChecklistProps) {
   const complete = missing.length === 0;
 
+  if (complete || (typeof percentage === 'number' && percentage >= 100)) {
+    return null;
+  }
+
   return (
     <div className="bg-white p-6 border-t border-purple-200/40 dark:bg-[#13131a] dark:border-purple-500/30">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -50,13 +53,18 @@ export function ProfileRequirementsChecklist({
         )}
       </div>
 
-      {complete ? (
-        <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-xs font-medium text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-300">
-          <CheckCircleIcon className="h-4 w-4 shrink-0" />
-          Nothing outstanding.
+      {typeof percentage === 'number' && (
+        <div className="mb-4" aria-label={`Profile ${percentage}% complete`}>
+          <div className="h-2 overflow-hidden rounded-full bg-purple-100 dark:bg-purple-950">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all"
+              style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
+            />
+          </div>
         </div>
-      ) : (
-        <ul className="space-y-2">
+      )}
+
+      <ul className="space-y-2">
           {missing.map((requirement) => (
             <li key={requirement.id}>
               <button
@@ -84,8 +92,7 @@ export function ProfileRequirementsChecklist({
               </button>
             </li>
           ))}
-        </ul>
-      )}
+      </ul>
     </div>
   );
 }
