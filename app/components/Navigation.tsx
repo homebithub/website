@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router";
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon } from "@heroicons/react/20/solid";
+import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { API_BASE_URL } from "~/config/api";
@@ -712,6 +712,15 @@ function NavigationContent() {
                                             )}
                                         </Menu.Item>
                                     )}
+
+                                    {/* Theme Toggle in Mobile Menu */}
+                                    <Menu.Item>
+                                      {({ active }) => (
+                                        <button type="button" onClick={() => window.dispatchEvent(new Event('open-support-chat'))} className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-primary-700 dark:text-purple-400'} flex w-[calc(100%-16px)] items-center gap-2 rounded-xl px-5 py-2 text-base mx-2`}>
+                                          <ChatBubbleLeftRightIcon className="h-5 w-5" /> Help & support
+                                        </button>
+                                      )}
+                                    </Menu.Item>
 
                                     {/* Theme Toggle in Mobile Menu */}
                                     <div className="px-5 py-3 flex items-center justify-between">
