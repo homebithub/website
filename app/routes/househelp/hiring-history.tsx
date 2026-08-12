@@ -248,6 +248,7 @@ export default function HousehelpHiringHistory() {
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [showInterestModal, setShowInterestModal] = useState(false);
   const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
+  const [historyFor, setHistoryFor] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
@@ -1102,6 +1103,29 @@ export default function HousehelpHiringHistory() {
                           </button>
                         )}
                       </div>
+                    </div>
+                    {historyFor === interest.id && (
+                      <div className="mt-4 rounded-2xl border border-purple-200 bg-purple-50/50 p-4 dark:border-purple-500/20 dark:bg-purple-950/20">
+                        <p className="mb-3 text-xs font-bold uppercase tracking-wide text-purple-700 dark:text-purple-200">
+                          Application history
+                        </p>
+                        <ApplicationHistory
+                          applicationId={interest.id}
+                          actorProfileId={getStoredUserProfileId() || ''}
+                          viewer="househelp"
+                        />
+                      </div>
+                    )}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setHistoryFor((current) => current === interest.id ? null : interest.id)}
+                        aria-expanded={historyFor === interest.id}
+                        className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-1 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30"
+                      >
+                        <Clock className="h-4 w-4" aria-hidden />
+                        {historyFor === interest.id ? 'Hide history' : 'View application history'}
+                      </button>
                     </div>
                   </div>
                 ))}
