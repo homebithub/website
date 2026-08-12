@@ -9,11 +9,12 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import JobPostModal from '~/components/modals/JobPostModal';
 import { useSSEContextSafe } from '~/contexts/SSEContext';
-import { buildIdentifierMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
+import { buildApplicationContractMap, buildIdentifierMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { ApplicationHistory } from '~/components/hiring/ApplicationHistory';
+import { ListingDetails } from '~/components/listing/ListingDetails';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
 
@@ -278,6 +279,7 @@ export default function HiringHistory() {
   const [cancelRequest, setCancelRequest] = useState<HireRequest | null>(null);
   const [showJobModal, setShowJobModal] = useState(false);
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
+  const [viewingJob, setViewingJob] = useState<JobPosting | null>(null);
   const [jobToDelete, setJobToDelete] = useState<JobPosting | null>(null);
   const [jobActionLoading, setJobActionLoading] = useState<string | null>(null);
   const [jobsSuccess, setJobsSuccess] = useState<string | null>(null);
@@ -464,7 +466,9 @@ export default function HiringHistory() {
       try {
         const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
         const items = extractEnvelopeArray<any>(raw);
-        setEmploymentContractMap(buildIdentifierMap(items, getHousehelpCandidateIds));
+        const next = buildIdentifierMap(items, getHousehelpCandidateIds);
+        Object.assign(next, buildApplicationContractMap(items));
+        setEmploymentContractMap(next);
       } catch (err) {
         // Non-critical
       }
@@ -747,6 +751,8 @@ export default function HiringHistory() {
       });
       if (contractId) params.set('hire_contract_id', String(contractId));
       if (interest.househelp_id) params.set('househelp_id', String(interest.househelp_id));
+      params.set('application_id', interest.id);
+      if ((interest as any).listing_id) params.set('listing_id', String((interest as any).listing_id));
 
       if (listing) {
         const posted = listingHighlights(listing).salary;
@@ -929,6 +935,12 @@ export default function HiringHistory() {
       applicants: [], shortlisted: [], awaiting: [], hired: [], closed: [],
     };
     for (const row of applicants) {
+      const linkedContract = employmentContractMap[`application:${row.id}`];
+      const linkedStatus = String(linkedContract?.storage_status || linkedContract?.status || '').toLowerCase();
+      if (['active', 'signed_by_both', 'completed'].includes(linkedStatus)) {
+        groups.hired.push(row);
+        continue;
+      }
       // A hire that has ended belongs with the finished work, not with the
       // current work, whatever the application still says.
       //
@@ -953,7 +965,7 @@ export default function HiringHistory() {
       }
     }
     return groups;
-  }, [applicants, endedEngagements, househelpUserIdFor]);
+  }, [applicants, employmentContractMap, endedEngagements, househelpUserIdFor]);
 
   // The nav badge counts what needs the household's attention: new applicants
   // plus anyone who has accepted and is waiting on their approval.
@@ -981,7 +993,7 @@ export default function HiringHistory() {
       { key: 'applicants', label: 'Applicants', count: applicantsByTab.applicants.length },
       { key: 'shortlisted', label: 'Shortlisted', count: applicantsByTab.shortlisted.length },
       { key: 'awaiting', label: 'Needs your reply', count: applicantsByTab.awaiting.length },
-      { key: 'hired', label: 'Hired' },
+      { key: 'hired', label: 'Contracts' },
       { key: 'closed', label: 'Closed' },
     ],
     [applicantsByTab],
@@ -1402,6 +1414,9 @@ export default function HiringHistory() {
         {!loading && activeTab !== 'jobs' && visibleApplicants.length > 0 && (
           <div className="space-y-5">
             {visibleApplicants.map((interest) => {
+              const listing = jobs.find(
+                (job) => String(job.id) === String((interest as any).listing_id ?? ''),
+              );
               const profileId = interest.househelp_id || interest.househelp?.id;
               const profile = profileId ? profilesById[profileId] : undefined;
               const firstName = profile?.first_name || interest.househelp?.first_name || interest.househelp?.user?.first_name;
@@ -1436,10 +1451,11 @@ export default function HiringHistory() {
               // question has been settled and offering it again is offering to
               // go backwards — which the state machine will not do anyway.
               const canShortlist = interest.status === 'initiated';
-              const existingContract = findByAnyIdentifier(
-                employmentContractMap,
-                getHousehelpCandidateIds(interest),
-              );
+              // Applications are per listing. Matching on the househelp alone
+              // incorrectly lets a contract for another advert control this
+              // card, and also fails to enforce the one-contract-per-application
+              // rule. The API exposes this relationship directly.
+              const existingContract = employmentContractMap[`application:${interest.id}`];
               const contractStatus = String(
                 existingContract?.storage_status || existingContract?.status || '',
               ).toLowerCase();
@@ -1724,6 +1740,16 @@ export default function HiringHistory() {
                         <p className="text-xs font-medium text-gray-500 dark:text-gray-300">
                           Status: {statusLabel}
                         </p>
+                      )}
+                      {listing && (
+                        <button
+                          type="button"
+                          onClick={() => setViewingJob(listing)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-1.5 text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30"
+                        >
+                          <Briefcase className="h-4 w-4" />
+                          View job listing
+                        </button>
                       )}
                       <button
                         onClick={() => handleViewInterest(interest)}
@@ -2146,6 +2172,17 @@ export default function HiringHistory() {
   job={editingJob}
   onSaved={handleJobSaved}
 />
+{viewingJob && (
+  <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingJob(null)}>
+    <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white">{viewingJob.title || 'Job listing'}</h2>
+        <button type="button" onClick={() => setViewingJob(null)} className="rounded-full border border-purple-300 p-2 text-purple-700 dark:border-purple-600 dark:text-purple-200" aria-label="Close job listing"><XCircle className="h-4 w-4" /></button>
+      </div>
+      <ListingDetails listing={viewingJob as any} emptyMessage="This job listing has no additional details." />
+    </div>
+  </div>
+)}
 <ConfirmDialog
   isOpen={!!jobToDelete}
   title="Delete Job Posting"

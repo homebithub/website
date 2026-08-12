@@ -60,6 +60,8 @@ export default function EmploymentContractPage() {
   const contractId = searchParams.get('id');
   const househelpId = searchParams.get('househelp_id');
   const hireContractId = searchParams.get('hire_contract_id');
+  const applicationId = searchParams.get('application_id');
+  const listingId = searchParams.get('listing_id');
   const backTo = searchParams.get('backTo') || (contractId ? '/household/employment-contracts' : '/household/hiring');
   const backLabel = searchParams.get('backLabel') || (contractId ? 'Back to Contracts' : 'Back to Hiring');
   const printRef = useRef<HTMLDivElement>(null);
@@ -322,10 +324,17 @@ export default function EmploymentContractPage() {
         custom_clauses: customClauses.filter(c => c.trim()),
       };
       if (hireContractId) body.hire_contract_id = hireContractId;
+      if (applicationId) body.application_id = applicationId;
+      if (listingId) body.listing_id = listingId;
       if (startDate) body.start_date = new Date(startDate).toISOString();
       if (endDate) body.end_date = new Date(endDate).toISOString();
 
-      const data = await employmentContractService.createEmploymentContract('', body);
+      // CreateFromHireRequest has already created the one contract attached to
+      // this application. Configure that draft instead of creating an unrelated
+      // second engagement every time this form is submitted.
+      const data = hireContractId
+        ? await employmentContractService.updateEmploymentContract(hireContractId, '', body)
+        : await employmentContractService.createEmploymentContract('', body);
       const newContract = data?.data || data;
       setContract(newContract);
       setViewMode('preview');

@@ -9,7 +9,7 @@ import { ApplicationHistory } from '~/components/hiring/ApplicationHistory';
 import { OpenForWorkButton } from '~/components/OpenForWorkButton';
 import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
-import { buildIdentifierMap, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
+import { buildApplicationContractMap, buildIdentifierMap, collapseApplicationContracts, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
@@ -42,6 +42,7 @@ interface HireRequest {
 
 interface HireContract {
   id: string;
+  listing_id?: string;
   household_id: string;
   job_type?: string;
   start_date?: string;
@@ -65,6 +66,7 @@ interface HireContract {
 
 interface Interest {
   id: string;
+  listing_id?: string;
   househelp_id: string;
   household_id: string;
   /** The job this application is against, as the household posted it. */
@@ -92,6 +94,8 @@ interface Interest {
 
 interface EmploymentContract {
   id: string;
+  application_id?: string;
+  listing_id?: string;
   household_id: string;
   househelp_id: string;
   status?: string;
@@ -248,6 +252,7 @@ export default function HousehelpHiringHistory() {
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [showInterestModal, setShowInterestModal] = useState(false);
+  const [viewingListing, setViewingListing] = useState<Record<string, any> | null>(null);
   const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
   const [historyFor, setHistoryFor] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
@@ -342,6 +347,7 @@ export default function HousehelpHiringHistory() {
             const rows = raw?.data?.data ?? raw?.data ?? raw ?? [];
             return (Array.isArray(rows) ? rows : []).map((row: any): HireContract => ({
               id: String(row?.id ?? ''),
+              listing_id: row?.listing_id ? String(row.listing_id) : undefined,
               household_id: String(row?.household_profile_id ?? ''),
               job_type: row?.engagement_type || row?.job_type,
               start_date: row?.start_date,
@@ -376,8 +382,9 @@ export default function HousehelpHiringHistory() {
     try {
       const raw = await employmentContractService.listEmploymentContracts('', undefined, limit, offset);
       const items = extractEnvelopeArray<EmploymentContract>(raw);
-      setEmploymentContracts(items);
-      setEmploymentContractsTotal(extractTotal(raw, items.length));
+      const uniqueItems = collapseApplicationContracts(items);
+      setEmploymentContracts(uniqueItems);
+      setEmploymentContractsTotal(uniqueItems.length);
     } catch (err: any) {
       setError(err.message || 'Failed to load employment contracts');
     } finally {
@@ -391,7 +398,9 @@ export default function HousehelpHiringHistory() {
       try {
         const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
         const items = extractEnvelopeArray<EmploymentContract>(raw);
-        setEmploymentContractMap(buildIdentifierMap(items, getHouseholdCandidateIds));
+        const next = buildIdentifierMap(items, getHouseholdCandidateIds);
+        Object.assign(next, buildApplicationContractMap(items));
+        setEmploymentContractMap(next);
       } catch (err) {
         // Non-critical
       }
@@ -476,6 +485,7 @@ export default function HousehelpHiringHistory() {
         const householdProfileId = String(listing?.user_profile_id ?? '');
         return {
           id: String(application.id ?? ''),
+          listing_id: listingId,
           househelp_id: applicantProfileId,
           household_id: householdProfileId,
           salary_expectation: 0,
@@ -649,6 +659,20 @@ export default function HousehelpHiringHistory() {
       case 'viewed': return <Eye className="w-4 h-4" />;
       case 'cancelled': return <Ban className="w-4 h-4" />;
       default: return <Clock className="w-4 h-4" />;
+    }
+  };
+
+  const openJobListing = async (listingId?: string, listing?: Record<string, any> | null) => {
+    if (listing) {
+      setViewingListing(listing);
+      return;
+    }
+    if (!listingId) return;
+    try {
+      const raw = await jobService.getJob(listingId);
+      setViewingListing(raw?.data ?? raw);
+    } catch (err: any) {
+      setError(err?.message || 'We could not load this job listing.');
     }
   };
 
@@ -912,6 +936,11 @@ export default function HousehelpHiringHistory() {
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
+                          {ec.listing_id && (
+                            <button type="button" onClick={() => openJobListing(ec.listing_id)} className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-1 text-xs font-medium text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30">
+                              <Briefcase className="h-4 w-4" /> View job listing
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               const params = new URLSearchParams({
@@ -987,6 +1016,11 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
+                        {contract.listing_id && (
+                          <button type="button" onClick={() => openJobListing(contract.listing_id)} className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-1 text-xs font-medium text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30">
+                            <Briefcase className="h-4 w-4" /> View job listing
+                          </button>
+                        )}
                         {['completed', 'terminated'].includes(String(contract.status).toLowerCase()) && (
                           <button
                             onClick={() => {
@@ -1076,7 +1110,7 @@ export default function HousehelpHiringHistory() {
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
                         <button onClick={() => { setSelectedInterest(interest); setShowInterestModal(true); }} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
-                          View Details
+                          <Briefcase className="h-4 w-4" /> View job listing
                         </button>
                         {/* An offer is waiting for an answer. "initiated" is
                             reached both by applying and by a household inviting
@@ -1169,6 +1203,18 @@ export default function HousehelpHiringHistory() {
         cancelText="Cancel"
         variant="warning"
       />
+
+      {viewingListing && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingListing(null)}>
+          <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">{String(viewingListing.title || 'Job listing')}</h2>
+              <button type="button" onClick={() => setViewingListing(null)} className="rounded-full border border-purple-300 p-2 text-purple-700 dark:border-purple-600 dark:text-purple-200" aria-label="Close job listing"><X className="h-4 w-4" /></button>
+            </div>
+            <ListingDetails listing={viewingListing} emptyMessage="This job listing has no additional details." />
+          </div>
+        </div>
+      )}
 
       {/* Interest Details Modal */}
       {showInterestModal && selectedInterest && (
