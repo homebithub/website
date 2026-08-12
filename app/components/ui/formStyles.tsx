@@ -52,3 +52,8 @@ export function RequiredLegend({ className = "" }: { className?: string }) {
     </p>
   );
 }
+
+export function FieldError({ id, message, className = "" }: { id?: string; message?: string | null; className?: string }) {
+  if (!message?.trim()) return null;
+  return <p id={id} role="alert" className={`mt-1 text-xs font-medium text-red-600 dark:text-red-300 ${className}`}>{message}</p>;
+}

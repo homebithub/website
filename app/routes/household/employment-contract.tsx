@@ -11,6 +11,8 @@ import { resolveHousehelpProfile, resolveHousehelpUserId } from '~/utils/househe
 import { FormPageSkeleton } from "~/components/ShimmerLoader";
 import CustomSelect from '~/components/ui/CustomSelect';
 import { contractPdfBytes, downloadContractPdf } from '~/utils/contractDocument';
+import { FormError } from '~/components/FormError';
+import { RequiredMark } from '~/components/ui/formStyles';
 
 interface ContractClause {
   id: string;
@@ -76,6 +78,7 @@ export default function EmploymentContractPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<string | null>(null);
 
   // Configuration form state
@@ -282,19 +285,29 @@ export default function EmploymentContractPage() {
   };
 
   const handleCreateContract = async () => {
-    if (!jobTitle || !salary || !resolvedHousehelpProfileId) {
-      setError('Job title, salary, and househelp are required');
+    const nextFieldErrors: Record<string, string> = {};
+    if (!jobTitle.trim()) nextFieldErrors.jobTitle = 'Enter the job title.';
+    if (!salary.trim()) nextFieldErrors.salary = 'Enter the agreed salary.';
+    else if (!Number.isFinite(Number(salary)) || Number(salary) <= 0) nextFieldErrors.salary = 'Enter a salary greater than zero.';
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setError(null);
+      return;
+    }
+    if (!resolvedHousehelpProfileId) {
+      setError('We could not identify the applicant. Return to Hiring and open the contract from the applicant’s card.');
       return;
     }
     if (endDate && !startDate) {
-      setError('Select a start date before choosing an end date.');
+      setFieldErrors({ endDate: 'Select a start date before choosing an end date.' });
       return;
     }
     if (startDate && endDate && endDate < startDate) {
-      setError('End date must be the same as or later than the start date.');
+      setFieldErrors({ endDate: 'Choose an end date on or after the start date.' });
       return;
     }
     setSaving(true);
+    setFieldErrors({});
     setError(null);
     try {
       const body: any = {
@@ -326,15 +339,25 @@ export default function EmploymentContractPage() {
 
   const handleUpdateContract = async () => {
     if (!contract) return;
+    const nextFieldErrors: Record<string, string> = {};
+    if (!jobTitle.trim()) nextFieldErrors.jobTitle = 'Enter the job title.';
+    if (!salary.trim()) nextFieldErrors.salary = 'Enter the agreed salary.';
+    else if (!Number.isFinite(Number(salary)) || Number(salary) <= 0) nextFieldErrors.salary = 'Enter a salary greater than zero.';
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setError(null);
+      return;
+    }
     if (endDate && !startDate) {
-      setError('Select a start date before choosing an end date.');
+      setFieldErrors({ endDate: 'Select a start date before choosing an end date.' });
       return;
     }
     if (startDate && endDate && endDate < startDate) {
-      setError('End date must be the same as or later than the start date.');
+      setFieldErrors({ endDate: 'Choose an end date on or after the start date.' });
       return;
     }
     setSaving(true);
+    setFieldErrors({});
     setError(null);
     try {
       const body: any = {
@@ -644,7 +667,7 @@ export default function EmploymentContractPage() {
         )}
 
         {/* Alerts */}
-        {error && (
+        {error && viewMode !== 'configure' && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-xl flex items-center gap-2">
             <XCircle className="w-5 h-5 flex-shrink-0" />
             <span>{error}</span>
@@ -670,10 +693,11 @@ export default function EmploymentContractPage() {
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Contract Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Title *</label>
-                  <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                  <label htmlFor="contract-job-title" className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Title<RequiredMark /></label>
+                  <input id="contract-job-title" type="text" required aria-invalid={Boolean(fieldErrors.jobTitle)} aria-describedby={fieldErrors.jobTitle ? 'contract-job-title-error' : undefined} value={jobTitle} onChange={e => { setJobTitle(e.target.value); setFieldErrors(current => ({ ...current, jobTitle: '' })); }}
+                    className={`w-full px-3 py-1.5 border rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${fieldErrors.jobTitle ? 'border-red-500 focus:ring-red-500/20' : 'border-purple-200 dark:border-purple-500/30 focus:ring-purple-500 focus:border-purple-400'}`}
                     placeholder="e.g. Live-in Househelp" />
+                  {fieldErrors.jobTitle && <p id="contract-job-title-error" className="mt-1 text-[11px] font-medium text-red-600 dark:text-red-300">{fieldErrors.jobTitle}</p>}
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Work Location</label>
@@ -682,10 +706,11 @@ export default function EmploymentContractPage() {
                     placeholder="e.g. Nairobi, Kilimani" />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary (KES) *</label>
-                  <input type="number" value={salary} onChange={e => setSalary(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                  <label htmlFor="contract-salary" className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary (KES)<RequiredMark /></label>
+                  <input id="contract-salary" type="number" min="1" required aria-invalid={Boolean(fieldErrors.salary)} aria-describedby={fieldErrors.salary ? 'contract-salary-error' : undefined} value={salary} onChange={e => { setSalary(e.target.value); setFieldErrors(current => ({ ...current, salary: '' })); }}
+                    className={`w-full px-3 py-1.5 border rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${fieldErrors.salary ? 'border-red-500 focus:ring-red-500/20' : 'border-purple-200 dark:border-purple-500/30 focus:ring-purple-500 focus:border-purple-400'}`}
                     placeholder="e.g. 15000" />
+                  {fieldErrors.salary && <p id="contract-salary-error" className="mt-1 text-[11px] font-medium text-red-600 dark:text-red-300">{fieldErrors.salary}</p>}
                   {postedSalary && !contractId && (
                     <p className="mt-1 text-[11px] text-gray-500 dark:text-purple-300">
                       Your advert said {postedSalary}. Enter the figure you agreed.
@@ -693,7 +718,7 @@ export default function EmploymentContractPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency *</label>
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency<RequiredMark /></label>
                   <CustomSelect
                     value={salaryFrequency}
                     onChange={setSalaryFrequency}
@@ -713,18 +738,20 @@ export default function EmploymentContractPage() {
                     setStartDate(nextStartDate);
                     if (endDate && nextStartDate && endDate < nextStartDate) {
                       setEndDate('');
-                      setError('The previous end date was cleared because it was before the new start date. Choose a new end date if needed.');
+                      setFieldErrors(current => ({ ...current, endDate: 'The previous end date was cleared. Choose a date on or after the new start date.' }));
                     }
                   }}
                     className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">End Date (optional)</label>
-                  <input type="date" value={endDate} min={startDate || undefined} disabled={!startDate} onChange={e => {
+                  <input type="date" value={endDate} min={startDate || undefined} disabled={!startDate} aria-invalid={Boolean(fieldErrors.endDate)} aria-describedby={fieldErrors.endDate ? 'contract-end-date-error' : undefined} onChange={e => {
                     setEndDate(e.target.value);
+                    setFieldErrors(current => ({ ...current, endDate: '' }));
                     setError(null);
                   }}
-                    className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:cursor-not-allowed disabled:opacity-50" />
+                    className={`w-full px-3 py-1.5 border rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 ${fieldErrors.endDate ? 'border-red-500 focus:ring-red-500/20' : 'border-purple-200 dark:border-purple-500/30 focus:ring-purple-500 focus:border-purple-400'}`} />
+                  {fieldErrors.endDate && <p id="contract-end-date-error" className="mt-1 text-[11px] font-medium text-red-600 dark:text-red-300">{fieldErrors.endDate}</p>}
                   {!startDate && <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">Select a start date first.</p>}
                 </div>
               </div>
@@ -800,15 +827,16 @@ export default function EmploymentContractPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-3">
+            <FormError message={error} />
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button onClick={handleBackNavigation}
-                className="px-4 py-1.5 border border-purple-200 dark:border-purple-700/50 text-gray-700 dark:text-purple-200 rounded-lg text-xs hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-all font-semibold">
+                className="w-full px-4 py-2.5 border border-purple-200 dark:border-purple-700/50 text-gray-700 dark:text-purple-200 rounded-lg text-xs hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-all font-semibold sm:w-auto">
                 Cancel
               </button>
               <button
                 onClick={contract ? handleUpdateContract : handleCreateContract}
                 disabled={saving}
-                className="px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-xs hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow disabled:opacity-50 flex items-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-xs font-semibold text-white shadow transition-all hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 sm:w-auto"
               >
                 {saving && <span className="hb-shimmer-piece h-4 w-4 rounded-full" />}
                 {contract ? 'Update & Preview' : 'Create & Preview'}
