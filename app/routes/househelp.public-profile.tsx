@@ -22,6 +22,7 @@ import { useProfileViewTracking } from "~/hooks/useProfileViewTracking";
 import { ProfileChoicesSection } from '~/components/profile/ProfileChoicesSection';
 import { FullPageError } from '~/components/FullPageError';
 import { resolveHousehelpProfile } from '~/utils/househelpProfiles';
+import { ContractKYCRecord } from '~/components/profile/ContractKYCRecord';
 
 interface UserData {
   id?: string;
@@ -451,6 +452,8 @@ export default function HousehelpPublicProfile() {
     profile?.identity_verified === true || (profile?.user as any)?.identity_verified === true;
   const identityVerifiedAt =
     typeof profile?.identity_verified_at === 'string' ? profile.identity_verified_at : undefined;
+  const househelpUserId = profile.user_id || profile.user?.user_id || profile.user?.id || user?.user_id || user?.id || '';
+  const canRequestContractKYC = isViewingOther && currentProfileType?.toLowerCase() === 'household';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -578,6 +581,12 @@ export default function HousehelpPublicProfile() {
               fallbackProfileId="6dbd5104-d314-4ef1-a7d3-37d7eb26ddff"
               profileType="househelp"
               title="Profile Details"
+            />
+
+            <ContractKYCRecord
+              househelpUserId={househelpUserId}
+              enabled={canRequestContractKYC}
+              onViewDocument={setSelectedImage}
             />
 
             {(profile.user_id || user?.id || user?.user_id) && (
