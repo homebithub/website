@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useProfileSetupStatus } from '~/hooks/useProfileSetupStatus';
 
@@ -11,7 +11,54 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
   const location = useLocation();
   const { isInSetupMode } = useProfileSetupStatus();
-  const isHousehelpProfileRoute = location.pathname.startsWith('/househelp/profile');
+  const footerRef = useRef<HTMLElement | null>(null);
+  const normalFooterHeightRef = useRef(0);
+  const compactRef = useRef(false);
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    setCompact(false);
+    compactRef.current = false;
+    normalFooterHeightRef.current = 0;
+
+    let frame = 0;
+    const measure = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const footer = footerRef.current;
+        if (!footer || window.innerWidth < 1024) {
+          setCompact(false);
+          return;
+        }
+
+        if (!compactRef.current) {
+          normalFooterHeightRef.current = footer.getBoundingClientRect().height;
+        }
+
+        // Ignore the footer itself when deciding whether the page content is
+        // scrollable. This keeps a footer from making an otherwise short page
+        // classify itself as long and avoids layout-state oscillation.
+        const normalFooterHeight = normalFooterHeightRef.current || 112;
+        const pageHeightWithoutFooter = document.documentElement.scrollHeight
+          + (compactRef.current ? normalFooterHeight : 0)
+          - normalFooterHeight;
+        const nextCompact = pageHeightWithoutFooter > window.innerHeight + 80;
+        compactRef.current = nextCompact;
+        setCompact(nextCompact);
+      });
+    };
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(document.documentElement);
+    window.addEventListener('resize', measure);
+    measure();
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [location.pathname]);
 
   // Hide footer during profile setup flow
   if (isInSetupMode) {
@@ -24,8 +71,34 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
       ? 'bg-white text-gray-800 border-gray-200 dark:bg-[#0a0a0f] dark:text-gray-300 dark:border-purple-500/20'
       : 'bg-gray-900 dark:bg-[#0a0a0f] text-gray-100 dark:text-gray-300 border-gray-800 dark:border-purple-500/20';
 
+  if (compact) {
+    return (
+      <footer
+        ref={footerRef}
+        aria-label="Website information"
+        className={`fixed bottom-20 right-5 z-30 hidden max-w-[420px] rounded-xl border px-3 py-2 text-[11px] shadow-lg backdrop-blur-md lg:block ${
+          variant === 'light'
+            ? 'border-gray-200 bg-white/90 text-gray-500 dark:border-white/10 dark:bg-[#13131a]/90 dark:text-gray-400'
+            : 'border-white/10 bg-gray-900/90 text-gray-400 dark:bg-[#0a0a0f]/90'
+        }`}
+      >
+        <nav className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1">
+          <Link to="/privacy" prefetch="viewport" className="hover:text-purple-400">Privacy</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/terms" prefetch="viewport" className="hover:text-purple-400">Terms</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/cookies" prefetch="viewport" className="hover:text-purple-400">Cookies</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/contact" prefetch="viewport" className="hover:text-purple-400">Contact</Link>
+          <span aria-hidden="true">·</span>
+          <span><span className="gradient-text font-semibold">Homebit</span> © {new Date().getFullYear()}</span>
+        </nav>
+      </footer>
+    );
+  }
+
   return (
-    <footer className={`${baseClasses} ${themeClasses}`}>
+    <footer ref={footerRef} className={`${baseClasses} ${themeClasses}`}>
       <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="mb-4 md:mb-0">
           <span className="font-bold text-base gradient-text">Homebit</span> <span className="text-gray-400">&copy; {new Date().getFullYear()}</span>
