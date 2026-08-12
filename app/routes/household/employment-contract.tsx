@@ -1037,26 +1037,26 @@ export default function EmploymentContractPage() {
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 justify-end">
+            <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:justify-end">
               {/* Download - only when both signed */}
               {canDownload && (
                 <button onClick={handleDownload} disabled={downloading}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg shadow-purple-500/30 flex items-center gap-2 disabled:opacity-60">
-                  <Download className="w-4 h-4" /> {downloading ? 'Preparing PDF…' : 'Download PDF'}
+                  className="flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-2.5 text-xs font-semibold text-white shadow-lg shadow-purple-500/30 transition-all hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 sm:px-6 sm:text-sm">
+                  <Download className="h-4 w-4 shrink-0" /> {downloading ? 'Preparing PDF…' : 'Download PDF'}
                 </button>
               )}
 
               {/* Email contract */}
               {canDownload && (
                 <button onClick={openEmailModal}
-                  className="px-6 py-2.5 border-2 border-purple-200 dark:border-purple-700/50 text-gray-700 dark:text-purple-200 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-all font-semibold flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
+                  className="flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border-2 border-purple-200 px-2 py-2.5 text-xs font-semibold text-gray-700 transition-all hover:bg-purple-50 dark:border-purple-700/50 dark:text-purple-200 dark:hover:bg-purple-900/40 sm:px-6 sm:text-sm">
+                  <Mail className="h-4 w-4 shrink-0" />
                   Email Contract
                 </button>
               )}
 
               {contract && !isSignedByBoth && (
-                <p className="w-full text-right text-xs text-gray-500 dark:text-purple-300/70">
+                <p className="col-span-2 w-full text-right text-xs text-gray-500 dark:text-purple-300/70">
                   The PDF will show this contract as still awaiting a signature.
                 </p>
               )}

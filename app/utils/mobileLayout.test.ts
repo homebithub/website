@@ -52,4 +52,11 @@ describe('mobile layout guardrails', () => {
     expect(househelpHome).toContain("'filters'} applied`");
     expect(householdHome).toContain("'filters'} applied`");
   });
+
+  it('shares the mobile contract action row between both actions', () => {
+    const contract = source('app/routes/household/employment-contract.tsx');
+    expect(contract).toContain('grid w-full grid-cols-2 gap-3 sm:flex');
+    expect(contract).toContain('Preparing PDF…');
+    expect(contract).toContain('Email Contract');
+  });
 });
