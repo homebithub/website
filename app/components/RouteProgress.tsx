@@ -1,8 +1,30 @@
-import { useNavigation } from 'react-router';
+import { useEffect, useRef } from 'react';
+import { useLocation, useNavigation } from 'react-router';
+import { reportPerformance } from '~/utils/webVitals';
 
 export function RouteProgress() {
   const navigation = useNavigation();
+  const location = useLocation();
   const active = navigation.state !== 'idle';
+  const startedAt = useRef<number | null>(null);
+  const fromPath = useRef(location.pathname);
+
+  useEffect(() => {
+    if (active && startedAt.current === null) {
+      startedAt.current = performance.now();
+      fromPath.current = location.pathname;
+      return;
+    }
+    if (!active && startedAt.current !== null) {
+      reportPerformance({
+        name: 'route-navigation',
+        value: Math.round(performance.now() - startedAt.current),
+        from: fromPath.current,
+        to: location.pathname,
+      });
+      startedAt.current = null;
+    }
+  }, [active, location.pathname]);
 
   return (
     <div

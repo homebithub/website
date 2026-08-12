@@ -13,6 +13,23 @@ const BUILD_CLIENT_DIR = path.join(__dirname, "build", "client");
 
 const app = express();
 
+// Expose website/SSR time independently from CDN and ingress time. This makes
+// a browser trace answer whether a slow navigation was spent in this process
+// or before the request reached it.
+app.use((req, res, next) => {
+    const startedAt = process.hrtime.bigint();
+    const writeHead = res.writeHead;
+    res.writeHead = function timedWriteHead(...args) {
+        const durationMs = Number(process.hrtime.bigint() - startedAt) / 1e6;
+        if (!res.headersSent) {
+            res.setHeader("Server-Timing", `website;dur=${durationMs.toFixed(1)}`);
+            res.setHeader("X-Response-Time", `${durationMs.toFixed(1)}ms`);
+        }
+        return writeHead.apply(this, args);
+    };
+    next();
+});
+
 // Compress all HTTP responses (gzip/deflate)
 app.use(compression());
 

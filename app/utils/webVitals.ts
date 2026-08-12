@@ -18,6 +18,15 @@ type Metric = {
   id: string;
 };
 
+export type PerformanceDetail = {
+  name: string;
+  value: number;
+  rating?: string;
+  from?: string;
+  to?: string;
+  initiatorType?: string;
+};
+
 function getWebVitalsEndpoint(): string | null {
   if (typeof window === 'undefined') return null;
   const endpoint = (window as any).ENV?.WEB_VITALS_API_URL || (window as any).ENV?.MONITORING_API_URL;
@@ -58,6 +67,57 @@ function sendToAnalytics(metric: Metric) {
   }
 }
 
+/** Report route and network timings through the same optional telemetry sink. */
+export function reportPerformance(detail: PerformanceDetail) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('homebit:performance', { detail }));
+  if (process.env.NODE_ENV !== 'production') return;
+  const endpoint = getWebVitalsEndpoint();
+  if (!endpoint) return;
+  const payload = JSON.stringify({
+    type: 'performance',
+    ...detail,
+    pathname: window.location.pathname,
+    timestamp: new Date().toISOString(),
+  });
+  try {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(endpoint, new Blob([payload], { type: 'application/json' }));
+    } else {
+      void fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+        keepalive: true,
+      });
+    }
+  } catch {
+    // Telemetry must never affect navigation.
+  }
+}
+
+export function trackSlowResources(thresholdMs = 300) {
+  if (typeof window === 'undefined' || typeof PerformanceObserver === 'undefined') return;
+  try {
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as PerformanceResourceTiming[]) {
+        if (entry.duration < thresholdMs) continue;
+        const url = new URL(entry.name, window.location.origin);
+        // Drop queries because they may contain profile ids or search terms.
+        reportPerformance({
+          name: 'slow-resource',
+          value: Math.round(entry.duration),
+          to: `${url.origin}${url.pathname}`,
+          initiatorType: entry.initiatorType,
+        });
+      }
+    });
+    observer.observe({ type: 'resource', buffered: true });
+  } catch {
+    // Older browsers can still report Core Web Vitals.
+  }
+}
+
 export function trackWebVitals() {
   // Dynamically import web-vitals to avoid bundling in SSR
   if (typeof window !== 'undefined') {
@@ -72,6 +132,7 @@ export function trackWebVitals() {
     }).catch((error) => {
       console.error('Failed to load web-vitals:', error);
     });
+    trackSlowResources();
   }
 }
 
