@@ -83,6 +83,14 @@ function NavigationContent() {
         return host.startsWith('app.') || host === 'app.homebit.co.ke';
     }, []);
 
+    const adminDashboardUrl = React.useMemo(() => {
+        if (typeof window === 'undefined') return 'https://hba.homebit.co.ke';
+        const hostname = window.location.hostname.toLowerCase();
+        return hostname === 'preprod.homebit.co.ke' || hostname.startsWith('preprod.') || hostname === 'localhost'
+            ? 'https://preprod-hba.homebit.co.ke'
+            : 'https://hba.homebit.co.ke';
+    }, []);
+
     // Memoized dashboard path based on profile type
     const dashboardPath = React.useMemo(() => {
         const role = normalizeProfileRole(profileType);
@@ -529,7 +537,7 @@ function NavigationContent() {
                     {/* Admin Dashboard - desktop, for admins who are also on the site */}
                     {canSeeAdminDashboard && (
                         <a
-                            href="https://hba.homebit.co.ke"
+                            href={adminDashboardUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="hidden lg:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105 transition-all duration-200"
@@ -811,7 +819,7 @@ function NavigationContent() {
                                                 <Menu.Item>
                                                     {({ active }) => (
                                                         <a
-                                                            href="https://hba.homebit.co.ke"
+                                                            href={adminDashboardUrl}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className={`${

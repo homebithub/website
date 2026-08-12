@@ -289,29 +289,21 @@ export function ProfileAccountSummary({
   };
 
   return (
-    <section className="rounded-2xl bg-white dark:bg-[#13131a] p-4 sm:p-6 border border-purple-200/40 dark:border-purple-500/30 mb-4">
+    <section className="relative rounded-2xl bg-white dark:bg-[#13131a] p-4 sm:p-6 border border-purple-200/40 dark:border-purple-500/30 mb-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-200">
             <UserRound className="h-5 w-5" />
           </div>
-          <div>
+          <div className="pr-0 lg:pr-28">
             <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-300">My Account</p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
               {[firstName, lastName].filter(Boolean).join(' ') || 'Account details'}
             </h2>
-            <button
-              type="button"
-              onClick={openEditor}
-              className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 transition-colors hover:text-pink-600 dark:text-purple-300 dark:hover:text-pink-300"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-              Edit account
-            </button>
           </div>
         </div>
 
-        {(!progress || completionPercent < 100) && <div className="min-w-[220px]">
+        {(!progress || completionPercent < 100) && <div className="min-w-[220px] lg:mt-8">
           <div className="mb-2 flex items-center justify-between text-xs font-semibold text-purple-700 dark:text-purple-300">
             <span>Profile completion</span>
             <span>
@@ -331,6 +323,15 @@ export function ProfileAccountSummary({
           </p>
         </div>}
       </div>
+
+      <button
+        type="button"
+        onClick={openEditor}
+        className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-purple-700 transition-colors hover:text-pink-600 dark:text-purple-300 dark:hover:text-pink-300 lg:absolute lg:right-6 lg:top-5 lg:mt-0"
+      >
+        <Pencil className="h-3.5 w-3.5" />
+        Edit account
+      </button>
 
       {saveMessage ? (
         <p className="mt-4 text-xs font-medium text-emerald-700 dark:text-emerald-300">{saveMessage}</p>
