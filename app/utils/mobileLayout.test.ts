@@ -54,6 +54,12 @@ describe('mobile layout guardrails', () => {
     expect(householdHome).toContain('hb-content-rail flex flex-col');
   });
 
+  it('keeps shared navigation available while every page scrolls', () => {
+    const navigation = source('app/components/Navigation.tsx');
+    expect(navigation).toContain('fixed inset-x-0 top-0 z-40');
+    expect(navigation).toContain('h-[56px] shrink-0 sm:h-[60px]');
+  });
+
   it('keeps discovery filters open while choosing from portalled selects', () => {
     const customSelect = source('app/components/ui/CustomSelect.tsx');
     const househelpHome = source('app/components/HousehelpJobsHome.tsx');
