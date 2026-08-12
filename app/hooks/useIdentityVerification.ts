@@ -5,6 +5,7 @@ import { launchSmileSession, loadSmileScript, type SmileSession } from "~/servic
 import { getStoredUserId } from "~/utils/authStorage";
 
 const DISMISSAL_KEY_PREFIX = "homebit_identity_verification_prompt_dismissed";
+const SUBMITTED_KEY_PREFIX = "homebit_identity_verification_submitted";
 
 export type IdentityVerificationStatus =
   | "loading"
@@ -102,6 +103,35 @@ const rememberDismissal = (userId: string) => {
   }
 };
 
+const submissionKey = (userId: string) => `${SUBMITTED_KEY_PREFIX}:${userId}`;
+
+const rememberSubmission = (userId: string) => {
+  if (typeof window === "undefined" || !userId) return;
+  try {
+    window.localStorage.setItem(submissionKey(userId), "true");
+  } catch {
+    // The in-memory status below still prevents an immediate duplicate upload.
+  }
+};
+
+const hasSubmittedLocally = (userId: string) => {
+  if (typeof window === "undefined" || !userId) return false;
+  try {
+    return window.localStorage.getItem(submissionKey(userId)) === "true";
+  } catch {
+    return false;
+  }
+};
+
+const clearSubmittedLocally = (userId: string) => {
+  if (typeof window === "undefined" || !userId) return;
+  try {
+    window.localStorage.removeItem(submissionKey(userId));
+  } catch {
+    // Nothing else depends on storage cleanup.
+  }
+};
+
 export function useIdentityVerification(userIdInput?: string): IdentityVerificationState {
   const userId = useMemo(() => userIdInput || getStoredUserId(), [userIdInput]);
   const [status, setStatus] = useState<IdentityVerificationStatus>("loading");
@@ -125,10 +155,19 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
     try {
       const response = await kycService.getMyKYC(userId);
       const next = normalizeStatus(normalizeResponse(response));
-      setStatus(next.status);
-      setInternalStatus(next.internalStatus);
+      // Smile's success callback reaches the browser before its webhook reaches
+      // us. Keep the locally acknowledged upload in the waiting state while
+      // the API still reports the older session_created value; otherwise the
+      // homepage briefly offers "Continue verification" after the documents
+      // were already received. The marker also survives a page reload.
+      const awaitingWebhook = hasSubmittedLocally(userId) && next.internalStatus === "session_created";
+      setStatus(awaitingWebhook ? "in_progress" : next.status);
+      setInternalStatus(awaitingWebhook ? "submitted" : next.internalStatus);
       setFailureReason(next.failureReason);
-      setCanRetry(next.canRetry);
+      setCanRetry(awaitingWebhook ? false : next.canRetry);
+      if (!awaitingWebhook && next.internalStatus !== "session_created") {
+        clearSubmittedLocally(userId);
+      }
       setError("");
     } catch (refreshError: any) {
       setError(refreshError?.message || "We could not check your verification status.");
@@ -191,6 +230,7 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
 
       launchSmileSession(session, {
         onSuccess: () => {
+          rememberSubmission(userId);
           setModalOpen(false);
           setInternalStatus("submitted");
           window.dispatchEvent(new CustomEvent("homebit:identity-verification-submitted"));

@@ -197,7 +197,7 @@ export function IdentityVerificationPrompt({
             <div className="pr-10">
               <span className="inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-100 px-3 py-1 text-[10px] font-bold tracking-[0.16em] text-purple-700 dark:border-purple-400/25 dark:bg-purple-500/10 dark:text-purple-200">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                IDENTITY VERIFIED
+                SECURE IDENTITY CHECK
               </span>
               <h2 id="identity-verification-title" className="mt-4 text-xl font-semibold sm:text-2xl">
                 Verify your identity
@@ -267,8 +267,14 @@ export function IdentityVerificationPrompt({
                 disabled={launching || waiting}
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 text-xs font-semibold text-white shadow-lg shadow-purple-950/40 transition hover:from-purple-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {launching ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Fingerprint className="h-4 w-4" />}
-                {launching ? "Preparing secure check…" : status === "failed" ? "Try again" : "Start verification"}
+                {launching || status === "in_progress" ? <RefreshCw className={`h-4 w-4 ${launching ? "animate-spin" : ""}`} /> : <Fingerprint className="h-4 w-4" />}
+                {launching
+                  ? "Refreshing secure session…"
+                  : status === "in_progress"
+                    ? "Refresh & continue"
+                    : status === "failed"
+                      ? "Try again"
+                      : "Start verification"}
               </button>
             </div>
           </section>
