@@ -707,8 +707,8 @@ export default function HouseholdProfile() {
 
       {/* Household Invitation Code */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-start mb-4">
-          <div>
+        <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-6">
+          <div className="min-w-0 flex-1">
             <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🔑 Household Code</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
               Share this code with your partner or family member to give them access to this
@@ -718,9 +718,9 @@ export default function HouseholdProfile() {
           </div>
           <button
             onClick={() => navigate('/household/requests')}
-            className="relative px-4 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-semibold rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all flex items-center gap-2"
+            className="relative inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-purple-100 px-5 py-2 text-sm font-semibold text-purple-700 transition-all hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
             View Requests
