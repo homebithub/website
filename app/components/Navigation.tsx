@@ -475,7 +475,7 @@ function NavigationContent() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className={`link relative rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-md' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-md'}`}
+                                className={`link relative rounded-xl px-3.5 py-2 text-sm font-semibold tracking-[0.01em] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 ${isActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25 ring-1 ring-white/10' : 'text-gray-900 hover:bg-purple-100 hover:text-purple-800 dark:text-white dark:hover:bg-white/10 dark:hover:text-white'}`}
                             >
                                 {item.name}
                                 {'count' in item && item.name === 'Saved' && renderBadge((item as any).count)}
@@ -497,7 +497,7 @@ function NavigationContent() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className={`link relative rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-md' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-md'}`}
+                                className={`link relative rounded-xl px-3.5 py-2 text-sm font-semibold tracking-[0.01em] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 ${isActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25 ring-1 ring-white/10' : 'text-gray-900 hover:bg-purple-100 hover:text-purple-800 dark:text-white dark:hover:bg-white/10 dark:hover:text-white'}`}
                                 id={item.name === 'Saved' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
