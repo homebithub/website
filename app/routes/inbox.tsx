@@ -1721,7 +1721,7 @@ export default function InboxPage() {
           </div>
         </div>
       ) : (
-          <div className="h-full bg-white dark:bg-[#13131a] grid grid-rows-[auto,1fr,auto] relative overflow-hidden">
+          <div className="relative grid h-full min-w-0 w-full max-w-full grid-rows-[auto,1fr,auto] overflow-hidden bg-white dark:bg-[#13131a]">
             {/* Header */}
             <div className="p-4 border-b border-purple-200 dark:border-purple-500/30 flex items-center gap-3">
               <button
@@ -1792,7 +1792,7 @@ export default function InboxPage() {
             </div>
 
             {/* Messages - Scrollable */}
-            <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="homebit-scrollbar relative min-h-0 space-y-2 overflow-y-auto p-4">
+            <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="homebit-scrollbar relative min-h-0 min-w-0 space-y-2 overflow-x-hidden overflow-y-auto p-2 sm:p-4">
               <div className={lockMessages ? 'pointer-events-none select-none blur-sm transition duration-150' : ''}>
                 <div ref={messagesSentinelRef} className="h-4" />
                 
@@ -1918,7 +1918,7 @@ export default function InboxPage() {
                       </button>
                     )}
                     {/* Message bubble */}
-                    <div className={`relative max-w-[75%] rounded-2xl px-4 py-2 shadow ${
+                    <div className={`relative min-w-0 max-w-[85%] sm:max-w-[75%] rounded-2xl px-3 sm:px-4 py-2 shadow ${
                       mine 
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100'
@@ -2269,7 +2269,7 @@ export default function InboxPage() {
         )}
 
         {/* Input - At bottom (grid row) */}
-        <div className="p-4 border-t border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a]">
+        <div className="min-w-0 border-t border-purple-200 bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:border-purple-500/30 dark:bg-[#13131a] sm:p-4">
           {selectedIds.size > 0 && (
             <div className="mb-2 flex flex-col gap-2 rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-slate-800 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-xs font-semibold">{selectedIds.size} selected</div>
@@ -2355,7 +2355,7 @@ export default function InboxPage() {
               </p>
             </div>
           ) : (
-          <form onSubmit={handleSend} className="flex items-end gap-2">
+          <form onSubmit={handleSend} className="flex min-w-0 items-end gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={(e) => {
@@ -2392,7 +2392,7 @@ export default function InboxPage() {
                 }
               }}
               placeholder="Type a message..."
-              className="flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-4 py-2 text-xs text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:text-sm min-h-[40px] max-h-[150px]"
+              className="min-h-[40px] min-w-0 max-h-[150px] flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-3 py-2 text-base text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:px-4 sm:text-sm"
               autoComplete="off"
               rows={1}
             />
@@ -2427,10 +2427,10 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-[100dvh] w-full max-w-full flex flex-col overflow-hidden">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
-        <main className="flex-1 flex flex-col relative pt-6 pb-4 overflow-hidden min-h-0">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-0 pt-0 sm:pb-4 sm:pt-6">
           {/* Desktop: Split view */}
           <div className="hidden lg:flex flex-1 max-w-7xl mx-auto w-full mt-2 overflow-hidden min-h-0">
             <div className="w-1/3 border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] rounded-l-2xl overflow-hidden flex flex-col">
@@ -2442,7 +2442,7 @@ export default function InboxPage() {
           </div>
 
           {/* Mobile: Single view */}
-          <div className="lg:hidden flex-1 overflow-hidden">
+          <div className="lg:hidden min-h-0 min-w-0 w-full max-w-full flex-1 overflow-hidden">
             {activeConversationId ? (
               <div className="h-full border-l border-r border-b border-purple-200 dark:border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] rounded-b-2xl overflow-hidden flex flex-col">
                 {messagesView}

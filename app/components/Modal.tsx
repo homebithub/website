@@ -43,8 +43,8 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className="relative transform overflow-hidden rounded-t-2xl sm:rounded-3xl bg-white px-8 pb-8 pt-8 text-left shadow-2xl transition-all w-full sm:max-w-md max-h-[90vh] sm:max-h-[85vh] overflow-y-auto border border-gray-100">
-                <div className="absolute right-6 top-6 sm:block">
+              <Dialog.Panel className="relative w-full max-w-full transform overflow-y-auto rounded-t-3xl border border-gray-100 bg-white px-4 pb-8 pt-6 text-left shadow-2xl transition-all sm:max-w-md sm:rounded-3xl sm:px-8 sm:pt-8 max-h-[92dvh] sm:max-h-[85vh]">
+                <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
                   <button
                     type="button"
                     className="rounded-full bg-gray-100 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200"

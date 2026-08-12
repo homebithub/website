@@ -169,9 +169,9 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
+    <div className="hb-modal-shell">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+      <div className="hb-modal-panel sm:mx-4">
         <div className="sticky top-0 bg-white dark:bg-[#13131a] border-b border-gray-200 dark:border-purple-500/20 px-6 py-4 flex items-center justify-between">
           <h2 className="text-base font-bold text-gray-900 dark:text-white">
             {listing ? "Update Open for Work" : "Go Open for Work"}
@@ -181,7 +181,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
           {success && <SuccessAlert message={success} />}
           {prefilled && !listing?.id ? (
             <p className="rounded-xl bg-purple-50 px-3 py-2 text-xs text-purple-800 dark:bg-purple-500/10 dark:text-purple-100">

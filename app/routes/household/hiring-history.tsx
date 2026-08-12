@@ -1176,8 +1176,8 @@ export default function HiringHistory() {
   };
 
   return (
-    <div className="w-full">
-      <div className="rounded-3xl bg-white shadow-xl border border-purple-100 px-4 sm:px-8 py-8 dark:bg-gradient-to-b dark:from-[#1a102b] dark:via-[#0e0a1a] dark:to-[#07050d] dark:border-purple-800/40 dark:shadow-2xl dark:shadow-purple-900/50 transition-colors">
+    <div className="w-full min-w-0 max-w-full overflow-hidden">
+      <div className="rounded-2xl bg-white shadow-xl border border-purple-100 px-3 py-4 sm:rounded-3xl sm:px-8 sm:py-8 dark:bg-gradient-to-b dark:from-[#1a102b] dark:via-[#0e0a1a] dark:to-[#07050d] dark:border-purple-800/40 dark:shadow-2xl dark:shadow-purple-900/50 transition-colors">
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
@@ -1207,14 +1207,14 @@ export default function HiringHistory() {
                 past the edge, and no-scrollbar meant nothing showed that there
                 was more to reach. */}
             <nav
-              className="flex gap-4 sm:gap-6 px-4 sm:px-6 text-gray-600 dark:text-purple-200 overflow-x-auto no-scrollbar"
+              className="flex max-w-full snap-x snap-mandatory gap-4 overflow-x-auto px-3 text-gray-600 no-scrollbar dark:text-purple-200 sm:gap-6 sm:px-6"
               aria-label="Tabs"
             >
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  className={`shrink-0 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-xs transition-colors flex items-center gap-1.5 sm:gap-2 ${
+                  className={`shrink-0 snap-start whitespace-nowrap py-4 px-1 border-b-2 font-medium text-xs transition-colors flex items-center gap-1.5 sm:gap-2 ${
                     activeTab === tab.key
                       ? 'border-purple-500 text-purple-700 dark:text-white'
                       : 'border-transparent text-gray-400 hover:text-purple-700 dark:hover:text-white hover:border-purple-300'
@@ -1476,15 +1476,15 @@ export default function HiringHistory() {
               return (
                 <div
                   key={interest.id}
-                  className={`relative overflow-hidden rounded-2xl border bg-white p-5 sm:p-7 transition-shadow hover:shadow-xl dark:bg-purple-950/40 ${
+                  className={`relative min-w-0 overflow-hidden rounded-2xl border bg-white p-3 sm:p-7 transition-shadow hover:shadow-xl dark:bg-purple-950/40 ${
                     isNew
                       ? 'border-green-300 dark:border-green-600/40 ring-2 ring-green-100 dark:ring-green-900/30'
                       : 'border-purple-100 dark:border-purple-800/40'
                   }`}
                 >
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8">
-                    <div className="flex flex-1 items-start gap-4">
-                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg">
+                    <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg sm:h-16 sm:w-16">
                         {avatarUrl ? (
                           <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
                         ) : (
@@ -1496,7 +1496,7 @@ export default function HiringHistory() {
 
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-base font-semibold text-gray-900 dark:text-white">{displayName}</h3>
+                          <h3 className="min-w-0 break-words text-sm font-semibold text-gray-900 dark:text-white sm:text-base">{displayName}</h3>
                           {isNew && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-200">
                               <HandHeart className="h-3 w-3" />

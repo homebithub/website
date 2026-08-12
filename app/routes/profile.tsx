@@ -745,14 +745,14 @@ export default function ProfilePage() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
-        <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+        <main className="flex min-w-0 flex-1 flex-col items-center justify-center px-3 py-4 sm:px-4 sm:py-8">
           <div className="w-full max-w-3xl">
             <a href="/settings" className="inline-flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium mb-4 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
               Back to Settings
             </a>
           </div>
-          <div className="w-full max-w-3xl bg-white dark:bg-[#13131a] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-8 transition-colors duration-300">
+          <div className="w-full min-w-0 max-w-3xl rounded-2xl border-2 border-purple-200/40 bg-white p-4 shadow-2xl transition-colors duration-300 dark:border-purple-500/30 dark:bg-[#13131a] dark:shadow-glow-md sm:rounded-3xl sm:p-8">
             <h1 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-300 mb-2 text-center">My Account</h1>
             <p className="text-center text-xs text-gray-600 dark:text-gray-400 mb-6">Manage your account information. Only email, name and phone are editable.</p>
 

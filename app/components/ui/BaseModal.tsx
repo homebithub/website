@@ -67,13 +67,13 @@ export function BaseModal({
                 className={`
                   relative transform overflow-hidden rounded-t-2xl sm:rounded-2xl
                   bg-white dark:bg-dark-card 
-                  px-6 pb-8 pt-8 text-left shadow-2xl transition-all 
+                  px-4 pb-8 pt-6 text-left shadow-2xl transition-all sm:px-6 sm:pt-8
                   w-full ${sizeClasses[size]} max-h-[90vh] sm:max-h-[85vh] overflow-y-auto
                   border border-purple-100 dark:border-purple-500/20
                 `}
               >
                 {showCloseButton && (
-                  <div className="absolute right-6 top-6 z-10">
+                  <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
                     <button
                       type="button"
                       className="
@@ -96,7 +96,7 @@ export function BaseModal({
                       {title && (
                         <Dialog.Title
                           as="h3"
-                          className="text-xl font-bold text-gray-900 dark:text-white leading-tight"
+                          className="pr-12 text-lg font-bold leading-tight text-gray-900 dark:text-white sm:text-xl"
                         >
                           {title}
                         </Dialog.Title>
