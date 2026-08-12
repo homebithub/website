@@ -34,7 +34,12 @@ export default function SupportChat() {
     if (!chat) return;
     try {
       const data = await supportService.messages(chat.id, chat.access_token);
-      if (!open && data.messages.length > previousCount.current) { const incoming=data.messages.slice(previousCount.current).filter((m) => m.sender_type === 'agent').length; setUnread((n) => n + incoming); if(incoming>0)setOpen(true) }
+      if (!open && data.messages.length > previousCount.current) {
+        const incoming = data.messages
+          .slice(previousCount.current)
+          .filter((message) => message.sender_type === 'agent').length;
+        setUnread((count) => count + incoming);
+      }
       previousCount.current = data.messages.length; setMessages(data.messages); setChat((old) => old ? { ...old, ...data.chat, access_token: old.access_token } : old);
     } catch (e) { setError(e instanceof Error ? e.message : 'Could not refresh chat'); }
   }, [chat?.id, chat?.access_token, open]);
