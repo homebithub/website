@@ -608,6 +608,38 @@ export default function HousehelpJobsHome() {
     };
   }, []);
 
+  // Search responses cannot be trusted to decorate every row with
+  // `has_applied` (older gateway versions omit it). Applications are the
+  // source of truth, so load them once for this profile and compare normalized
+  // listing ids before discovery cards are rendered.
+  useEffect(() => {
+    if (!househelpProfileId) return;
+    let cancelled = false;
+
+    const fetchAppliedListings = async () => {
+      try {
+        const raw = await listingApplicationService.listApplications({
+          applicantProfileId: househelpProfileId,
+          limit: 200,
+          offset: 0,
+        });
+        if (cancelled) return;
+        const applications = extractArray<Record<string, any>>(raw);
+        const ids = applications
+          .map((application) => application.listing_id ?? application.listingId ?? application.job_listing_id ?? application.jobListingId)
+          .filter((id) => id !== undefined && id !== null && String(id) !== '')
+          .map(String);
+        setAppliedJobIds((previous) => new Set([...previous, ...ids]));
+      } catch {
+        // The create endpoint still rejects duplicates. Keep discovery usable
+        // if this non-blocking status lookup is temporarily unavailable.
+      }
+    };
+
+    void fetchAppliedListings();
+    return () => { cancelled = true; };
+  }, [househelpProfileId]);
+
   useEffect(() => {
     let cancelled = false;
     const fetchProfile = async () => {
@@ -794,6 +826,10 @@ export default function HousehelpJobsHome() {
   };
 
   const handleOpenApplyModal = (job: JobListing) => {
+    if (appliedJobIds.has(jobKey(job)) || job.has_applied) {
+      setSuccess("You have already applied to this job.");
+      return;
+    }
     if (requireSubscription("apply to jobs")) {
       return;
     }
@@ -820,6 +856,11 @@ export default function HousehelpJobsHome() {
     event.preventDefault();
     if (!selectedJob) return;
 
+    if (appliedJobIds.has(jobKey(selectedJob)) || selectedJob.has_applied) {
+      setApplyError("You have already applied to this job.");
+      return;
+    }
+
     if (!househelpProfileId) {
       setApplyError("Please complete your househelp profile before applying.");
       return;
@@ -842,13 +883,13 @@ export default function HousehelpJobsHome() {
       await jobService.applyForJob(selectedJob.id, househelpProfileId, pitch.trim());
 
       setSuccess("Application submitted successfully.");
-      setAppliedJobIds((prev) => new Set(prev).add(selectedJob.id));
+      setAppliedJobIds((prev) => new Set(prev).add(jobKey(selectedJob)));
       setSelectedJob(null);
       setPitch("");
     } catch (err: any) {
       const message = err?.message || "Failed to submit application. Please try again.";
       if (message.toLowerCase().includes("already applied")) {
-        setAppliedJobIds((prev) => new Set(prev).add(selectedJob.id));
+        setAppliedJobIds((prev) => new Set(prev).add(jobKey(selectedJob)));
         setSuccess("You have already applied to this job.");
         setSelectedJob(null);
         setPitch("");
@@ -1396,7 +1437,7 @@ export default function HousehelpJobsHome() {
                               handleOpenApplyModal(job);
                             }}
                             disabled={!isJobOpen(job) || hasApplied}
-                            className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`rounded-xl px-4 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed ${hasApplied ? "bg-emerald-600" : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"}`}
                           >
                             {hasApplied ? "Applied" : "Apply"}
                           </button>

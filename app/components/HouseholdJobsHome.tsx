@@ -542,6 +542,7 @@ export default function HouseholdJobsHome() {
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [contactedListingIds, setContactedListingIds] = useState<Set<string>>(() => new Set());
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Kept between visits. Narrowing a search used to be thrown away when the
   // tab closed, so anyone returning daily redid the same work every day — and
@@ -629,11 +630,15 @@ export default function HouseholdJobsHome() {
   const filteredListings = useMemo(
     () => listings.filter((listing) => {
       if (!isServiceProvider && !isOpenForWorkListingActive(listing)) return false;
+      // A listing the household has already approached belongs in Inbox/Hiring,
+      // not discovery. Conversations are listing-scoped, so this remains
+      // correct when the same househelp publishes a future opportunity.
+      if (!isServiceProvider && contactedListingIds.has(String(listing.id))) return false;
       const minimum = Number(filters.minRating || 0);
       const rating = Number(listing.househelp?.rating ?? 0);
       return !minimum || rating >= minimum;
     }),
-    [listings, isServiceProvider, filters.minRating],
+    [listings, isServiceProvider, filters.minRating, contactedListingIds],
   );
 
   useEffect(() => {
@@ -659,6 +664,34 @@ export default function HouseholdJobsHome() {
   useEffect(() => {
     persistSavedInviteMessage(inviteDraft);
   }, [inviteDraft]);
+
+  useEffect(() => {
+    if (isServiceProvider || !currentUserId) return;
+    let cancelled = false;
+    const fetchContactedListings = async () => {
+      try {
+        const raw = await notificationsService.listConversations(currentUserId, 0, 200);
+        if (cancelled) return;
+        const conversations = Array.isArray(raw?.conversations)
+          ? raw.conversations
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : Array.isArray(raw)
+              ? raw
+              : [];
+        const ids = conversations
+          .map((conversation: Record<string, any>) => conversation.listing_id ?? conversation.listingId)
+          .filter((id: unknown) => id !== undefined && id !== null && String(id) !== '')
+          .map(String);
+        setContactedListingIds(new Set(ids));
+      } catch {
+        // Sending still resolves an existing listing-scoped conversation, so
+        // duplicate outreach is prevented even if this decoration call fails.
+      }
+    };
+    void fetchContactedListings();
+    return () => { cancelled = true; };
+  }, [currentUserId, isServiceProvider]);
 
   const sortedListings = useMemo(() => {
     if (!sortBy) return filteredListings;
@@ -886,6 +919,10 @@ export default function HouseholdJobsHome() {
   };
 
   const handleOpenInviteModal = (listing: OpenForWorkListing, options?: { template?: "skills" | "availability" }) => {
+    if (contactedListingIds.has(String(listing.id))) {
+      setActionSuccess("You have already contacted this househelp about this listing. Open Inbox to continue the conversation.");
+      return;
+    }
     // Invite sends a message too, so gating one path and not the other would be
     // a paywall with a hole beside it — and the hole is a button on the same
     // card. Checked when the composer opens rather than on send, so nobody
@@ -912,6 +949,10 @@ export default function HouseholdJobsHome() {
   const handleSendInvite = async (event?: React.FormEvent) => {
     event?.preventDefault();
     if (!selectedInviteListing) return;
+    if (contactedListingIds.has(String(selectedInviteListing.id))) {
+      setInviteError("You have already contacted this househelp about this listing. Open Inbox to continue the conversation.");
+      return;
+    }
     if (!currentUserId) {
       setInviteError("We couldn’t verify your household profile.");
       return;
@@ -945,6 +986,7 @@ export default function HouseholdJobsHome() {
       if (!convId) throw new Error("We couldn't open a conversation just yet.");
 
       await notificationsService.sendMessage(convId, body, '', currentUserId, currentHouseholdProfileId || '', 'household');
+      setContactedListingIds((previous) => new Set(previous).add(String(selectedInviteListing.id)));
       persistSavedInviteMessage(body);
       setActionSuccess("Invite sent successfully.");
       setSelectedInviteListing(null);
