@@ -1848,7 +1848,7 @@ export default function HiringHistory() {
             </> : <>
               <button type="button" onClick={() => { setSelectedHiringCard(null); setHistoryFor(record.id); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">History</button>
               <button type="button" onClick={() => handleChatWithApplicant(record)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Chat</button>
-              {listing && <button type="button" onClick={() => setViewingJob(listing)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
+              {listing && <button type="button" onClick={() => { setSelectedHiringCard(null); setViewingJob(listing); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
               <button type="button" onClick={() => handleViewInterest(record)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white">View profile</button>
             </>}
           />

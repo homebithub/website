@@ -1317,7 +1317,7 @@ export default function HousehelpHiringHistory() {
               { label: 'Signature', value: isEmploymentContract ? (record.househelp_signed_at ? 'Signed' : 'Awaiting your signature') : undefined },
             ]}
             actions={<>
-              {record.listing_id && <button type="button" onClick={() => openJobListing(record.listing_id, record.listing)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
+              {record.listing_id && <button type="button" onClick={() => { setSelectedHiringCard(null); void openJobListing(record.listing_id, record.listing); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
               <button type="button" onClick={() => navigate(profileLink, { state: { profileId: record.household?.id || record.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View household</button>
               {isRequest && normalizeStatus(record.status) === 'pending' && <>
                 <button type="button" onClick={() => { setSelectedHiringCard(null); setSelectedRequest(record.id); setShowDeclineModal(true); }} className="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-600">Decline</button>
