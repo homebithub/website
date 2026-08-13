@@ -64,5 +64,8 @@ export function HiringCardModal({ open, onClose, eyebrow, title, status, summary
 }
 
 export function isHiringCardAction(target: EventTarget | null) {
-  return target instanceof Element && Boolean(target.closest('button, a, input, select, textarea, [role="button"]'));
+  // The card itself has role="button" for keyboard/accessibility semantics.
+  // Including [role="button"] here made every descendant look like an action,
+  // because closest() eventually found the card and suppressed its modal.
+  return target instanceof Element && Boolean(target.closest('button, a, input, select, textarea'));
 }
