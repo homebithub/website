@@ -4,6 +4,7 @@ import { hireContractService } from '~/services/grpc/authServices';
 import { FileText, CheckCircle, XCircle, Calendar, DollarSign, Briefcase } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
+import { getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
 
 interface HireContract {
   id: string;
@@ -47,6 +48,17 @@ export default function HouseholdContracts() {
   const [offset, setOffset] = useState(0);
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
+
+  const viewHousehelpProfile = (contract: HireContract) => {
+    const profileId = getHousehelpCandidateIds(contract)[0];
+    if (!profileId) {
+      setError("We couldn't identify this househelp's profile. Refresh the page and try again.");
+      return;
+    }
+    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Contracts')}`, {
+      state: { profileId, backTo: backToPath, backLabel: 'Back to Contracts' },
+    });
+  };
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -317,9 +329,7 @@ export default function HouseholdContracts() {
                     </button>
 
                     <button
-                      onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(contract.househelp_id)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Contracts')}`, {
-                        state: { profileId: contract.househelp_id, backTo: backToPath, backLabel: 'Back to Contracts' }
-                      })}
+                      onClick={() => viewHousehelpProfile(contract)}
                       className="px-4 py-1 text-xs border border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors whitespace-nowrap"
                     >
                       View Profile

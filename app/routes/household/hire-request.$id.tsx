@@ -57,6 +57,17 @@ export default function HireRequestDetail() {
   const backLabel = searchParams.get('backLabel') || 'Back to Hiring History';
   const detailPath = `${location.pathname}${location.search || ''}`;
 
+  const viewHousehelpProfile = () => {
+    const profileId = getHousehelpCandidateIds(hireRequest)[0];
+    if (!profileId) {
+      setError("We couldn't identify this househelp's profile. Refresh the page and try again.");
+      return;
+    }
+    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(detailPath)}&backLabel=${encodeURIComponent('Back to Hire Request')}`, {
+      state: { profileId, backTo: detailPath, backLabel: 'Back to Hire Request' },
+    });
+  };
+
   useEffect(() => {
     fetchHireRequest();
   }, [id]);
@@ -369,9 +380,7 @@ export default function HireRequestDetail() {
                     {hireRequest.househelp?.first_name} {hireRequest.househelp?.last_name}
                   </h3>
                   <button
-                    onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(hireRequest.househelp_id)}&from=hiring&backTo=${encodeURIComponent(detailPath)}&backLabel=${encodeURIComponent('Back to Hire Request')}`, {
-                      state: { profileId: hireRequest.househelp_id, backTo: detailPath, backLabel: 'Back to Hire Request' }
-                    })}
+                    onClick={viewHousehelpProfile}
                     className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
                   >
                     View Full Profile →
@@ -517,9 +526,7 @@ export default function HireRequestDetail() {
               )}
 
               <button
-                onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(hireRequest.househelp_id)}&from=hiring&backTo=${encodeURIComponent(detailPath)}&backLabel=${encodeURIComponent('Back to Hire Request')}`, {
-                  state: { profileId: hireRequest.househelp_id, backTo: detailPath, backLabel: 'Back to Hire Request' }
-                })}
+                onClick={viewHousehelpProfile}
                 className="w-full px-4 py-1.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-medium transition-colors"
               >
                 View Househelp Profile

@@ -1,6 +1,6 @@
 function normalizeId(value: unknown): string | undefined {
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
+  if (typeof value !== 'string' && typeof value !== 'number') return undefined;
+  const trimmed = String(value).trim();
   return trimmed || undefined;
 }
 
@@ -24,6 +24,12 @@ export function getHouseholdCandidateIds(record: any): string[] {
 
 export function getHousehelpCandidateIds(record: any): string[] {
   return collectIds(
+    // Listing applications use service_provider_id on creation, while older
+    // responses and clients called the same value applicant_profile_id.
+    record?.applicant_profile_id,
+    record?.applicantProfileId,
+    record?.service_provider_id,
+    record?.serviceProviderId,
     record?.househelp_id,
     record?.househelp_user_id,
     record?.househelp_profile_id,
@@ -31,6 +37,9 @@ export function getHousehelpCandidateIds(record: any): string[] {
     record?.househelp?.profile_id,
     record?.househelp?.user_id,
     record?.househelp?.user?.id,
+    record?.applicant?.profile_id,
+    record?.applicant?.profileId,
+    record?.applicant?.id,
   );
 }
 

@@ -103,10 +103,11 @@ type TabType = 'jobs' | 'applicants' | 'shortlisted' | 'awaiting' | 'hired' | 'c
  * the switch to applications is one function rather than a rewrite.
  */
 function toApplicantRow(application: Record<string, any>): Interest {
+  const [applicantProfileId = ''] = getHousehelpCandidateIds(application);
   return {
     id: String(application.id ?? ''),
     // The applicant's user_profile id, which is what the profile lookup needs.
-    househelp_id: String(application.applicant_profile_id ?? application.applicantProfileId ?? ''),
+    househelp_id: applicantProfileId,
     household_id: '',
     salary_expectation: Number(application.salary_expectation ?? 0),
     salary_frequency: String(application.salary_frequency ?? 'monthly'),
@@ -116,6 +117,7 @@ function toApplicantRow(application: Record<string, any>): Interest {
     status: String(application.status ?? 'initiated'),
     created_at: String(application.created_at ?? application.createdAt ?? ''),
     listing_id: application.listing_id ?? application.listingId,
+    househelp: application.househelp ?? application.applicant,
   } as Interest;
 }
 
@@ -1008,14 +1010,18 @@ export default function HiringHistory() {
     [applicantsByTab],
   );
 
-  const handleViewInterest = async (interest: Interest) => {
+  const handleViewInterest = (interest: Interest | HireRequest) => {
     // No "mark as viewed": applications have no such flag, and the tabs already
     // say what needs attention by status. Nothing is lost — a read receipt was
     // never shown to the applicant.
     // Navigate to househelp profile using profileId
-    const profileId = interest.househelp_id;
-    navigate(`/househelp/public-profile?profileId=${profileId}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
-      state: { backTo: backToPath, backLabel: 'Back to Hiring' },
+    const profileId = getHousehelpCandidateIds(interest)[0];
+    if (!profileId) {
+      setError("We couldn't identify this househelp's profile. Refresh the page and try again.");
+      return;
+    }
+    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
+      state: { profileId, backTo: backToPath, backLabel: 'Back to Hiring' },
     });
   };
 
@@ -1965,18 +1971,8 @@ export default function HiringHistory() {
 
         <button
           onClick={() => {
-            const profileId =
-              selectedRequest?.househelp?.id || selectedRequest?.househelp_id;
-            if (profileId) {
-              navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
-                state: {
-                  profileId,
-                  backTo: backToPath,
-                  backLabel: "Back to Hiring",
-                },
-              });
-              setSelectedRequest(null);
-            }
+            handleViewInterest(selectedRequest);
+            setSelectedRequest(null);
           }}
           className="
             flex-1 inline-flex items-center justify-center
