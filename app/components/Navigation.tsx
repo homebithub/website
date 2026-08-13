@@ -14,6 +14,7 @@ import notificationsService from '~/services/grpc/notifications.service';
 import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { cachedRequest } from '~/utils/requestCache';
+import { countUnattendedHiringRecords, hiringAttentionScope } from '~/utils/hiringAttention';
 
 const NAV_COUNT_STALE_MS = 2 * 60_000;
 const NAV_ADMIN_STALE_MS = 10 * 60_000;
@@ -148,40 +149,55 @@ function NavigationContent() {
             ? 'My Profile'
             : 'Profile';
 
-    // Fetch hiring badge count: pending items the user has NOT acted upon
-    // A badge is a claim that something is waiting on *you*. Each side is waiting
-    // on something different, and counting the same thing for both got it wrong
-    // for households: a hire request they sent is waiting on the househelp, not
-    // on them, so it was a number they could not act on and could not clear.
-    //
-    //   household  → applicants to review ('initiated'), plus candidates who
-    //                accepted and now need their approval ('accepted')
-    //   househelp  → hire requests received and unanswered
+    // Total unattended cards across every Hiring tab. The same versioned ledger
+    // drives the tab badges and card highlights, so opening the page alone never
+    // clears this number; a card interaction does.
     const fetchHireRequestCount = React.useCallback(async (overrideProfileType?: string | null, force = false) => {
         try {
             if (!getAccessTokenFromCookies()) return;
             const pt = overrideProfileType ?? profileType;
             const role = normalizeProfileRole(pt);
             const userId = getStoredUserId() || '';
-            if (!role || !userId) return;
+            const profileId = getStoredUserProfileId() || '';
+            if (!role || !userId || !profileId) return;
             const total = await cachedRequest(`nav:hiring:${userId}:${role}`, async () => {
                 const {
                     marketplaceHireRequestService: hireRequestService,
                     marketplaceListingApplicationService: listingApplicationService,
                 } = await import('~/services/grpc/marketplace.service');
                 if (role === 'client') {
-                    const ownerProfileId = getStoredUserProfileId() || '';
-                    if (!ownerProfileId) return 0;
                     const raw = await listingApplicationService.listApplications({
-                        ownerProfileId,
-                        statuses: ['initiated', 'accepted'],
+                        ownerProfileId: profileId,
                         limit: 200,
                     });
                     const rows = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
-                    return Number(raw?.total ?? rows.length);
+                    return countUnattendedHiringRecords(hiringAttentionScope(profileId, 'household'), [
+                        { kind: 'application', records: rows },
+                    ]);
                 }
-                const data = await hireRequestService.listHireRequests('', '', 'pending');
-                return Number(data?.total || (Array.isArray(data?.data) ? data.data.length : 0));
+                const {
+                    hireContractService,
+                    employmentContractService,
+                    employmentService,
+                } = await import('~/services/grpc/authServices');
+                const applicantPromise = listingApplicationService.listApplications({ applicantProfileId: profileId, limit: 200 });
+                const [requestsRaw, applicationsRaw, employmentContractsRaw, legacyContractsRaw, workRaw] = await Promise.all([
+                    hireRequestService.listHireRequests('', 'househelp'),
+                    applicantPromise,
+                    employmentContractService.listEmploymentContracts('', undefined, 200, 0),
+                    hireContractService.listHireContracts('', 'househelp'),
+                    employmentService.listByHousehelp(userId, 200, 0),
+                ]);
+                const rows = (raw: any) => {
+                    const value = raw?.data?.data ?? raw?.data ?? raw ?? [];
+                    return Array.isArray(value) ? value : [];
+                };
+                return countUnattendedHiringRecords(hiringAttentionScope(profileId, 'househelp'), [
+                    { kind: 'request', records: rows(requestsRaw) },
+                    { kind: 'application', records: rows(applicationsRaw) },
+                    { kind: 'employment-contract', records: rows(employmentContractsRaw) },
+                    { kind: 'work', records: [...rows(legacyContractsRaw), ...rows(workRaw)] },
+                ]);
             }, { maxAgeMs: NAV_COUNT_STALE_MS, force });
 
             setHireRequestCount(total);
@@ -345,10 +361,14 @@ function NavigationContent() {
         };
 
         window.addEventListener('hiring-updated', handleHiringUpdate);
+        window.addEventListener('hiring-attention-updated', handleHiringUpdate);
+        window.addEventListener('storage', handleHiringUpdate);
         window.addEventListener('inbox-updated', handleInboxUpdate);
         window.addEventListener('shortlist-updated', handleShortlistUpdate);
         return () => {
             window.removeEventListener('hiring-updated', handleHiringUpdate);
+            window.removeEventListener('hiring-attention-updated', handleHiringUpdate);
+            window.removeEventListener('storage', handleHiringUpdate);
             window.removeEventListener('inbox-updated', handleInboxUpdate);
             window.removeEventListener('shortlist-updated', handleShortlistUpdate);
         };
@@ -363,6 +383,16 @@ function NavigationContent() {
     useSSESubscriptionSafe('hiring.application.accepted', refreshHiring, badgesAreLive);
     useSSESubscriptionSafe('hiring.application.declined', refreshHiring, badgesAreLive);
     useSSESubscriptionSafe('hiring.application.approved', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.shortlisted', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.closed', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.request.received', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.request.accepted', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.request.rejected', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.contract.signed', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.contract.terminated', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.employment_contract.offered', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.employment_contract.sent_to_househelp', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.employment_contract.fully_signed', refreshHiring, badgesAreLive);
 
     // Messages come over the WebSocket rather than SSE, so the inbox badge
     // needs its own subscription: 'new_message' for one arriving, 'message_read'

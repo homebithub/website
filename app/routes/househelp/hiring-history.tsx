@@ -12,6 +12,8 @@ import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProf
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { buildApplicationContractMap, buildIdentifierMap, collapseApplicationContracts, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
+import { useSSEContextSafe } from '~/contexts/SSEContext';
+import { hiringAttentionScope, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
   Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User, FileText
@@ -234,6 +236,7 @@ function buildHouseholdProfileLink(options: {
 export default function HousehelpHiringHistory() {
   const navigate = useNavigate();
   const location = useLocation();
+  const sseContext = useSSEContextSafe();
   const [searchParams, setSearchParams] = useSearchParams();
   const currentProfileType = (getStoredUser() as any)?.profile_type || getStoredProfileType();
   const profileRole = normalizeHiringProfileRole(currentProfileType);
@@ -276,8 +279,8 @@ export default function HousehelpHiringHistory() {
   const [viewingListing, setViewingListing] = useState<Record<string, any> | null>(null);
   const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
   const [historyFor, setHistoryFor] = useState<string | null>(null);
-  const [pendingCount, setPendingCount] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [attentionRevision, setAttentionRevision] = useState(0);
   
   // Confirmation dialog states
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
@@ -285,6 +288,17 @@ export default function HousehelpHiringHistory() {
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
+  const attentionScope = hiringAttentionScope(getStoredUserProfileId(), 'househelp');
+
+  useEffect(() => {
+    const refreshAttention = () => setAttentionRevision((value) => value + 1);
+    window.addEventListener('hiring-attention-updated', refreshAttention);
+    window.addEventListener('storage', refreshAttention);
+    return () => {
+      window.removeEventListener('hiring-attention-updated', refreshAttention);
+      window.removeEventListener('storage', refreshAttention);
+    };
+  }, []);
 
   const handleTabChange = (tab: TabType) => {
 
@@ -297,29 +311,12 @@ export default function HousehelpHiringHistory() {
   };
 
   useEffect(() => {
-    const fetchPendingCount = async () => {
-      try {
-        const raw = await hireRequestService.listHireRequests('', 'househelp', 'pending');
-        const items = raw?.data || raw || [];
-        setPendingCount(Array.isArray(items) ? items.length : 0);
-      } catch (err) {
-        console.error('Failed to fetch pending count:', err);
-      }
-    };
-    fetchPendingCount();
-  }, []);
+    void Promise.all([fetchHireRequests(), fetchContracts(), fetchEmploymentContracts(), fetchInterests()]);
+  }, [isClientProfile]);
 
   useEffect(() => {
-    if (activeTab === 'requests') {
-      fetchHireRequests();
-    } else if (activeTab === 'work-history') {
-      fetchContracts();
-    } else if (activeTab === 'employment-contracts') {
-      fetchEmploymentContracts();
-    } else if (activeTab === 'interests') {
-      fetchInterests();
-    }
-  }, [activeTab, offset, isClientProfile]);
+    if (offset > 0) void fetchEmploymentContracts();
+  }, [offset]);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -572,6 +569,25 @@ export default function HousehelpHiringHistory() {
     }
   };
 
+  const refreshRealtimeHiring = () => {
+    void Promise.all([fetchHireRequests(), fetchContracts(), fetchEmploymentContracts(), fetchInterests()]);
+  };
+  const realtimeHiringEvents = [
+    'hiring.request.received', 'hiring.request.accepted', 'hiring.request.rejected',
+    'hiring.application.submitted', 'hiring.application.shortlisted', 'hiring.application.accepted',
+    'hiring.application.declined', 'hiring.application.approved', 'hiring.application.closed',
+    'hiring.contract.signed', 'hiring.contract.terminated',
+    'hiring.employment_contract.offered', 'hiring.employment_contract.sent_to_househelp',
+    'hiring.employment_contract.fully_signed',
+  ];
+  useEffect(() => {
+    if (!sseContext || !attentionScope) return;
+    const unsubscribers = realtimeHiringEvents.map((eventType) =>
+      sseContext.subscribe(eventType, refreshRealtimeHiring),
+    );
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+  }, [sseContext, attentionScope]);
+
   const openAcceptConfirm = (requestId: string) => {
     setPendingActionId(requestId);
     setShowAcceptConfirm(true);
@@ -741,11 +757,16 @@ export default function HousehelpHiringHistory() {
     }
   };
 
+  const unattendedCount = <T extends { id?: string | number | null }>(
+    kind: 'application' | 'request' | 'employment-contract' | 'work',
+    records: T[],
+  ) => records.filter((record) => isHiringRecordUnattended(attentionScope, kind, record)).length;
+
   const tabs: { key: TabType; label: string; count?: number }[] = [
-    { key: 'interests', label: 'Applications' },
-    { key: 'requests', label: 'Requests', count: pendingCount > 0 ? pendingCount : undefined },
-    { key: 'employment-contracts', label: 'Contracts' },
-    { key: 'work-history', label: 'Work History' },
+    { key: 'interests', label: 'Applications', count: unattendedCount('application', interests) },
+    { key: 'requests', label: 'Requests', count: unattendedCount('request', hireRequests) },
+    { key: 'employment-contracts', label: 'Contracts', count: unattendedCount('employment-contract', employmentContracts) },
+    { key: 'work-history', label: 'Work History', count: unattendedCount('work', contracts) },
   ];
 
   const pageTitle = 'Hiring';
@@ -865,9 +886,10 @@ export default function HousehelpHiringHistory() {
                       : 'Negotiable');
                   const starts = highlights.startTiming
                     || (request.start_date ? formatDate(request.start_date) : 'Flexible');
+                  const isNew = isHiringRecordUnattended(attentionScope, 'request', request);
 
                   return (
-                  <div key={request.id} className="p-6 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors">
+                  <div key={request.id} onClickCapture={() => markHiringRecordAttended(attentionScope, 'request', request)} className={`p-6 transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/20 ${isNew ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
@@ -880,6 +902,7 @@ export default function HousehelpHiringHistory() {
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <h3 className="text-base font-semibold text-gray-900 dark:text-white">{getHouseholdName(request.household)}</h3>
+                            {isNew && <span className="rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">New</span>}
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
                               {getStatusIcon(request.status)}
                               {formatStatus(request.status)}
@@ -985,8 +1008,9 @@ export default function HousehelpHiringHistory() {
                     return { label: ec.status, color: 'bg-gray-100 text-gray-800', icon: <FileText className="w-4 h-4" /> };
                   };
                   const badge = getECStatusBadge();
+                  const isNew = isHiringRecordUnattended(attentionScope, 'employment-contract', ec);
                   return (
-                    <div key={ec.id} className="p-6 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors">
+                    <div key={ec.id} onClickCapture={() => markHiringRecordAttended(attentionScope, 'employment-contract', ec)} className={`p-6 transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/20 ${isNew ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
                       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
@@ -999,6 +1023,7 @@ export default function HousehelpHiringHistory() {
                           <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-2 mb-2">
                               <h3 className="text-base font-semibold text-gray-900 dark:text-white">{ec.job_title}</h3>
+                              {isNew && <span className="rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">New</span>}
                               <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${badge.color}`}>
                                 {badge.icon} {badge.label}
                               </span>
@@ -1059,7 +1084,7 @@ export default function HousehelpHiringHistory() {
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-purple-800/40">
                 {contracts.map((contract) => (
-                  <div key={contract.id} className="p-6 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors">
+                  <div key={contract.id} onClickCapture={() => markHiringRecordAttended(attentionScope, 'work', contract)} className={`p-6 transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/20 ${isHiringRecordUnattended(attentionScope, 'work', contract) ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
@@ -1072,6 +1097,7 @@ export default function HousehelpHiringHistory() {
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <h3 className="text-base font-semibold text-gray-900 dark:text-white">{getHouseholdName(contract.household)}</h3>
+                            {isHiringRecordUnattended(attentionScope, 'work', contract) && <span className="rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">New</span>}
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(contract.status)}`}>
                               {getStatusIcon(contract.status)}
                               {formatStatus(contract.status)}
@@ -1134,7 +1160,7 @@ export default function HousehelpHiringHistory() {
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-purple-800/40">
                 {interests.map((interest) => (
-                  <div key={interest.id} className="p-6 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors">
+                  <div key={interest.id} onClickCapture={() => markHiringRecordAttended(attentionScope, 'application', interest)} className={`p-6 transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/20 ${isHiringRecordUnattended(attentionScope, 'application', interest) ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
@@ -1147,6 +1173,7 @@ export default function HousehelpHiringHistory() {
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <h3 className="text-base font-semibold text-gray-900 dark:text-white">{getHouseholdName(interest.household)}</h3>
+                            {isHiringRecordUnattended(attentionScope, 'application', interest) && <span className="rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">New</span>}
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(interest.status)}`}>
                               {getStatusIcon(interest.status)}
                               {formatStatus(interest.status)}

@@ -18,6 +18,7 @@ import { ApplicationHistory } from '~/components/hiring/ApplicationHistory';
 import { ListingDetails } from '~/components/listing/ListingDetails';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
+import { hiringAttentionScope, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
 
 interface HireRequest {
   id: string;
@@ -314,8 +315,23 @@ export default function HiringHistory() {
   const [rejectReason, setRejectReason] = useState('');
   // Map all known househelp identifiers to the matching employment contract.
   const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, any>>({});
+  const [attentionRevision, setAttentionRevision] = useState(0);
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
+  const attentionScope = hiringAttentionScope(
+    currentHouseholdProfileId || getStoredUserProfileId(),
+    'household',
+  );
+
+  useEffect(() => {
+    const refreshAttention = () => setAttentionRevision((value) => value + 1);
+    window.addEventListener('hiring-attention-updated', refreshAttention);
+    window.addEventListener('storage', refreshAttention);
+    return () => {
+      window.removeEventListener('hiring-attention-updated', refreshAttention);
+      window.removeEventListener('storage', refreshAttention);
+    };
+  }, []);
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -647,16 +663,22 @@ export default function HiringHistory() {
   }, [activeTab, searchParams]);
 
 
-  // SSE: auto-refetch applicants when a new application is received
+  // Keep every tab badge in sync with the full hiring event stream.
   useEffect(() => {
     if (!sseContext) return;
-    const unsub = sseContext.subscribe('auth.household.updated', (event: any) => {
+    const unsubscribers = ['hiring.application.submitted', 'hiring.application.shortlisted',
+      'hiring.application.accepted', 'hiring.application.declined', 'hiring.application.approved',
+      'hiring.application.closed', 'hiring.contract.signed', 'hiring.contract.terminated',
+      'hiring.employment_contract.fully_signed'].map((eventType) =>
+      sseContext.subscribe(eventType, () => void fetchApplicants()),
+    );
+    unsubscribers.push(sseContext.subscribe('auth.household.updated', (event: any) => {
       const action = event?.data?.action;
       if (action === 'interest_received') {
-        fetchApplicants();
+        void fetchApplicants();
       }
-    });
-    return unsub;
+    }));
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, [sseContext]);
 
   // Every application across this household's listings, in one request.
@@ -978,15 +1000,12 @@ export default function HiringHistory() {
     return groups;
   }, [applicants, employmentContractMap, endedEngagements, househelpUserIdFor]);
 
-  // The nav badge counts what needs the household's attention: new applicants
-  // plus anyone who has accepted and is waiting on their approval.
-  //
-  // Derived from the same grouping the tabs use rather than fetched separately,
-  // so the badge and the tabs can never disagree — a badge showing three when the
-  // tab shows none is the kind of thing that trains people to ignore badges.
+  // Any status change is a fresh item until a card-level action acknowledges it.
   useEffect(() => {
-    setApplicantsCount(applicantsByTab.applicants.length + applicantsByTab.awaiting.length);
-  }, [applicantsByTab]);
+    setApplicantsCount(applicants.filter((record) =>
+      isHiringRecordUnattended(attentionScope, 'application', record),
+    ).length);
+  }, [applicants, applicantsByTab, attentionRevision, attentionScope]);
 
   // What the active tab shows. 'jobs' renders its own list, so anything else
   // falls back to an empty group rather than the whole set.
@@ -1001,13 +1020,15 @@ export default function HiringHistory() {
       // Counts only where a number tells the household something. "Applicants"
       // and "Needs your reply" are queues to work through; hired and closed are
       // history, and a badge on history reads as something to action.
-      { key: 'applicants', label: 'Applicants', count: applicantsByTab.applicants.length },
-      { key: 'shortlisted', label: 'Shortlisted', count: applicantsByTab.shortlisted.length },
-      { key: 'awaiting', label: 'Needs your reply', count: applicantsByTab.awaiting.length },
-      { key: 'hired', label: 'Contracts' },
-      { key: 'closed', label: 'Closed' },
+      ...(['applicants', 'shortlisted', 'awaiting', 'hired', 'closed'] as const).map((key) => ({
+        key,
+        label: key === 'applicants' ? 'Applicants' : key === 'shortlisted' ? 'Shortlisted' : key === 'awaiting' ? 'Needs your reply' : key === 'hired' ? 'Contracts' : 'Closed',
+        count: applicantsByTab[key].filter((record) =>
+          isHiringRecordUnattended(attentionScope, 'application', record),
+        ).length,
+      })),
     ],
-    [applicantsByTab],
+    [applicantsByTab, attentionRevision, attentionScope],
   );
 
   const handleViewInterest = (interest: Interest | HireRequest) => {
@@ -1457,7 +1478,7 @@ export default function HiringHistory() {
                 : profile?.availability_date
                   ? formatDate(profile.availability_date)
                   : 'Flexible';
-              const isNew = !interest.viewed_at;
+              const isNew = isHiringRecordUnattended(attentionScope, 'application', interest);
               // The application's own status, not a bookmark somewhere else.
               const isShortlisted = interest.status === 'shortlisted';
               const isClosed = ['declined', 'approved'].includes(interest.status);
@@ -1513,9 +1534,10 @@ export default function HiringHistory() {
               return (
                 <div
                   key={interest.id}
+                  onClickCapture={() => markHiringRecordAttended(attentionScope, 'application', interest)}
                   className={`relative min-w-0 overflow-hidden rounded-2xl border bg-white p-3 sm:p-7 transition-shadow hover:shadow-xl dark:bg-purple-950/40 ${
                     isNew
-                      ? 'border-green-300 dark:border-green-600/40 ring-2 ring-green-100 dark:ring-green-900/30'
+                      ? 'border-purple-500 ring-2 ring-purple-200/80 dark:border-fuchsia-500/70 dark:ring-fuchsia-900/40'
                       : 'border-purple-100 dark:border-purple-800/40'
                   }`}
                 >
