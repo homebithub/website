@@ -229,9 +229,8 @@ export default function Pricing() {
 
   const handleSelectPlan = async (plan: SubscriptionPlan) => {
     if (!user) {
-      // TODO: Uncomment signup redirect when going live
-      // const redirect = encodeURIComponent(location.pathname);
-      // navigate(`/signup?redirect=${redirect}&plan=${plan.id}`);
+      const redirect = encodeURIComponent(location.pathname);
+      navigate(`/signup?redirect=${redirect}&plan=${plan.id}`);
       return;
     }
     

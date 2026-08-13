@@ -588,12 +588,18 @@ function NavigationContent() {
                     </div>
 
                     {showAuthButtons && (
-                        <div className="flex items-center space-x-3">
+                        <div className="hidden items-center gap-2 lg:flex">
                             <Link
-                                to="/waitlist"
-                                className="link hidden lg:block text-xs font-medium rounded-xl transition-all duration-200 px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+                                to="/login"
+                                className="link rounded-xl border border-purple-300 px-4 py-1.5 text-xs font-semibold text-purple-700 transition-all duration-200 hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-purple-500/40 dark:text-purple-300 dark:hover:bg-purple-900/30"
                             >
-                                Join Waitlist
+                                Log in
+                            </Link>
+                            <Link
+                                to="/signup"
+                                className="link rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1.5 text-xs font-semibold text-white shadow-md transition-all duration-200 hover:scale-105 hover:from-purple-700 hover:to-pink-700 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                            >
+                                Sign up
                             </Link>
                         </div>
                     )}
@@ -716,16 +722,24 @@ function NavigationContent() {
 
                                     {/* Mobile Auth Options */}
                                     {showAuthButtons && (
-                                        <Menu.Item>
-                                            {({ active }) => (
+                                        <div className="mx-2 mt-2 grid grid-cols-2 gap-2 border-t border-purple-100 px-2 pt-3 dark:border-purple-500/20">
+                                            <Menu.Item>
                                                 <Link
-                                                    to="/waitlist"
-                                                    className={`font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-4 py-1 text-xs rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
+                                                    to="/login"
+                                                    className="rounded-xl border border-purple-300 px-4 py-2 text-center text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-300 dark:hover:bg-purple-900/30"
                                                 >
-                                                    Join Waitlist
+                                                    Log in
                                                 </Link>
-                                            )}
-                                        </Menu.Item>
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                <Link
+                                                    to="/signup"
+                                                    className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-center text-xs font-semibold text-white shadow-md transition-all hover:from-purple-700 hover:to-pink-700 hover:shadow-lg"
+                                                >
+                                                    Sign up
+                                                </Link>
+                                            </Menu.Item>
+                                        </div>
                                     )}
 
                                     {/* Notifications in Mobile Menu */}

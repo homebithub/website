@@ -154,14 +154,13 @@ export default function Home4() {
                     We connect households with trusted, skilled professionals. Simple hiring, transparent pricing, and peace of mind — all in one platform.
                   </p>
                   <div className="mt-4 flex flex-wrap items-center gap-3">
-                    {/* TODO: Uncomment signup link when going live */}
-                    {/* <Link
+                    <Link
                       to="/signup"
                       className="group inline-flex items-center gap-2 rounded-xl bg-gray-900 dark:bg-white px-5 py-2 text-xs font-bold text-white dark:text-gray-900 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
                     >
                       Get Started
                       <ArrowRightIcon className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-                    </Link> */}
+                    </Link>
                     <Link
                       to="/about"
                       className="text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200 underline underline-offset-4 decoration-gray-300 dark:decoration-gray-600 hover:decoration-purple-400"
@@ -357,13 +356,12 @@ export default function Home4() {
                   Join thousands of households and professionals already on Homebit.
                 </p>
                 <div className="mt-6">
-                  {/* TODO: Uncomment signup link when going live */}
-                  {/* <Link
+                  <Link
                     to="/signup"
                     className="inline-block rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-xs sm:text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300"
                   >
                     Join Homebit Today
-                  </Link> */}
+                  </Link>
                 </div>
               </SlideUp>
             </div>

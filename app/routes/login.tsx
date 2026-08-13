@@ -421,11 +421,10 @@ export default function LoginPage() {
           </div>
           
           <div className="mt-6 text-center">
-            {/* TODO: Uncomment signup link when going live */}
-            {/* <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Don't have an account?</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Don't have an account?</span>
             <Link to="/signup" className="ml-1 text-sm font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline transition-colors">
               Sign up
-            </Link> */}
+            </Link>
           </div>
           </form>
           </PurpleCard>

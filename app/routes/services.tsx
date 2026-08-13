@@ -134,14 +134,13 @@ export default function Services() {
                   Join Homebit and connect with trusted professionals today.
                 </p>
                 <div className="mt-6">
-                  {/* TODO: Uncomment signup link when going live */}
-                  {/* <Button
+                  <Button
                     as={Link}
                     to="/signup"
                     size="lg"
                   >
                     Get Started
-                  </Button> */}
+                  </Button>
                 </div>
               </SlideUp>
             </div>
