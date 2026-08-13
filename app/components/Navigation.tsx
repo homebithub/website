@@ -15,6 +15,7 @@ import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { cachedRequest } from '~/utils/requestCache';
 import { countUnattendedHiringRecords, hiringAttentionScope } from '~/utils/hiringAttention';
+import { collapseApplicationContracts } from '~/utils/hiringIdentifiers';
 
 const NAV_COUNT_STALE_MS = 2 * 60_000;
 const NAV_ADMIN_STALE_MS = 10 * 60_000;
@@ -192,10 +193,11 @@ function NavigationContent() {
                     const value = raw?.data?.data ?? raw?.data ?? raw ?? [];
                     return Array.isArray(value) ? value : [];
                 };
+                const visibleEmploymentContracts = collapseApplicationContracts(rows(employmentContractsRaw));
                 return countUnattendedHiringRecords(hiringAttentionScope(profileId, 'househelp'), [
                     { kind: 'request', records: rows(requestsRaw) },
                     { kind: 'application', records: rows(applicationsRaw) },
-                    { kind: 'employment-contract', records: rows(employmentContractsRaw) },
+                    { kind: 'employment-contract', records: visibleEmploymentContracts },
                     { kind: 'work', records: [...rows(legacyContractsRaw), ...rows(workRaw)] },
                 ]);
             }, { maxAgeMs: NAV_COUNT_STALE_MS, force });

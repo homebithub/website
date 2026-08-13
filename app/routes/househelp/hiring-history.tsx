@@ -444,7 +444,9 @@ export default function HousehelpHiringHistory() {
     setEmploymentContractsLoading(true);
     setError(null);
     try {
-      const raw = await employmentContractService.listEmploymentContracts('', undefined, limit, offset);
+      // Load the same bounded set used by the navbar so tab and global counts
+      // cannot disagree because an unattended contract fell onto page two.
+      const raw = await employmentContractService.listEmploymentContracts('', undefined, 200, 0);
       const items = await decorateHouseholdRows(extractEnvelopeArray<EmploymentContract>(raw));
       const uniqueItems = collapseApplicationContracts(items);
       setEmploymentContracts(uniqueItems);
