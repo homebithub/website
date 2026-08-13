@@ -1275,7 +1275,7 @@ export default function HiringHistory() {
                   {tab.key === 'jobs' && <Briefcase className="w-4 h-4" />}
                   {tab.label}
                   {tab.count !== undefined && tab.count > 0 && (
-                    <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-green-500 text-white">
+                    <span className="ml-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-0.5 text-xs font-bold text-white shadow-sm shadow-purple-500/20">
                       {tab.count}
                     </span>
                   )}

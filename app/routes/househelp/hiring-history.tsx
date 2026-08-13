@@ -818,7 +818,7 @@ export default function HousehelpHiringHistory() {
                 {tab.key === 'work-history' && <Briefcase className="w-4 h-4" />}
                 {tab.key === 'interests' && <HandHeart className="w-4 h-4" />}
                 {tab.label}
-                {tab.count && tab.count > 0 && (
+                {tab.count !== undefined && tab.count > 0 && (
                   <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300">
                     {tab.count}
                   </span>
