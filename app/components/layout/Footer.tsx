@@ -102,7 +102,7 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
         ref={footerRef}
         data-site-footer
         aria-label="Website information"
-        className={`fixed bottom-20 right-5 z-30 hidden max-w-[420px] rounded-xl border px-3 py-2 text-[11px] shadow-lg backdrop-blur-md lg:block ${
+        className={`fixed bottom-0 left-5 z-30 hidden max-w-[420px] rounded-t-xl border px-3 py-2 text-[11px] shadow-lg backdrop-blur-md lg:block ${
           variant === 'light'
             ? 'border-gray-200 bg-white/90 text-gray-500 dark:border-white/10 dark:bg-[#13131a]/90 dark:text-gray-400'
             : 'border-gray-200 bg-white/90 text-gray-500 dark:border-white/10 dark:bg-[#0a0a0f]/90 dark:text-gray-400'
