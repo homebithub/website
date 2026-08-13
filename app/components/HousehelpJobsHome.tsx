@@ -267,30 +267,6 @@ const extractArray = <T,>(raw: any): T[] => {
 const jobKey = (job: { id?: unknown } | null | undefined): string =>
   job?.id === undefined || job?.id === null ? "" : String(job.id);
 
-const SAVED_PITCH_STORAGE_KEY = "homebit_househelp_saved_pitch";
-
-const loadSavedPitchFromStorage = (): string => {
-  if (typeof window === "undefined") return "";
-  try {
-    return window.localStorage.getItem(SAVED_PITCH_STORAGE_KEY) || "";
-  } catch {
-    return "";
-  }
-};
-
-const persistSavedPitchToStorage = (value: string) => {
-  if (typeof window === "undefined") return;
-  try {
-    if (value) {
-      window.localStorage.setItem(SAVED_PITCH_STORAGE_KEY, value);
-    } else {
-      window.localStorage.removeItem(SAVED_PITCH_STORAGE_KEY);
-    }
-  } catch {
-    // ignore storage errors
-  }
-};
-
 type ResponsivenessBadge = {
   tone: "fast" | "steady" | "slow";
   label: string;
@@ -416,7 +392,7 @@ export default function HousehelpJobsHome() {
   const [househelpProfileId, setHousehelpProfileId] = useState<string>("");
   const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
   const [selectedJobDetail, setSelectedJobDetail] = useState<JobListing | null>(null);
-  const [pitch, setPitch] = useState(loadSavedPitchFromStorage());
+  const [pitch, setPitch] = useState("");
   const [applyLoading, setApplyLoading] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [householdProfiles, setHouseholdProfiles] = useState<Record<string, HouseholdProfileLike | null>>({});
@@ -425,16 +401,6 @@ export default function HousehelpJobsHome() {
     const profile = profileId ? householdProfiles[profileId] : null;
     return profile?.display_name || profile?.household_name || profile?.name || null;
   }, [householdProfiles]);
-  const buildTemplatePitch = useCallback((job: JobListing, variant: "experience" | "availability") => {
-    const householdName = renderHouseholdName(job) || "there";
-    const jobType = job.job_types?.[0]?.replace(/_/g, " ") || job.title || "this role";
-    const startWindow = formatDate(job.start_date);
-    if (variant === "experience") {
-      const choresFocus = (job.chores_ids?.length ?? 0) > 0 ? "similar chores" : "household routines";
-      return `Hi ${householdName},\n\nI have hands-on experience handling ${choresFocus} and can bring a calm, reliable presence to your home. I'd love to support you as a ${jobType} and can share references if helpful.\n\nThanks for considering me!`;
-    }
-    return `Hello ${householdName},\n\nI noticed you're looking for help as soon as ${startWindow}. I'm currently available, flexible with schedules, and comfortable aligning with your family's routines. Let me know if you'd like to chat further or schedule a quick call.\n\nWarmly,`;
-  }, [renderHouseholdName]);
   const [shortlistedJobIds, setShortlistedJobIds] = useState<Set<string>>(() => new Set());
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(() => new Set());
   const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
@@ -827,17 +793,12 @@ export default function HousehelpJobsHome() {
     return resolveHouseholdOwnerUserId(profile) || profile?.user_id || householdUserKey(job);
   };
 
-  const handleOpenApplyModal = (job: JobListing, options?: { template?: "experience" | "availability" }) => {
+  const handleOpenApplyModal = (job: JobListing) => {
     if (requireSubscription("apply to jobs")) {
       return;
     }
     setSelectedJob(job);
-    if (options?.template) {
-      const template = buildTemplatePitch(job, options.template);
-      setPitch(template);
-    } else {
-      setPitch(loadSavedPitchFromStorage());
-    }
+    setPitch("");
     setApplyError(null);
   };
 
@@ -853,17 +814,6 @@ export default function HousehelpJobsHome() {
     if (applyLoading) return;
     setSelectedJob(null);
     setApplyError(null);
-  };
-
-  const buildQuickPitch = (job: JobListing) => {
-    const householdName = renderHouseholdName(job) || "your household";
-    const jobType = job.job_types?.[0]?.replace(/_/g, " ") || "this role";
-    return `Hi ${householdName},\n\nI'm interested in ${jobType}. I have experience with similar households and can start ${formatDate(job.start_date)}. Happy to share more details or answer any questions.\n\nThank you!`;
-  };
-
-  const handleUseQuickPitch = () => {
-    if (!selectedJob) return;
-    setPitch(buildQuickPitch(selectedJob));
   };
 
   const handleSubmitApplication = async (event: React.FormEvent) => {
@@ -891,7 +841,6 @@ export default function HousehelpJobsHome() {
       // had applied.
       await jobService.applyForJob(selectedJob.id, househelpProfileId, pitch.trim());
 
-      persistSavedPitchToStorage(pitch);
       setSuccess("Application submitted successfully.");
       setAppliedJobIds((prev) => new Set(prev).add(selectedJob.id));
       setSelectedJob(null);
@@ -900,7 +849,6 @@ export default function HousehelpJobsHome() {
       const message = err?.message || "Failed to submit application. Please try again.";
       if (message.toLowerCase().includes("already applied")) {
         setAppliedJobIds((prev) => new Set(prev).add(selectedJob.id));
-        persistSavedPitchToStorage(pitch);
         setSuccess("You have already applied to this job.");
         setSelectedJob(null);
         setPitch("");
@@ -1790,75 +1738,34 @@ export default function HousehelpJobsHome() {
 
             <form onSubmit={handleSubmitApplication} className="mt-6 space-y-5">
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-semibold text-purple-600 dark:text-purple-300">Pitch (optional)</label>
-                  <button
-                    type="button"
-                    onClick={handleUseQuickPitch}
-                    className="text-[11px] font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
-                  >
-                    Use quick pitch
-                  </button>
-                </div>
+                <label className="mb-2 block text-xs font-semibold text-purple-600 dark:text-purple-300">Cover letter (optional)</label>
                 <textarea
                   value={pitch}
                   onChange={(event) => setPitch(event.target.value)}
                   rows={5}
-                  placeholder="Introduce yourself, highlight your experience, or explain why you’re a great fit for this household."
+                  placeholder="Introduce yourself and explain why you would be a good fit for this household."
                   className="w-full text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/40 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition resize-none"
                 />
-                <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">We’ll share this message with the household together with your application.</p>
+                <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">We’ll share your cover letter with the household together with your application.</p>
               </div>
 
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-600/30 rounded-xl p-4 text-xs text-purple-800 dark:text-purple-200">
-                <p className="font-semibold mb-1">What happens after you submit?</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Your application is recorded immediately.</li>
-                  <li>{pitch.trim() ? "Your pitch will appear in the household’s applicants list." : "You can add a pitch now or later to help the household shortlist you."}</li>
-                  <li>You can follow up via chat using the buttons on the job card.</li>
-                </ul>
+              <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-800 dark:border-purple-600/30 dark:bg-purple-900/20 dark:text-purple-200">
+                Your application and cover letter will appear in the household’s applicants list immediately.
               </div>
 
-              <div className="flex items-center gap-3 justify-end">
-                <button
-                  type="button"
-                  onClick={handleUseQuickPitch}
-                  className="px-4 py-2 rounded-xl border border-green-200/70 text-green-700 text-xs font-semibold hover:bg-green-50 dark:border-green-500/30 dark:text-green-200 dark:hover:bg-green-500/10 transition"
-                >
-                  Use quick pitch
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!selectedJob) return;
-                    setPitch(buildTemplatePitch(selectedJob, "experience"));
-                  }}
-                  className="px-4 py-2 rounded-xl border border-purple-200/70 text-purple-700 text-xs font-semibold hover:bg-purple-50 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-500/10 transition"
-                >
-                  Experience template
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!selectedJob) return;
-                    setPitch(buildTemplatePitch(selectedJob, "availability"));
-                  }}
-                  className="px-4 py-2 rounded-xl border border-blue-200/70 text-blue-700 text-xs font-semibold hover:bg-blue-50 dark:border-blue-500/30 dark:text-blue-200 dark:hover:bg-blue-500/10 transition"
-                >
-                  Availability template
-                </button>
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={handleCloseApplyModal}
                   disabled={applyLoading}
-                  className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                  className="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={applyLoading}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 transition disabled:opacity-60"
+                  className="min-h-11 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-purple-500/30 transition hover:from-purple-700 hover:to-pink-700 disabled:opacity-60"
                 >
                   {applyLoading ? "Submitting..." : "Submit application"}
                 </button>
