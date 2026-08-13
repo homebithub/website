@@ -8,6 +8,7 @@ import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { jobService, shortlistService } from "~/services/grpc/authServices";
 import { formatListingPlace } from "~/utils/place";
 import { listingHighlights } from "~/utils/listingFeatures";
+import { ListingCardFacts } from "~/components/listing/ListingCardFacts";
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { formatTimeAgo } from "~/utils/timeAgo";
@@ -292,14 +293,15 @@ export default function ShortlistPage() {
                       }}
                       className="cursor-pointer bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8">
+                        <div className="min-w-0">
+                          <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
                             {job ? job.title || "Household Job" : "Loading..."}
                           </h3>
                           <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatListingPlace(job)}</p>
                         </div>
-                        <div className="flex items-start gap-2">
+                        <ListingCardFacts listing={job} />
+                        <div className="flex shrink-0 items-start gap-1.5 sm:gap-2">
                           <span
                             className={`px-3 py-1 text-xs font-semibold rounded-full ${
                               isOpen

@@ -43,6 +43,7 @@ import { OpenForWorkButton } from "~/components/OpenForWorkButton";
 import { humanizeFeatureName, listingHighlights, remainingFeatureGroups } from "~/utils/listingFeatures";
 import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
+import { ListingCardFacts } from "~/components/listing/ListingCardFacts";
 
 interface JobListing {
   id: string;
@@ -1285,10 +1286,10 @@ export default function HousehelpJobsHome() {
                       }}
                       className="cursor-pointer rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400 dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8">
+                        <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{job.title || "Household Job"}</h3>
+                            <h3 className="min-w-0 text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{job.title || "Household Job"}</h3>
                             {typeof job.fit_score === "number" && job.fit_score >= 0 && (
                               <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${matchScoreClasses(job.fit_score)}`}>
                                 Match {job.fit_score}%
@@ -1341,8 +1342,9 @@ export default function HousehelpJobsHome() {
                             </div>
                           )}
                         </div>
-                        <div className="flex items-start gap-2">
-                          <span className={`px-3 py-1 text-xs font-semibold rounded-full ${isJobOpen(job)
+                        <ListingCardFacts listing={job} />
+                        <div className="flex shrink-0 items-start gap-1.5 sm:gap-2">
+                          <span className={`px-2.5 py-1 text-[11px] font-semibold rounded-full sm:px-3 sm:text-xs ${isJobOpen(job)
                             ? "bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-white"
                             : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300"}`}
                           >
@@ -1355,7 +1357,7 @@ export default function HousehelpJobsHome() {
                                 handleChatWithHousehold(job);
                               }}
                               disabled={chatLoadingId === job.id}
-                              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition disabled:opacity-60"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-purple-200/60 bg-white text-purple-700 transition hover:bg-purple-50 disabled:opacity-60 dark:border-purple-500/30 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10 sm:h-9 sm:w-9"
                               aria-label="Chat with household"
                             >
                               {chatLoadingId === job.id ? (
@@ -1373,7 +1375,7 @@ export default function HousehelpJobsHome() {
                                 event.stopPropagation();
                                 handleViewProfile(job);
                               }}
-                              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-purple-200/60 bg-white text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10 sm:h-9 sm:w-9"
                               aria-label="View household profile"
                             >
                               <Eye className="w-4 h-4" />

@@ -35,6 +35,7 @@ import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
+import { ListingCardFacts } from "~/components/listing/ListingCardFacts";
 import { resolveHousehelpProfile } from '~/utils/househelpProfiles';
 
 interface HousehelpSummary {
@@ -1334,10 +1335,10 @@ export default function HouseholdJobsHome() {
                           )}
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
+                          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8">
+                            <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{cardTitle}</h3>
+                                <h3 className="min-w-0 text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{cardTitle}</h3>
                                 {/* Beside the name, the way every other platform
                                     places it — an employer scanning a list reads
                                     the tick as part of the person, not as one
@@ -1374,14 +1375,15 @@ export default function HouseholdJobsHome() {
                                 </div>
                               )}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <ListingCardFacts listing={listing} />
+                            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                               <button
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   handleShortlist(listing);
                                 }}
                                 disabled={shortlistLoadingId === listing.id}
-                                className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                                className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition sm:h-9 sm:w-9 ${
                                   shortlisted
                                     ? "border-pink-400 bg-pink-500 text-white"
                                     : "border-purple-200/70 bg-white text-purple-700 hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"

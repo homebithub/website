@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { formatListingPlace } from '~/utils/place';
 import { listingHighlights } from '~/utils/listingFeatures';
+import { ListingCardFacts } from '~/components/listing/ListingCardFacts';
 import { hireRequestService, hireContractService, employmentContractService, shortlistService, jobService, listingApplicationService, employmentService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart, Star } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -1299,9 +1300,9 @@ export default function HiringHistory() {
                   key={job.id}
                   className="rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8">
+                    <div className="min-w-0">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
                         {job.title || 'Untitled role'}
                       </h3>
                       {/* Where the job is. This is now the only place a
@@ -1312,7 +1313,8 @@ export default function HiringHistory() {
                         📍 {formatListingPlace(job)}
                       </p>
                     </div>
-                    <span className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
+                    <ListingCardFacts listing={job} />
+                    <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold sm:px-3 sm:text-xs ${job.status === 'closed'
                       ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
                       : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'}`}>
                       {job.status || 'open'}

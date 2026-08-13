@@ -16,6 +16,7 @@ import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { formatTimeAgo } from '~/utils/timeAgo';
 import { normalizeOnboardingAmountFromStorage } from '~/utils/onboardingCompensation';
 import { formatPlaceOrFallback } from '~/utils/place';
+import { ListingCardFacts } from '~/components/listing/ListingCardFacts';
 
 const formatDate = (value?: string) => {
   if (!value) return 'Flexible';
@@ -401,12 +402,13 @@ export default function HouseholdShortlistPage() {
                           )}
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{name}</h3>
+                          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8">
+                            <div className="min-w-0">
+                              <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{name}</h3>
                               <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <ListingCardFacts listing={listing} />
+                            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                               <button
                                 onClick={() => handleRemove(s.profile_id)}
                                 disabled={removingId === s.profile_id}
