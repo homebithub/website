@@ -1729,7 +1729,7 @@ export default function InboxPage() {
           </div>
         </div>
       ) : (
-          <div className="relative grid h-full min-w-0 w-full max-w-full grid-rows-[auto,1fr,auto] overflow-hidden bg-white dark:bg-[#13131a]">
+          <div className="relative grid h-full min-w-0 w-full max-w-full grid-rows-[auto,minmax(0,1fr),auto] overflow-hidden bg-white dark:bg-[#13131a]">
             {/* Header */}
             <div className="p-4 border-b border-purple-200 dark:border-purple-500/30 flex items-center gap-3">
               <button
@@ -2279,7 +2279,7 @@ export default function InboxPage() {
         )}
 
         {/* Input - At bottom (grid row) */}
-        <div className="min-w-0 border-t border-purple-200 bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:border-purple-500/30 dark:bg-[#13131a] sm:p-4">
+        <div className="sticky bottom-0 z-20 min-w-0 shrink-0 border-t border-purple-200 bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:border-purple-500/30 dark:bg-[#13131a] sm:p-4">
           {selectedIds.size > 0 && (
             <div className="mb-2 flex flex-col gap-2 rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-slate-800 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-xs font-semibold">{selectedIds.size} selected</div>
@@ -2424,7 +2424,7 @@ export default function InboxPage() {
   // Show loading state while checking authentication
   if (authLoading) {
     return (
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="flex h-[calc(100dvh-56px)] min-h-0 flex-col overflow-hidden sm:h-[calc(100dvh-60px)]">
         <Navigation />
         <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
           <main className="flex-1 py-6">
@@ -2438,7 +2438,7 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="h-[100dvh] w-full max-w-full flex flex-col overflow-hidden">
+    <div className="flex h-[calc(100dvh-56px)] min-h-0 w-full max-w-full flex-col overflow-hidden sm:h-[calc(100dvh-60px)]">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-0 pt-0 sm:pb-4 sm:pt-6">
