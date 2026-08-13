@@ -30,7 +30,7 @@ export function HiringCardModal({ open, onClose, eyebrow, title, status, summary
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-5" role="dialog" aria-modal="true" aria-label={`${title} details`}>
+    <div className="fixed inset-0 z-[120] flex items-end justify-center p-0 sm:items-center sm:p-5" role="dialog" aria-modal="true" aria-label={`${title} details`}>
       <button type="button" aria-label="Close details" className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <section className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#140a24] sm:max-w-2xl sm:rounded-3xl">
         <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-purple-100 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-800/50 dark:bg-[#140a24]/95 sm:px-7">

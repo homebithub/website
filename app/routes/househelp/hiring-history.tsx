@@ -1346,7 +1346,7 @@ export default function HousehelpHiringHistory() {
       />
 
       {viewingListing && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingListing(null)}>
+        <div className="fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingListing(null)}>
           <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between gap-4">
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">{String(viewingListing.title || 'Job listing')}</h2>
@@ -1359,20 +1359,20 @@ export default function HousehelpHiringHistory() {
 
       {/* Interest Details Modal */}
       {showInterestModal && selectedInterest && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => { setShowInterestModal(false); setSelectedInterest(null); }} />
-            <div className="relative bg-white dark:bg-[#1a1a2e] rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
+        <div className="fixed inset-0 z-[120] overflow-hidden" role="dialog" aria-modal="true" aria-label="Application details">
+          <div className="relative flex h-full items-end justify-center p-0 sm:items-center sm:p-5">
+            <button type="button" aria-label="Close application details" className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => { setShowInterestModal(false); setSelectedInterest(null); }} />
+            <div className="relative flex max-h-[94dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#171426] sm:max-h-[90dvh] sm:rounded-3xl">
               {/* Header */}
-              <div className="relative bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-800 dark:to-gray-700 px-6 py-8">
+              <div className="relative shrink-0 bg-gradient-to-r from-purple-800 via-fuchsia-800 to-pink-700 px-5 py-5 sm:px-7 sm:py-6">
                 <button 
                   onClick={() => { setShowInterestModal(false); setSelectedInterest(null); }}
                   className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
                 >
                   <X className="w-5 h-5 text-white" />
                 </button>
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full overflow-hidden bg-white/20 flex-shrink-0 ring-4 ring-white/30">
+                <div className="flex items-center gap-4 pr-10">
+                  <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-full bg-white/20 ring-2 ring-white/40 sm:h-20 sm:w-20">
                     {getHouseholdAvatar(selectedInterest.household) ? (
                       <img src={getHouseholdAvatar(selectedInterest.household)} alt={getHouseholdName(selectedInterest.household)} className="w-full h-full object-cover" />
                     ) : (
@@ -1400,7 +1400,7 @@ export default function HousehelpHiringHistory() {
               </div>
 
               {/* Content */}
-              <div className="p-6 space-y-6">
+              <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-5 sm:p-7">
                 {/* The job itself, first.
                     This modal opened on the covering message the applicant had
                     written and nothing else — so the one screen for deciding
@@ -1477,10 +1477,10 @@ export default function HousehelpHiringHistory() {
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-2">
+                <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-col gap-3 border-t border-purple-100 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-800/50 dark:bg-[#171426]/95 sm:-mx-7 sm:-mb-7 sm:flex-row sm:justify-end sm:px-7">
                   <button 
                     onClick={() => navigate(buildHouseholdProfileLink({ household: selectedInterest.household, fallbackProfileId: selectedInterest.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: selectedInterest.household?.id || selectedInterest.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-xs font-semibold text-white transition-all hover:from-purple-700 hover:to-pink-700"
                   >
                     <User className="w-4 h-4" /> View Household Profile
                   </button>
@@ -1488,7 +1488,7 @@ export default function HousehelpHiringHistory() {
                     <button 
                       onClick={() => openWithdrawConfirm(selectedInterest.id)}
                       disabled={actionLoading === selectedInterest.id}
-                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-300 px-5 py-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-600 dark:hover:bg-red-900/30"
                     >
                       <XCircle className="w-4 h-4" /> Withdraw
                     </button>
