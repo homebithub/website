@@ -11,6 +11,8 @@ interface HiringCardModalProps {
   onClose: () => void;
   eyebrow: string;
   title: string;
+  imageUrl?: string;
+  initials?: string;
   status?: string;
   summary?: ReactNode;
   fields: HiringDetailField[];
@@ -18,7 +20,7 @@ interface HiringCardModalProps {
   actions?: ReactNode;
 }
 
-export function HiringCardModal({ open, onClose, eyebrow, title, status, summary, fields, message, actions }: HiringCardModalProps) {
+export function HiringCardModal({ open, onClose, eyebrow, title, imageUrl, initials, status, summary, fields, message, actions }: HiringCardModalProps) {
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -34,11 +36,18 @@ export function HiringCardModal({ open, onClose, eyebrow, title, status, summary
       <button type="button" aria-label="Close details" className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <section className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#140a24] sm:max-w-2xl sm:rounded-3xl">
         <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-purple-100 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-800/50 dark:bg-[#140a24]/95 sm:px-7">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
+            {(imageUrl || initials) && (
+              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-sm ring-2 ring-purple-200 dark:ring-purple-700">
+                {imageUrl ? <img src={imageUrl} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-sm font-bold">{initials}</span>}
+              </div>
+            )}
+            <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-purple-500">{eyebrow}</p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <h2 className="break-words text-lg font-bold text-gray-950 dark:text-white">{title}</h2>
               {status && <span className="rounded-full bg-purple-100 px-2.5 py-1 text-[11px] font-semibold capitalize text-purple-700 dark:bg-purple-900/50 dark:text-purple-200">{status.replace(/[_-]/g, ' ')}</span>}
+            </div>
             </div>
           </div>
           <button type="button" onClick={onClose} className="rounded-full border border-purple-200 p-2 text-gray-500 hover:bg-purple-50 dark:border-purple-700 dark:text-purple-200 dark:hover:bg-purple-900/40" aria-label="Close">

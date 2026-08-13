@@ -20,6 +20,7 @@ import { getInboxRoute, startOrGetConversation, type StartConversationPayload } 
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
 import { hiringAttentionScope, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
 import { HiringCardModal, isHiringCardAction } from '~/components/hiring/HiringCardModal';
+import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 
 interface HireRequest {
   id: string;
@@ -370,6 +371,11 @@ export default function HiringHistory() {
     },
     [profilesById],
   );
+  const applicantUserIds = useMemo(
+    () => Array.from(new Set(applicants.map(househelpUserIdFor).filter(Boolean))),
+    [applicants, househelpUserIdFor],
+  );
+  const applicantProfilePhotos = useProfilePhotos(applicantUserIds);
 
   const refreshEngagements = useCallback(async () => {
     const userId = getStoredUserId();
@@ -1466,7 +1472,8 @@ export default function HiringHistory() {
               const firstName = profile?.first_name || interest.househelp?.first_name || interest.househelp?.user?.first_name;
               const lastName = profile?.last_name || interest.househelp?.last_name || interest.househelp?.user?.last_name;
               const displayName = `${firstName || ''} ${lastName || ''}`.trim() || getHousehelpName(interest.househelp as any);
-              const avatarUrl = profile?.avatar_url || profile?.profile_picture || (Array.isArray(profile?.photos) ? profile?.photos?.[0] : undefined) || interest.househelp?.avatar_url || interest.househelp?.photos?.[0];
+              const applicantUserId = househelpUserIdFor(interest);
+              const avatarUrl = profile?.avatar_url || profile?.profile_picture || (Array.isArray(profile?.photos) ? profile?.photos?.[0] : undefined) || interest.househelp?.avatar_url || interest.househelp?.photos?.[0] || applicantProfilePhotos[applicantUserId];
               const locationCandidate = [profile?.county_of_residence, profile?.location, (profile as any)?.neighborhood, (profile as any)?.region, (profile as any)?.city].find((value) => typeof value === 'string' && value.length > 0);
               const experienceValue = profile?.years_of_experience ?? profile?.experience;
               const experienceYears = typeof experienceValue === 'number' && experienceValue > 0 ? experienceValue : undefined;
@@ -1822,6 +1829,8 @@ export default function HiringHistory() {
         const profileId = !isJob ? record.househelp_id || record.househelp?.id : '';
         const profile = profileId ? profilesById[profileId] : undefined;
         const personName = `${profile?.first_name || record.househelp?.first_name || record.househelp?.user?.first_name || ''} ${profile?.last_name || record.househelp?.last_name || record.househelp?.user?.last_name || ''}`.trim() || 'Househelp';
+        const applicantUserId = !isJob ? househelpUserIdFor(record) : '';
+        const imageUrl = !isJob ? profile?.avatar_url || profile?.profile_picture || profile?.photos?.[0] || record.househelp?.avatar_url || record.househelp?.photos?.[0] || applicantProfilePhotos[applicantUserId] : undefined;
         const listing = !isJob ? jobs.find((job) => String(job.id) === String(record.listing_id || '')) : record;
         return (
           <HiringCardModal
@@ -1829,6 +1838,8 @@ export default function HiringHistory() {
             onClose={() => setSelectedHiringCard(null)}
             eyebrow={isJob ? 'Job listing details' : `${activeTab} details`}
             title={isJob ? record.title || 'Untitled role' : personName}
+            imageUrl={imageUrl}
+            initials={!isJob ? personName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() : undefined}
             status={record.status}
             summary={isJob ? record.description : record.comments}
             fields={isJob ? [

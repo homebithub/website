@@ -15,6 +15,7 @@ import { ListPageSkeleton } from "~/components/ShimmerLoader";
 import { useSSEContextSafe } from '~/contexts/SSEContext';
 import { hiringAttentionScope, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
 import { HiringCardModal, isHiringCardAction } from '~/components/hiring/HiringCardModal';
+import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
   Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User, FileText
@@ -30,7 +31,7 @@ interface HouseholdSummary {
   first_name?: string;
   last_name?: string;
   town?: string;
-  user?: { first_name: string; last_name: string };
+  user?: { id?: string; first_name: string; last_name: string };
   user_id?: string;
 }
 
@@ -270,6 +271,14 @@ export default function HousehelpHiringHistory() {
   const [employmentContractsLoading, setEmploymentContractsLoading] = useState(true);
   // Map all known household identifiers to the matching employment contract.
   const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, EmploymentContract>>({});
+  const householdUserIds = Array.from(new Set(
+    [...hireRequests, ...contracts, ...interests, ...employmentContracts]
+      .map((record) => String(record.household?.user_id || record.household?.user?.id || ''))
+      .filter(Boolean),
+  ));
+  const householdProfilePhotos = useProfilePhotos(householdUserIds);
+  const resolvedHouseholdAvatar = (household?: HouseholdSummary) =>
+    getHouseholdAvatar(household) || householdProfilePhotos[String(household?.user_id || household?.user?.id || '')] || '';
   
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
@@ -897,8 +906,8 @@ export default function HousehelpHiringHistory() {
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                          {getHouseholdAvatar(request.household) ? (
-                            <img src={getHouseholdAvatar(request.household)} alt={getHouseholdName(request.household)} className="w-full h-full object-cover" />
+                          {resolvedHouseholdAvatar(request.household) ? (
+                            <img src={resolvedHouseholdAvatar(request.household)} alt={getHouseholdName(request.household)} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(request.household)}</div>
                           )}
@@ -1018,8 +1027,8 @@ export default function HousehelpHiringHistory() {
                       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                            {getHouseholdAvatar(ec.household) ? (
-                              <img src={getHouseholdAvatar(ec.household)} alt={getHouseholdName(ec.household)} className="w-full h-full object-cover" />
+                            {resolvedHouseholdAvatar(ec.household) ? (
+                              <img src={resolvedHouseholdAvatar(ec.household)} alt={getHouseholdName(ec.household)} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(ec.household)}</div>
                             )}
@@ -1092,8 +1101,8 @@ export default function HousehelpHiringHistory() {
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                          {getHouseholdAvatar(contract.household) ? (
-                            <img src={getHouseholdAvatar(contract.household)} alt={getHouseholdName(contract.household)} className="w-full h-full object-cover" />
+                          {resolvedHouseholdAvatar(contract.household) ? (
+                            <img src={resolvedHouseholdAvatar(contract.household)} alt={getHouseholdName(contract.household)} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(contract.household)}</div>
                           )}
@@ -1168,8 +1177,8 @@ export default function HousehelpHiringHistory() {
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                          {getHouseholdAvatar(interest.household) ? (
-                            <img src={getHouseholdAvatar(interest.household)} alt={getHouseholdName(interest.household)} className="w-full h-full object-cover" />
+                          {resolvedHouseholdAvatar(interest.household) ? (
+                            <img src={resolvedHouseholdAvatar(interest.household)} alt={getHouseholdName(interest.household)} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(interest.household)}</div>
                           )}
@@ -1306,6 +1315,8 @@ export default function HousehelpHiringHistory() {
             onClose={() => setSelectedHiringCard(null)}
             eyebrow={kind === 'request' ? 'Hire request details' : kind === 'employment-contract' ? 'Contract details' : 'Work details'}
             title={record.job_title || record.job_type || householdName}
+            imageUrl={resolvedHouseholdAvatar(record.household)}
+            initials={getHouseholdInitials(record.household)}
             status={record.status}
             summary={record.special_requirements}
             fields={[
@@ -1373,8 +1384,8 @@ export default function HousehelpHiringHistory() {
                 </button>
                 <div className="flex items-center gap-4 pr-10">
                   <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-full bg-white/20 ring-2 ring-white/40 sm:h-20 sm:w-20">
-                    {getHouseholdAvatar(selectedInterest.household) ? (
-                      <img src={getHouseholdAvatar(selectedInterest.household)} alt={getHouseholdName(selectedInterest.household)} className="w-full h-full object-cover" />
+                    {resolvedHouseholdAvatar(selectedInterest.household) ? (
+                      <img src={resolvedHouseholdAvatar(selectedInterest.household)} alt={getHouseholdName(selectedInterest.household)} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
                         {getHouseholdInitials(selectedInterest.household)}
