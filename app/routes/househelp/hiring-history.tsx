@@ -14,6 +14,7 @@ import { buildApplicationContractMap, buildIdentifierMap, collapseApplicationCon
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
 import { useSSEContextSafe } from '~/contexts/SSEContext';
 import { hiringAttentionScope, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
+import { HiringCardModal, isHiringCardAction } from '~/components/hiring/HiringCardModal';
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
   Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User, FileText
@@ -278,6 +279,7 @@ export default function HousehelpHiringHistory() {
   const [showInterestModal, setShowInterestModal] = useState(false);
   const [viewingListing, setViewingListing] = useState<Record<string, any> | null>(null);
   const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
+  const [selectedHiringCard, setSelectedHiringCard] = useState<{ kind: 'request' | 'employment-contract' | 'work'; record: any } | null>(null);
   const [historyFor, setHistoryFor] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [attentionRevision, setAttentionRevision] = useState(0);
@@ -889,7 +891,7 @@ export default function HousehelpHiringHistory() {
                   const isNew = isHiringRecordUnattended(attentionScope, 'request', request);
 
                   return (
-                  <div key={request.id} onClickCapture={() => markHiringRecordAttended(attentionScope, 'request', request)} className={`p-6 transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/20 ${isNew ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
+                  <div key={request.id} role="button" tabIndex={0} onClickCapture={() => markHiringRecordAttended(attentionScope, 'request', request)} onClick={(event) => { if (!isHiringCardAction(event.target)) setSelectedHiringCard({ kind: 'request', record: request }); }} onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && !isHiringCardAction(event.target)) { event.preventDefault(); markHiringRecordAttended(attentionScope, 'request', request); setSelectedHiringCard({ kind: 'request', record: request }); } }} className={`cursor-pointer p-6 transition-colors hover:bg-purple-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-purple-500 dark:hover:bg-purple-900/20 ${isNew ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
@@ -1010,7 +1012,7 @@ export default function HousehelpHiringHistory() {
                   const badge = getECStatusBadge();
                   const isNew = isHiringRecordUnattended(attentionScope, 'employment-contract', ec);
                   return (
-                    <div key={ec.id} onClickCapture={() => markHiringRecordAttended(attentionScope, 'employment-contract', ec)} className={`p-6 transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/20 ${isNew ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
+                    <div key={ec.id} role="button" tabIndex={0} onClickCapture={() => markHiringRecordAttended(attentionScope, 'employment-contract', ec)} onClick={(event) => { if (!isHiringCardAction(event.target)) setSelectedHiringCard({ kind: 'employment-contract', record: ec }); }} onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && !isHiringCardAction(event.target)) { event.preventDefault(); markHiringRecordAttended(attentionScope, 'employment-contract', ec); setSelectedHiringCard({ kind: 'employment-contract', record: ec }); } }} className={`cursor-pointer p-6 transition-colors hover:bg-purple-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-purple-500 dark:hover:bg-purple-900/20 ${isNew ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
                       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                         <div className="flex items-start gap-4 flex-1">
                           <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
@@ -1084,7 +1086,7 @@ export default function HousehelpHiringHistory() {
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-purple-800/40">
                 {contracts.map((contract) => (
-                  <div key={contract.id} onClickCapture={() => markHiringRecordAttended(attentionScope, 'work', contract)} className={`p-6 transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/20 ${isHiringRecordUnattended(attentionScope, 'work', contract) ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
+                  <div key={contract.id} role="button" tabIndex={0} onClickCapture={() => markHiringRecordAttended(attentionScope, 'work', contract)} onClick={(event) => { if (!isHiringCardAction(event.target)) setSelectedHiringCard({ kind: 'work', record: contract }); }} onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && !isHiringCardAction(event.target)) { event.preventDefault(); markHiringRecordAttended(attentionScope, 'work', contract); setSelectedHiringCard({ kind: 'work', record: contract }); } }} className={`cursor-pointer p-6 transition-colors hover:bg-purple-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-purple-500 dark:hover:bg-purple-900/20 ${isHiringRecordUnattended(attentionScope, 'work', contract) ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
@@ -1160,7 +1162,7 @@ export default function HousehelpHiringHistory() {
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-purple-800/40">
                 {interests.map((interest) => (
-                  <div key={interest.id} onClickCapture={() => markHiringRecordAttended(attentionScope, 'application', interest)} className={`p-6 transition-colors hover:bg-purple-50/50 dark:hover:bg-purple-900/20 ${isHiringRecordUnattended(attentionScope, 'application', interest) ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
+                  <div key={interest.id} role="button" tabIndex={0} onClickCapture={() => markHiringRecordAttended(attentionScope, 'application', interest)} onClick={(event) => { if (!isHiringCardAction(event.target)) { setSelectedInterest(interest); setShowInterestModal(true); } }} onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && !isHiringCardAction(event.target)) { event.preventDefault(); markHiringRecordAttended(attentionScope, 'application', interest); setSelectedInterest(interest); setShowInterestModal(true); } }} className={`cursor-pointer p-6 transition-colors hover:bg-purple-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-purple-500 dark:hover:bg-purple-900/20 ${isHiringRecordUnattended(attentionScope, 'application', interest) ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
                         <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
@@ -1289,6 +1291,41 @@ export default function HousehelpHiringHistory() {
           </div>
         )}
       </div>
+
+      {selectedHiringCard && (() => {
+        const { kind, record } = selectedHiringCard;
+        const householdName = getHouseholdName(record.household);
+        const isRequest = kind === 'request';
+        const isEmploymentContract = kind === 'employment-contract';
+        const profileLink = buildHouseholdProfileLink({ household: record.household, fallbackProfileId: record.household_id, backTo: backToPath, backLabel: 'Back to Hiring' });
+        return (
+          <HiringCardModal
+            open
+            onClose={() => setSelectedHiringCard(null)}
+            eyebrow={kind === 'request' ? 'Hire request details' : kind === 'employment-contract' ? 'Contract details' : 'Work details'}
+            title={record.job_title || record.job_type || householdName}
+            status={record.status}
+            summary={record.special_requirements}
+            fields={[
+              { label: 'Household', value: householdName },
+              { label: 'Salary', value: formatSalary(record.salary_offered ?? record.salary, record.salary_frequency) },
+              { label: 'Start', value: record.start_date ? formatDate(record.start_date) : 'Flexible' },
+              { label: 'Created', value: record.created_at ? formatDate(record.created_at) : undefined },
+              { label: 'End', value: record.end_date ? formatDate(record.end_date) : undefined },
+              { label: 'Signature', value: isEmploymentContract ? (record.househelp_signed_at ? 'Signed' : 'Awaiting your signature') : undefined },
+            ]}
+            actions={<>
+              {record.listing_id && <button type="button" onClick={() => openJobListing(record.listing_id, record.listing)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
+              <button type="button" onClick={() => navigate(profileLink, { state: { profileId: record.household?.id || record.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View household</button>
+              {isRequest && normalizeStatus(record.status) === 'pending' && <>
+                <button type="button" onClick={() => { setSelectedHiringCard(null); setSelectedRequest(record.id); setShowDeclineModal(true); }} className="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-600">Decline</button>
+                <button type="button" onClick={() => { setSelectedHiringCard(null); openAcceptConfirm(record.id); }} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white">Accept</button>
+              </>}
+              {isEmploymentContract && <button type="button" onClick={() => { const params = new URLSearchParams({ id: record.id, backTo: backToPath, backLabel: 'Back to Hiring' }); navigate(`/household/employment-contract?${params.toString()}`); }} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white">{record.status === 'pending_househelp' ? 'Review & sign' : 'View contract'}</button>}
+            </>}
+          />
+        );
+      })()}
 
       {/* Decline Modal */}
       <ConfirmDialog

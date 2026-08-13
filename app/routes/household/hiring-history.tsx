@@ -19,6 +19,7 @@ import { ListingDetails } from '~/components/listing/ListingDetails';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
 import { hiringAttentionScope, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
+import { HiringCardModal, isHiringCardAction } from '~/components/hiring/HiringCardModal';
 
 interface HireRequest {
   id: string;
@@ -280,6 +281,7 @@ export default function HiringHistory() {
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState<HireRequest | null>(null);
+  const [selectedHiringCard, setSelectedHiringCard] = useState<{ kind: 'job' | 'application'; record: any } | null>(null);
   const [cancelRequest, setCancelRequest] = useState<HireRequest | null>(null);
   const [showJobModal, setShowJobModal] = useState(false);
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
@@ -1325,7 +1327,11 @@ export default function HiringHistory() {
               return (
                 <div
                   key={job.id}
-                  className="rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6"
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => { if (!isHiringCardAction(event.target)) setSelectedHiringCard({ kind: 'job', record: job }); }}
+                  onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedHiringCard({ kind: 'job', record: job }); } }}
+                  className="cursor-pointer rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6"
                 >
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8">
                     <div className="min-w-0">
@@ -1535,7 +1541,11 @@ export default function HiringHistory() {
                 <div
                   key={interest.id}
                   onClickCapture={() => markHiringRecordAttended(attentionScope, 'application', interest)}
-                  className={`relative min-w-0 overflow-hidden rounded-2xl border bg-white p-3 sm:p-7 transition-shadow hover:shadow-xl dark:bg-purple-950/40 ${
+                  onClick={(event) => { if (!isHiringCardAction(event.target)) setSelectedHiringCard({ kind: 'application', record: interest }); }}
+                  onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && !isHiringCardAction(event.target)) { event.preventDefault(); markHiringRecordAttended(attentionScope, 'application', interest); setSelectedHiringCard({ kind: 'application', record: interest }); } }}
+                  role="button"
+                  tabIndex={0}
+                  className={`relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border bg-white p-3 transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 sm:p-7 dark:bg-purple-950/40 ${
                     isNew
                       ? 'border-purple-500 ring-2 ring-purple-200/80 dark:border-fuchsia-500/70 dark:ring-fuchsia-900/40'
                       : 'border-purple-100 dark:border-purple-800/40'
@@ -1805,6 +1815,45 @@ export default function HiringHistory() {
         )}
 
       </div>
+
+      {selectedHiringCard && (() => {
+        const { kind, record } = selectedHiringCard;
+        const isJob = kind === 'job';
+        const profileId = !isJob ? record.househelp_id || record.househelp?.id : '';
+        const profile = profileId ? profilesById[profileId] : undefined;
+        const personName = `${profile?.first_name || record.househelp?.first_name || record.househelp?.user?.first_name || ''} ${profile?.last_name || record.househelp?.last_name || record.househelp?.user?.last_name || ''}`.trim() || 'Househelp';
+        const listing = !isJob ? jobs.find((job) => String(job.id) === String(record.listing_id || '')) : record;
+        return (
+          <HiringCardModal
+            open
+            onClose={() => setSelectedHiringCard(null)}
+            eyebrow={isJob ? 'Job listing details' : `${activeTab} details`}
+            title={isJob ? record.title || 'Untitled role' : personName}
+            status={record.status}
+            summary={isJob ? record.description : record.comments}
+            fields={isJob ? [
+              { label: 'Location', value: formatListingPlace(record) },
+              { label: 'Salary', value: listingHighlights(record).salary || 'Not specified' },
+              { label: 'Start', value: listingHighlights(record).startTiming || 'Flexible' },
+              { label: 'Posted', value: record.created_at ? formatDate(record.created_at) : 'Recently' },
+            ] : [
+              { label: 'Job', value: listing?.title || record.job_type || 'Not specified' },
+              { label: 'Salary', value: listingHighlights(listing).salary || 'Not specified' },
+              { label: 'Available', value: record.available_from ? formatDate(record.available_from) : 'Flexible' },
+              { label: 'Applied', value: formatDate(record.created_at) },
+            ]}
+            actions={isJob ? <>
+              <button type="button" onClick={() => { setSelectedHiringCard(null); setEditingJob(record); setShowJobModal(true); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Edit</button>
+              <button type="button" onClick={() => handleToggleJobStatus(record)} className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white">{record.status === 'closed' ? 'Reopen' : 'Close job'}</button>
+            </> : <>
+              <button type="button" onClick={() => { setSelectedHiringCard(null); setHistoryFor(record.id); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">History</button>
+              <button type="button" onClick={() => handleChatWithApplicant(record)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Chat</button>
+              {listing && <button type="button" onClick={() => setViewingJob(listing)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
+              <button type="button" onClick={() => handleViewInterest(record)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white">View profile</button>
+            </>}
+          />
+        );
+      })()}
 
       {/* Details Modal */}
       {selectedRequest && (
