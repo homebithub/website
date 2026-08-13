@@ -60,9 +60,12 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
   };
 
   const formatDuration = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+    // Analytics returns an average, so it can contain a long decimal. Display
+    // only whole seconds and keep the existing compact hour/minute format.
+    const wholeSeconds = Math.max(0, Math.round(seconds));
+    if (wholeSeconds < 60) return `${wholeSeconds}s`;
+    const minutes = Math.floor(wholeSeconds / 60);
+    const remainingSeconds = wholeSeconds % 60;
     if (minutes < 60) {
       return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
     }
