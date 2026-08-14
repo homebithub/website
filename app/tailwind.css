@@ -414,6 +414,21 @@ body > * {
   body.hb-has-mobile-bottom-nav {
     padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
   }
+
+  /* The software keyboard already reduces the usable visual viewport. Do not
+     reserve another navigation-height beneath focused controls: it creates a
+     large dead strip above iOS keyboards. The navigation returns on blur. */
+  body.hb-mobile-keyboard-open {
+    padding-bottom: 0;
+  }
+
+  body.hb-mobile-keyboard-open .hb-mobile-bottom-navigation {
+    display: none;
+  }
+
+  body.hb-mobile-keyboard-open .hb-inbox-viewport {
+    bottom: 0;
+  }
 }
 
 /* The inbox is an app-style workspace between two fixed navigation bars.

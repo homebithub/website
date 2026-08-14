@@ -69,7 +69,31 @@ export function MobileBottomNavigation({
 
   useEffect(() => {
     document.body.classList.add('hb-has-mobile-bottom-nav');
-    return () => document.body.classList.remove('hb-has-mobile-bottom-nav');
+    const isTextEntry = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      return target.matches("textarea, input:not([type='checkbox']):not([type='radio']):not([type='button']):not([type='submit']), [contenteditable='true'], [role='textbox']");
+    };
+    const handleFocusIn = (event: FocusEvent) => {
+      if (!isTextEntry(event.target)) return;
+      document.body.classList.add('hb-mobile-keyboard-open');
+      setMoreOpen(false);
+    };
+    const handleFocusOut = () => {
+      // Let focus move between form fields without flashing the navigation.
+      window.setTimeout(() => {
+        if (!isTextEntry(document.activeElement)) {
+          document.body.classList.remove('hb-mobile-keyboard-open');
+        }
+      }, 0);
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+    return () => {
+      document.body.classList.remove('hb-has-mobile-bottom-nav', 'hb-mobile-keyboard-open');
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+    };
   }, []);
 
   useEffect(() => setMoreOpen(false), [location.pathname]);
@@ -152,7 +176,7 @@ export function MobileBottomNavigation({
         </div>
       )}
 
-      <nav aria-label="Mobile navigation" className="fixed inset-x-0 bottom-0 z-50 border-t border-purple-200/70 bg-white/95 px-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#101017]/95 lg:hidden">
+      <nav aria-label="Mobile navigation" className="hb-mobile-bottom-navigation fixed inset-x-0 bottom-0 z-50 border-t border-purple-200/70 bg-white/95 px-2 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#101017]/95 lg:hidden">
         <div className="mx-auto flex max-w-lg items-stretch gap-1 rounded-[1.4rem] border border-purple-200/70 bg-white/90 p-1.5 shadow-[0_-8px_30px_rgba(147,51,234,0.14)] dark:border-purple-500/20 dark:bg-[#171721]">
           {primaryItems.map((item) => {
             const Icon = item.icon;
