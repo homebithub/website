@@ -13,7 +13,7 @@ import { BaseModal } from '~/components/ui/BaseModal';
 
 export const OPEN_PWA_INSTALL_EVENT = 'open-pwa-install';
 
-const DISMISSED_AT_KEY = 'homebit:pwa-install-dismissed-at';
+const DISMISSED_AT_KEY = 'homebit:pwa-install-v2-dismissed-at';
 const SESSION_VIEWS_KEY = 'homebit:pwa-install-page-views';
 const DISMISSAL_COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
 
