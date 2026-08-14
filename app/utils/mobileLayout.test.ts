@@ -32,7 +32,9 @@ describe('mobile layout guardrails', () => {
     expect(prompt).toContain("window.addEventListener('beforeinstallprompt'");
     expect(prompt).toContain("window.matchMedia('(display-mode: standalone)')");
     expect(prompt).toContain('Add to Home Screen');
-    expect(prompt).toContain('open HomeBit in Safari');
+    expect(prompt).toContain('Safari is required on iPhone and iPad');
+    expect(prompt).toContain('Copy HomeBit link');
+    expect(prompt).toContain('Chrome, Firefox, Edge, and other iOS browsers cannot install HomeBit');
     expect(prompt).toContain('DISMISSAL_COOLDOWN_MS');
     expect(root).toContain('<PWAInstallPrompt />');
     expect(navigation).toContain('<PWAInstallMenuButton />');

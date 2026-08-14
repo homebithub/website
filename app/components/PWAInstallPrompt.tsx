@@ -4,6 +4,7 @@ import {
   ArrowDownTrayIcon,
   ArrowUpOnSquareIcon,
   CheckCircleIcon,
+  ClipboardDocumentIcon,
   DevicePhoneMobileIcon,
 } from '@heroicons/react/24/outline';
 
@@ -37,6 +38,12 @@ function isAppleMobileDevice() {
   if (typeof navigator === 'undefined') return false;
   return /iPhone|iPad|iPod/i.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isSafariOnAppleMobile() {
+  if (!isAppleMobileDevice() || typeof navigator === 'undefined') return false;
+  const userAgent = navigator.userAgent;
+  return /Safari/i.test(userAgent) && !/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo/i.test(userAgent);
 }
 
 function dismissalIsCurrent() {
@@ -86,8 +93,10 @@ export function PWAInstallPrompt() {
   const [isOpen, setIsOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
+  const [copied, setCopied] = useState(false);
   const autoPromptScheduled = useRef(false);
   const isIOS = isAppleMobileDevice();
+  const isIOSSafari = isSafariOnAppleMobile();
 
   useEffect(() => {
     setInstalled(isInstalledPWA());
@@ -149,6 +158,24 @@ export function PWAInstallPrompt() {
     setDeferredPrompt(null);
   };
 
+  const copyWebsiteLink = async () => {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const input = document.createElement('textarea');
+      input.value = url;
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      input.remove();
+    }
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2500);
+  };
+
   if (installed) return null;
 
   return (
@@ -168,7 +195,7 @@ export function PWAInstallPrompt() {
           </div>
         </div>
 
-        {deferredPrompt ? (
+        {deferredPrompt && !isIOS ? (
           <button
             type="button"
             onClick={() => void install()}
@@ -180,17 +207,33 @@ export function PWAInstallPrompt() {
         ) : (
           <div>
             <p className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
-              {isIOS ? 'On your iPhone or iPad:' : 'From your browser menu:'}
+              {isIOS ? (isIOSSafari ? 'Install from Safari:' : 'Safari is required on iPhone and iPad') : 'From your browser menu:'}
             </p>
-            <ol className="space-y-3 text-sm text-gray-700 dark:text-gray-200">
-              <li className="flex gap-3"><ArrowUpOnSquareIcon className="mt-0.5 h-5 w-5 shrink-0 text-purple-500" /><span><strong>1.</strong> Tap the <strong>Share</strong> button in your browser.</span></li>
-              <li className="flex gap-3"><DevicePhoneMobileIcon className="mt-0.5 h-5 w-5 shrink-0 text-purple-500" /><span><strong>2.</strong> Choose <strong>Add to Home Screen</strong>.</span></li>
-              <li className="flex gap-3"><CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-pink-500" /><span><strong>3.</strong> Select <strong>Add</strong>{isIOS ? ' (leave “Open as Web App” enabled)' : ''}.</span></li>
-            </ol>
-            {isIOS && (
-              <p className="mt-4 rounded-xl bg-gray-100 p-3 text-xs text-gray-600 dark:bg-white/5 dark:text-gray-300">
-                If your current browser does not show “Add to Home Screen”, open HomeBit in Safari and follow the same steps.
-              </p>
+            {isIOS && !isIOSSafari ? (
+              <>
+                <p className="mb-4 rounded-xl border border-amber-300/60 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-100">
+                  Chrome, Firefox, Edge, and other iOS browsers cannot install HomeBit. Copy this page, open Safari, and paste the link there.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void copyWebsiteLink()}
+                  className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 font-semibold text-white shadow-lg shadow-purple-500/25 transition hover:from-purple-700 hover:to-pink-700"
+                >
+                  {copied ? <CheckCircleIcon className="h-5 w-5" /> : <ClipboardDocumentIcon className="h-5 w-5" />}
+                  {copied ? 'Link copied — now open Safari' : 'Copy HomeBit link'}
+                </button>
+                <ol className="space-y-3 text-sm text-gray-700 dark:text-gray-200">
+                  <li className="flex gap-3"><DevicePhoneMobileIcon className="mt-0.5 h-5 w-5 shrink-0 text-purple-500" /><span><strong>1.</strong> Open <strong>Safari</strong> and paste the copied link.</span></li>
+                  <li className="flex gap-3"><ArrowUpOnSquareIcon className="mt-0.5 h-5 w-5 shrink-0 text-purple-500" /><span><strong>2.</strong> Tap Safari’s <strong>Share</strong> button.</span></li>
+                  <li className="flex gap-3"><CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-pink-500" /><span><strong>3.</strong> Choose <strong>Add to Home Screen</strong>, leave “Open as Web App” enabled, then tap <strong>Add</strong>.</span></li>
+                </ol>
+              </>
+            ) : (
+              <ol className="space-y-3 text-sm text-gray-700 dark:text-gray-200">
+                <li className="flex gap-3"><ArrowUpOnSquareIcon className="mt-0.5 h-5 w-5 shrink-0 text-purple-500" /><span><strong>1.</strong> Tap the <strong>Share</strong> button{isIOS ? ' in Safari' : ' in your browser'}.</span></li>
+                <li className="flex gap-3"><DevicePhoneMobileIcon className="mt-0.5 h-5 w-5 shrink-0 text-purple-500" /><span><strong>2.</strong> Choose <strong>Add to Home Screen</strong>.</span></li>
+                <li className="flex gap-3"><CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-pink-500" /><span><strong>3.</strong> Select <strong>Add</strong>{isIOS ? ' and leave “Open as Web App” enabled' : ''}.</span></li>
+              </ol>
             )}
           </div>
         )}
