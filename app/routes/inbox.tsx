@@ -6,7 +6,7 @@ import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { profileReadService as grpcProfileService } from '~/services/grpc/profileRead.service';
 import { marketplaceHireRequestService as hireRequestService } from '~/services/grpc/marketplace.service';
-import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, ArrowUturnLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import type { EmojiClickData } from 'emoji-picker-react';
 import ConversationHire from '~/components/hiring/ConversationHire';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
@@ -305,6 +305,8 @@ export default function InboxPage() {
   const [editingDraft, setEditingDraft] = useState<string>("");
   const [editingSaving, setEditingSaving] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const swipeGestureRef = useRef<{ id: string; startX: number; startY: number; horizontal: boolean; offset: number } | null>(null);
+  const [swipePreview, setSwipePreview] = useState<{ id: string; offset: number } | null>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null);
   const [openReactPickerMsgId, setOpenReactPickerMsgId] = useState<string | null>(null);
@@ -1254,7 +1256,45 @@ export default function InboxPage() {
 
   const handleReplyMessage = useCallback((m: Message) => {
     setReplyTo(m);
+    window.setTimeout(() => textareaRef.current?.focus(), 0);
   }, []);
+
+  const beginReplySwipe = useCallback((event: React.TouchEvent, message: Message) => {
+    if (lockMessages || selectedIds.size > 0 || event.touches.length !== 1) return;
+    swipeGestureRef.current = {
+      id: message.id,
+      startX: event.touches[0].clientX,
+      startY: event.touches[0].clientY,
+      horizontal: false,
+      offset: 0,
+    };
+    startLongPress(message.id);
+  }, [lockMessages, selectedIds.size, startLongPress]);
+
+  const moveReplySwipe = useCallback((event: React.TouchEvent) => {
+    const gesture = swipeGestureRef.current;
+    if (!gesture || event.touches.length !== 1) return;
+    const dx = event.touches[0].clientX - gesture.startX;
+    const dy = event.touches[0].clientY - gesture.startY;
+    if (!gesture.horizontal) {
+      if (Math.abs(dy) > Math.abs(dx) || Math.abs(dx) < 10) return;
+      gesture.horizontal = true;
+      cancelLongPress();
+    }
+    // Resistance after the reply threshold keeps the bubble attached to the
+    // conversation while still making the gesture obvious in either direction.
+    const offset = Math.sign(dx) * Math.min(78, Math.abs(dx) * 0.72);
+    gesture.offset = offset;
+    setSwipePreview({ id: gesture.id, offset });
+  }, [cancelLongPress]);
+
+  const finishReplySwipe = useCallback((message: Message) => {
+    const gesture = swipeGestureRef.current;
+    cancelLongPress();
+    swipeGestureRef.current = null;
+    setSwipePreview(null);
+    if (gesture?.id === message.id && Math.abs(gesture.offset) >= 48) handleReplyMessage(message);
+  }, [cancelLongPress, handleReplyMessage]);
 
   const cancelEditMessage = useCallback(() => {
     setEditingMessageId(null);
@@ -1731,7 +1771,7 @@ export default function InboxPage() {
       ) : (
           <div className="relative grid h-full min-w-0 w-full max-w-full grid-rows-[auto,minmax(0,1fr),auto] overflow-hidden bg-white dark:bg-[#13131a]">
             {/* Header */}
-            <div className="p-4 border-b border-purple-200 dark:border-purple-500/30 flex items-center gap-3">
+            <div className="sticky top-0 z-30 flex shrink-0 items-center gap-3 border-b border-purple-200 bg-white/95 p-4 backdrop-blur dark:border-purple-500/30 dark:bg-[#13131a]/95">
               <button
                 onClick={handleBackToList}
                 className="lg:hidden p-2 hover:bg-purple-100 dark:hover:bg-slate-800 rounded-full transition"
@@ -1894,22 +1934,27 @@ export default function InboxPage() {
                 return (
                   <div
                     key={m.id}
-                    className={`group relative flex ${mine ? 'justify-end' : 'justify-start'} ${
+                    className={`group relative flex touch-pan-y ${mine ? 'justify-end' : 'justify-start'} ${
                       highlightMsgId === m.id 
                         ? 'animate-[highlight-blink_1.5s_ease-in-out] rounded-xl ring-2 ring-purple-400/60' 
                         : selectedIds.has(m.id) 
                         ? 'ring-2 ring-purple-400 rounded-xl' 
                         : ''
                     }`}
-                    onTouchStart={() => {
-                      if (selectedIds.size === 0) {
-                        // Long press to open action menu on mobile
-                        startLongPress(m.id);
-                      }
-                    }}
-                    onTouchEnd={cancelLongPress}
+                    onTouchStart={(event) => beginReplySwipe(event, m)}
+                    onTouchMove={moveReplySwipe}
+                    onTouchEnd={() => finishReplySwipe(m)}
+                    onTouchCancel={() => finishReplySwipe(m)}
                     ref={(el) => { messageRefs.current[m.id] = el; }}
                   >
+                    {swipePreview?.id === m.id && (
+                      <span
+                        className={`pointer-events-none absolute top-1/2 z-0 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-purple-100 text-purple-600 shadow-sm dark:bg-purple-900/50 dark:text-purple-200 ${swipePreview.offset > 0 ? 'left-1' : 'right-1'}`}
+                        aria-hidden="true"
+                      >
+                        <ArrowUturnLeftIcon className={`h-5 w-5 ${swipePreview.offset < 0 ? '-scale-x-100' : ''}`} />
+                      </span>
+                    )}
                     {selectedIds.size > 0 && (
                       <button
                         type="button"
@@ -1926,7 +1971,7 @@ export default function InboxPage() {
                       </button>
                     )}
                     {/* Message bubble */}
-                    <div className={`relative min-w-0 max-w-[85%] sm:max-w-[75%] rounded-2xl px-3 sm:px-4 py-2 shadow ${
+                    <div style={swipePreview?.id === m.id ? { transform: `translateX(${swipePreview.offset}px)` } : undefined} className={`relative z-[1] min-w-0 max-w-[85%] rounded-2xl px-3 py-2 shadow sm:max-w-[75%] sm:px-4 ${swipePreview?.id === m.id ? '' : 'transition-transform duration-150'} ${
                       mine 
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100'
@@ -2391,7 +2436,8 @@ export default function InboxPage() {
               }}
               onBlur={() => sendTypingUpdate(false)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                const coarsePointer = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+                if (!coarsePointer && e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   if (input.trim()) {
                     handleSend(e as any);
