@@ -12,6 +12,7 @@ import { RouteProgress } from "~/components/RouteProgress";
 import { PersistentNavigation } from "~/components/Navigation";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
 import SupportChat from "~/components/support/SupportChat";
+import { PWARegistration } from "~/components/PWARegistration";
 import stylesheet from "./tailwind.css?url";
 
 export const meta: Route.MetaFunction = () => [
@@ -35,6 +36,7 @@ export const meta: Route.MetaFunction = () => [
 export const links: Route.LinksFunction = () => [
     { rel: "stylesheet", href: stylesheet },
     { rel: "canonical", href: "https://homebit.co.ke" },
+    { rel: "manifest", href: "/manifest.webmanifest" },
 ];
 
 export const headers: Route.HeadersFunction = () => ({
@@ -100,7 +102,12 @@ export default function App() {
         <html lang="en" className="h-full" suppressHydrationWarning>
             <head>
                 <meta charSet="utf-8"/>
-                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+                <meta name="theme-color" content="#8b2be2" />
+                <meta name="mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+                <meta name="apple-mobile-web-app-title" content="Homebit" />
                 <Meta/>
                 <Links/>
                 {/* Open the API connection while the browser parses the page.
@@ -115,8 +122,7 @@ export default function App() {
                 <link rel="icon" type="image/x-icon" href="/favicon.ico" />
                 <link rel="icon" href="/logos/logo-dark.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" />
                 <link rel="icon" href="/logos/logo-light.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" />
-                <link rel="apple-touch-icon" href="/logos/logo-dark.png" />
-                <link rel="apple-touch-icon" href="/logos/logo-light.png" sizes="180x180" />
+                <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png" sizes="180x180" />
 
                 {/* Global font: Plus Jakarta Sans (thinner, modern sans) */}
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -198,6 +204,7 @@ export default function App() {
                 </ThemeProvider>
                 <ScrollRestoration/>
                 <Scripts/>
+                <PWARegistration />
             </body>
         </html>
     );

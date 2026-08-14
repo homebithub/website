@@ -166,6 +166,14 @@ app.use("/api", (req, res, next) => {
 app.use(express.static(BUILD_CLIENT_DIR, {
     index: false, // Don't serve index.html automatically
     setHeaders: (res, filePath) => {
+        // A service worker is executable update metadata, not a versioned
+        // bundle. Caching it as immutable would strand installed users on an
+        // old application for a year.
+        if (filePath.endsWith(`${path.sep}sw.js`)) {
+            res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            res.setHeader("Service-Worker-Allowed", "/");
+            return;
+        }
         // Cache static assets but not HTML
         if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.woff2')) {
             res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
