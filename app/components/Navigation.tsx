@@ -95,12 +95,14 @@ function NavigationContent() {
             : 'https://hba.homebit.co.ke';
     }, []);
 
-    // Memoized dashboard path based on profile type
+    // The root route is the real dashboard for both profiles: it resolves the
+    // signed-in role and renders HouseholdJobsHome or HousehelpJobsHome. The
+    // /household and /househelp paths are layout namespaces, not home pages;
+    // linking the mobile Home tab to them produced a 404 on direct navigation.
     const dashboardPath = React.useMemo(() => {
         const role = normalizeProfileRole(profileType);
         if (!role) return null;
-        if (role === "client") return "/household";
-        if (role === "service-provider") return "/househelp";
+        if (role === "client" || role === "service-provider") return "/";
         // Bureau users should not access regular navigation
         return null;
     }, [profileType]);
