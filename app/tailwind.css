@@ -252,6 +252,48 @@ body > * {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Every mobile dialog gets the same scroll boundary. dvh follows the visible
+   viewport while browser chrome and the keyboard open; momentum scrolling is
+   needed on older iOS WebKit builds. */
+.hb-mobile-modal-panel {
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 0.75rem);
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.hb-mobile-more-sheet {
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 6.5rem);
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+/* Chat copy is intentionally denser than form-entry copy. The viewport keeps
+   iOS from magnifying focused fields, while this explicit override prevents
+   the general 16px form safeguard from making long messages look oversized. */
+@media (max-width: 767px) {
+  [role='dialog'][aria-modal='true'] {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  [role='dialog'][aria-modal='true'] > section {
+    max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 0.75rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  textarea.hb-chat-composer {
+    font-size: 14px !important;
+    line-height: 1.35rem;
+    letter-spacing: normal;
+  }
+}
+
+@media (min-width: 640px) {
+  .hb-mobile-modal-panel { max-height: 85vh; }
+}
+
 /* Full-width app chrome with one shared inner rail. The backgrounds and dividers
    reach the viewport edges, while the logo, account menu, filter controls and
    cards all begin and end on the same lines. */

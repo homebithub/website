@@ -122,7 +122,7 @@ export default function App() {
         <html lang="en" className="h-full" suppressHydrationWarning>
             <head>
                 <meta charSet="utf-8"/>
-                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
                 <meta name="theme-color" content="#8b2be2" />
                 <meta name="mobile-web-app-capable" content="yes" />
                 <meta name="apple-mobile-web-app-capable" content="yes" />

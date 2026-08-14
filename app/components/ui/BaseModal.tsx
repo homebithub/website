@@ -54,7 +54,7 @@ export function BaseModal({
           <div className="fixed inset-0 bg-black/40 backdrop-blur-md transition-opacity" />
         </Transition.Child>
 
-        <div className="fixed inset-0 z-10 overflow-y-auto">
+        <div className="fixed inset-0 z-10 overflow-y-auto overscroll-contain">
           <div className="flex min-h-full items-end justify-center text-center sm:items-center sm:p-4">
             <Transition.Child
               as={Fragment}
@@ -70,7 +70,7 @@ export function BaseModal({
                   relative transform overflow-hidden rounded-t-2xl sm:rounded-2xl
                   bg-white dark:bg-dark-card 
                   px-4 pb-8 pt-6 text-left shadow-2xl transition-all sm:px-6 sm:pt-8
-                  w-full ${sizeClasses[size]} max-h-[90vh] sm:max-h-[85vh] overflow-y-auto
+                  hb-mobile-modal-panel w-full ${sizeClasses[size]} overflow-y-auto overscroll-contain
                   border border-purple-100 dark:border-purple-500/20
                 `}
               >

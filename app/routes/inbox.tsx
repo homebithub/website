@@ -2403,7 +2403,7 @@ export default function InboxPage() {
                 }
               }}
               placeholder="Type a message..."
-              className="min-h-[36px] min-w-0 max-h-[150px] flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-2.5 py-1.5 text-[16px] leading-5 tracking-[-0.025em] text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:min-h-[40px] sm:px-4 sm:py-2 sm:text-sm sm:tracking-normal"
+              className="hb-chat-composer min-h-[36px] min-w-0 max-h-[150px] flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-2.5 py-1.5 leading-5 text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:min-h-[40px] sm:px-4 sm:py-2"
               autoComplete="off"
               rows={1}
             />

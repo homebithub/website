@@ -35,7 +35,7 @@ export function HiringCardModal({ open, onClose, eyebrow, title, imageUrl, initi
   return (
     <div className="fixed inset-0 z-[120] flex items-end justify-center p-0 sm:items-center sm:p-5" role="dialog" aria-modal="true" aria-label={`${title} details`}>
       <button type="button" aria-label="Close details" className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <section className="relative max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#140a24] sm:max-w-2xl sm:rounded-3xl">
+      <section className="hb-mobile-modal-panel relative w-full overflow-y-auto rounded-t-3xl border border-purple-500/30 bg-white pb-[env(safe-area-inset-bottom,0px)] shadow-2xl dark:bg-[#140a24] sm:max-w-2xl sm:rounded-3xl">
         <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-purple-100 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-800/50 dark:bg-[#140a24]/95 sm:px-7">
           <div className="flex min-w-0 items-center gap-3">
             {(imageUrl || initials) && (

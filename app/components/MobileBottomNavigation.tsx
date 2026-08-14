@@ -87,14 +87,16 @@ export function MobileBottomNavigation({
   const isActive = (href: string) => href === '/'
     ? location.pathname === '/'
     : location.pathname === href || location.pathname.startsWith(`${href}/`);
-  const primaryRouteActive = primaryItems.some((item) => isActive(item.href));
+  const activeHref = primaryItems
+    .filter((item) => isActive(item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
     <>
       {moreOpen && (
         <div className="lg:hidden">
           <button type="button" aria-label="Close more navigation" onClick={() => setMoreOpen(false)} className="fixed inset-0 z-40 bg-black/55 backdrop-blur-sm" />
-          <section className="fixed inset-x-3 bottom-[calc(5.8rem+env(safe-area-inset-bottom,0px))] z-50 mx-auto max-h-[70dvh] max-w-lg overflow-y-auto rounded-3xl border border-purple-300/50 bg-white p-4 shadow-2xl shadow-purple-900/30 dark:border-purple-500/30 dark:bg-[#13131a]">
+          <section className="hb-mobile-more-sheet fixed inset-x-3 bottom-[calc(5.8rem+env(safe-area-inset-bottom,0px))] z-50 mx-auto max-w-lg overflow-y-auto overscroll-contain rounded-3xl border border-purple-300/50 bg-white p-4 shadow-2xl shadow-purple-900/30 dark:border-purple-500/30 dark:bg-[#13131a]">
             <div className="mb-3 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-purple-500">Navigation</p>
@@ -138,7 +140,7 @@ export function MobileBottomNavigation({
               </button>
               <PWAInstallMenuButton />
               <div className="mt-1 flex items-center justify-between rounded-2xl px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
-                <span>Theme</span><ThemeToggle size="sm" />
+                <span>Theme</span><ThemeToggle size="sm" dropdownPlacement="up" />
               </div>
               {user && (
                 <button type="button" onClick={() => { setMoreOpen(false); onLogout(); }} className="flex w-full items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30">
@@ -154,7 +156,7 @@ export function MobileBottomNavigation({
         <div className="mx-auto flex max-w-lg items-stretch gap-1 rounded-[1.4rem] border border-purple-200/70 bg-white/90 p-1.5 shadow-[0_-8px_30px_rgba(147,51,234,0.14)] dark:border-purple-500/20 dark:bg-[#171721]">
           {primaryItems.map((item) => {
             const Icon = item.icon;
-            const active = isActive(item.href);
+            const active = !moreOpen && item.href === activeHref;
             return (
               <Link key={item.name} to={item.href} prefetch="intent" className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[10px] font-semibold transition ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25' : 'text-gray-500 dark:text-gray-400'}`}>
                 <Icon className="h-5 w-5" />
@@ -163,7 +165,7 @@ export function MobileBottomNavigation({
               </Link>
             );
           })}
-          <button type="button" onClick={() => setMoreOpen((open) => !open)} className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[10px] font-semibold transition ${moreOpen || !primaryRouteActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25' : 'text-gray-500 dark:text-gray-400'}`} aria-expanded={moreOpen}>
+          <button type="button" onClick={() => setMoreOpen((open) => !open)} className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[10px] font-semibold transition ${moreOpen || !activeHref ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25' : 'text-gray-500 dark:text-gray-400'}`} aria-expanded={moreOpen}>
             <EllipsisHorizontalIcon className="h-5 w-5" />
             <span>More</span>
           </button>

@@ -6,6 +6,7 @@ interface ThemeToggleProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
+  dropdownPlacement?: 'up' | 'down';
 }
 
 const themeOptions = [
@@ -17,7 +18,8 @@ const themeOptions = [
 export default function ThemeToggle({ 
   className = '', 
   size = 'md',
-  showLabel = false 
+  showLabel = false,
+  dropdownPlacement = 'down',
 }: ThemeToggleProps) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -108,7 +110,7 @@ export default function ThemeToggle({
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-1.5 w-44 origin-top-right rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+        <div className={`absolute right-0 z-50 w-44 rounded-xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800 ${dropdownPlacement === 'up' ? 'bottom-full mb-1.5 origin-bottom-right' : 'mt-1.5 origin-top-right'}`}>
           <div className="p-1" role="listbox" aria-label="Select theme">
             {themeOptions.map(({ value, label, Icon }) => {
               const isSelected = themePreference === value;
