@@ -28,7 +28,7 @@ import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionReminder";
 import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
-import { Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { Briefcase, Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
 import { humanizeFeatureName, readFeatureGroups } from "~/utils/listingFeatures";
 import { useSubscription } from "~/hooks/useSubscription";
@@ -37,6 +37,9 @@ import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
 import { ListingCardFacts } from "~/components/listing/ListingCardFacts";
 import { resolveHousehelpProfile } from '~/utils/househelpProfiles';
+import { jobService as householdJobService } from '~/services/grpc/authServices';
+import JobPostModal from '~/components/modals/JobPostModal';
+import ConfirmDialog from '~/components/ConfirmDialog';
 
 interface HousehelpSummary {
   id?: string;
@@ -145,6 +148,41 @@ interface OpenForWorkListing {
   owner_rating?: number;
   owner_review_count?: number;
 }
+
+interface HouseholdJobListing {
+  id: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  created_at?: string;
+  expires_at?: string;
+  salary_min?: number;
+  salary_max?: number;
+  salary_frequency?: string;
+  salary_range?: { min?: number; max?: number; currency?: string };
+  [key: string]: any;
+}
+
+const describeJobExpiry = (value?: string): string => {
+  if (!value) return "No expiry set";
+  const expires = new Date(value).getTime();
+  if (Number.isNaN(expires)) return "Expiry unavailable";
+  const remaining = expires - Date.now();
+  if (remaining <= 0) return "Closing now";
+  const days = Math.ceil(remaining / 86_400_000);
+  if (days === 1) return "Closes tomorrow";
+  return `Closes in ${days} days`;
+};
+
+const formatJobSalary = (job: HouseholdJobListing): string => {
+  const min = Number(job.salary_min ?? job.salary_range?.min ?? 0);
+  const max = Number(job.salary_max ?? job.salary_range?.max ?? 0);
+  if (!min && !max) return "Salary not specified";
+  const amount = min && max && min !== max
+    ? `${min.toLocaleString()}–${max.toLocaleString()}`
+    : (min || max).toLocaleString();
+  return `${job.salary_range?.currency || "KES"} ${amount}${job.salary_frequency ? ` / ${job.salary_frequency}` : ""}`;
+};
 
 type SalaryRangeOption = {
   value: string;
@@ -543,6 +581,12 @@ export default function HouseholdJobsHome() {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [contactedListingIds, setContactedListingIds] = useState<Set<string>>(() => new Set());
+  const [activeHouseholdJobs, setActiveHouseholdJobs] = useState<HouseholdJobListing[]>([]);
+  const [activeJobsLoading, setActiveJobsLoading] = useState(false);
+  const [showActiveJobs, setShowActiveJobs] = useState(false);
+  const [editingHouseholdJob, setEditingHouseholdJob] = useState<HouseholdJobListing | null>(null);
+  const [householdJobToDelete, setHouseholdJobToDelete] = useState<HouseholdJobListing | null>(null);
+  const [householdJobActionId, setHouseholdJobActionId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Kept between visits. Narrowing a search used to be thrown away when the
   // tab closed, so anyone returning daily redid the same work every day — and
@@ -664,6 +708,60 @@ export default function HouseholdJobsHome() {
   useEffect(() => {
     persistSavedInviteMessage(inviteDraft);
   }, [inviteDraft]);
+
+  const fetchActiveHouseholdJobs = useCallback(async () => {
+    if (isServiceProvider || !currentHouseholdProfileId) return;
+    setActiveJobsLoading(true);
+    try {
+      const raw = await householdJobService.listJobs(100, 0, currentHouseholdProfileId, "active");
+      const payload = raw?.data ?? raw ?? [];
+      const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+      setActiveHouseholdJobs(items as HouseholdJobListing[]);
+    } catch {
+      setActiveHouseholdJobs([]);
+    } finally {
+      setActiveJobsLoading(false);
+    }
+  }, [currentHouseholdProfileId, isServiceProvider]);
+
+  useEffect(() => {
+    void fetchActiveHouseholdJobs();
+  }, [fetchActiveHouseholdJobs]);
+
+  const updateHouseholdJob = async (job: HouseholdJobListing, action: "close" | "renew") => {
+    setHouseholdJobActionId(job.id);
+    setError(null);
+    try {
+      if (action === "close") {
+        await householdJobService.closeJob(job.id, currentUserId);
+        setActionSuccess("Job listing closed.");
+      } else {
+        await householdJobService.renewListing(job.id, currentHouseholdProfileId || undefined);
+        setActionSuccess("Job kept open for another three weeks.");
+      }
+      await fetchActiveHouseholdJobs();
+    } catch (err: any) {
+      setError(err?.message || "Could not update this job listing.");
+    } finally {
+      setHouseholdJobActionId(null);
+    }
+  };
+
+  const deleteHouseholdJob = async () => {
+    if (!householdJobToDelete) return;
+    setHouseholdJobActionId(householdJobToDelete.id);
+    setError(null);
+    try {
+      await householdJobService.deleteJob(householdJobToDelete.id, currentUserId);
+      setActionSuccess("Job listing deleted.");
+      setHouseholdJobToDelete(null);
+      await fetchActiveHouseholdJobs();
+    } catch (err: any) {
+      setError(err?.message || "Could not delete this job listing.");
+    } finally {
+      setHouseholdJobActionId(null);
+    }
+  };
 
   useEffect(() => {
     if (isServiceProvider || !currentUserId) return;
@@ -1076,6 +1174,24 @@ export default function HouseholdJobsHome() {
                   {sortedListings.length} {sortedListings.length === 1 ? "listing" : "listings"} available
                 </p>
               </div>
+
+              {!isServiceProvider && (
+                <button
+                  type="button"
+                  onClick={() => setShowActiveJobs(true)}
+                  disabled={activeJobsLoading}
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-500/15 disabled:cursor-wait disabled:opacity-70 dark:text-emerald-200"
+                  aria-label="View your active job listings"
+                >
+                  <Briefcase className="h-4 w-4" />
+                  <span className="hidden md:inline">
+                    {activeJobsLoading
+                      ? "Checking active jobs…"
+                      : `${activeHouseholdJobs.length} ${activeHouseholdJobs.length === 1 ? "job listing" : "job listings"} active`}
+                  </span>
+                  <span className={`h-2 w-2 rounded-full ${activeHouseholdJobs.length > 0 ? "bg-emerald-400" : "bg-gray-400"}`} />
+                </button>
+              )}
 
 
               <label className="min-w-0 flex-1 sm:flex-none">
@@ -1883,6 +1999,81 @@ export default function HouseholdJobsHome() {
           </div>
         );
       })()}
+      {showActiveJobs && (
+        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setShowActiveJobs(false)}>
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="active-jobs-title"
+            className="flex max-h-[90dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#15101f] sm:rounded-3xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flex items-start justify-between gap-4 border-b border-purple-100 px-5 py-4 dark:border-purple-500/20 sm:px-6">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-purple-600 dark:text-purple-300">Your listings</p>
+                <h2 id="active-jobs-title" className="mt-1 text-lg font-bold text-gray-900 dark:text-white">
+                  {activeHouseholdJobs.length} active {activeHouseholdJobs.length === 1 ? "job" : "jobs"}
+                </h2>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Manage the roles currently visible to househelps.</p>
+              </div>
+              <button type="button" onClick={() => setShowActiveJobs(false)} className="rounded-full border border-purple-200 p-2 text-purple-700 hover:bg-purple-50 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-500/10" aria-label="Close active job listings">
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+
+            <div className="space-y-3 overflow-y-auto p-4 sm:p-6">
+              {activeHouseholdJobs.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-purple-300 p-10 text-center dark:border-purple-500/30">
+                  <Briefcase className="mx-auto h-8 w-8 text-purple-400" />
+                  <h3 className="mt-3 text-sm font-semibold text-gray-900 dark:text-white">No active job listings</h3>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Create or reopen a listing from Hiring when you are ready.</p>
+                </div>
+              ) : activeHouseholdJobs.map((job) => (
+                <article key={job.id} className="rounded-2xl border border-purple-200 bg-purple-50/40 p-4 dark:border-purple-500/25 dark:bg-purple-950/20 sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-bold text-gray-900 dark:text-white">{job.title || "Untitled role"}</h3>
+                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-gray-600 dark:text-gray-300">{job.description || "No description provided."}</p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">Active</span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
+                    <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Salary</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{formatJobSalary(job)}</p></div>
+                    <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Posted</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{job.created_at ? formatTimeAgo(job.created_at) : "Recently"}</p></div>
+                    <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Expiry</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{describeJobExpiry(job.expires_at)}</p></div>
+                  </div>
+                  <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-purple-100 pt-4 dark:border-purple-500/20">
+                    <button type="button" onClick={() => setEditingHouseholdJob(job)} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">Edit</button>
+                    <button type="button" onClick={() => void updateHouseholdJob(job, "close")} disabled={householdJobActionId === job.id} className="rounded-xl border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white/5">Close</button>
+                    <button type="button" onClick={() => void updateHouseholdJob(job, "renew")} disabled={householdJobActionId === job.id} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 disabled:opacity-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">{householdJobActionId === job.id ? "Updating…" : "Keep open"}</button>
+                    <button type="button" onClick={() => setHouseholdJobToDelete(job)} disabled={householdJobActionId === job.id} className="rounded-xl border border-red-300 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10">Delete</button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
+      <JobPostModal
+        isOpen={Boolean(editingHouseholdJob)}
+        onClose={() => setEditingHouseholdJob(null)}
+        job={editingHouseholdJob}
+        onSaved={() => {
+          setEditingHouseholdJob(null);
+          setActionSuccess("Job listing updated.");
+          void fetchActiveHouseholdJobs();
+        }}
+      />
+      <ConfirmDialog
+        isOpen={Boolean(householdJobToDelete)}
+        title="Delete job listing"
+        message="Delete this job listing? This cannot be undone."
+        confirmText={householdJobActionId === householdJobToDelete?.id ? "Deleting…" : "Delete"}
+        cancelText="Cancel"
+        onConfirm={deleteHouseholdJob}
+        onCancel={() => setHouseholdJobToDelete(null)}
+        variant="danger"
+      />
       {/* Same wording and destination as the home screen, so the two places a
           household can start a conversation now behave identically. */}
       <SubscriptionRequiredModal
