@@ -367,3 +367,15 @@ body > * {
     font-size: 16px !important;
   }
 }
+
+@media (max-width: 1023px) {
+  body.hb-has-mobile-bottom-nav {
+    padding-bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@layer components {
+  .hb-mobile-sheet-link {
+    @apply flex min-w-0 items-center gap-2 rounded-2xl px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-purple-50 hover:text-purple-700 dark:text-gray-200 dark:hover:bg-purple-950/40 dark:hover:text-purple-200;
+  }
+}

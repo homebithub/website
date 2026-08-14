@@ -17,6 +17,7 @@ import { cachedRequest } from '~/utils/requestCache';
 import { countUnattendedHiringRecords, hiringAttentionScope } from '~/utils/hiringAttention';
 import { collapseApplicationContracts } from '~/utils/hiringIdentifiers';
 import { PWAInstallMenuButton } from '~/components/PWAInstallPrompt';
+import { MobileBottomNavigation } from '~/components/MobileBottomNavigation';
 
 const NAV_COUNT_STALE_MS = 2 * 60_000;
 const NAV_ADMIN_STALE_MS = 10 * 60_000;
@@ -680,7 +681,7 @@ function NavigationContent() {
                     )}
 
                     {/* Menu Dropdown - Only show on mobile */}
-                    <Menu as="div" className="relative inline-block text-left lg:hidden">
+                    <Menu as="div" className="hidden text-left">
                         <Menu.Button
                             className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:from-purple-600 dark:to-pink-600 dark:shadow-glow-sm"
                             aria-label="Open navigation menu"
@@ -914,6 +915,18 @@ function NavigationContent() {
             )}
 
         </nav>
+        <MobileBottomNavigation
+            user={Boolean(user)}
+            homeHref={dashboardPath || '/'}
+            authenticatedItems={authLinks}
+            profileHref={accountProfileHref}
+            profileLabel={accountProfileLabel}
+            unreadNotifications={unreadCount}
+            canSeeAdmin={canSeeAdminDashboard}
+            adminUrl={adminDashboardUrl}
+            onOpenNotifications={() => setIsNotificationsOpen(true)}
+            onLogout={() => void handleLogout()}
+        />
         {/* A fixed header leaves normal document flow. Keep every route's first
             control visible without making individual pages know the navbar's
             responsive height. */}

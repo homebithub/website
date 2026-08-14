@@ -108,6 +108,17 @@ describe('mobile layout guardrails', () => {
     expect(navigation).toContain('h-[56px] shrink-0 sm:h-[60px]');
   });
 
+  it('uses a role-aware bottom bar instead of a mobile hamburger', () => {
+    const navigation = source('app/components/Navigation.tsx');
+    const bottom = source('app/components/MobileBottomNavigation.tsx');
+    expect(navigation).toContain('<MobileBottomNavigation');
+    expect(navigation).toContain('<Menu as="div" className="hidden text-left">');
+    expect(bottom).toContain("{ name: 'Services', href: '/services'");
+    expect(bottom).toContain("item.name !== 'Blog'");
+    expect(bottom).toContain('PWAInstallMenuButton');
+    expect(bottom).toContain('Help & support');
+  });
+
   it('keeps discovery filters open while choosing from portalled selects', () => {
     const customSelect = source('app/components/ui/CustomSelect.tsx');
     const househelpHome = source('app/components/HousehelpJobsHome.tsx');
