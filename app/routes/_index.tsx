@@ -37,17 +37,19 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function Index() {
   useScrollFadeIn();
   const { isAuthenticated: loaderAuth, userType: loaderUserType } = useLoaderData<typeof loader>();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   // Client-side fallback: SSR loader may not see httpOnly cookies,
   // but AuthContext reads the token from localStorage.
-  let isAuthenticated = loaderAuth;
-  let userType = loaderUserType;
-
-  if (!isAuthenticated && user) {
-    isAuthenticated = true;
-    userType = (user as any)?.user?.profile_type || getStoredProfileType() || null;
-  }
+  // SSR gives the first paint a useful answer, but once the client session
+  // check completes it is authoritative. A stale HttpOnly cookie can make the
+  // loader say "signed in" while AuthContext correctly clears the session;
+  // continuing to trust the loader produced a logged-out navbar over a
+  // household homepage.
+  const isAuthenticated = authLoading ? loaderAuth : Boolean(user);
+  const userType = user
+    ? (user as any)?.user?.profile_type || getStoredProfileType() || null
+    : authLoading ? loaderUserType : null;
 
   // Show authenticated home for logged-in users based on profile type
   if (isAuthenticated) {

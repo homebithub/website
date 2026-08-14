@@ -14,8 +14,8 @@ export function AppLaunchScreen() {
 
     // Keep the hand-off from the native launch image smooth, but never hold up
     // an already interactive app for the sake of an artificial animation.
-    const fadeTimer = window.setTimeout(() => setLeaving(true), 350);
-    const removeTimer = window.setTimeout(() => setVisible(false), 600);
+    const fadeTimer = window.setTimeout(() => setLeaving(true), 1200);
+    const removeTimer = window.setTimeout(() => setVisible(false), 1500);
     return () => {
       window.clearTimeout(fadeTimer);
       window.clearTimeout(removeTimer);

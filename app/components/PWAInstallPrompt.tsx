@@ -135,7 +135,11 @@ export function PWAInstallPrompt() {
       // Fall back to the authenticated-user condition below.
     }
 
-    if (autoPromptScheduled.current || (!user && pageViews < 2)) return;
+    // iOS offers no native beforeinstallprompt event. Show our Safari guidance
+    // on the first engaged visit there; elsewhere wait for sign-in or a second
+    // page so the invitation does not interrupt a brand-new visitor.
+    const readyForPrompt = Boolean(user) || pageViews >= 2 || isAppleMobileDevice();
+    if (autoPromptScheduled.current || !readyForPrompt) return;
     autoPromptScheduled.current = true;
     const timer = window.setTimeout(() => setIsOpen(true), 7000);
     return () => {

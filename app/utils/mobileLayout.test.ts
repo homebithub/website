@@ -36,6 +36,7 @@ describe('mobile layout guardrails', () => {
     expect(prompt).toContain('Copy HomeBit link');
     expect(prompt).toContain('Chrome, Firefox, Edge, and other iOS browsers cannot install HomeBit');
     expect(prompt).toContain('DISMISSAL_COOLDOWN_MS');
+    expect(prompt).toContain('pageViews >= 2 || isAppleMobileDevice()');
     expect(root).toContain('<PWAInstallPrompt />');
     expect(navigation).toContain('<PWAInstallMenuButton />');
   });
@@ -49,6 +50,13 @@ describe('mobile layout guardrails', () => {
     expect(launch).toContain("window.matchMedia('(display-mode: standalone)')");
     expect(css).toContain('@media (display-mode: standalone)');
     expect(css).toContain('.hb-launch-screen--leaving');
+    expect(launch).toContain('setLeaving(true), 1200');
+  });
+
+  it('lets the resolved client session override stale homepage cookies', () => {
+    const home = source('app/routes/_index.tsx');
+    expect(home).toContain('authLoading ? loaderAuth : Boolean(user)');
+    expect(home).toContain('authLoading ? loaderUserType : null');
   });
 
   it('renders shared dialogs as bottom sheets on phones', () => {
