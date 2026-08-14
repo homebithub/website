@@ -709,7 +709,7 @@ export default function Pricing() {
             <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
               <Transition.Child
                 as={Fragment}

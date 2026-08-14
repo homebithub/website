@@ -43,7 +43,7 @@ export default function ImageUploadModal({ open, onClose, files, setFiles, onUpl
 
   return (
     <div
-      className={`fixed inset-0 z-40 flex items-end sm:items-center justify-center ${open ? '' : 'hidden'}`}
+      className={`hb-mobile-modal-viewport fixed inset-0 z-40 flex items-end sm:items-center justify-center ${open ? '' : 'hidden'}`}
       aria-modal="true" role="dialog">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
       <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-lg p-6 w-full sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">

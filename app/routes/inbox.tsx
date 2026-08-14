@@ -2599,7 +2599,7 @@ export default function InboxPage() {
 
       {/* Chat Terms of Use Modal */}
       {showChatTerms && !chatTermsAccepted && (
-        <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={() => setShowChatTerms(false)}>
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={() => setShowChatTerms(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <div
             className="relative w-full sm:max-w-md bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4"
@@ -2730,7 +2730,7 @@ export default function InboxPage() {
       )}
 
       {showHireWizard && selectedConversation && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <div className="relative z-10 w-full px-4 sm:px-0 flex justify-center">
             <ConversationHire
@@ -2783,7 +2783,7 @@ export default function InboxPage() {
       )}
 
       {hireRequestJob && (
-        <div className="fixed inset-0 z-[170] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setHireRequestJob(null)}>
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[170] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setHireRequestJob(null)}>
           <section role="dialog" aria-modal="true" aria-labelledby="chat-job-listing-title" className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-500/40 bg-white shadow-2xl dark:bg-[#171122] sm:max-w-3xl sm:rounded-3xl" onClick={(event) => event.stopPropagation()}>
             <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-purple-200 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-700/50 dark:bg-[#171122]/95 sm:px-6">
               <div>

@@ -246,6 +246,23 @@ body > * {
 .hb-modal-shell {
   @apply fixed inset-0 z-[90] flex items-end justify-center sm:items-center sm:p-4;
 }
+
+/* Fixed dialogs share the same usable mobile viewport as the page: below the
+   top navigation and above the bottom navigation. This keeps sticky modal
+   headers and their close buttons reachable instead of hiding them under app
+   chrome. Desktop dialogs continue to use the full viewport. */
+.hb-mobile-modal-viewport,
+.hb-modal-shell {
+  top: calc(56px + env(safe-area-inset-top, 0px) + 0.5rem) !important;
+  bottom: calc(6rem + env(safe-area-inset-bottom, 0px) + 0.5rem) !important;
+}
+
+.hb-mobile-modal-viewport .hb-mobile-modal-panel,
+.hb-mobile-modal-viewport [role='dialog'][aria-modal='true'],
+.hb-modal-shell .hb-mobile-modal-panel,
+.hb-modal-shell [role='dialog'][aria-modal='true'] {
+  max-height: 100% !important;
+}
 .hb-modal-panel {
   @apply relative w-full max-w-full overflow-y-auto rounded-t-3xl bg-white shadow-2xl dark:bg-[#13131a] sm:max-w-lg sm:rounded-3xl;
   max-height: min(92dvh, 92vh);
@@ -292,6 +309,28 @@ body > * {
 
 @media (min-width: 640px) {
   .hb-mobile-modal-panel { max-height: 85vh; }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .hb-mobile-modal-viewport,
+  .hb-modal-shell {
+    top: calc(60px + env(safe-area-inset-top, 0px) + 0.5rem) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hb-mobile-modal-viewport,
+  .hb-modal-shell {
+    top: 0 !important;
+    bottom: 0 !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  body.hb-mobile-keyboard-open .hb-mobile-modal-viewport,
+  body.hb-mobile-keyboard-open .hb-modal-shell {
+    bottom: 0.5rem !important;
+  }
 }
 
 /* Full-width app chrome with one shared inner rail. The backgrounds and dividers

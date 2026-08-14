@@ -368,7 +368,7 @@ export default function ProfileReviews({
       )}
 
       {showReviewForm && (
-        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
           <form
             onSubmit={submitReview}
             className="w-full max-w-lg rounded-t-3xl border border-purple-500/30 bg-white p-6 shadow-2xl dark:bg-[#13131a] sm:rounded-3xl"

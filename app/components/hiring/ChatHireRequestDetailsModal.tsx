@@ -60,7 +60,7 @@ export default function ChatHireRequestDetailsModal({
       : '';
 
   return (
-    <div className="fixed inset-0 z-[160] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
+    <div className="hb-mobile-modal-viewport fixed inset-0 z-[160] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={onClose}>
       <section
         role="dialog"
         aria-modal="true"

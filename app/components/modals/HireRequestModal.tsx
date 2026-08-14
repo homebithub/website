@@ -144,7 +144,7 @@ export default function HireRequestModal({
 
   const content = (
     <>
-      <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 backdrop-blur-sm sm:items-center sm:p-5" onClick={onClose}>
+      <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end justify-center bg-black/65 backdrop-blur-sm sm:items-center sm:p-5" onClick={onClose}>
         <section onClick={(event) => event.stopPropagation()} className="max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#13131a] sm:max-w-2xl sm:rounded-2xl">
           <header className="sticky top-0 z-10 flex items-center justify-between border-b border-purple-200 bg-white px-5 py-4 dark:border-purple-500/20 dark:bg-[#13131a]">
             <div>

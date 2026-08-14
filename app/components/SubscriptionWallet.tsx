@@ -203,7 +203,7 @@ export function SubscriptionWallet() {
             <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4 text-center">
               <Transition.Child
                 as={Fragment}
@@ -381,7 +381,7 @@ export function SubscriptionWallet() {
             <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
               <Transition.Child
                 as={Fragment}

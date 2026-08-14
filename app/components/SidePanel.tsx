@@ -34,7 +34,7 @@ export function SidePanel({
           <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] transition-opacity" />
         </Transition.Child>
 
-        <div className="fixed inset-0 overflow-hidden">
+        <div className="hb-mobile-modal-viewport fixed inset-0 overflow-hidden">
           <div className="absolute inset-0 overflow-hidden">
             <div className="pointer-events-none fixed inset-0">
               <Transition.Child

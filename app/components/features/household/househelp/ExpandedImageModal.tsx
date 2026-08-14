@@ -18,7 +18,7 @@ export default function ExpandedImageModal({
 }: ExpandedImageModalProps) {
   if (!images || images.length === 0) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={onClose} />
       <button
         className="absolute top-4 right-4 z-10 text-white bg-black/60 rounded-full p-2 text-xl"

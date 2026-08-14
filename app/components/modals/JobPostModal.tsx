@@ -578,7 +578,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
 
   const modal = (
     <div
-      className="fixed inset-0 isolate flex items-end justify-center overflow-y-auto overscroll-contain bg-black/50 p-0 backdrop-blur-sm dark:bg-black/70 sm:items-center sm:px-4 sm:py-8"
+      className="hb-mobile-modal-viewport fixed inset-0 isolate flex items-end justify-center overflow-y-auto overscroll-contain bg-black/50 p-0 backdrop-blur-sm dark:bg-black/70 sm:items-center sm:px-4 sm:py-8"
       // Above every app layer, but below the list CustomSelect portals to the
       // body. At the maximum this backdrop covered its own dropdowns: the list
       // opened behind it, so it looked like nothing happened and the next click

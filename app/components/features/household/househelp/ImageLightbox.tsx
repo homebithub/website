@@ -14,7 +14,7 @@ export default function ImageLightbox({ images, open, index, onClose, onPrev, on
   if (!open) return null;
   const img = images[index];
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={onClose} />
       <button
         className="absolute top-4 right-4 z-10 text-white text-lg font-bold"

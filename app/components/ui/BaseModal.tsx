@@ -54,7 +54,7 @@ export function BaseModal({
           <div className="fixed inset-0 bg-black/40 backdrop-blur-md transition-opacity" />
         </Transition.Child>
 
-        <div className="fixed inset-0 z-10 overflow-y-auto overscroll-contain">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-10 overflow-y-auto overscroll-contain">
           <div className="flex min-h-full items-end justify-center text-center sm:items-center sm:p-4">
             <Transition.Child
               as={Fragment}

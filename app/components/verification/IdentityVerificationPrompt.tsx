@@ -171,7 +171,7 @@ export function IdentityVerificationPrompt({
       </section>
 
       {modalOpen && typeof document !== "undefined" && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-6" role="presentation">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-6" role="presentation">
           <button
             type="button"
             className="absolute inset-0 cursor-default bg-black/50 backdrop-blur-sm dark:bg-black/75"

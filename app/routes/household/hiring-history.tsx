@@ -1885,7 +1885,7 @@ export default function HiringHistory() {
 
       {/* Details Modal */}
       {selectedRequest && (
-     <div className="fixed inset-0 z-50 grid place-items-center p-3 sm:p-4">
+     <div className="hb-mobile-modal-viewport fixed inset-0 z-50 grid place-items-center p-3 sm:p-4">
     {/* Overlay */}
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm"
@@ -2114,7 +2114,7 @@ export default function HiringHistory() {
 
 
 {cancelRequest && (
-  <div className="fixed inset-0 z-50 grid place-items-center p-3 sm:p-4">
+  <div className="hb-mobile-modal-viewport fixed inset-0 z-50 grid place-items-center p-3 sm:p-4">
     {/* Overlay */}
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm"
@@ -2278,7 +2278,7 @@ export default function HiringHistory() {
   onSaved={handleJobSaved}
 />
 {viewingJob && (
-  <div className="fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingJob(null)}>
+  <div className="hb-mobile-modal-viewport fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingJob(null)}>
     <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white">{viewingJob.title || 'Job listing'}</h2>
@@ -2308,7 +2308,7 @@ export default function HiringHistory() {
     had, and it has to hold up if either of them ever needs to say what
     happened. */}
 {terminating && (
-  <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+  <div className="hb-mobile-modal-viewport fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
     <div className="w-full max-w-md rounded-t-3xl border border-red-200 bg-white p-6 shadow-2xl dark:border-red-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
       <h3 className="text-base font-semibold text-gray-900 dark:text-white">
         End the engagement with {terminating.househelp?.first_name || 'this person'}?
@@ -2354,7 +2354,7 @@ export default function HiringHistory() {
 )}
 
 {rejecting && (
-  <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+  <div className="hb-mobile-modal-viewport fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
     <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
       <h3 className="text-base font-semibold text-gray-900 dark:text-white">
         Not going ahead with {rejecting.househelp?.first_name || 'this applicant'}?

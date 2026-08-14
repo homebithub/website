@@ -76,7 +76,7 @@ function DocumentViewer({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-6"
+      className="hb-mobile-modal-viewport fixed inset-0 z-[70] flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-label={`View ${viewer.document.file_name || 'certification document'}`}

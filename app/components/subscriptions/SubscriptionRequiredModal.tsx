@@ -24,7 +24,7 @@ export function SubscriptionRequiredModal({
       : `You need an active subscription or free trial to ${actionLabel}. Choose a plan to get started.`;
 
   return (
-    <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={onClose}>
+    <div className="hb-mobile-modal-viewport fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
         className="relative w-full sm:max-w-md bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto sm:mx-4"

@@ -88,7 +88,7 @@ export function InviteCodeGenerator({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsOpen(false)} />
       <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl shadow-2xl dark:shadow-glow-lg w-full sm:max-w-2xl sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto border-2 border-purple-200 dark:border-purple-500/30 animate-slide-up">
         {/* Header */}

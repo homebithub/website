@@ -1503,7 +1503,7 @@ export default function HousehelpJobsHome() {
         );
 
         return (
-          <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
+          <div className="hb-mobile-modal-viewport fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setPreviewProfileJob(null)} />
             <div className="relative w-full sm:max-w-xl bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl border border-purple-200/60 dark:border-purple-700/30 shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
               <div className="flex items-start justify-between gap-4">
@@ -1578,7 +1578,7 @@ export default function HousehelpJobsHome() {
         const detailFeatureGroups = remainingFeatureGroups(selectedJobDetail);
 
         return (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseJobDetail} />
             <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
               <div className="flex items-start justify-between gap-4">
@@ -1752,7 +1752,7 @@ export default function HousehelpJobsHome() {
       })()}
 
       {selectedJob && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseApplyModal} />
           <div className="relative w-full sm:max-w-lg bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between gap-4">

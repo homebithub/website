@@ -1737,7 +1737,7 @@ export default function HouseholdJobsHome() {
         const featureGroups = listingFeatureGroups(selectedListing);
 
         return (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseListingModal} />
             <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
               <div className="flex items-start justify-between gap-4">
@@ -1920,7 +1920,7 @@ export default function HouseholdJobsHome() {
         const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || 'Househelp';
         const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
         return (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseInviteModal} />
             <div className="relative w-full sm:max-w-lg bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8">
               <div className="flex items-start justify-between gap-4">
@@ -2002,7 +2002,7 @@ export default function HouseholdJobsHome() {
         );
       })()}
       {showActiveJobs && (
-        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setShowActiveJobs(false)}>
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[120] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setShowActiveJobs(false)}>
           <section
             role="dialog"
             aria-modal="true"

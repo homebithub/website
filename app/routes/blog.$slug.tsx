@@ -645,7 +645,7 @@ export default function BlogPost() {
 
       {/* Auth Modal - shown when non-logged-in user tries to like */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowAuthModal(false)}

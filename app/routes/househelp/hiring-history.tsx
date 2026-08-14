@@ -1357,7 +1357,7 @@ export default function HousehelpHiringHistory() {
       />
 
       {viewingListing && (
-        <div className="fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingListing(null)}>
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingListing(null)}>
           <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between gap-4">
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">{String(viewingListing.title || 'Job listing')}</h2>
@@ -1370,7 +1370,7 @@ export default function HousehelpHiringHistory() {
 
       {/* Interest Details Modal */}
       {showInterestModal && selectedInterest && (
-        <div className="fixed inset-0 z-[120] overflow-hidden" role="dialog" aria-modal="true" aria-label="Application details">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[120] overflow-hidden" role="dialog" aria-modal="true" aria-label="Application details">
           <div className="relative flex h-full items-end justify-center p-0 sm:items-center sm:p-5">
             <button type="button" aria-label="Close application details" className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => { setShowInterestModal(false); setSelectedInterest(null); }} />
             <div className="relative flex max-h-[94dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#171426] sm:max-h-[90dvh] sm:rounded-3xl">
@@ -1542,7 +1542,7 @@ export default function HousehelpHiringHistory() {
           and "the hours do not work for me" is what stops them offering the
           same thing again. */}
       {answeringInterest && (
-        <div className="fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
           <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">
               Decline this offer?

@@ -29,7 +29,7 @@ export default function EditSectionModal({ isOpen, onClose, title, profileType, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
+    <div className="hb-mobile-modal-viewport fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div
         ref={backdropRef}
