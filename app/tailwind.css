@@ -416,23 +416,28 @@ body > * {
   }
 }
 
-/* Inbox owns its scroll area. Account for both fixed navigation bars in the
-   route height so the document itself never gains the bottom-bar padding as
-   extra scrollable space; otherwise the profile header can slide underneath
-   the top bar before the message scroller starts moving. */
+/* The inbox is an app-style workspace between two fixed navigation bars.
+   Pinning its edges (instead of only calculating a height) prevents mobile
+   browser/document scrolling from ever carrying the profile header behind
+   the top navbar. The message list remains the only scrolling region. */
 .hb-inbox-viewport {
-  height: calc(100dvh - 56px - 5.4rem - env(safe-area-inset-bottom, 0px));
+  position: fixed;
+  inset-inline: 0;
+  top: calc(56px + env(safe-area-inset-top, 0px));
+  bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px));
+  height: auto;
 }
 
 @media (min-width: 640px) and (max-width: 1023px) {
   .hb-inbox-viewport {
-    height: calc(100dvh - 60px - 5.4rem - env(safe-area-inset-bottom, 0px));
+    top: calc(60px + env(safe-area-inset-top, 0px));
   }
 }
 
 @media (min-width: 1024px) {
   .hb-inbox-viewport {
-    height: calc(100dvh - 60px);
+    top: calc(60px + env(safe-area-inset-top, 0px));
+    bottom: 0;
   }
 }
 
