@@ -16,6 +16,7 @@ import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { cachedRequest } from '~/utils/requestCache';
 import { countUnattendedHiringRecords, hiringAttentionScope } from '~/utils/hiringAttention';
 import { collapseApplicationContracts } from '~/utils/hiringIdentifiers';
+import { PWAInstallMenuButton } from '~/components/PWAInstallPrompt';
 
 const NAV_COUNT_STALE_MS = 2 * 60_000;
 const NAV_ADMIN_STALE_MS = 10 * 60_000;
@@ -775,6 +776,8 @@ function NavigationContent() {
                                         </button>
                                       )}
                                     </Menu.Item>
+
+                                    <PWAInstallMenuButton />
 
                                     {/* Theme Toggle in Mobile Menu */}
                                     <div className="px-5 py-3 flex items-center justify-between">

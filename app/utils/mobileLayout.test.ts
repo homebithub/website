@@ -25,6 +25,19 @@ describe('mobile layout guardrails', () => {
     expect(root).not.toContain('maximum-scale=1');
   });
 
+  it('offers a discoverable PWA installation path on mobile browsers', () => {
+    const prompt = source('app/components/PWAInstallPrompt.tsx');
+    const root = source('app/root.tsx');
+    const navigation = source('app/components/Navigation.tsx');
+    expect(prompt).toContain("window.addEventListener('beforeinstallprompt'");
+    expect(prompt).toContain("window.matchMedia('(display-mode: standalone)')");
+    expect(prompt).toContain('Add to Home Screen');
+    expect(prompt).toContain('open HomeBit in Safari');
+    expect(prompt).toContain('DISMISSAL_COOLDOWN_MS');
+    expect(root).toContain('<PWAInstallPrompt />');
+    expect(navigation).toContain('<PWAInstallMenuButton />');
+  });
+
   it('renders shared dialogs as bottom sheets on phones', () => {
     expect(source('app/components/ui/BaseModal.tsx')).toContain('rounded-t-2xl sm:rounded-2xl');
     expect(source('app/components/Modal.tsx')).toContain('rounded-t-3xl');

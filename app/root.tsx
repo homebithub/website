@@ -13,6 +13,7 @@ import { PersistentNavigation } from "~/components/Navigation";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
 import SupportChat from "~/components/support/SupportChat";
 import { PWARegistration } from "~/components/PWARegistration";
+import { PWAInstallPrompt } from "~/components/PWAInstallPrompt";
 import stylesheet from "./tailwind.css?url";
 
 export const meta: Route.MetaFunction = () => [
@@ -197,6 +198,7 @@ export default function App() {
                                     <PersistentNavigation/>
                                     <Outlet/>
                                     <SupportChat />
+                                    <PWAInstallPrompt />
                                 </ProfileEditorProvider>
                             </WebSocketProvider>
                         </SSEProvider>
