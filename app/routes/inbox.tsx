@@ -5,11 +5,13 @@ import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { profileReadService as grpcProfileService } from '~/services/grpc/profileRead.service';
-import { marketplaceHireRequestService as hireRequestService } from '~/services/grpc/marketplace.service';
+import { marketplaceHireRequestService as hireRequestService, marketplaceJobService as jobService } from '~/services/grpc/marketplace.service';
 import { ArrowLeftIcon, ArrowUturnLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import type { EmojiClickData } from 'emoji-picker-react';
 import ConversationHire from '~/components/hiring/ConversationHire';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
+import ChatHireRequestDetailsModal, { type ChatHireRequest } from '~/components/hiring/ChatHireRequestDetailsModal';
+import { ListingDetails } from '~/components/listing/ListingDetails';
 import { useWebSocketContext } from '~/contexts/WebSocketContext';
 import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved, WSEventTyping } from '~/types/websocket';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
@@ -94,7 +96,7 @@ type ToastItem = {
   type: 'success' | 'error';
 };
 
-type HireRequestSummary = {
+type HireRequestSummary = ChatHireRequest & {
   id: string;
   household_id?: string;
   househelp_id?: string;
@@ -391,6 +393,10 @@ export default function InboxPage() {
   const [househelpProfileIdForHire, setHousehelpProfileIdForHire] = useState<string | null>(null);
   const [hireRequestStatus, setHireRequestStatus] = useState<string | undefined>();
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
+  const [hireRequestDetails, setHireRequestDetails] = useState<HireRequestSummary | null>(null);
+  const [showHireRequestDetails, setShowHireRequestDetails] = useState(false);
+  const [hireRequestJob, setHireRequestJob] = useState<Record<string, any> | null>(null);
+  const [hireRequestJobLoading, setHireRequestJobLoading] = useState(false);
   const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
   const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
 
@@ -776,6 +782,7 @@ export default function InboxPage() {
     if (!conversation) {
       setHireRequestStatus(undefined);
       setHireRequestId(undefined);
+      setHireRequestDetails(null);
       return;
     }
     try {
@@ -815,16 +822,41 @@ export default function InboxPage() {
       if (match) {
         setHireRequestStatus(match.status);
         setHireRequestId(match.id);
+        setHireRequestDetails(match);
       } else {
         setHireRequestStatus(undefined);
         setHireRequestId(undefined);
+        setHireRequestDetails(null);
       }
     } catch (err) {
       console.error('Failed to fetch hire request context', err);
       setHireRequestStatus(undefined);
       setHireRequestId(undefined);
+      setHireRequestDetails(null);
     }
   }, []);
+
+  const handleViewHireRequestJob = useCallback(async () => {
+    const listingId = String(hireRequestDetails?.listing_id || '').trim();
+    if (!listingId) {
+      pushToast('This hire request is not linked to a job listing.', 'error');
+      return;
+    }
+
+    setHireRequestJobLoading(true);
+    try {
+      const response = await jobService.getJob(listingId);
+      const listing = extractEnvelopeObject<Record<string, any>>(response);
+      if (!listing?.id) throw new Error('Job listing not found');
+      setShowHireRequestDetails(false);
+      setHireRequestJob(listing);
+    } catch (err) {
+      console.error('Failed to load hire request job listing', err);
+      pushToast('Failed to load the job listing.', 'error');
+    } finally {
+      setHireRequestJobLoading(false);
+    }
+  }, [hireRequestDetails, pushToast]);
 
   useEffect(() => {
     fetchHireContext(selectedConversation);
@@ -1449,6 +1481,7 @@ export default function InboxPage() {
       setHireActionLoading('accept');
       await hireRequestService.acceptHireRequest(hireRequestId);
       setHireRequestStatus('accepted');
+      setHireRequestDetails((current) => current ? { ...current, status: 'accepted' } : current);
     } catch (err) {
       console.error(err);
       pushToast('Failed to accept hire request', 'error');
@@ -1463,6 +1496,7 @@ export default function InboxPage() {
       setHireActionLoading('decline');
       await hireRequestService.declineHireRequest(hireRequestId);
       setHireRequestStatus('declined');
+      setHireRequestDetails((current) => current ? { ...current, status: 'declined' } : current);
     } catch (err) {
       console.error(err);
       pushToast('Failed to decline hire request', 'error');
@@ -1856,18 +1890,7 @@ export default function InboxPage() {
                     hireRequestStatus={hireRequestStatus}
                     hireRequestId={hireRequestId}
                     onViewDetails={() => {
-                      if (hireRequestId) {
-                        if (currentUserProfileType?.toLowerCase() === 'household') {
-                          const backTo = `${location.pathname}${location.search || ''}`;
-                          const params = new URLSearchParams({
-                            backTo,
-                            backLabel: 'Back to Inbox',
-                          });
-                          navigate(`/household/hire-request/${hireRequestId}?${params.toString()}`);
-                        } else {
-                          navigate(`/househelp/hiring`);
-                        }
-                      }
+                      if (hireRequestDetails) setShowHireRequestDetails(true);
                     }}
                     onSendHireRequest={async () => {
                       if (!hasActiveSubscription && !subscriptionLoading) {
@@ -2713,6 +2736,38 @@ export default function InboxPage() {
               }}
             />
           </div>
+        </div>
+      )}
+
+      {showHireRequestDetails && hireRequestDetails && (
+        <ChatHireRequestDetailsModal
+          request={hireRequestDetails}
+          participantName={selectedConversation?.participant_name}
+          onClose={() => setShowHireRequestDetails(false)}
+          onViewJob={handleViewHireRequestJob}
+          jobLoading={hireRequestJobLoading}
+        />
+      )}
+
+      {hireRequestJob && (
+        <div className="fixed inset-0 z-[170] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setHireRequestJob(null)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="chat-job-listing-title" className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-500/40 bg-white shadow-2xl dark:bg-[#171122] sm:max-w-3xl sm:rounded-3xl" onClick={(event) => event.stopPropagation()}>
+            <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-purple-200 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-700/50 dark:bg-[#171122]/95 sm:px-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-purple-600 dark:text-purple-300">Job listing</p>
+                <h2 id="chat-job-listing-title" className="mt-1 text-lg font-bold text-gray-950 dark:text-white">{hireRequestJob.title || 'Job listing details'}</h2>
+              </div>
+              <button type="button" onClick={() => setHireRequestJob(null)} className="rounded-full border border-purple-300 p-2 text-purple-700 dark:border-purple-600 dark:text-purple-200" aria-label="Close job listing">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </header>
+            <div className="p-5 sm:p-6">
+              <ListingDetails listing={hireRequestJob} emptyMessage="This job listing has no additional details." />
+            </div>
+            <footer className="sticky bottom-0 flex justify-end border-t border-purple-200 bg-white/95 p-4 backdrop-blur dark:border-purple-700/50 dark:bg-[#171122]/95">
+              <button type="button" onClick={() => { setHireRequestJob(null); setShowHireRequestDetails(true); }} className="rounded-xl border border-purple-300 px-5 py-2 text-sm font-semibold text-purple-700 dark:border-purple-600 dark:text-purple-200">Back to hire request</button>
+            </footer>
+          </section>
         </div>
       )}
 

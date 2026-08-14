@@ -16,14 +16,14 @@ interface HireRequest {
   id: string;
   household_id: string;
   househelp_id: string;
-  job_type: string;
+  job_type?: string;
   start_date?: string;
-  salary_offered: number;
-  salary_frequency: string;
+  salary_offered?: number;
+  salary_frequency?: string;
   status: string;
   special_requirements?: string;
   work_schedule?: any;
-  created_at: string;
+  created_at?: string;
   updated_at: string;
   decline_reason?: string;
   househelp?: {
@@ -216,16 +216,21 @@ export default function HireRequestDetail() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Not specified';
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Not specified';
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
   };
 
-  const formatSalary = (amount: number, frequency: string) => {
-    return `KES ${amount.toLocaleString()} / ${frequency}`;
+  const formatSalary = (amount?: number, frequency?: string) => {
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value <= 0) return 'Not specified';
+    return `KES ${value.toLocaleString()}${frequency ? ` / ${frequency.replace(/[-_]+/g, ' ')}` : ''}`;
   };
 
   const getStatusIcon = (status: string) => {
@@ -400,7 +405,7 @@ export default function HireRequestDetail() {
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Job Type</p>
                     <p className="font-medium text-gray-900 dark:text-white capitalize">
-                      {hireRequest.job_type.replace('-', ' ')}
+                      {(hireRequest.job_type || 'Not specified').replace(/[-_]+/g, ' ')}
                     </p>
                   </div>
                 </div>

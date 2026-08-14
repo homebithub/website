@@ -119,6 +119,11 @@ export const marketplaceHireRequestService = {
 };
 
 export const marketplaceJobService = {
+  async getJob(id: string): Promise<any> {
+    const params = new URLSearchParams({ id, hydrate: 'get' });
+    const payload = await jobListingsApi(`?${params.toString()}`);
+    return payload.data ?? payload;
+  },
   async searchJobs(filters: Record<string, any>, _userId?: string): Promise<any> {
     const params = new URLSearchParams({
       limit: String(filters?.limit ?? 20),
