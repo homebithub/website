@@ -43,6 +43,7 @@ type Conversation = {
   unread_count?: number;
   participant_name?: string;
   participant_avatar?: string;
+  participant_online?: boolean;
 };
 
 type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
@@ -76,6 +77,9 @@ const normalizeConversationData = (c: any): Conversation => ({
   unread_count: c?.unread_count ?? 0,
   participant_name: c?.participant_name || undefined,
   participant_avatar: c?.participant_avatar || undefined,
+  participant_online: typeof (c?.participant_online ?? c?.participantOnline) === 'boolean'
+    ? Boolean(c?.participant_online ?? c?.participantOnline)
+    : undefined,
 });
 
 const resolveConversationId = (payload: any): string | undefined => {
@@ -352,7 +356,11 @@ export default function InboxPage() {
           return [normalized, ...prev];
         }
         const next = [...prev];
-        next[idx] = { ...next[idx], ...normalized };
+        next[idx] = {
+          ...next[idx],
+          ...normalized,
+          participant_online: normalized.participant_online ?? next[idx].participant_online,
+        };
         return next;
       });
     } catch (err) {
@@ -651,7 +659,7 @@ export default function InboxPage() {
   }, [lastActiveByUserId, messages, otherUserId, selectedConversation]);
 
   const isTyping = !!otherUserId && typingUserIds.has(otherUserId);
-  const isOnline = !!lastSeenAt && presenceNow - lastSeenAt < 120000;
+  const isOnline = Boolean(selectedConversation?.participant_online) || (!!lastSeenAt && presenceNow - lastSeenAt < 120000);
   const presenceLabel = useMemo(() => {
     if (isTyping) return 'typing...';
     if (isOnline) return 'online';
@@ -1963,7 +1971,13 @@ export default function InboxPage() {
                 </div>
                 {group.items.map((m) => {
                 const mine = currentUserId && m.sender_id === currentUserId;
-                const status = m._status || (m.read_at ? 'read' : 'delivered');
+                const status: MessageStatus = m.read_at
+                  ? 'read'
+                  : m._status === 'sending'
+                    ? 'sending'
+                    : isOnline
+                      ? 'delivered'
+                      : 'sent';
                 const replyMsg = m.reply_to_id ? messageById.get(m.reply_to_id) : undefined;
                 const replyFromName = replyMsg ? (replyMsg.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')) : '';
                 const interactionsDisabled = lockMessages;
@@ -2155,30 +2169,24 @@ export default function InboxPage() {
                             <span>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             {mine && !m.deleted_at && (
                               <span className="inline-flex items-center ml-1">
-                                {status === 'sending' && (
-                                  /* Single grey tick - sending */
-                                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                {(status === 'sending' || status === 'sent') && (
+                                  /* One neutral tick: sending or accepted by the server. */
+                                  <svg className={`w-4 h-4 ${status === 'sending' ? 'text-white/45' : 'text-white/80'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-label={status === 'sending' ? 'Sending' : 'Sent'}>
                                     <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                                   </svg>
                                 )}
                                 {status === 'delivered' && (
-                                  /* Double grey ticks - saved in DB */
-                                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  /* Two neutral ticks: the recipient is connected. */
+                                  <svg className="w-4 h-4 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-label="Delivered">
                                     <path d="M2 13l4 4L16 7" strokeLinecap="round" strokeLinejoin="round" />
                                     <path d="M8 13l4 4L22 7" strokeLinecap="round" strokeLinejoin="round" />
                                   </svg>
                                 )}
                                 {status === 'read' && (
-                                  /* Double gradient ticks - read (WhatsApp-style) */
-                                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" strokeWidth="2">
-                                    <defs>
-                                      <linearGradient id="readGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#9333ea" />
-                                        <stop offset="100%" stopColor="#ec4899" />
-                                      </linearGradient>
-                                    </defs>
-                                    <path d="M2 13l4 4L16 7" stroke="url(#readGradient)" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M8 13l4 4L22 7" stroke="url(#readGradient)" strokeLinecap="round" strokeLinejoin="round" />
+                                  /* Bright blue read receipt with strong contrast on the message gradient. */
+                                  <svg className="w-4 h-4 text-sky-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-label="Read">
+                                    <path d="M2 13l4 4L16 7" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M8 13l4 4L22 7" strokeLinecap="round" strokeLinejoin="round" />
                                   </svg>
                                 )}
                               </span>
