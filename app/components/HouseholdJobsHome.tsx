@@ -30,7 +30,7 @@ import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
 import { Briefcase, Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
-import { humanizeFeatureName, readFeatureGroups } from "~/utils/listingFeatures";
+import { humanizeFeatureName, listingHighlights, readFeatureGroups } from "~/utils/listingFeatures";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 import { matchScoreClasses } from "~/utils/matchScore";
@@ -175,6 +175,8 @@ const describeJobExpiry = (value?: string): string => {
 };
 
 const formatJobSalary = (job: HouseholdJobListing): string => {
+  const featureSalary = listingHighlights(job).salary;
+  if (featureSalary) return featureSalary;
   const min = Number(job.salary_min ?? job.salary_range?.min ?? 0);
   const max = Number(job.salary_max ?? job.salary_range?.max ?? 0);
   if (!min && !max) return "Salary not specified";
@@ -2029,7 +2031,23 @@ export default function HouseholdJobsHome() {
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Create or reopen a listing from Hiring when you are ready.</p>
                 </div>
               ) : activeHouseholdJobs.map((job) => (
-                <article key={job.id} className="rounded-2xl border border-purple-200 bg-purple-50/40 p-4 dark:border-purple-500/25 dark:bg-purple-950/20 sm:p-5">
+                <article
+                  key={job.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => {
+                    if (event.target instanceof Element && event.target.closest('button')) return;
+                    setShowActiveJobs(false);
+                    navigate(`/household/hiring?tab=jobs&job=${encodeURIComponent(job.id)}`);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    setShowActiveJobs(false);
+                    navigate(`/household/hiring?tab=jobs&job=${encodeURIComponent(job.id)}`);
+                  }}
+                  className="cursor-pointer rounded-2xl border border-purple-200 bg-purple-50/40 p-4 transition hover:-translate-y-0.5 hover:border-purple-400 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-purple-500/25 dark:bg-purple-950/20 sm:p-5"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="truncate text-sm font-bold text-gray-900 dark:text-white">{job.title || "Untitled role"}</h3>

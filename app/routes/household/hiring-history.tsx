@@ -345,6 +345,22 @@ export default function HiringHistory() {
     setSearchParams(nextSearchParams, { replace: true });
   };
 
+  useEffect(() => {
+    const requestedJobId = searchParams.get('job');
+    if (!requestedJobId || jobs.length === 0) return;
+    if (selectedHiringCard?.kind === 'job' && String(selectedHiringCard.record?.id) === requestedJobId) return;
+    const requestedJob = jobs.find((job) => String(job.id) === requestedJobId);
+    if (requestedJob) setSelectedHiringCard({ kind: 'job', record: requestedJob });
+  }, [jobs, searchParams, selectedHiringCard]);
+
+  const closeHiringCard = () => {
+    setSelectedHiringCard(null);
+    if (!searchParams.has('job')) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('job');
+    setSearchParams(next, { replace: true });
+  };
+
   // Ids arrive as strings from the shortlist service and are read off records
   // that have carried them as numbers, so both sides are keyed the same way
   // before being compared.
@@ -1835,7 +1851,7 @@ export default function HiringHistory() {
         return (
           <HiringCardModal
             open
-            onClose={() => setSelectedHiringCard(null)}
+            onClose={closeHiringCard}
             eyebrow={isJob ? 'Job listing details' : `${activeTab} details`}
             title={isJob ? record.title || 'Untitled role' : personName}
             imageUrl={imageUrl}
@@ -1853,9 +1869,10 @@ export default function HiringHistory() {
               { label: 'Available', value: record.available_from ? formatDate(record.available_from) : 'Flexible' },
               { label: 'Applied', value: formatDate(record.created_at) },
             ]}
+            details={isJob ? <ListingDetails listing={record} /> : undefined}
             actions={isJob ? <>
-              <button type="button" onClick={() => { setSelectedHiringCard(null); setEditingJob(record); setShowJobModal(true); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Edit</button>
-              <button type="button" onClick={() => handleToggleJobStatus(record)} className="rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white">{record.status === 'closed' ? 'Reopen' : 'Close job'}</button>
+              <button type="button" onClick={() => { closeHiringCard(); setEditingJob(record); setShowJobModal(true); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Edit</button>
+              <button type="button" onClick={() => handleToggleJobStatus(record)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:from-purple-700 hover:to-pink-700">{record.status === 'closed' ? 'Reopen' : 'Close job'}</button>
             </> : <>
               <button type="button" onClick={() => { setSelectedHiringCard(null); setHistoryFor(record.id); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">History</button>
               <button type="button" onClick={() => handleChatWithApplicant(record)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Chat</button>

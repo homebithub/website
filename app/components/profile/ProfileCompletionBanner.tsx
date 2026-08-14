@@ -49,7 +49,7 @@ export function ProfileCompletionBanner({
               aria-hidden="true"
             >
               <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-300"
+                className="h-full rounded-full bg-gradient-to-r from-purple-600 to-pink-500 transition-all duration-300"
                 style={{ width: `${Math.max(progressValue, 6)}%` }}
               />
             </div>
@@ -60,7 +60,7 @@ export function ProfileCompletionBanner({
           <button
             type="button"
             onClick={onContinue}
-            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:ring-offset-amber-50 dark:focus-visible:ring-offset-[#16111f]"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md transition hover:from-purple-700 hover:to-pink-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#16111f]"
           >
             {ctaLabel}
             <ArrowRight className="h-4 w-4" />

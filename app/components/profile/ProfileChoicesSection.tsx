@@ -264,7 +264,7 @@ export function ProfileChoicesSection({
           <button
             type="button"
             onClick={() => setRetryKey((current) => current + 1)}
-            className="self-start rounded-lg bg-purple-700 px-3 py-1.5 font-semibold text-white transition hover:bg-purple-600 sm:self-auto"
+            className="self-start rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1.5 font-semibold text-white shadow-md transition hover:from-purple-700 hover:to-pink-700 sm:self-auto"
           >
             Try again
           </button>

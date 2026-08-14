@@ -306,7 +306,7 @@ export function SubscriptionWallet() {
                       ) : (
                         <div className="text-center py-8">
                           <p className="text-gray-500 dark:text-gray-400 mb-4">No active subscription</p>
-                          <button className="px-6 py-1 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors">
+                          <button className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-1 text-white shadow-md transition hover:from-purple-700 hover:to-pink-700">
                             View Plans
                           </button>
                         </div>

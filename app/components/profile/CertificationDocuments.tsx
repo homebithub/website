@@ -366,7 +366,7 @@ export function CertificationDocuments({ profileId }: { profileId?: string }) {
               type="button"
               onClick={upload}
               disabled={uploading}
-              className="rounded-xl bg-purple-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-purple-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {uploading ? 'Uploading…' : 'Upload documents'}
             </button>

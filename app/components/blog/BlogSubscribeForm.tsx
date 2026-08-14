@@ -103,7 +103,7 @@ export function BlogSubscribeForm({ variant = "banner", className = "", defaultE
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-medium text-white shadow-md transition hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Subscribe"}
         </button>

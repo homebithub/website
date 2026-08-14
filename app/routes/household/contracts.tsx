@@ -152,7 +152,7 @@ export default function HouseholdContracts() {
           </div>
           <button
             onClick={() => navigate('/household/employment-contracts')}
-            className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors whitespace-nowrap text-xs font-medium"
+            className="whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-medium text-white shadow-md transition hover:from-purple-700 hover:to-pink-700"
           >
             View Employment Contracts
           </button>
@@ -214,7 +214,7 @@ export default function HouseholdContracts() {
             </p>
             <button
               onClick={() => navigate('/household/hiring')}
-              className="px-6 py-1.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-medium transition-colors"
+              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-1.5 font-medium text-white shadow-md transition hover:from-purple-700 hover:to-pink-700"
             >
               View Hire Requests
             </button>
@@ -323,7 +323,7 @@ export default function HouseholdContracts() {
                   <div className="flex flex-col gap-2 ml-4">
                     <button
                       onClick={() => navigate(`/household/contracts/${contract.id}`)}
-                      className="px-4 py-1 text-xs bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors whitespace-nowrap"
+                      className="whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1 text-xs text-white shadow-md transition hover:from-purple-700 hover:to-pink-700"
                     >
                       View Details
                     </button>

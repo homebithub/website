@@ -201,7 +201,7 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
           <button
             type="submit"
             disabled={!message.trim() || sending}
-            className="px-6 py-1 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-1 text-white shadow-md transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
             {sending ? 'Sending...' : 'Send'}

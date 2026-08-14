@@ -218,7 +218,7 @@ const Certifications: React.FC = () => {
                   <button
                     type="button"
                     onClick={addOtherCert}
-                    className="px-4 py-1 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold transition-all flex items-center justify-center shadow-md hover:shadow-lg"
+                    className="flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1 font-bold text-white shadow-md transition-all hover:from-purple-700 hover:to-pink-700 hover:shadow-lg"
                     aria-label="Add certification"
                     title="Add another certification"
                   >
@@ -307,7 +307,7 @@ const Certifications: React.FC = () => {
                   <button
                     type="button"
                     onClick={addOtherHelp}
-                    className="px-4 py-1 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold transition-all flex items-center justify-center shadow-md hover:shadow-lg"
+                    className="flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1 font-bold text-white shadow-md transition-all hover:from-purple-700 hover:to-pink-700 hover:shadow-lg"
                     aria-label="Add skill"
                     title="Add another skill"
                   >
