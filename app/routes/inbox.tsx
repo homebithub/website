@@ -302,12 +302,11 @@ export default function InboxPage() {
   const [profileModalTimedOut, setProfileModalTimedOut] = useState(false);
   const [profileModalReloadKey, setProfileModalReloadKey] = useState(0);
   const [openMsgMenuId, setOpenMsgMenuId] = useState<string | null>(null);
-  const longPressTimerRef = useRef<number | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState<string>("");
   const [editingSaving, setEditingSaving] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
-  const swipeGestureRef = useRef<{ id: string; startX: number; startY: number; horizontal: boolean; moved: boolean; offset: number } | null>(null);
+  const swipeGestureRef = useRef<{ id: string; startX: number; startY: number; horizontal: boolean; offset: number } | null>(null);
   const [swipePreview, setSwipePreview] = useState<{ id: string; offset: number } | null>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null);
@@ -1232,27 +1231,6 @@ export default function InboxPage() {
     }
   }, []);
 
-  const startLongPress = useCallback((id: string) => {
-    if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
-    longPressTimerRef.current = window.setTimeout(() => {
-      longPressTimerRef.current = null;
-      // On mobile long-press, open the action menu instead of selecting
-      if (window.innerWidth < 1024) {
-        setOpenReactPickerMsgId(null);
-        setOpenMsgMenuId(id);
-      } else {
-        setSelectedIds((prev) => new Set(prev).add(id));
-      }
-    }, 600);
-  }, []);
-
-  const cancelLongPress = useCallback(() => {
-    if (longPressTimerRef.current) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
-
   useEffect(() => {
     if (!openMsgMenuId) return;
 
@@ -1323,42 +1301,32 @@ export default function InboxPage() {
       startX: event.touches[0].clientX,
       startY: event.touches[0].clientY,
       horizontal: false,
-      moved: false,
       offset: 0,
     };
-    startLongPress(message.id);
-  }, [lockMessages, selectedIds.size, startLongPress]);
+  }, [lockMessages, selectedIds.size]);
 
   const moveReplySwipe = useCallback((event: React.TouchEvent) => {
     const gesture = swipeGestureRef.current;
     if (!gesture || event.touches.length !== 1) return;
     const dx = event.touches[0].clientX - gesture.startX;
     const dy = event.touches[0].clientY - gesture.startY;
-    // A long press must remain stationary. Cancel it as soon as the finger
-    // moves enough to indicate scrolling or a reply swipe.
-    if (!gesture.moved && Math.hypot(dx, dy) >= 8) {
-      gesture.moved = true;
-      cancelLongPress();
-    }
     if (!gesture.horizontal) {
       if (Math.abs(dy) > Math.abs(dx) || Math.abs(dx) < 10) return;
       gesture.horizontal = true;
-      cancelLongPress();
     }
     // Resistance after the reply threshold keeps the bubble attached to the
     // conversation while still making the gesture obvious in either direction.
     const offset = Math.sign(dx) * Math.min(78, Math.abs(dx) * 0.72);
     gesture.offset = offset;
     setSwipePreview({ id: gesture.id, offset });
-  }, [cancelLongPress]);
+  }, []);
 
   const finishReplySwipe = useCallback((message: Message) => {
     const gesture = swipeGestureRef.current;
-    cancelLongPress();
     swipeGestureRef.current = null;
     setSwipePreview(null);
     if (gesture?.id === message.id && gesture.horizontal && Math.abs(gesture.offset) >= 48) handleReplyMessage(message);
-  }, [cancelLongPress, handleReplyMessage]);
+  }, [handleReplyMessage]);
 
   const cancelEditMessage = useCallback(() => {
     setEditingMessageId(null);
