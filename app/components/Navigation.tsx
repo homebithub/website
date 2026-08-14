@@ -493,7 +493,7 @@ function NavigationContent() {
 
     return (
         <>
-        <nav className="fixed inset-x-0 top-0 z-40 overflow-visible border-b border-primary-200/60 bg-gradient-to-br from-primary-100 via-white to-purple-200 shadow-lg shadow-purple-200/40 transition-all duration-300 dark:border-purple-500/20 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] dark:shadow-glow-sm">
+        <nav className="hb-safe-nav fixed inset-x-0 top-0 z-40 overflow-visible border-b border-primary-200/60 bg-gradient-to-br from-primary-100 via-white to-purple-200 shadow-lg shadow-purple-200/40 transition-all duration-300 dark:border-purple-500/20 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] dark:shadow-glow-sm">
             <div className="hb-content-rail relative flex min-h-[56px] items-center justify-between sm:min-h-[60px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
@@ -914,7 +914,7 @@ function NavigationContent() {
         {/* A fixed header leaves normal document flow. Keep every route's first
             control visible without making individual pages know the navbar's
             responsive height. */}
-        <div className="h-[56px] shrink-0 sm:h-[60px]" aria-hidden="true" />
+        <div className="hb-safe-nav-spacer shrink-0" aria-hidden="true" />
         </>
     );
 }

@@ -1007,7 +1007,7 @@ export default function HousehelpJobsHome() {
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className="flex-1 pb-10">
-          <section className="sticky top-[56px] z-30 mb-4 h-14 w-full border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[60px] sm:h-16">
+          <section className="hb-safe-sticky-below-nav sticky z-30 mb-4 h-14 w-full border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:h-16">
             <div className="hb-content-rail flex h-full items-center gap-2 sm:gap-3">
               <div className="hidden min-w-0 flex-1 sm:block">
                 <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">Latest job openings</h1>

@@ -259,6 +259,31 @@ body > * {
   @apply mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-6;
 }
 
+/* Installed iOS/Android apps may expose a display cutout above the CSS
+   viewport. Keep fixed chrome, its flow spacer, and the filter bar in one
+   shared coordinate system so the logo and menu never sit under that cutout. */
+.hb-safe-nav {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.hb-safe-nav-spacer {
+  height: calc(56px + env(safe-area-inset-top, 0px));
+}
+
+.hb-safe-sticky-below-nav {
+  top: calc(56px + env(safe-area-inset-top, 0px));
+}
+
+@media (min-width: 640px) {
+  .hb-safe-nav-spacer {
+    height: calc(60px + env(safe-area-inset-top, 0px));
+  }
+
+  .hb-safe-sticky-below-nav {
+    top: calc(60px + env(safe-area-inset-top, 0px));
+  }
+}
+
 .hb-filter-panel > * {
   @apply mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-6;
 }
