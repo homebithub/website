@@ -283,6 +283,7 @@ export default function InboxPage() {
   const reactionPickerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const skipNextAutomaticMessageScrollRef = useRef(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -926,6 +927,7 @@ export default function InboxPage() {
     if (authLoading || !user) return;
 
     let cancelled = false;
+    let initialScrollFrame: number | null = null;
     const conversationId = activeConversationId; // Capture non-null value
     
     async function loadMessages() {
@@ -955,9 +957,25 @@ export default function InboxPage() {
         const data: Message[] = items.map(normalizeMsg);
         
         if (cancelled) return;
+        // The initial message render is positioned separately below. Prevent the
+        // generic new-message effect from starting a competing smooth scroll.
+        skipNextAutomaticMessageScrollRef.current = data.length > 0;
         setMessages(data);
         setMessagesOffset(data.length);
         setMessagesHasMore(data.length === messagesLimit);
+
+        // Position only the chat viewport, immediately after React paints the
+        // messages. scrollIntoView can also move ancestor/page scrollers and the
+        // old implementation ran after the read API completed, which temporarily
+        // fought touch scrolling on slower mobile connections.
+        initialScrollFrame = window.requestAnimationFrame(() => {
+          if (cancelled || activeConversationId !== conversationId) return;
+          const container = messagesContainerRef.current;
+          if (!container) return;
+          container.scrollTop = container.scrollHeight;
+          setIsAtBottom(true);
+          setNewMessageCount(0);
+        });
         
         // Mark conversation as read
         try {
@@ -970,14 +988,6 @@ export default function InboxPage() {
           console.error('[Inbox] Failed to mark conversation as read:', err);
         }
         
-        // Scroll to bottom
-        setTimeout(() => {
-          if (bottomRef.current) {
-            bottomRef.current.scrollIntoView({ behavior: 'auto' });
-            setIsAtBottom(true);
-            setNewMessageCount(0);
-          }
-        }, 100);
       } catch (e: any) {
         console.error('[Inbox] Error loading messages:', e);
         if (!cancelled) {
@@ -990,12 +1000,19 @@ export default function InboxPage() {
     loadMessages();
     return () => {
       cancelled = true;
+      if (initialScrollFrame !== null) {
+        window.cancelAnimationFrame(initialScrollFrame);
+      }
     };
   }, [activeConversationId, messagesLimit, authLoading, user, notifyInboxUpdated]);
 
   // Scroll to bottom on conversation load or new message
   useEffect(() => {
     if (messages.length > 0 && activeConversationId) {
+      if (skipNextAutomaticMessageScrollRef.current) {
+        skipNextAutomaticMessageScrollRef.current = false;
+        return;
+      }
       const container = messagesContainerRef.current;
       if (!container) return;
 
