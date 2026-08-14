@@ -171,6 +171,13 @@ export class AdminServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  adminGetPWAAnalytics(
+    request: auth_auth_pb.AdminPWAAnalyticsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   adminGetPlatformSettings(
     request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | undefined,
@@ -191,6 +198,13 @@ export class AuthServiceClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: any; });
+
+  recordPWAUsage(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
   signup(
     request: auth_auth_pb.SignupRequest,
@@ -2568,6 +2582,11 @@ export class AdminServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
+  adminGetPWAAnalytics(
+    request: auth_auth_pb.AdminPWAAnalyticsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
   adminGetPlatformSettings(
     request: google_protobuf_empty_pb.Empty,
     metadata?: grpcWeb.Metadata
@@ -2584,6 +2603,11 @@ export class AuthServicePromiseClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: any; });
+
+  recordPWAUsage(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
 
   signup(
     request: auth_auth_pb.SignupRequest,

@@ -74,7 +74,7 @@ export function MobileBottomNavigation({
 
   useEffect(() => setMoreOpen(false), [location.pathname]);
 
-  const primaryItems = user
+  const primaryItems: Array<NavigationItem & { icon: typeof HomeIcon }> = user
     ? [
         { name: 'Home', href: homeHref, icon: HomeIcon, count: 0 },
         ...authenticatedItems.filter((item) => item.name !== 'Blog').slice(0, 3).map((item) => ({

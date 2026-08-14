@@ -7,6 +7,24 @@ import * as shared_shared_pb from '../shared/shared_pb'; // proto import: "share
 import * as client_profile_client_profile_pb from '../client_profile/client_profile_pb'; // proto import: "client_profile/client_profile.proto"
 
 
+export class AdminPWAAnalyticsRequest extends jspb.Message {
+  getDays(): number;
+  setDays(value: number): AdminPWAAnalyticsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminPWAAnalyticsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminPWAAnalyticsRequest): AdminPWAAnalyticsRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminPWAAnalyticsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminPWAAnalyticsRequest;
+  static deserializeBinaryFromReader(message: AdminPWAAnalyticsRequest, reader: jspb.BinaryReader): AdminPWAAnalyticsRequest;
+}
+
+export namespace AdminPWAAnalyticsRequest {
+  export type AsObject = {
+    days: number;
+  };
+}
+
 export class User extends jspb.Message {
   getId(): string;
   setId(value: string): User;

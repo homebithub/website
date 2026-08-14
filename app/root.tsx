@@ -15,6 +15,7 @@ import SupportChat from "~/components/support/SupportChat";
 import { PWARegistration } from "~/components/PWARegistration";
 import { PWAInstallPrompt } from "~/components/PWAInstallPrompt";
 import { AppLaunchScreen } from "~/components/AppLaunchScreen";
+import { PullToRefresh } from "~/components/PullToRefresh";
 import stylesheet from "./tailwind.css?url";
 
 export const meta: Route.MetaFunction = () => [
@@ -195,6 +196,7 @@ export default function App() {
             </head>
             <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300" suppressHydrationWarning>
                 <AppLaunchScreen />
+                <PullToRefresh />
                 {/* Blocking script to prevent theme flash - must be in body, not head (head scripts break React Router CSS injection) */}
                 <script
                     dangerouslySetInnerHTML={{

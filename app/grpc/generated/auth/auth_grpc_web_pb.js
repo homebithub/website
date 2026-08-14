@@ -1495,6 +1495,67 @@ proto.auth.AdminServicePromiseClient.prototype.adminGetDeviceActivity =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.AdminPWAAnalyticsRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_AdminService_AdminGetPWAAnalytics = new grpc.web.MethodDescriptor(
+  '/auth.AdminService/AdminGetPWAAnalytics',
+  grpc.web.MethodType.UNARY,
+  proto.auth.AdminPWAAnalyticsRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.AdminPWAAnalyticsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.AdminPWAAnalyticsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminServiceClient.prototype.adminGetPWAAnalytics =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminService/AdminGetPWAAnalytics',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetPWAAnalytics,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.AdminPWAAnalyticsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminServicePromiseClient.prototype.adminGetPWAAnalytics =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminService/AdminGetPWAAnalytics',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetPWAAnalytics);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.google.protobuf.Empty,
  *   !proto.auth.JsonResponse>}
  */
@@ -1663,6 +1724,67 @@ proto.auth.AuthServicePromiseClient =
    */
   this.hostname_ = hostname.replace(/\/+$/, '');
 
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_AuthService_RecordPWAUsage = new grpc.web.MethodDescriptor(
+  '/auth.AuthService/RecordPWAUsage',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AuthServiceClient.prototype.recordPWAUsage =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AuthService/RecordPWAUsage',
+      request,
+      metadata || {},
+      methodDescriptor_AuthService_RecordPWAUsage,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AuthServicePromiseClient.prototype.recordPWAUsage =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AuthService/RecordPWAUsage',
+      request,
+      metadata || {},
+      methodDescriptor_AuthService_RecordPWAUsage);
 };
 
 
