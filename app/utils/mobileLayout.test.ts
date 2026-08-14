@@ -14,6 +14,17 @@ describe('mobile layout guardrails', () => {
     expect(css).toContain('overflow-x: hidden');
   });
 
+  it('prevents iOS from zooming when a mobile form control receives focus', () => {
+    const css = source('app/tailwind.css');
+    const root = source('app/root.tsx');
+    expect(css).toContain("input:not([type='checkbox'])");
+    expect(css).toContain("[contenteditable='true']");
+    expect(css).toContain('gmp-place-autocomplete');
+    expect(css).toContain('font-size: 16px !important');
+    expect(root).not.toContain('user-scalable=no');
+    expect(root).not.toContain('maximum-scale=1');
+  });
+
   it('renders shared dialogs as bottom sheets on phones', () => {
     expect(source('app/components/ui/BaseModal.tsx')).toContain('rounded-t-2xl sm:rounded-2xl');
     expect(source('app/components/Modal.tsx')).toContain('rounded-t-3xl');

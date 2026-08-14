@@ -308,3 +308,17 @@ body > * {
   55% { transform: translateX(110%); }
   100% { transform: translateX(260%); }
 }
+
+/* iOS Safari magnifies a page when a focused text control computes below
+   16px. Keep controls at the native threshold on phones without disabling
+   pinch-to-zoom or otherwise weakening the viewport's accessibility. */
+@media (max-width: 767px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+  select,
+  textarea,
+  [contenteditable='true'],
+  [role='textbox'],
+  gmp-place-autocomplete {
+    font-size: 16px !important;
+  }
+}
