@@ -2493,7 +2493,7 @@ export default function InboxPage() {
   // Show loading state while checking authentication
   if (authLoading) {
     return (
-      <div className="flex h-[calc(100dvh-56px)] min-h-0 flex-col overflow-hidden sm:h-[calc(100dvh-60px)]">
+      <div className="hb-inbox-viewport flex min-h-0 flex-col overflow-hidden">
         <Navigation />
         <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
           <main className="flex-1 py-6">
@@ -2507,7 +2507,7 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="flex h-[calc(100dvh-56px)] min-h-0 w-full max-w-full flex-col overflow-hidden sm:h-[calc(100dvh-60px)]">
+    <div className="hb-inbox-viewport flex min-h-0 w-full max-w-full flex-col overflow-hidden">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
         <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-0 pt-0 sm:pb-4 sm:pt-6">
