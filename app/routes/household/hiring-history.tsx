@@ -880,6 +880,16 @@ export default function HiringHistory() {
     }
   };
 
+  const viewEmploymentContract = (contract: { id?: string } | null | undefined) => {
+    if (!contract?.id) return;
+    const params = new URLSearchParams({
+      id: String(contract.id),
+      backTo: backToPath,
+      backLabel: 'Back to Hiring',
+    });
+    navigate(`/household/employment-contract?${params.toString()}`);
+  };
+
   const openCancelModal = (request: HireRequest) => {
     setCancelRequest(request);
     setCancelReason('');
@@ -1715,12 +1725,12 @@ export default function HiringHistory() {
                       was wide: on a phone they landed on top of the applicant's
                       own name and the status beside it, covering both and
                       taking the taps meant for them. */}
-                  <div className="mt-6 flex flex-wrap items-center gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
+                  <div className="mt-6 grid gap-3 lg:flex lg:items-center">
+                    <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center">
                       <button
                         onClick={() => handleChatWithApplicant(interest)}
                         disabled={chatLoading}
-                        className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-purple-200/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
+                        className="inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-purple-200/70 bg-purple-50 px-2 py-2 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 sm:px-3 sm:py-1.5 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
                       >
                         {chatLoading ? (
                           <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
@@ -1756,7 +1766,7 @@ export default function HiringHistory() {
                         onClick={() =>
                           setHistoryFor((current) => (current === interest.id ? null : interest.id))
                         }
-                        className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-purple-200/60 bg-white px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/5 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                        className="inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-purple-200/60 bg-white px-2 py-2 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-50 sm:px-3 sm:py-1.5 dark:border-purple-500/30 dark:bg-white/5 dark:text-purple-200 dark:hover:bg-purple-500/10"
                       >
                         <Clock className="h-4 w-4" />
                         <span>{historyFor === interest.id ? 'Hide history' : 'History'}</span>
@@ -1787,7 +1797,7 @@ export default function HiringHistory() {
                           onClick={() => handleRejectApplicant(interest)}
                           disabled={shortlistLoading}
                           title="Let them know you are not going ahead"
-                          className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-60 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                          className="inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-red-300 bg-white px-2 py-2 text-xs font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-60 sm:px-3 sm:py-1.5 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
                         >
                           <UserX className="h-4 w-4" />
                           <span>Reject</span>
@@ -1811,12 +1821,22 @@ export default function HiringHistory() {
                       ) : null}
                     </div>
 
-                    <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end lg:ml-auto">
+                      {existingContract?.id && (
+                        <button
+                          type="button"
+                          onClick={() => viewEmploymentContract(existingContract)}
+                          className="col-span-2 inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-2.5 text-xs font-semibold text-white shadow-lg transition hover:from-purple-700 hover:via-pink-700 hover:to-rose-600 sm:col-auto sm:w-auto sm:py-1.5"
+                        >
+                          <FileText className="h-4 w-4" />
+                          View contract
+                        </button>
+                      )}
                       {listing && (
                         <button
                           type="button"
                           onClick={() => setViewingJob(listing)}
-                          className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl border border-purple-300 px-4 py-1.5 text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30"
+                          className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-50 sm:w-auto sm:px-4 sm:py-1.5 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30"
                         >
                           <Briefcase className="h-4 w-4" />
                           View job listing
@@ -1824,7 +1844,11 @@ export default function HiringHistory() {
                       )}
                       <button
                         onClick={() => handleViewInterest(interest)}
-                        className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-1.5 text-xs font-semibold text-white shadow-lg transition-colors hover:from-purple-700 hover:via-pink-700 hover:to-rose-500"
+                        className={`inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold transition-colors sm:w-auto sm:px-5 sm:py-1.5 ${
+                          existingContract?.id
+                            ? 'border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30'
+                            : 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white shadow-lg hover:from-purple-700 hover:via-pink-700 hover:to-rose-500'
+                        }`}
                       >
                         <Eye className="h-4 w-4" />
                         View profile
@@ -1848,6 +1872,10 @@ export default function HiringHistory() {
         const applicantUserId = !isJob ? househelpUserIdFor(record) : '';
         const imageUrl = !isJob ? profile?.avatar_url || profile?.profile_picture || profile?.photos?.[0] || record.househelp?.avatar_url || record.househelp?.photos?.[0] || applicantProfilePhotos[applicantUserId] : undefined;
         const listing = !isJob ? jobs.find((job) => String(job.id) === String(record.listing_id || '')) : record;
+        const employmentContract = !isJob
+          ? employmentContractMap[`application:${record.id}`] ||
+            employmentContractMap[`listing-househelp:${String(record.listing_id || '')}:${applicantUserId}`]
+          : undefined;
         return (
           <HiringCardModal
             open
@@ -1874,6 +1902,11 @@ export default function HiringHistory() {
               <button type="button" onClick={() => { closeHiringCard(); setEditingJob(record); setShowJobModal(true); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Edit</button>
               <button type="button" onClick={() => handleToggleJobStatus(record)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:from-purple-700 hover:to-pink-700">{record.status === 'closed' ? 'Reopen' : 'Close job'}</button>
             </> : <>
+              {employmentContract?.id && (
+                <button type="button" onClick={() => viewEmploymentContract(employmentContract)} className="rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-md">
+                  View contract
+                </button>
+              )}
               <button type="button" onClick={() => { setSelectedHiringCard(null); setHistoryFor(record.id); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">History</button>
               <button type="button" onClick={() => handleChatWithApplicant(record)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Chat</button>
               {listing && <button type="button" onClick={() => { setSelectedHiringCard(null); setViewingJob(listing); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
