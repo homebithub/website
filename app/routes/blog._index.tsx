@@ -174,27 +174,27 @@ export default function BlogIndex() {
       <PurpleThemeWrapper variant="gradient" bubbles={false} className="flex-1">
         <main className="flex-1">
           {/* Hero Header */}
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-8 sm:pb-12">
+          <section className="mx-auto max-w-7xl px-4 pb-5 pt-6 sm:px-6 sm:pb-12 sm:pt-16 lg:px-8">
             <div className="text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 mb-6">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-purple-200 bg-purple-100 px-3 py-1.5 dark:border-purple-500/20 dark:bg-purple-500/10 sm:mb-6 sm:px-4 sm:py-2">
                 <BookOpen className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">Our Blog</span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-extrabold mb-4">
+              <h1 className="mb-2 text-xl font-extrabold sm:mb-4 sm:text-2xl">
                 <span className="text-gray-900 dark:text-white">Homebit </span>
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Blog</span>
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              <p className="mx-auto max-w-2xl text-xs leading-5 text-gray-600 dark:text-gray-400 sm:text-sm">
                 Insights, tips, and stories about household management and hiring help
               </p>
             </div>
           </section>
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+          <div className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 sm:pb-16 lg:px-8">
             {/* Search and Filters */}
-            <div className="mb-10 space-y-4">
+            <div className="mb-6 space-y-3 sm:mb-10 sm:space-y-4">
               {/* Search Bar */}
-              <Form onSubmit={handleSearch} className="flex gap-3">
+              <Form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <div className="flex-1 relative">
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
                   <input
@@ -202,44 +202,46 @@ export default function BlogIndex() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search articles..."
-                    className="w-full pl-12 pr-4 py-3 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full rounded-xl border-2 border-purple-200 bg-white py-2.5 pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 transition-all focus:border-transparent focus:ring-2 focus:ring-purple-500 dark:border-purple-500/20 dark:bg-white/5 dark:text-white dark:placeholder-gray-500 sm:py-3 sm:pl-12"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-sm text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 hover:scale-105 transition-all duration-200"
+                  className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:shadow-purple-500/30 sm:w-auto sm:py-3 sm:hover:scale-105"
                 >
                   Search
                 </button>
               </Form>
 
               {/* Filters */}
-              <div className="flex flex-wrap gap-4 items-center">
-                <div className="flex items-center gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
+                <div className="flex items-center gap-2 pb-0.5 sm:pb-0">
                   <Filter className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                   <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Filter:</span>
                 </div>
 
                 {/* Category Filter */}
-                <CustomSelect
-                  size="sm"
-                  className="min-w-[10rem]"
-                  value={searchParams.get("category") || ""}
-                  onChange={handleCategoryFilter}
-                  ariaLabel="Filter by category"
-                  placeholder="All Categories"
-                  options={[
-                    { value: "", label: "All Categories" },
-                    ...categories.map((category) => ({ value: category, label: category })),
-                  ]}
-                />
+                <div className="min-w-0 sm:min-w-[10rem]">
+                  <CustomSelect
+                    size="sm"
+                    className="w-full"
+                    value={searchParams.get("category") || ""}
+                    onChange={handleCategoryFilter}
+                    ariaLabel="Filter by category"
+                    placeholder="All Categories"
+                    options={[
+                      { value: "", label: "All Categories" },
+                      ...categories.map((category) => ({ value: category, label: category })),
+                    ]}
+                  />
+                </div>
 
                 {/* Sort */}
-                <div className="flex items-center gap-2 ml-auto">
+                <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 sm:ml-auto sm:flex sm:min-w-[12rem]">
                   <TrendingUp className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                   <CustomSelect
                     size="sm"
-                    className="min-w-[10rem]"
+                    className="w-full sm:min-w-[10rem]"
                     value={searchParams.get("sort") || "newest"}
                     onChange={handleSort}
                     ariaLabel="Sort posts"
@@ -254,8 +256,8 @@ export default function BlogIndex() {
 
             {/* Blog Posts Grid */}
             {posts.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-500/10 mb-6">
+              <div className="py-10 text-center sm:py-20">
+                <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-100 dark:bg-purple-500/10 sm:mb-6 sm:h-16 sm:w-16">
                   <BookOpen className="w-8 h-8 text-purple-500 dark:text-purple-400" />
                 </div>
                 <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
@@ -366,7 +368,7 @@ export default function BlogIndex() {
             )}
           </div>
           {/* Subscribe Banner */}
-          <div className="mt-12">
+          <div className="mt-6 sm:mt-12">
             <BlogSubscribeForm variant="banner" defaultEmail={userEmail} defaultName={userName} />
           </div>
         </main>
