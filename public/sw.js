@@ -1,4 +1,4 @@
-const VERSION = 'homebit-pwa-v1';
+const VERSION = 'homebit-pwa-v2';
 const STATIC_CACHE = `${VERSION}-static`;
 const PUBLIC_ASSETS = ['/offline.html', '/manifest.webmanifest', '/pwa/icon-192.png', '/pwa/icon-512.png'];
 

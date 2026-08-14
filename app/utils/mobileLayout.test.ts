@@ -38,6 +38,17 @@ describe('mobile layout guardrails', () => {
     expect(navigation).toContain('<PWAInstallMenuButton />');
   });
 
+  it('bridges the installed PWA launch into the first interactive paint', () => {
+    const root = source('app/root.tsx');
+    const launch = source('app/components/AppLaunchScreen.tsx');
+    const css = source('app/tailwind.css');
+    expect(root).toContain('apple-touch-startup-image');
+    expect(root).toContain('<AppLaunchScreen />');
+    expect(launch).toContain("window.matchMedia('(display-mode: standalone)')");
+    expect(css).toContain('@media (display-mode: standalone)');
+    expect(css).toContain('.hb-launch-screen--leaving');
+  });
+
   it('renders shared dialogs as bottom sheets on phones', () => {
     expect(source('app/components/ui/BaseModal.tsx')).toContain('rounded-t-2xl sm:rounded-2xl');
     expect(source('app/components/Modal.tsx')).toContain('rounded-t-3xl');

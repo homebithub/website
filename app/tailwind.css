@@ -309,6 +309,51 @@ body > * {
   100% { transform: translateX(260%); }
 }
 
+/* This surface is emitted in the server HTML, so an installed PWA has branded
+   pixels from its first web-view paint. Normal browser tabs never display it. */
+.hb-launch-screen {
+  display: none;
+}
+
+@media (display-mode: standalone) {
+  .hb-launch-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: env(safe-area-inset-top, 0px) 24px env(safe-area-inset-bottom, 0px);
+    background: #0a0a0f;
+    opacity: 1;
+    transition: opacity 220ms ease-out;
+  }
+
+  .hb-launch-screen--leaving {
+    pointer-events: none;
+    opacity: 0;
+  }
+}
+
+.hb-launch-glow {
+  position: absolute;
+  width: min(86vw, 520px);
+  aspect-ratio: 1;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgb(139 43 226 / 30%) 0%, rgb(10 10 15 / 0%) 68%);
+}
+
+.hb-launch-progress {
+  animation: hb-launch-progress 1.1s ease-in-out infinite;
+}
+
+@keyframes hb-launch-progress {
+  0% { transform: translateX(-110%); }
+  50% { transform: translateX(50%); }
+  100% { transform: translateX(210%); }
+}
+
 /* iOS Safari magnifies a page when a focused text control computes below
    16px. Keep controls at the native threshold on phones without disabling
    pinch-to-zoom or otherwise weakening the viewport's accessibility. */
