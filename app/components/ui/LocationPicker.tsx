@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import CustomSelect from '~/components/ui/CustomSelect';
 import { FIELD_LABEL_CLASS, RequiredMark } from '~/components/ui/formStyles';
 import { locationService } from '~/services/grpc/authServices';
+import { GoogleLocationPicker, type PreciseLocation } from '~/components/ui/GoogleLocationPicker';
 
 /** One level of the Kenya administrative hierarchy. */
 type Place = {
@@ -16,6 +17,7 @@ export type LocationSelection = {
   subcountyName: string;
   wardId: number | null;
   wardName: string;
+  precise?: PreciseLocation;
 };
 
 type LocationPickerProps = {
@@ -86,6 +88,7 @@ export function LocationPicker({
 
   const [loadingLevel, setLoadingLevel] = useState<'county' | 'subcounty' | 'ward' | null>('county');
   const [error, setError] = useState<string | null>(null);
+  const [precise, setPrecise] = useState<PreciseLocation | undefined>();
 
   // onChange is called from effects; holding it in a ref keeps a caller that
   // passes an inline function from re-running them on every render.
@@ -100,6 +103,27 @@ export function LocationPicker({
     return rows
       .map((row: any) => ({ id: Number(row?.id), name: String(row?.name ?? '') }))
       .filter((place: Place) => Number.isFinite(place.id) && place.name !== '');
+  };
+
+  const confirmPreciseLocation = async (next: PreciseLocation) => {
+    setPrecise(next);
+    const hint = next.wardHint || next.subcountyHint || next.countyHint;
+    if (!hint) return;
+    try {
+      const response = await locationService.searchLocations(hint);
+      const rows = response?.data ?? response ?? [];
+      const countyHint = (next.countyHint || '').toLowerCase().replace(/\s+county$/, '');
+      const row = Array.isArray(rows)
+        ? rows.find((item: any) => !countyHint || String(item.county || '').toLowerCase().includes(countyHint)) || rows[0]
+        : null;
+      if (!row) return;
+      setCountyId(Number(row.county_id) || null);
+      setSubcountyId(Number(row.subcounty_id) || null);
+      setWardId(Number(row.id) || null);
+    } catch {
+      // Google remains useful for the pin even when no administrative row can
+      // be inferred. The three canonical fields below stay editable.
+    }
   };
 
   useEffect(() => {
@@ -189,8 +213,9 @@ export function LocationPicker({
       subcountyName: nameOf(subcounties, subcountyId),
       wardId,
       wardName: nameOf(wards, wardId),
+      precise,
     });
-  }, [countyId, subcountyId, wardId, counties, subcounties, wards]);
+  }, [countyId, subcountyId, wardId, counties, subcounties, wards, precise]);
 
   const handleCounty = useCallback((value: string) => {
     // Changing a level invalidates everything below it. Leaving a stale ward
@@ -326,6 +351,7 @@ export function LocationPicker({
 
   return (
     <div className="space-y-3">
+      <GoogleLocationPicker onConfirm={confirmPreciseLocation} />
       {fields}
       <p className="-mt-2 text-[11px] text-gray-500 dark:text-gray-400">
         Not sure of the ward? Pick the one nearest to you — it only needs to be

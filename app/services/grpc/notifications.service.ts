@@ -18,6 +18,18 @@ const notifications_pb = notifications_pb_module as any;
 
 const notificationsClient = new NotificationsServiceClient(GRPC_WEB_BASE_URL, null, null);
 
+export async function getPublicFeatureFlag(name: string): Promise<boolean> {
+  const request = new notifications_pb.GetPublicFeatureFlagRequest();
+  request.setName(name);
+  const response = await new Promise<any>((resolve, reject) => {
+    notificationsClient.getPublicFeatureFlag(request, {}, (error: any, result: any) => {
+      if (error) reject(error);
+      else resolve(result);
+    });
+  });
+  return Boolean(response?.getEnabled?.());
+}
+
 function resolveUserId(userId: string): string {
   if (userId) return userId;
   return getStoredUserId();

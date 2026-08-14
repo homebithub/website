@@ -43,6 +43,7 @@ const Location: React.FC<LocationProps> = ({ onSelect, onSaved }) => {
         countyId: number | null;
     }>({ wardId: null, subcountyId: null, countyId: null });
     const [submitting, setSubmitting] = useState(false);
+    const [travelRadiusKm, setTravelRadiusKm] = useState(15);
     const [submitStatus, setSubmitStatus] = useState<{ success: boolean; message: string } | null>(null);
 
     // Prime the picker from the editor context, so coming back to this section
@@ -95,7 +96,7 @@ const Location: React.FC<LocationProps> = ({ onSelect, onSaved }) => {
 
     const handleChange = (next: LocationSelection) => {
         setSelection(next);
-        if (next.wardId && next.wardId !== savedWardId) {
+        if ((next.wardId && next.wardId !== savedWardId) || next.precise) {
             markDirty();
             setSubmitStatus(null);
         }
@@ -127,7 +128,14 @@ const Location: React.FC<LocationProps> = ({ onSelect, onSaved }) => {
             await locationService.createLocation('', {
                 ward_id: selection.wardId,
                 location_type: 'primary',
-                label: selection.wardName,
+                label: selection.precise?.label || selection.wardName,
+                address: selection.precise?.label,
+                latitude: selection.precise?.latitude,
+                longitude: selection.precise?.longitude,
+                google_place_id: selection.precise?.googlePlaceId,
+                location_provider: selection.precise?.provider || 'administrative',
+                accuracy_metres: selection.precise?.accuracyMetres,
+                travel_radius_km: travelRadiusKm,
             });
 
             try {
@@ -196,6 +204,10 @@ const Location: React.FC<LocationProps> = ({ onSelect, onSaved }) => {
                         required
                         size="sm"
                     />
+                    <label className="mt-4 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+                        Comfortable travel distance: {travelRadiusKm} km
+                        <input type="range" min="1" max="60" step="1" value={travelRadiusKm} onChange={(event) => { setTravelRadiusKm(Number(event.target.value)); markDirty(); }} className="mt-2 w-full accent-purple-600" />
+                    </label>
                 </div>
 
                 {submitStatus?.success && <SuccessAlert message={submitStatus.message} />}

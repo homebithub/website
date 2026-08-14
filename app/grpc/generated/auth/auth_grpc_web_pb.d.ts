@@ -976,6 +976,13 @@ export class ListingServiceClient {
                response: shared_shared_pb.GenericResponse) => void
   ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
 
+  listApplicationEvents(
+    request: auth_auth_pb.ApplicationActionRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: shared_shared_pb.GenericResponse) => void
+  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+
 }
 
 export class OpenForWorkServiceClient {
@@ -3149,6 +3156,11 @@ export class ListingServicePromiseClient {
 
   listApplications(
     request: auth_auth_pb.ListApplicationsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<shared_shared_pb.GenericResponse>;
+
+  listApplicationEvents(
+    request: auth_auth_pb.ApplicationActionRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<shared_shared_pb.GenericResponse>;
 

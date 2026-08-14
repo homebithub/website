@@ -61,6 +61,8 @@ export function loader({ request }: Route.LoaderArgs) {
 
 	return {
 		ENV: {
+			GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || "",
+			GOOGLE_MAPS_MAP_ID: process.env.GOOGLE_MAPS_MAP_ID || "",
 			GOOGLE_CLIENT_ID:
 				process.env.GOOGLE_CLIENT_ID ||
 				"180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",

@@ -8436,6 +8436,67 @@ proto.auth.ListingServicePromiseClient.prototype.listApplications =
 
 
 /**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.ApplicationActionRequest,
+ *   !proto.shared.GenericResponse>}
+ */
+const methodDescriptor_ListingService_ListApplicationEvents = new grpc.web.MethodDescriptor(
+  '/auth.ListingService/ListApplicationEvents',
+  grpc.web.MethodType.UNARY,
+  proto.auth.ApplicationActionRequest,
+  shared_shared_pb.GenericResponse,
+  /**
+   * @param {!proto.auth.ApplicationActionRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  shared_shared_pb.GenericResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.ApplicationActionRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.shared.GenericResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.shared.GenericResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ListingServiceClient.prototype.listApplicationEvents =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ListingService/ListApplicationEvents',
+      request,
+      metadata || {},
+      methodDescriptor_ListingService_ListApplicationEvents,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.ApplicationActionRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.shared.GenericResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ListingServicePromiseClient.prototype.listApplicationEvents =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ListingService/ListApplicationEvents',
+      request,
+      metadata || {},
+      methodDescriptor_ListingService_ListApplicationEvents);
+};
+
+
+/**
  * @param {string} hostname
  * @param {?Object} credentials
  * @param {?grpc.web.ClientOptions} options

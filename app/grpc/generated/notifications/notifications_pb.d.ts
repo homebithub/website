@@ -1971,6 +1971,46 @@ export namespace FeatureFlag {
   };
 }
 
+export class GetPublicFeatureFlagRequest extends jspb.Message {
+  getName(): string;
+  setName(value: string): GetPublicFeatureFlagRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetPublicFeatureFlagRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: GetPublicFeatureFlagRequest): GetPublicFeatureFlagRequest.AsObject;
+  static serializeBinaryToWriter(message: GetPublicFeatureFlagRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetPublicFeatureFlagRequest;
+  static deserializeBinaryFromReader(message: GetPublicFeatureFlagRequest, reader: jspb.BinaryReader): GetPublicFeatureFlagRequest;
+}
+
+export namespace GetPublicFeatureFlagRequest {
+  export type AsObject = {
+    name: string;
+  };
+}
+
+export class GetPublicFeatureFlagResponse extends jspb.Message {
+  getName(): string;
+  setName(value: string): GetPublicFeatureFlagResponse;
+
+  getEnabled(): boolean;
+  setEnabled(value: boolean): GetPublicFeatureFlagResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetPublicFeatureFlagResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetPublicFeatureFlagResponse): GetPublicFeatureFlagResponse.AsObject;
+  static serializeBinaryToWriter(message: GetPublicFeatureFlagResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetPublicFeatureFlagResponse;
+  static deserializeBinaryFromReader(message: GetPublicFeatureFlagResponse, reader: jspb.BinaryReader): GetPublicFeatureFlagResponse;
+}
+
+export namespace GetPublicFeatureFlagResponse {
+  export type AsObject = {
+    name: string;
+    enabled: boolean;
+  };
+}
+
 export class ListFeatureFlagsRequest extends jspb.Message {
   getCategory(): string;
   setCategory(value: string): ListFeatureFlagsRequest;

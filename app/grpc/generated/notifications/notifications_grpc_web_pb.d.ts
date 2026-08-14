@@ -309,6 +309,13 @@ export class NotificationsServiceClient {
                response: notifications_notifications_pb.ListUserEventsSinceResponse) => void
   ): grpcWeb.ClientReadableStream<notifications_notifications_pb.ListUserEventsSinceResponse>;
 
+  getPublicFeatureFlag(
+    request: notifications_notifications_pb.GetPublicFeatureFlagRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: notifications_notifications_pb.GetPublicFeatureFlagResponse) => void
+  ): grpcWeb.ClientReadableStream<notifications_notifications_pb.GetPublicFeatureFlagResponse>;
+
   adminListUserEvents(
     request: notifications_notifications_pb.AdminListUserEventsRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -558,6 +565,11 @@ export class NotificationsServicePromiseClient {
     request: notifications_notifications_pb.ListUserEventsSinceRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<notifications_notifications_pb.ListUserEventsSinceResponse>;
+
+  getPublicFeatureFlag(
+    request: notifications_notifications_pb.GetPublicFeatureFlagRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<notifications_notifications_pb.GetPublicFeatureFlagResponse>;
 
   adminListUserEvents(
     request: notifications_notifications_pb.AdminListUserEventsRequest,

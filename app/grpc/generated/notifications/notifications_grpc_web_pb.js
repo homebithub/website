@@ -2703,6 +2703,67 @@ proto.notifications.NotificationsServicePromiseClient.prototype.listUserEventsSi
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.notifications.GetPublicFeatureFlagRequest,
+ *   !proto.notifications.GetPublicFeatureFlagResponse>}
+ */
+const methodDescriptor_NotificationsService_GetPublicFeatureFlag = new grpc.web.MethodDescriptor(
+  '/notifications.NotificationsService/GetPublicFeatureFlag',
+  grpc.web.MethodType.UNARY,
+  proto.notifications.GetPublicFeatureFlagRequest,
+  proto.notifications.GetPublicFeatureFlagResponse,
+  /**
+   * @param {!proto.notifications.GetPublicFeatureFlagRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.notifications.GetPublicFeatureFlagResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.notifications.GetPublicFeatureFlagRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.notifications.GetPublicFeatureFlagResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.notifications.GetPublicFeatureFlagResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.notifications.NotificationsServiceClient.prototype.getPublicFeatureFlag =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/notifications.NotificationsService/GetPublicFeatureFlag',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_GetPublicFeatureFlag,
+      callback);
+};
+
+
+/**
+ * @param {!proto.notifications.GetPublicFeatureFlagRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.notifications.GetPublicFeatureFlagResponse>}
+ *     Promise that resolves to the response
+ */
+proto.notifications.NotificationsServicePromiseClient.prototype.getPublicFeatureFlag =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/notifications.NotificationsService/GetPublicFeatureFlag',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_GetPublicFeatureFlag);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.notifications.AdminListUserEventsRequest,
  *   !proto.notifications.AdminListUserEventsResponse>}
  */

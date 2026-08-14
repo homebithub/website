@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
-import { clientProfileService, jobService, petsService, profileService } from "~/services/grpc/authServices";
+import { clientProfileService, jobService, locationService, petsService, profileService } from "~/services/grpc/authServices";
 import { getStoredUserProfileId } from "~/utils/authStorage";
 import { useModalDismiss } from "~/hooks/useModalDismiss";
 import {
@@ -530,6 +530,19 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
 
     setSaving(true);
     try {
+      // The listing repository snapshots this confirmed pin onto the job. Keep
+      // the profile location current first, while retaining ward-only saves
+      // when Google is disabled or unavailable.
+      await locationService.createLocation('', {
+        ward_id: location.wardId,
+        location_type: 'primary',
+        label: location.precise?.label || location.wardName,
+        address: location.precise?.label,
+        latitude: location.precise?.latitude,
+        longitude: location.precise?.longitude,
+        google_place_id: location.precise?.googlePlaceId,
+        location_provider: location.precise?.provider || 'administrative',
+      });
       let savedListing: Record<string, any> | undefined;
       if (editing) {
         savedListing = await jobService.updateJob(String(job?.id), "", {
