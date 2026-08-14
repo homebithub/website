@@ -412,7 +412,7 @@ body > * {
 
 @media (max-width: 1023px) {
   body.hb-has-mobile-bottom-nav {
-    padding-bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -424,7 +424,7 @@ body > * {
   position: fixed;
   inset-inline: 0;
   top: calc(56px + env(safe-area-inset-top, 0px));
-  bottom: calc(5.4rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
   height: auto;
 }
 

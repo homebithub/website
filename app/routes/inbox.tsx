@@ -2643,7 +2643,7 @@ export default function InboxPage() {
       {/* Profile Modal */}
       {showProfileModal && profileModalUrl && (
         <div
-          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center"
+          className="absolute inset-0 z-[70] flex items-end justify-center sm:items-center"
           onClick={() => {
             setShowProfileModal(false);
             setProfileModalUrl(null);
@@ -2656,7 +2656,7 @@ export default function InboxPage() {
           }}
         >
           <div
-            className="relative w-full sm:max-w-6xl h-[85vh] rounded-t-2xl sm:rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-slide-up"
+            className="relative h-full w-full overflow-hidden rounded-t-2xl border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-slide-up sm:h-[85vh] sm:max-w-6xl sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button

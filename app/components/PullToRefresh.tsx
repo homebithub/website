@@ -16,33 +16,62 @@ function scrollContainer(target: EventTarget | null): HTMLElement | null {
 
 export function PullToRefresh() {
   const startY = useRef<number | null>(null);
+  const startX = useRef<number | null>(null);
   const eligible = useRef(false);
+  const pulling = useRef(false);
+  const distanceRef = useRef(0);
+  const refreshingRef = useRef(false);
+  const frameRef = useRef<number | null>(null);
   const [distance, setDistance] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    if (!isInstalledPWA()) return;
+    // An embedded profile has its own scroll surface inside the parent inbox.
+    // Installing another document-level gesture handler in the iframe makes
+    // iOS arbitrate two pull gestures and can leave the inner page unscrollable.
+    if (!isInstalledPWA() || window.self !== window.top) return;
+    const renderDistance = (next: number) => {
+      distanceRef.current = next;
+      if (frameRef.current !== null) return;
+      frameRef.current = window.requestAnimationFrame(() => {
+        frameRef.current = null;
+        setDistance(distanceRef.current);
+      });
+    };
     const start = (event: TouchEvent) => {
-      if (refreshing || event.touches.length !== 1) return;
+      if (refreshingRef.current || event.touches.length !== 1) return;
       const target = event.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
       const scroller = scrollContainer(target);
       eligible.current = (scroller ? scroller.scrollTop : window.scrollY) <= 0;
       startY.current = eligible.current ? event.touches[0].clientY : null;
+      startX.current = eligible.current ? event.touches[0].clientX : null;
+      pulling.current = false;
     };
     const move = (event: TouchEvent) => {
-      if (!eligible.current || startY.current === null) return;
+      if (!eligible.current || startY.current === null || startX.current === null || event.touches.length !== 1) return;
       const delta = event.touches[0].clientY - startY.current;
-      if (delta <= 0) { setDistance(0); return; }
+      const horizontalDelta = Math.abs(event.touches[0].clientX - startX.current);
+      if (!pulling.current) {
+        if (delta <= 10 || horizontalDelta > delta) return;
+        pulling.current = true;
+      }
+      if (delta <= 0) { renderDistance(0); return; }
       event.preventDefault();
-      setDistance(Math.min(104, delta * 0.55));
+      renderDistance(Math.min(104, delta * 0.55));
     };
     const end = () => {
-      if (distance >= TRIGGER) {
-        setRefreshing(true); setDistance(TRIGGER); reportPWAEvent('refresh');
+      if (pulling.current && distanceRef.current >= TRIGGER) {
+        refreshingRef.current = true;
+        setRefreshing(true);
+        renderDistance(TRIGGER);
+        reportPWAEvent('refresh');
         window.setTimeout(() => window.location.reload(), 220);
-      } else setDistance(0);
-      startY.current = null; eligible.current = false;
+      } else renderDistance(0);
+      startY.current = null;
+      startX.current = null;
+      eligible.current = false;
+      pulling.current = false;
     };
     document.addEventListener('touchstart', start, { passive: true });
     document.addEventListener('touchmove', move, { passive: false });
@@ -53,8 +82,9 @@ export function PullToRefresh() {
       document.removeEventListener('touchmove', move);
       document.removeEventListener('touchend', end);
       document.removeEventListener('touchcancel', end);
+      if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
     };
-  }, [distance, refreshing]);
+  }, []);
 
   if (!distance && !refreshing) return null;
   const ready = distance >= TRIGGER;
