@@ -307,7 +307,7 @@ export default function InboxPage() {
   const [editingDraft, setEditingDraft] = useState<string>("");
   const [editingSaving, setEditingSaving] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
-  const swipeGestureRef = useRef<{ id: string; startX: number; startY: number; horizontal: boolean; offset: number } | null>(null);
+  const swipeGestureRef = useRef<{ id: string; startX: number; startY: number; horizontal: boolean; moved: boolean; offset: number } | null>(null);
   const [swipePreview, setSwipePreview] = useState<{ id: string; offset: number } | null>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null);
@@ -1158,6 +1158,9 @@ export default function InboxPage() {
   const handleMessagesScroll = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
+
+    setOpenMsgMenuId(null);
+    setOpenReactPickerMsgId(null);
     
     // Check if user is at bottom (with 50px threshold)
     const threshold = 50;
@@ -1232,13 +1235,15 @@ export default function InboxPage() {
   const startLongPress = useCallback((id: string) => {
     if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
     longPressTimerRef.current = window.setTimeout(() => {
+      longPressTimerRef.current = null;
       // On mobile long-press, open the action menu instead of selecting
       if (window.innerWidth < 1024) {
+        setOpenReactPickerMsgId(null);
         setOpenMsgMenuId(id);
       } else {
         setSelectedIds((prev) => new Set(prev).add(id));
       }
-    }, 400);
+    }, 600);
   }, []);
 
   const cancelLongPress = useCallback(() => {
@@ -1247,6 +1252,26 @@ export default function InboxPage() {
       longPressTimerRef.current = null;
     }
   }, []);
+
+  useEffect(() => {
+    if (!openMsgMenuId) return;
+
+    const dismissMessageMenu = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest(`[data-message-actions="${openMsgMenuId}"]`)) return;
+      setOpenMsgMenuId(null);
+    };
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenMsgMenuId(null);
+    };
+
+    document.addEventListener('pointerdown', dismissMessageMenu, true);
+    document.addEventListener('keydown', dismissOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', dismissMessageMenu, true);
+      document.removeEventListener('keydown', dismissOnEscape);
+    };
+  }, [openMsgMenuId]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -1298,6 +1323,7 @@ export default function InboxPage() {
       startX: event.touches[0].clientX,
       startY: event.touches[0].clientY,
       horizontal: false,
+      moved: false,
       offset: 0,
     };
     startLongPress(message.id);
@@ -1308,6 +1334,12 @@ export default function InboxPage() {
     if (!gesture || event.touches.length !== 1) return;
     const dx = event.touches[0].clientX - gesture.startX;
     const dy = event.touches[0].clientY - gesture.startY;
+    // A long press must remain stationary. Cancel it as soon as the finger
+    // moves enough to indicate scrolling or a reply swipe.
+    if (!gesture.moved && Math.hypot(dx, dy) >= 8) {
+      gesture.moved = true;
+      cancelLongPress();
+    }
     if (!gesture.horizontal) {
       if (Math.abs(dy) > Math.abs(dx) || Math.abs(dx) < 10) return;
       gesture.horizontal = true;
@@ -1325,7 +1357,7 @@ export default function InboxPage() {
     cancelLongPress();
     swipeGestureRef.current = null;
     setSwipePreview(null);
-    if (gesture?.id === message.id && Math.abs(gesture.offset) >= 48) handleReplyMessage(message);
+    if (gesture?.id === message.id && gesture.horizontal && Math.abs(gesture.offset) >= 48) handleReplyMessage(message);
   }, [cancelLongPress, handleReplyMessage]);
 
   const cancelEditMessage = useCallback(() => {
@@ -2003,8 +2035,14 @@ export default function InboxPage() {
                       {!interactionsDisabled && (
                         <button
                           type="button"
+                          data-message-actions={m.id}
                           className={`absolute top-0 ${mine ? '-right-9 lg:-right-2' : '-left-9 lg:-left-2'} inline-flex h-7 w-7 items-center justify-center rounded-full border border-purple-200 bg-white/80 shadow transition dark:border-purple-500/30 dark:bg-[#0f0f16]/80 lg:-top-2 lg:opacity-0 lg:group-hover:opacity-100`}
-                          onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
+                          onTouchStart={(event) => event.stopPropagation()}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setOpenReactPickerMsgId(null);
+                            setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id);
+                          }}
                           aria-label="Message options"
                         >
                           <EllipsisVerticalIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
@@ -2234,7 +2272,9 @@ export default function InboxPage() {
                         return (
                           <div
                             ref={msgMenuRef}
+                            data-message-actions={m.id}
                             tabIndex={0}
+                            onTouchStart={(event) => event.stopPropagation()}
                             onKeyDown={(e) => {
                               if (e.key === 'ArrowDown') { e.preventDefault(); setMsgMenuFocusIndex((i) => Math.min(i + 1, options.length - 1)); }
                               else if (e.key === 'ArrowUp') { e.preventDefault(); setMsgMenuFocusIndex((i) => Math.max(i - 1, 0)); }
