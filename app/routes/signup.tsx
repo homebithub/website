@@ -274,7 +274,7 @@ export default function SignupPage() {
     
     // Modal state - check if profile_type is in URL params from Google callback
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(!googleProfileType);
-    
+
     const [formLoading, setFormLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<SignupResponse | null>(null);
@@ -681,8 +681,8 @@ export default function SignupPage() {
     return (
         <div className="min-h-screen flex flex-col">
         <Navigation/>
-        <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1 signup-page">
-        <main className="flex-1 flex min-h-0 w-full flex-col justify-start items-center overflow-y-auto px-4 py-8">
+        <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1 min-h-0 signup-page">
+        <main className="flex w-full flex-col items-center justify-start overflow-visible px-4 py-8 pb-12">
             {/* Profile Selection Modal */}
             <Modal 
                 isOpen={isProfileModalOpen} 
