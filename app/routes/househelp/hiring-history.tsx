@@ -79,6 +79,7 @@ interface Interest {
   job_type?: string;
   comments?: string;
   status?: string;
+  initiated_by_applicant?: boolean;
   viewed_at?: string;
   created_at: string;
   household?: HouseholdSummary;
@@ -566,6 +567,13 @@ export default function HousehelpHiringHistory() {
           salary_expectation: 0,
           salary_frequency: '',
           status: String(application.status ?? 'initiated'),
+          // The same projection used by the household view distinguishes a
+          // direct application from an offer. A direct application already
+          // contains the househelp's consent, so it must not render an
+          // accept button on the applicant's own page.
+          initiated_by_applicant: Boolean(
+            application.initiated_by_applicant ?? application.initiatedByApplicant,
+          ),
           comments: application.message ? String(application.message) : undefined,
           created_at: String(application.created_at ?? application.createdAt ?? ''),
           household: householdById.get(householdProfileId),
@@ -1227,10 +1235,11 @@ export default function HousehelpHiringHistory() {
                         <button onClick={() => { setSelectedInterest(interest); setShowInterestModal(true); }} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           <Briefcase className="h-4 w-4" /> View job listing
                         </button>
-                        {/* An offer is waiting for an answer. "initiated" is
-                            reached both by applying and by a household inviting
-                            you; either way the next word is yours. */}
-                        {interest.status === 'initiated' && (
+                        {/* Only a household-initiated offer waits for the
+                            househelp's acceptance. A direct application is
+                            already consented to and is answered by the
+                            household instead. */}
+                        {interest.status === 'initiated' && !interest.initiated_by_applicant && (
                           <>
                             <button
                               onClick={() => answerInterest(interest, 'accepted')}
