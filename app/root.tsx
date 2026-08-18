@@ -1,4 +1,4 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRevalidator } from "react-router";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useLocation, useRevalidator } from "react-router";
 import React from "react";
 import type { Route } from "./+types/root";
 
@@ -107,7 +107,9 @@ export async function action() {
 
 export default function App() {
     const { ENV } = useLoaderData<typeof loader>() || { ENV: { GOOGLE_CLIENT_ID: "", GATEWAY_API_BASE_URL: "" } };
+    const location = useLocation();
     const revalidator = useRevalidator();
+    const isEmbeddedRoute = ['1', 'true'].includes(new URLSearchParams(location.search).get('embed') || '');
 
     React.useEffect(() => {
         const refresh = () => revalidator.revalidate();
@@ -226,7 +228,7 @@ export default function App() {
                                     <DeviceRevocationWatcher/>
                                     <PersistentNavigation/>
                                     <Outlet/>
-                                    <SupportChat />
+                                    {!isEmbeddedRoute && <SupportChat />}
                                     <PWAInstallPrompt />
                                 </ProfileEditorProvider>
                             </WebSocketProvider>

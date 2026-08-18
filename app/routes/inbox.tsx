@@ -2726,9 +2726,6 @@ export default function InboxPage() {
               }}
               title="Profile"
             />
-            <span className={`pb-2 text-[10px] tabular-nums ${CHAT_MESSAGE_LIMIT - input.length < 100 ? 'text-amber-500' : 'text-gray-400'}`}>
-              {(CHAT_MESSAGE_LIMIT - input.length).toLocaleString()}
-            </span>
           </div>
         </div>
       )}
