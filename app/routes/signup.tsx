@@ -681,8 +681,8 @@ export default function SignupPage() {
     return (
         <div className="min-h-screen flex flex-col">
         <Navigation/>
-        <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
-        <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+        <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1 signup-page">
+        <main className="flex-1 flex min-h-0 flex-col justify-start md:justify-center items-center px-4 py-8">
             {/* Profile Selection Modal */}
             <Modal 
                 isOpen={isProfileModalOpen} 
