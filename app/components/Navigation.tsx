@@ -345,6 +345,32 @@ function NavigationContent() {
                     getStoredProfileAvatar(currentUserId),
                 ));
 
+                // The auth session does not always include the profile's
+                // avatar URL. Hydrate it once from the active profile so the
+                // navbar is correct on a fresh device as well as after an
+                // in-page avatar change.
+                void (async () => {
+                    try {
+                        const role = normalizeProfileRole(resolvedProfileType);
+                        if (!role || !currentUserId) return;
+                        const { profileService } = await import('~/services/grpc/authServices');
+                        const profileData = role === 'client'
+                            ? await profileService.getCurrentHouseholdProfile('')
+                            : await profileService.getCurrentHousehelpProfile('');
+                        const avatar = firstProfileAvatar(
+                            profileData?.avatar_url,
+                            profileData?.avatarUrl,
+                            profileData?.user?.avatar_url,
+                            profileData?.user?.profile_image,
+                        );
+                        if (avatar) {
+                            setProfileAvatar(avatar);
+                        }
+                    } catch {
+                        // Avatar hydration is cosmetic; the initials fallback remains available.
+                    }
+                })();
+
                 // Fetch counts only for authenticated users who finished onboarding
                 if (!isInSetupMode && allowAuxiliaryAccountCalls) {
                     fetchHireRequestCount(resolvedProfileType);
