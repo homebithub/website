@@ -388,6 +388,7 @@ export default function HousehelpJobsHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [househelpProfileId, setHousehelpProfileId] = useState<string>("");
@@ -397,6 +398,17 @@ export default function HousehelpJobsHome() {
   const [applyLoading, setApplyLoading] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [householdProfiles, setHouseholdProfiles] = useState<Record<string, HouseholdProfileLike | null>>({});
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      setRefreshKey((value) => value + 1);
+      setOffset(0);
+      setJobs([]);
+      setHasMore(true);
+    };
+    window.addEventListener("homebit:refresh", handleRefresh);
+    return () => window.removeEventListener("homebit:refresh", handleRefresh);
+  }, []);
   const renderHouseholdName = useCallback((job: JobListing) => {
     const profileId = householdProfileKey(job);
     const profile = profileId ? householdProfiles[profileId] : null;
@@ -752,7 +764,7 @@ export default function HousehelpJobsHome() {
   // arrived a moment later. The board therefore showed no match scores at all
   // until something else happened to change, such as touching a filter, which
   // is why the percentages looked like they came and went at random.
-  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored, househelpProfileId]);
+  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored, househelpProfileId, refreshKey]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;

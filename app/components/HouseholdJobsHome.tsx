@@ -572,6 +572,7 @@ export default function HouseholdJobsHome() {
   const isServiceProvider = profileType === "househelp";
 
   const [listings, setListings] = useState<OpenForWorkListing[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [selectedListing, setSelectedListing] = useState<OpenForWorkListing | null>(null);
   const [selectedInviteListing, setSelectedInviteListing] = useState<OpenForWorkListing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -608,6 +609,17 @@ export default function HouseholdJobsHome() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [inviteDraft, setInviteDraft] = useState(loadSavedInviteMessage());
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      setRefreshKey((value) => value + 1);
+      setOffset(0);
+      setListings([]);
+      setHasMore(true);
+    };
+    window.addEventListener("homebit:refresh", handleRefresh);
+    return () => window.removeEventListener("homebit:refresh", handleRefresh);
+  }, []);
 
   const limit = 12;
   const backToPath = "/household/jobs";
@@ -958,7 +970,7 @@ export default function HouseholdJobsHome() {
     return () => {
       cancelled = true;
     };
-  }, [offset, searchKey, currentUserId, isServiceProvider, filtersRestored]);
+  }, [offset, searchKey, currentUserId, isServiceProvider, filtersRestored, refreshKey]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;

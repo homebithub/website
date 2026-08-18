@@ -1,4 +1,4 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "react-router";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useRevalidator } from "react-router";
 import React from "react";
 import type { Route } from "./+types/root";
 
@@ -107,6 +107,14 @@ export async function action() {
 
 export default function App() {
     const { ENV } = useLoaderData<typeof loader>() || { ENV: { GOOGLE_CLIENT_ID: "", GATEWAY_API_BASE_URL: "" } };
+    const revalidator = useRevalidator();
+
+    React.useEffect(() => {
+        const refresh = () => revalidator.revalidate();
+        window.addEventListener("homebit:refresh", refresh);
+        return () => window.removeEventListener("homebit:refresh", refresh);
+    }, [revalidator]);
+
     const apiOrigins = Array.from(new Set([
         ENV.GATEWAY_API_BASE_URL,
         ENV.AUTH_API_BASE_URL,
