@@ -1080,7 +1080,7 @@ export default function HousehelpJobsHome() {
             {filtersOpen && (
               <div
                 id="househelp-job-filters"
-                className="hb-filter-panel absolute left-0 right-0 top-full max-h-[calc(100vh-120px)] overflow-y-auto border-b border-purple-200/60 bg-white/95 pb-4 shadow-2xl backdrop-blur-xl dark:border-purple-500/30 dark:bg-[#141020]/95"
+                className="hb-filter-panel absolute left-0 right-0 top-full h-[calc(100dvh-8rem)] max-h-[calc(100dvh-8rem)] overflow-y-auto border-b border-purple-200/60 bg-white/95 pb-4 shadow-2xl backdrop-blur-xl overscroll-contain touch-pan-y dark:border-purple-500/30 dark:bg-[#141020]/95 sm:h-auto sm:max-h-[calc(100vh-120px)]"
               >
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
