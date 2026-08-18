@@ -1,7 +1,6 @@
 import React, { Fragment, useRef } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 interface ModalProps {
   isOpen: boolean;
@@ -12,7 +11,6 @@ interface ModalProps {
 
 export function Modal({ isOpen, onClose, title, children }: ModalProps) {
   const cancelButtonRef = useRef(null);
-  useBodyScrollLock(isOpen);
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
@@ -35,7 +33,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
         </Transition.Child>
 
         <div className="hb-mobile-modal-viewport fixed inset-0 z-10 overflow-y-auto">
-          <div className="flex min-h-full items-end justify-center text-center sm:items-center sm:p-4">
+          <div className="flex min-h-0 min-h-full items-end justify-center text-center sm:items-center sm:p-4">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -45,7 +43,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className="hb-mobile-modal-panel relative flex min-h-0 w-full max-w-full transform flex-col overflow-y-auto rounded-t-3xl border border-gray-100 bg-white px-4 pb-8 pt-6 text-left shadow-2xl transition-all sm:max-w-md sm:rounded-3xl sm:px-8 sm:pt-8 max-h-[92dvh] sm:max-h-[85vh]">
+              <Dialog.Panel className="hb-mobile-modal-panel relative min-h-0 flex w-full max-w-full max-h-full transform flex-col overflow-y-auto rounded-t-3xl border border-gray-100 bg-white px-4 pb-8 pt-6 text-left shadow-2xl transition-all sm:max-w-md sm:rounded-3xl sm:px-8 sm:pt-8 max-h-[92dvh] sm:max-h-[85vh]">
                 <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
                   <button
                     type="button"

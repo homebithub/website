@@ -1,7 +1,6 @@
 import React, { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -33,7 +32,6 @@ export function BaseModal({
   showCloseButton = true,
   closeOnOutsideClick = true,
 }: BaseModalProps) {
-  useBodyScrollLock(isOpen);
   return (
     <Transition.Root show={isOpen} as={Fragment}>
       <Dialog
@@ -55,7 +53,7 @@ export function BaseModal({
         </Transition.Child>
 
         <div className="hb-mobile-modal-viewport fixed inset-0 z-10 overflow-y-auto overscroll-contain">
-          <div className="flex min-h-full items-end justify-center text-center sm:items-center sm:p-4">
+          <div className="flex min-h-0 min-h-full items-end justify-center text-center sm:items-center sm:p-4">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -67,7 +65,7 @@ export function BaseModal({
             >
               <Dialog.Panel 
                 className={`
-                  relative transform overflow-hidden rounded-t-2xl sm:rounded-2xl
+                  relative min-h-0 transform overflow-hidden rounded-t-2xl sm:rounded-2xl
                   bg-white dark:bg-dark-card 
                   px-4 pb-8 pt-6 text-left shadow-2xl transition-all sm:px-6 sm:pt-8
                   hb-mobile-modal-panel w-full ${sizeClasses[size]} overflow-y-auto overscroll-contain

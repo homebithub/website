@@ -1367,7 +1367,7 @@ export default function HousehelpHiringHistory() {
 
       {viewingListing && (
         <div className="hb-mobile-modal-viewport fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingListing(null)}>
-          <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
+          <div className="hb-mobile-modal-panel max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between gap-4">
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">{String(viewingListing.title || 'Job listing')}</h2>
               <button type="button" onClick={() => setViewingListing(null)} className="rounded-full border border-purple-300 p-2 text-purple-700 dark:border-purple-600 dark:text-purple-200" aria-label="Close job listing"><X className="h-4 w-4" /></button>
@@ -1382,7 +1382,7 @@ export default function HousehelpHiringHistory() {
         <div className="hb-mobile-modal-viewport fixed inset-0 z-[120] overflow-hidden" role="dialog" aria-modal="true" aria-label="Application details">
           <div className="relative flex h-full items-end justify-center p-0 sm:items-center sm:p-5">
             <button type="button" aria-label="Close application details" className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => { setShowInterestModal(false); setSelectedInterest(null); }} />
-            <div className="relative flex max-h-[94dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#171426] sm:max-h-[90dvh] sm:rounded-3xl">
+            <div className="hb-mobile-modal-panel relative flex max-h-[94dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#171426] sm:max-h-[90dvh] sm:rounded-3xl">
               {/* Header */}
               <div className="relative shrink-0 bg-gradient-to-r from-purple-800 via-fuchsia-800 to-pink-700 px-5 py-5 sm:px-7 sm:py-6">
                 <button 

@@ -11,7 +11,7 @@ describe('mobile layout guardrails', () => {
     const root = source('app/root.tsx');
     expect(root).toContain('width=device-width, initial-scale=1');
     expect(css).toContain('-webkit-text-size-adjust: 100%');
-    expect(css).toContain('overflow-x: hidden');
+    expect(css).toContain('overflow-x: clip');
   });
 
   it('prevents iOS from zooming when a mobile form control receives focus', () => {
@@ -71,7 +71,9 @@ describe('mobile layout guardrails', () => {
     expect(lock).toContain("document.body.style.position = 'fixed'");
     expect(lock).toContain('lockCount += 1');
     expect(source('app/components/ProfileViewsAnalytics.tsx')).toContain('useBodyScrollLock(isOpen)');
-    expect(source('app/components/ui/BaseModal.tsx')).toContain('useBodyScrollLock(isOpen)');
+    // Headless UI Dialog already owns the document scroll lock. A second
+    // global lock can leave html/body stuck at overflow:hidden after close.
+    expect(source('app/components/ui/BaseModal.tsx')).not.toContain('useBodyScrollLock');
     expect(confirmation).toContain('useBodyScrollLock(isOpen)');
     expect(confirmation).toContain('createPortal(');
     expect(confirmation).toContain('document.body');
@@ -79,10 +81,10 @@ describe('mobile layout guardrails', () => {
 
   it('keeps the mobile inbox inside the dynamic viewport', () => {
     const inbox = source('app/routes/inbox.tsx');
-    expect(inbox).toContain('h-[100dvh]');
+    expect(inbox).toContain('hb-inbox-viewport');
     expect(inbox).toContain('overflow-x-hidden overflow-y-auto');
     expect(inbox).toContain('min-w-0 max-h-[150px] flex-1');
-    expect(inbox).toContain('text-[16px]');
+    expect(inbox).toContain('hb-chat-composer');
     expect(inbox).toContain("mine ? 'mr-9 lg:mr-0' : 'ml-9 lg:ml-0'");
     expect(inbox).toContain("'-right-9 lg:-right-2'");
   });
@@ -105,7 +107,8 @@ describe('mobile layout guardrails', () => {
   it('keeps shared navigation available while every page scrolls', () => {
     const navigation = source('app/components/Navigation.tsx');
     expect(navigation).toContain('fixed inset-x-0 top-0 z-40');
-    expect(navigation).toContain('h-[56px] shrink-0 sm:h-[60px]');
+    expect(navigation).toContain('min-h-[56px]');
+    expect(navigation).toContain('sm:min-h-[60px]');
   });
 
   it('uses a role-aware bottom bar instead of a mobile hamburger', () => {

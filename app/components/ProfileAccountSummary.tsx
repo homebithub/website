@@ -362,7 +362,7 @@ export function ProfileAccountSummary({
             if (event.currentTarget === event.target) closeEditor();
           }}
         >
-          <div className="w-full max-w-xl rounded-2xl border border-purple-300/40 bg-white p-5 shadow-2xl dark:border-purple-500/30 dark:bg-[#17151f] sm:p-6">
+          <div className="hb-mobile-modal-panel w-full max-w-xl overflow-y-auto rounded-2xl border border-purple-300/40 bg-white p-5 shadow-2xl dark:border-purple-500/30 dark:bg-[#17151f] sm:p-6">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <h3 id="account-editor-title" className="text-lg font-bold text-gray-900 dark:text-white">
