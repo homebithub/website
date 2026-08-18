@@ -118,6 +118,7 @@ function toApplicantRow(application: Record<string, any>): Interest {
     // The pitch the applicant attached, now stored on the application itself.
     comments: application.message ? String(application.message) : undefined,
     status: String(application.status ?? 'initiated'),
+    initiated_by_applicant: Boolean(application.initiated_by_applicant ?? application.initiatedByApplicant),
     created_at: String(application.created_at ?? application.createdAt ?? ''),
     listing_id: application.listing_id ?? application.listingId,
     househelp: application.househelp ?? application.applicant,
@@ -197,6 +198,7 @@ interface Interest {
   job_type?: string;
   comments?: string;
   status: string;
+  initiated_by_applicant?: boolean;
   viewed_at?: string;
   created_at: string;
   househelp?: {
@@ -1528,6 +1530,11 @@ export default function HiringHistory() {
               // question has been settled and offering it again is offering to
               // go backwards — which the state machine will not do anyway.
               const canShortlist = interest.status === 'initiated';
+              // A direct application is the househelp's consent. The household
+              // can accept it here and move straight to a hire. An initiated
+              // offer, on the other hand, still belongs to the househelp to
+              // accept or decline.
+              const canAcceptApplicant = interest.status === 'initiated' && Boolean(interest.initiated_by_applicant);
               // Applications are per listing. Matching on the househelp alone
               // incorrectly lets a contract for another advert control this
               // card, and also fails to enforce the one-contract-per-application
@@ -1557,12 +1564,15 @@ export default function HiringHistory() {
               // false for every row ever rendered and the buttons under it had
               // never once appeared.
               const canActOnInterest =
-                (interest.status === 'shortlisted' || interest.status === 'accepted') && !hasExistingContract;
+                (canAcceptApplicant || interest.status === 'shortlisted' || interest.status === 'accepted') && !hasExistingContract;
               // What the next step actually is, named as the household would
               // name it: an offer to somebody set aside, a contract to somebody
               // who has already said yes.
-              const advanceLabel =
-                interest.status === 'accepted' ? 'Send contract' : 'Send offer';
+              const advanceLabel = interest.status === 'accepted'
+                ? 'Send contract'
+                : canAcceptApplicant
+                  ? 'Accept'
+                  : 'Send offer';
               const statusLabel = interest.status
                 ? interest.status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
                 : 'Pending';
