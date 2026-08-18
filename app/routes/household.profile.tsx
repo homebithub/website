@@ -30,6 +30,7 @@ interface HouseholdData {
   id?: string;
   user_profile_id?: string;
   user_id?: string;
+	avatar_url?: string;
   house_size?: string;
   household_notes?: string;
   needs_live_in?: boolean;
@@ -548,6 +549,15 @@ export default function HouseholdProfile() {
     setPhotoToDelete(photoUrl);
   };
 
+  const setPrimaryPhoto = async (photoUrl: string) => {
+    try {
+      await grpcProfileService.updateHouseholdProfile('', 'household', { avatar_url: photoUrl });
+      setProfile((current) => current ? { ...current, avatar_url: photoUrl } : current);
+    } catch (err: any) {
+      setUploadError(err.message || 'We couldn’t set your profile picture. Please try again.');
+    }
+  };
+
   const handleDeletePhoto = async () => {
     if (!photoToDelete) return;
 
@@ -1009,6 +1019,13 @@ export default function HouseholdProfile() {
                     className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-xl text-xs font-semibold hover:bg-purple-50"
                   >
                     View Full
+                  </button>
+                  <button
+                    onClick={() => void setPrimaryPhoto(photo)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-purple-600 text-white rounded-xl text-xs font-semibold hover:bg-purple-700"
+                    title="Use as profile picture"
+                  >
+                    {profile.avatar_url === photo ? 'Profile picture' : 'Set as profile picture'}
                   </button>
                   <button
                     onClick={() => confirmDeletePhoto(photo)}

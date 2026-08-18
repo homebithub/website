@@ -36,6 +36,7 @@ import { ProfileCompletionCelebrationModal } from '~/components/profile/ProfileC
 interface HousehelpData {
   id?: string;
   user_id?: string;
+	avatar_url?: string;
   first_name?: string;
   last_name?: string;
   gender?: string;
@@ -310,6 +311,15 @@ export default function HousehelpProfile() {
     setPhotoToDelete(photoUrl);
   };
 
+  const setPrimaryPhoto = async (photoUrl: string) => {
+    try {
+      await grpcProfileService.updateHousehelpFields('', 'househelp', { avatar_url: photoUrl });
+      setProfile((current) => current ? { ...current, avatar_url: photoUrl } : current);
+    } catch (err: any) {
+      setUploadError(err.message || 'We couldn’t set your profile picture. Please try again.');
+    }
+  };
+
   const handleDeletePhoto = async () => {
     if (!photoToDelete) return;
 
@@ -335,8 +345,10 @@ export default function HousehelpProfile() {
           setDeleteStatus('Deleting from storage...');
           try {
             await documentService.deleteDocument(document.id, '');
-          } catch (err) {
-            console.warn('Failed to delete document from storage, but will remove from profile');
+	          } catch (err) {
+	            // In particular, the Smile ID selfie is protected by auth. Do not
+	            // remove it from the profile if the storage deletion was refused.
+	            throw err;
           }
         }
       } catch (err) {
@@ -584,6 +596,13 @@ export default function HousehelpProfile() {
                   }}
                 />
                 <div className="absolute inset-0 bg-black/35 sm:bg-black sm:bg-opacity-0 sm:group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center gap-2">
+	                  <button
+	                    onClick={() => void setPrimaryPhoto(photo)}
+	                    className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-purple-600 text-white rounded-xl text-xs font-semibold hover:bg-purple-700"
+	                    title="Use as profile picture"
+	                  >
+	                    {profile.avatar_url === photo ? 'Profile picture' : 'Set as profile picture'}
+	                  </button>
                   <button
                     onClick={() => setSelectedImage(photo)}
                     className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-xl text-xs font-semibold hover:bg-purple-50"
