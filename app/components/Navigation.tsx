@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router";
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon, ChatBubbleLeftRightIcon, ArrowPathIcon } from "@heroicons/react/20/solid";
+import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { API_BASE_URL } from "~/config/api";
@@ -642,17 +642,6 @@ function NavigationContent() {
                         </a>
                     )}
 
-                    {/* Refresh current page data without reloading the browser */}
-                    <button
-                        type="button"
-                        onClick={() => window.dispatchEvent(new Event('homebit:refresh'))}
-                        className="hidden lg:inline-flex items-center justify-center rounded-lg border border-purple-200 bg-white p-1.5 text-purple-700 shadow-sm transition-all hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-900/30"
-                        aria-label="Refresh page data"
-                        title="Refresh page data"
-                    >
-                        <ArrowPathIcon className="h-5 w-5" />
-                    </button>
-
                     {/* Theme Toggle - Always visible on desktop */}
                     <div className="hidden lg:block">
                         <ThemeToggle size="md" />
@@ -855,18 +844,6 @@ function NavigationContent() {
                                     </Menu.Item>
 
                                     <PWAInstallMenuButton />
-
-                                    <Menu.Item>
-                                      {({ active }) => (
-                                        <button
-                                          type="button"
-                                          onClick={() => window.dispatchEvent(new Event('homebit:refresh'))}
-                                          className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-primary-700 dark:text-purple-400'} flex w-[calc(100%-16px)] items-center gap-2 rounded-xl px-5 py-2 text-base mx-2 font-medium`}
-                                        >
-                                          <ArrowPathIcon className="h-5 w-5" /> Refresh page
-                                        </button>
-                                      )}
-                                    </Menu.Item>
 
                                     {/* Theme Toggle in Mobile Menu */}
                                     <div className="px-5 py-3 flex items-center justify-between">

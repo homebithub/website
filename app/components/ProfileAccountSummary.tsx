@@ -55,6 +55,22 @@ function resolveProfileId(profile: UnknownRecord, fallbackProfileId: string) {
   );
 }
 
+// Uploads are scoped to the user's active `user_profile` row, not the catalog
+// profile type (the stable Household/HouseHelp IDs used for feature metadata).
+// The two IDs are both present on some profile responses, so keep this lookup
+// separate from resolveProfileId instead of accidentally sending the catalog ID
+// to the document endpoint.
+function resolveUploadProfileId(profile: UnknownRecord, userProfile: UnknownRecord) {
+  return String(
+    profile.user_profile_id ||
+    profile.userProfileId ||
+    profile.id ||
+    userProfile.id ||
+    getStoredValue('user_profile_id') ||
+    '',
+  );
+}
+
 function formatProfileType(profileId: string, fallbackProfileType: string) {
   return PROFILE_TYPES[profileId] || PROFILE_TYPES[fallbackProfileType] || fallbackProfileType;
 }
@@ -97,6 +113,7 @@ export function ProfileAccountSummary({
   const user = getNestedUser(profile);
   const profileId = resolveProfileId(profile, fallbackProfileId);
   const userProfile = getNestedRecord(profile.user_profile);
+  const uploadProfileId = resolveUploadProfileId(profile, userProfile);
   const currentUserId = String(
     storedUser.user_id ||
     storedUser.id ||
@@ -308,7 +325,7 @@ export function ProfileAccountSummary({
         <div className="flex items-start gap-3">
           <ProfileAvatarControl
             profileType={fallbackProfileType}
-            profileId={profileId}
+            profileId={uploadProfileId}
             userId={currentUserId}
             currentUrl={resolvedAvatarUrl}
             name={[firstName, lastName].filter(Boolean).join(' ')}
