@@ -520,7 +520,11 @@ export default function InboxPage() {
       if (convId) {
         requestConversationHydration(convId);
       }
-    }, [requestConversationHydration]),
+      // Navigation stays mounted independently of this route. Tell it to
+      // refresh as soon as a new thread is announced, including when the user
+      // is currently reading another conversation.
+      notifyInboxUpdated();
+    }, [notifyInboxUpdated, requestConversationHydration]),
     // onConversationArchived
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       const convId = resolveConversationId(event?.data) || event?.data?.conversation_id;

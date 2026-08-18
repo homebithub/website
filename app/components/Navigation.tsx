@@ -215,8 +215,9 @@ function NavigationContent() {
         }
     }, [profileType]);
 
-    // Unread messages. inboxCount existed and was never once populated, so the
-    // badge could not appear however many messages were waiting.
+    // Unread conversations, not unread messages. The navbar badge is a prompt
+    // to visit a thread, so five messages in one conversation should still be
+    // one item of attention.
     const fetchInboxCount = React.useCallback(async (force = false) => {
         try {
             if (!getAccessTokenFromCookies()) return;
@@ -225,10 +226,7 @@ function NavigationContent() {
             const unread = await cachedRequest(`nav:inbox:${userId}`, async () => {
                 const raw = await notificationsService.listConversations(userId, 0, 100);
                 const rows = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
-                return rows.reduce(
-                    (sum: number, conversation: any) => sum + Number(conversation?.unread_count || 0),
-                    0,
-                );
+                return rows.filter((conversation: any) => Number(conversation?.unread_count || 0) > 0).length;
             }, { maxAgeMs: NAV_COUNT_STALE_MS, force });
             setInboxCount(unread);
         } catch (error) {
@@ -400,14 +398,23 @@ function NavigationContent() {
     useSSESubscriptionSafe('hiring.employment_contract.sent_to_househelp', refreshHiring, badgesAreLive);
     useSSESubscriptionSafe('hiring.employment_contract.fully_signed', refreshHiring, badgesAreLive);
 
-    // Messages come over the WebSocket rather than SSE, so the inbox badge
-    // needs its own subscription: 'new_message' for one arriving, 'message_read'
-    // for one read on another device or in another tab.
+    // The inbox screen has always used the durable SSE stream, but the global
+    // navigation only listened to the best-effort WebSocket. Subscribe here as
+    // well so the badge refreshes even while somebody is reading a different
+    // conversation (or is elsewhere in the app).
+    useSSESubscriptionSafe('messaging.message.received', refreshInbox, badgesAreLive);
+    useSSESubscriptionSafe('messaging.message.read', refreshInbox, badgesAreLive);
+    useSSESubscriptionSafe('messaging.message.deleted', refreshInbox, badgesAreLive);
+    useSSESubscriptionSafe('messaging.conversation.started', refreshInbox, badgesAreLive);
+    useSSESubscriptionSafe('messaging.conversation.archived', refreshInbox, badgesAreLive);
+
+    // Keep WebSocket subscriptions too: they update the badge before the SSE
+    // replay arrives, while SSE remains the reliable path after a reconnect.
     const webSocket = useWebSocketContextSafe();
     useEffect(() => {
         if (!badgesAreLive || !webSocket) return;
 
-        const unsubscribers = ['new_message', 'message_read'].map((type) =>
+        const unsubscribers = ['new_message', 'message_read', 'conversation_started', 'conversation_archived'].map((type) =>
             webSocket.addEventListener(type, refreshInbox),
         );
         return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
