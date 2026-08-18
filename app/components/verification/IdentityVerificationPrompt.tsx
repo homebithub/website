@@ -110,7 +110,7 @@ export function IdentityVerificationPrompt({
       description:
         failureReason ||
         "We could not read the documents clearly enough. A brighter room and a steady hand usually fixes it — it takes a couple of minutes.",
-      action: "Start a new verification",
+      action: "Re-upload documents",
       tone: "amber",
     },
     failed: {
@@ -118,7 +118,7 @@ export function IdentityVerificationPrompt({
       eyebrow: "VERIFICATION NEEDS ATTENTION",
       title: "We couldn’t verify your identity",
       description: failureReason || "Review your document details and try again with clear, well-lit images.",
-      action: "Start a new verification",
+      action: "Re-upload documents",
       tone: "rose",
     },
   }[status];
