@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Mail, Pencil, Phone, UserRound, X } from 'lucide-react';
+import { Mail, Pencil, Phone, X } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { getStoredUser } from '~/utils/authStorage';
+import ProfileAvatarControl from '~/components/ProfileAvatarControl';
+import { firstProfileAvatar, getStoredProfileAvatar } from '~/utils/profileAvatar';
 import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
 import authService from '~/services/grpc/auth.service';
 import { handleApiError } from '~/utils/errorMessages';
@@ -14,6 +16,7 @@ type ProfileAccountSummaryProps = {
   profile: UnknownRecord;
   fallbackProfileId: string;
   fallbackProfileType: 'househelp' | 'household';
+  avatarUrl?: string;
 };
 
 const PROFILE_TYPES: Record<string, string> = {
@@ -87,6 +90,7 @@ export function ProfileAccountSummary({
   profile,
   fallbackProfileId,
   fallbackProfileType,
+  avatarUrl,
 }: ProfileAccountSummaryProps) {
   const navigate = useNavigate();
   const storedUser = getStoredUser() || {};
@@ -101,6 +105,16 @@ export function ProfileAccountSummary({
     user.user_id ||
     user.id ||
     '',
+  );
+  const resolvedAvatarUrl = firstProfileAvatar(
+    avatarUrl,
+    profile.avatar_url,
+    profile.avatarUrl,
+    user.avatar_url,
+    user.avatarUrl,
+    user.profile_image,
+    user.profileImage,
+    getStoredProfileAvatar(currentUserId),
   );
   const resolvedFirstName = getString(user.first_name) || getString(user.firstName) || getString(profile.first_name) || getString(storedUser.first_name);
   const resolvedLastName = getString(user.last_name) || getString(user.lastName) || getString(profile.last_name) || getString(storedUser.last_name);
@@ -292,9 +306,13 @@ export function ProfileAccountSummary({
     <section className="relative rounded-2xl bg-white dark:bg-[#13131a] p-4 sm:p-6 border border-purple-200/40 dark:border-purple-500/30 mb-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-200">
-            <UserRound className="h-5 w-5" />
-          </div>
+          <ProfileAvatarControl
+            profileType={fallbackProfileType}
+            profileId={profileId}
+            userId={currentUserId}
+            currentUrl={resolvedAvatarUrl}
+            name={[firstName, lastName].filter(Boolean).join(' ')}
+          />
           <div className="pr-0 lg:pr-28">
             <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-300">My Account</p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">

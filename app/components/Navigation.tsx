@@ -18,6 +18,7 @@ import { countUnattendedHiringRecords, hiringAttentionScope } from '~/utils/hiri
 import { collapseApplicationContracts } from '~/utils/hiringIdentifiers';
 import { PWAInstallMenuButton } from '~/components/PWAInstallPrompt';
 import { MobileBottomNavigation } from '~/components/MobileBottomNavigation';
+import { PROFILE_AVATAR_UPDATED_EVENT, firstProfileAvatar, getStoredProfileAvatar } from '~/utils/profileAvatar';
 
 const NAV_COUNT_STALE_MS = 2 * 60_000;
 const NAV_ADMIN_STALE_MS = 10 * 60_000;
@@ -70,6 +71,7 @@ function NavigationContent() {
     const currentUser = authUser ?? storedUser ?? null;
     const [profileType, setProfileType] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
+    const [profileAvatar, setProfileAvatar] = useState<string>('');
     const [inboxCount, setInboxCount] = useState<number>(0);
     const [hireRequestCount, setHireRequestCount] = useState<number>(0);
     const [savedCount, setSavedCount] = useState<number>(0);
@@ -77,6 +79,18 @@ function NavigationContent() {
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const { unreadCount } = useNotifications({ pollingMs: 5 * 60_000, pageSize: 20, enabled: allowAuxiliaryAccountCalls });
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const handleAvatarUpdate = (event: Event) => {
+            const detail = (event as CustomEvent<{ userId?: string; url?: string }>).detail || {};
+            const currentUserId = getStoredUserId() || String((currentUser as any)?.user_id || (currentUser as any)?.id || '');
+            if (!detail.userId || !currentUserId || detail.userId === currentUserId) {
+                setProfileAvatar(detail.url || '');
+            }
+        };
+        window.addEventListener(PROFILE_AVATAR_UPDATED_EVENT, handleAvatarUpdate);
+        return () => window.removeEventListener(PROFILE_AVATAR_UPDATED_EVENT, handleAvatarUpdate);
+    }, [currentUser]);
 
 
     // Detect if running on app subdomain
@@ -322,6 +336,14 @@ function NavigationContent() {
                 // Get user name for greeting
                 const firstName = currentUser.first_name || currentUser.firstName || "";
                 setUserName(firstName);
+                const currentUserId = getStoredUserId() || String(currentUser.user_id || currentUser.id || '');
+                setProfileAvatar(firstProfileAvatar(
+                    currentUser.avatar_url,
+                    currentUser.avatarUrl,
+                    currentUser.profile_image,
+                    currentUser.profileImage,
+                    getStoredProfileAvatar(currentUserId),
+                ));
 
                 // Fetch counts only for authenticated users who finished onboarding
                 if (!isInSetupMode && allowAuxiliaryAccountCalls) {
@@ -337,6 +359,7 @@ function NavigationContent() {
         } else {
             setProfileType(null);
             setUserName(null);
+            setProfileAvatar('');
             setInboxCount(0);
             setSavedCount(0);
             setIsAdmin(false);
@@ -630,6 +653,13 @@ function NavigationContent() {
                     {user && userName && (
                         <Menu as="div" className="relative hidden lg:inline-block text-left">
                             <Menu.Button className="flex items-center space-x-2 px-4 py-1 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all">
+                                {profileAvatar ? (
+                                    <img src={profileAvatar} alt="" className="h-7 w-7 rounded-full object-cover ring-1 ring-purple-300/70 dark:ring-purple-500/50" />
+                                ) : (
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-600 text-[10px] font-bold text-white">
+                                        {(userName || 'HB').slice(0, 2).toUpperCase()}
+                                    </span>
+                                )}
                                 <div className="text-xs text-gray-600 dark:text-gray-300">
                                     <span className="font-semibold text-sm">Hello, {userName}</span>
                                 </div>
@@ -823,9 +853,16 @@ function NavigationContent() {
                                         <>
                                             <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                                             {/* User Greeting in Mobile Menu */}
-                                            <div className="px-5 py-1 text-base font-bold rounded-xl text-primary-700 dark:text-purple-400 border-b border-primary-100 dark:border-gray-700">
-  <div className="font-semibold text-sm">Hello, {userName}</div>
-</div>
+                                            <div className="flex items-center gap-2 px-5 py-2 text-base font-bold rounded-xl text-primary-700 dark:text-purple-400 border-b border-primary-100 dark:border-gray-700">
+                                                {profileAvatar ? (
+                                                    <img src={profileAvatar} alt="" className="h-8 w-8 rounded-full object-cover ring-1 ring-purple-300/70 dark:ring-purple-500/50" />
+                                                ) : (
+                                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-600 text-[10px] font-bold text-white">
+                                                        {(userName || 'HB').slice(0, 2).toUpperCase()}
+                                                    </span>
+                                                )}
+                                                <div className="font-semibold text-sm">Hello, {userName}</div>
+                                            </div>
 
 
 
