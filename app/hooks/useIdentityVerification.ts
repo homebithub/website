@@ -282,6 +282,28 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
     setHandoffError("");
   }, []);
 
+  // The phone redeems the QR code without sharing the desktop's auth session.
+  // Poll the authoritative KYC status while the QR is visible so the desktop
+  // reacts as soon as the phone has submitted its capture.
+  useEffect(() => {
+    if (!modalOpen || !handoff || status === "approved") return;
+    const interval = window.setInterval(() => void refresh(), 2_000);
+    return () => window.clearInterval(interval);
+  }, [handoff, modalOpen, refresh, status]);
+
+  useEffect(() => {
+    if (!modalOpen || !handoff) return;
+    const phoneHasMovedPastSessionStart =
+      status === "under_review" ||
+      (status === "in_progress" && internalStatus !== "session_created");
+    if (!phoneHasMovedPastSessionStart) return;
+
+    // The QR has done its job. Close the handoff UI and leave the banner in its
+    // honest waiting state; reopening a new Smile session is no longer offered.
+    clearHandoff();
+    setModalOpen(false);
+  }, [clearHandoff, handoff, internalStatus, modalOpen, status]);
+
   useEffect(() => {
     if (!handoff) return;
     const remaining = handoff.expiresAt.getTime() - Date.now();
