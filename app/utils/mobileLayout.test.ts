@@ -21,6 +21,7 @@ describe('mobile layout guardrails', () => {
     expect(css).toContain("[contenteditable='true']");
     expect(css).toContain('gmp-place-autocomplete');
     expect(css).toContain('font-size: 16px !important');
+    expect(css).toContain('textarea.hb-chat-composer {\n    font-size: 16px !important;');
     expect(root).not.toContain('user-scalable=no');
     expect(root).not.toContain('maximum-scale=1');
   });

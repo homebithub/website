@@ -302,9 +302,8 @@ body > * {
   touch-action: pan-y;
 }
 
-/* Chat copy is intentionally denser than form-entry copy. The viewport keeps
-   iOS from magnifying focused fields, while this explicit override prevents
-   the general 16px form safeguard from making long messages look oversized. */
+/* Chat copy can stay visually compact through line-height, but the text size
+   must remain at least 16px on iOS or focusing the composer zooms the page. */
 @media (max-width: 767px) {
   [role='dialog'][aria-modal='true'] {
     overscroll-behavior: contain;
@@ -319,7 +318,7 @@ body > * {
   }
 
   textarea.hb-chat-composer {
-    font-size: 14px !important;
+    font-size: 16px !important;
     line-height: 1.35rem;
     letter-spacing: normal;
   }
