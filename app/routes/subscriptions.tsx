@@ -11,8 +11,6 @@ import {
   ArrowPathIcon,
   BanknotesIcon,
   ExclamationTriangleIcon,
-  PauseIcon,
-  PlayIcon,
   XCircleIcon as CancelIcon,
   CheckIcon
 } from '@heroicons/react/24/outline';
@@ -24,12 +22,10 @@ import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { paymentsService } from '~/services/grpc/payments.service';
-import { PauseSubscriptionModal } from '~/components/subscriptions/PauseSubscriptionModal';
 import { CancelSubscriptionFlow } from '~/components/subscriptions/CancelSubscriptionFlow';
 import { ChangePlanModal } from '~/components/subscriptions/ChangePlanModal';
 import { CreditBalanceCard } from '~/components/subscriptions/CreditBalanceCard';
-import { PauseStatusCard } from '~/components/subscriptions/PauseStatusCard';
-import type { PauseStatusResponse, CreditBalanceResponse, PauseReason, CancelReason } from '~/types/payments';
+import type { CreditBalanceResponse, CancelReason } from '~/types/payments';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import {
   extractPayments,
@@ -78,13 +74,10 @@ export default function SubscriptionsPage() {
   const [receiptMessage, setReceiptMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
   // Subscription management state
-  const [showPauseModal, setShowPauseModal] = useState(false);
   const [showCancelFlow, setShowCancelFlow] = useState(false);
   const [showChangePlanModal, setShowChangePlanModal] = useState(false);
   const [selectedNewPlan, setSelectedNewPlan] = useState<SubscriptionPlan | null>(null);
-  const [pauseStatus, setPauseStatus] = useState<PauseStatusResponse | null>(null);
   const [creditBalance, setCreditBalance] = useState<CreditBalanceResponse | null>(null);
-  const [loadingPauseStatus, setLoadingPauseStatus] = useState(false);
   const [loadingCreditBalance, setLoadingCreditBalance] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   
@@ -323,21 +316,6 @@ export default function SubscriptionsPage() {
   const isTrialing = subscriptionAccess?.is_trial || subscription?.status === 'trial';
   const daysRemaining = subscriptionAccess?.days_remaining ?? 0;
 
-  // Fetch pause status
-  const fetchPauseStatus = React.useCallback(async () => {
-    if (!subscription?.id) return;
-    
-    setLoadingPauseStatus(true);
-    try {
-      const status = await paymentsService.getPauseStatus(subscription.id, '');
-      setPauseStatus(status);
-    } catch (error) {
-      console.error('[Subscriptions] Failed to fetch pause status:', error);
-    } finally {
-      setLoadingPauseStatus(false);
-    }
-  }, [subscription?.id]);
-
   // Fetch credit balance
   const fetchCreditBalance = React.useCallback(async () => {
     if (!subscription?.id) return;
@@ -380,38 +358,12 @@ export default function SubscriptionsPage() {
     }
   }, [user, fetchSubscriptionData, currentUserEmail, currentUserPhone]);
 
-  // Fetch pause status and credit balance when subscription is loaded
+  // Fetch the credit balance when subscription is loaded
   useEffect(() => {
     if (subscription?.id) {
-      fetchPauseStatus();
       fetchCreditBalance();
     }
-  }, [subscription?.id, fetchPauseStatus, fetchCreditBalance]);
-
-  // Handle pause subscription
-  const handlePauseSubscription = async (reason: PauseReason, durationDays: number) => {
-    if (!subscription?.id) return;
-    
-    await paymentsService.pauseSubscription(subscription.id, '', reason, durationDays);
-    await fetchSubscriptionData();
-    await fetchPauseStatus();
-  };
-
-  // Handle resume subscription
-  const handleResumeSubscription = async () => {
-    if (!subscription?.id) return;
-    
-    setErrorMessage('');
-    try {
-      await paymentsService.resumeSubscription(subscription.id, '');
-      setSuccessMessage('Subscription resumed successfully');
-      await fetchSubscriptionData();
-      await fetchPauseStatus();
-      setTimeout(() => setSuccessMessage(''), 5000);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to resume subscription');
-    }
-  };
+  }, [subscription?.id, fetchCreditBalance]);
 
   // Handle cancel subscription
   const handleCancelSubscription = async (reason: CancelReason, feedback?: string) => {
@@ -809,27 +761,7 @@ export default function SubscriptionsPage() {
 
                       {/* Subscription Management Actions */}
                       <div className="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-2">
-                        {subscription.status === 'active' && !pauseStatus?.is_paused && (
-                          <button
-                            onClick={() => setShowPauseModal(true)}
-                            className="w-full sm:flex-1 sm:min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-xl hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-all text-xs font-medium"
-                          >
-                            <PauseIcon className="w-4 h-4" />
-                            Pause
-                          </button>
-                        )}
-                        
-                        {pauseStatus?.is_paused && (
-                          <button
-                            onClick={handleResumeSubscription}
-                            className="w-full sm:flex-1 sm:min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-xl hover:bg-green-200 dark:hover:bg-green-900/50 transition-all text-xs font-medium"
-                          >
-                            <PlayIcon className="w-4 h-4" />
-                            Resume
-                          </button>
-                        )}
-                        
-                        {subscription.status === 'active' && (
+                        {subscription.status === 'active' && !subscription.cancel_at_period_end && (
                           <button
                             onClick={() => setShowCancelFlow(true)}
                             className="w-full sm:flex-1 sm:min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-all text-xs font-medium"
@@ -845,13 +777,10 @@ export default function SubscriptionsPage() {
                     {successMessage && <SuccessAlert message={successMessage} />}
                     {errorMessage && <ErrorAlert message={errorMessage} />}
 
-                    {/* Pause Status Card */}
-                    {pauseStatus?.is_paused && (
-                      <PauseStatusCard
-                        pauseStatus={pauseStatus}
-                        loading={loadingPauseStatus}
-                        onResume={handleResumeSubscription}
-                      />
+                    {subscription.cancel_at_period_end && (
+                      <div className="mt-4 rounded-xl border border-amber-300/50 bg-amber-50/70 dark:border-amber-400/30 dark:bg-amber-900/20 px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
+                        Your subscription is set to end on <strong>{formatDate(subscription.current_period_end)}</strong>. You’ll keep Pro access until then.
+                      </div>
                     )}
 
                     {/* Credit Balance Card */}
@@ -1470,20 +1399,6 @@ export default function SubscriptionsPage() {
         </Dialog>
       </Transition>
 
-      {/* Pause Subscription Modal */}
-      {subscription && (
-        <PauseSubscriptionModal
-          isOpen={showPauseModal}
-          onClose={() => setShowPauseModal(false)}
-          subscription={subscription as any}
-          onSuccess={(resumeDate) => {
-            setSuccessMessage(`Subscription paused successfully. Will resume on ${formatDate(resumeDate)}`);
-            setTimeout(() => setSuccessMessage(''), 5000);
-          }}
-          onPause={handlePauseSubscription}
-        />
-      )}
-
       {/* Cancel Subscription Flow */}
       {subscription && (
         <CancelSubscriptionFlow
@@ -1492,10 +1407,6 @@ export default function SubscriptionsPage() {
           subscription={subscription as any}
           availablePlans={relevantPlans as any}
           onCancel={handleCancelSubscription}
-          onPauseInstead={() => {
-            setShowCancelFlow(false);
-            setShowPauseModal(true);
-          }}
           onDowngrade={(planId) => {
             const plan = relevantPlans.find(p => p.id === planId);
             if (plan) {

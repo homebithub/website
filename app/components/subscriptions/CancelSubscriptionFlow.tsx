@@ -13,7 +13,6 @@ interface CancelSubscriptionFlowProps {
   subscription: Subscription;
   availablePlans: SubscriptionPlan[];
   onCancel: (reason: CancelReason, feedback?: string) => Promise<void>;
-  onPauseInstead: () => void;
   onDowngrade: (planId: string) => void;
 }
 
@@ -31,7 +30,6 @@ export function CancelSubscriptionFlow({
   subscription,
   availablePlans,
   onCancel,
-  onPauseInstead,
   onDowngrade,
 }: CancelSubscriptionFlowProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -130,22 +128,6 @@ export function CancelSubscriptionFlow({
                     </p>
 
                     <div className="space-y-4">
-                      {/* Pause Option */}
-                      <button
-                        onClick={() => {
-                          handleClose();
-                          onPauseInstead();
-                        }}
-                        className="w-full p-4 text-left bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500 transition-all"
-                      >
-                        <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                          Pause Your Subscription Instead
-                        </h4>
-                        <p className="text-xs text-gray-600 dark:text-gray-300">
-                          Take a break for 7-90 days. Your subscription will resume automatically.
-                        </p>
-                      </button>
-
                       {/* Downgrade Options */}
                       {cheaperPlans.length > 0 && (
                         <div className="space-y-2">
