@@ -28,6 +28,7 @@ import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionReminder";
 import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
+import { ProfileCompletionCelebrationModal } from "~/components/profile/ProfileCompletionCelebrationModal";
 import { Briefcase, Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
 import { humanizeFeatureName, listingHighlights, readFeatureGroups } from "~/utils/listingFeatures";
@@ -1419,6 +1420,15 @@ export default function HouseholdJobsHome() {
                 totalItems={profileCompletionReminder.totalItems}
                 progressValue={profileCompletionReminder.progressValue}
                 onContinue={() => navigate(profileCompletionReminder.destination)}
+              />
+            )}
+            {profileCompletionReminder.shouldShowCelebration && (
+              <ProfileCompletionCelebrationModal
+                isOpen
+                profileType="household"
+                celebration={profileCompletionReminder.celebration}
+                onSeen={profileCompletionReminder.markCelebrationSeen}
+                onClose={() => void profileCompletionReminder.markCelebrationSeen()}
               />
             )}
 

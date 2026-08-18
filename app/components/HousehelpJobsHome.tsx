@@ -32,6 +32,7 @@ import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionRemind
 import CustomSelect from "~/components/ui/CustomSelect";
 import LocationPicker, { type LocationSelection } from "~/components/ui/LocationPicker";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
+import { ProfileCompletionCelebrationModal } from "~/components/profile/ProfileCompletionCelebrationModal";
 import { ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, SlidersHorizontal, X } from "lucide-react";
 import { useAuth } from "~/contexts/useAuth";
 import { useSubscription } from "~/hooks/useSubscription";
@@ -1231,6 +1232,15 @@ export default function HousehelpJobsHome() {
                 totalItems={profileCompletionReminder.totalItems}
                 progressValue={profileCompletionReminder.progressValue}
                 onContinue={() => navigate(profileCompletionReminder.destination)}
+              />
+            )}
+            {profileCompletionReminder.shouldShowCelebration && (
+              <ProfileCompletionCelebrationModal
+                isOpen
+                profileType="househelp"
+                celebration={profileCompletionReminder.celebration}
+                onSeen={profileCompletionReminder.markCelebrationSeen}
+                onClose={() => void profileCompletionReminder.markCelebrationSeen()}
               />
             )}
 

@@ -23,6 +23,8 @@ import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
 import type { MissingRequirement } from '~/hooks/useOnboardingProgress';
 import { profileFeatureLabel } from '~/utils/profileFeatures';
 import { notifyProfileProgressChanged } from '~/utils/profileProgress';
+import { useProfileCompletionReminder } from '~/hooks/useProfileCompletionReminder';
+import { ProfileCompletionCelebrationModal } from '~/components/profile/ProfileCompletionCelebrationModal';
 
 interface HouseholdData {
   id?: string;
@@ -363,6 +365,7 @@ export default function HouseholdProfile() {
 
   const [showViewsModal, setShowViewsModal] = useState(false);
   const { progress } = useOnboardingProgress(getStoredUserId() || '', 'household');
+  const profileCompletionReminder = useProfileCompletionReminder(getStoredUserId() || '', 'household');
 
   // Each outstanding requirement opens the editor that satisfies it.
   //
@@ -656,6 +659,15 @@ export default function HouseholdProfile() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
+      {profileCompletionReminder.shouldShowCelebration && (
+        <ProfileCompletionCelebrationModal
+          isOpen
+          profileType="household"
+          celebration={profileCompletionReminder.celebration}
+          onSeen={profileCompletionReminder.markCelebrationSeen}
+          onClose={() => void profileCompletionReminder.markCelebrationSeen()}
+        />
+      )}
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
       <main className="flex-1 py-8">
     <div className="max-w-5xl mx-auto px-4">

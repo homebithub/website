@@ -30,6 +30,8 @@ import { VerifiedBadge } from '~/components/VerifiedBadge';
 import { OpenForWorkButton } from '~/components/OpenForWorkButton';
 import { CertificationDocuments } from '~/components/profile/CertificationDocuments';
 import { PHOTO_ACCEPT_ATTRIBUTE, selectPhotosForUpload, uploadDocuments } from '~/utils/documentUploads';
+import { useProfileCompletionReminder } from '~/hooks/useProfileCompletionReminder';
+import { ProfileCompletionCelebrationModal } from '~/components/profile/ProfileCompletionCelebrationModal';
 
 interface HousehelpData {
   id?: string;
@@ -126,6 +128,7 @@ export default function HousehelpProfile() {
   const navigate = useNavigate();
   const identityVerification = useIdentityVerification(getStoredUserId());
   const { progress, refetch: refetchProgress } = useOnboardingProgress(getStoredUserId() || '', 'househelp');
+  const profileCompletionReminder = useProfileCompletionReminder(getStoredUserId() || '', 'househelp');
   const [editingLocation, setEditingLocation] = useState(false);
 
   // Each outstanding requirement opens whatever satisfies it. Location has no
@@ -417,6 +420,15 @@ export default function HousehelpProfile() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
+      {profileCompletionReminder.shouldShowCelebration && (
+        <ProfileCompletionCelebrationModal
+          isOpen
+          profileType="househelp"
+          celebration={profileCompletionReminder.celebration}
+          onSeen={profileCompletionReminder.markCelebrationSeen}
+          onClose={() => void profileCompletionReminder.markCelebrationSeen()}
+        />
+      )}
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
       <main className="flex-1 py-8">
     <div className="max-w-5xl mx-auto px-4">

@@ -23,6 +23,7 @@ export interface OnboardingProgress {
   completed_items?: number;
   total_items?: number;
   completion_percentage?: number;
+  completion_celebration_seen?: boolean;
   status: 'not_started' | 'in_progress' | 'completed';
   completed_steps?: number[];
   /** Everything still required for 100%, so the UI can list it. */
