@@ -68,7 +68,7 @@ export function HiringCardModal({ open, onClose, eyebrow, title, imageUrl, initi
           {details && <div>{details}</div>}
           {message && <div className="rounded-2xl border border-purple-100 p-4 dark:border-purple-800/50"><p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-purple-500">Message / notes</p><div className="whitespace-pre-wrap text-sm text-gray-700 dark:text-purple-100">{message}</div></div>}
         </div>
-        {actions && <footer className="sticky bottom-0 flex flex-wrap justify-end gap-2 border-t border-purple-100 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-800/50 dark:bg-[#140a24]/95 sm:px-7">{actions}</footer>}
+        {actions && <footer className="flex flex-wrap justify-end gap-2 border-t border-purple-100 bg-white px-5 py-4 dark:border-purple-800/50 dark:bg-[#140a24] sm:px-7">{actions}</footer>}
       </section>
     </div>
   );
