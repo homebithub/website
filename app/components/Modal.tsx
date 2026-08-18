@@ -45,7 +45,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className="relative w-full max-w-full transform overflow-y-auto rounded-t-3xl border border-gray-100 bg-white px-4 pb-8 pt-6 text-left shadow-2xl transition-all sm:max-w-md sm:rounded-3xl sm:px-8 sm:pt-8 max-h-[92dvh] sm:max-h-[85vh]">
+              <Dialog.Panel className="hb-mobile-modal-panel relative flex min-h-0 w-full max-w-full transform flex-col overflow-y-auto rounded-t-3xl border border-gray-100 bg-white px-4 pb-8 pt-6 text-left shadow-2xl transition-all sm:max-w-md sm:rounded-3xl sm:px-8 sm:pt-8 max-h-[92dvh] sm:max-h-[85vh]">
                 <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
                   <button
                     type="button"

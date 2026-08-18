@@ -595,7 +595,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
         // Column layout so the scrolling form takes whatever the header leaves,
         // rather than subtracting a header height that goes stale the moment
         // the header's padding or type size changes.
-        className="hb-mobile-modal-panel flex min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-purple-200 bg-white shadow-2xl dark:border-purple-500/40 dark:bg-dark-card dark:shadow-[0_0_42px_rgba(168,85,247,0.35)] sm:rounded-3xl"
+        className="hb-mobile-modal-panel flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-purple-200 bg-white shadow-2xl dark:border-purple-500/40 dark:bg-dark-card dark:shadow-[0_0_42px_rgba(168,85,247,0.35)] sm:h-auto sm:rounded-3xl"
       >
         <div className="flex items-start justify-between border-b border-purple-100 px-6 py-4 dark:border-purple-500/25">
           <div>
@@ -614,7 +614,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]">
+        <form onSubmit={handleSubmit} className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-6 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]">
           {success && <SuccessAlert title="Job Posting" message={success} durationMs={3000} />}
 
           <RequiredLegend className="mb-4" />

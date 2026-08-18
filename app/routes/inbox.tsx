@@ -2668,7 +2668,7 @@ export default function InboxPage() {
       {/* Profile Modal */}
       {showProfileModal && profileModalUrl && (
         <div
-          className="absolute inset-0 z-[70] flex items-end justify-center sm:items-center"
+          className="hb-mobile-modal-viewport fixed inset-0 z-[70] flex items-end justify-center sm:items-center"
           onClick={() => {
             setShowProfileModal(false);
             setProfileModalUrl(null);
@@ -2681,7 +2681,7 @@ export default function InboxPage() {
           }}
         >
           <div
-            className="relative h-full w-full overflow-hidden rounded-t-2xl border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-slide-up sm:h-[85vh] sm:max-w-6xl sm:rounded-2xl"
+            className="relative flex h-full min-h-0 w-full flex-col overflow-hidden rounded-t-2xl border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-slide-up sm:h-[85vh] sm:max-w-6xl sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -2712,7 +2712,7 @@ export default function InboxPage() {
             <iframe
               key={profileModalReloadKey}
               src={profileModalUrl}
-              className="w-full h-full border-0 bg-white"
+              className="min-h-0 w-full flex-1 border-0 bg-white"
               onLoad={() => {
                 setProfileModalLoading(false);
                 if (profileModalTimeoutId.current) {
