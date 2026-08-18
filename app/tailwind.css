@@ -386,6 +386,17 @@ body > * {
   @apply mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-6;
 }
 
+/* Keep the expanded filter sheet as its own touch scroll container on mobile.
+   A fixed height is intentional here: a max-height alone can leave an
+   absolutely positioned panel growing with its contents on mobile Safari,
+   putting the lower filters behind the bottom navigation instead of making
+   them reachable. */
+.hb-filter-panel {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+}
+
 @layer utilities {
   /* A strip that scrolls sideways without a bar sitting under it.
      Two tab strips already asked for this class; it had never been defined
