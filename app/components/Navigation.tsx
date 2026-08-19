@@ -567,7 +567,7 @@ function NavigationContent() {
 
                 {/* Public Navigation Links - Show on non-app hosts for all users */}
                 {!isAppHost && (
-                    <div className="absolute left-[43%] hidden -translate-x-1/2 items-center gap-2 xl:left-[45%] lg:flex">
+                    <div className="absolute left-[41%] hidden -translate-x-1/2 items-center gap-2 xl:left-[43%] lg:flex">
                         {(user ? authLinks : navigation).map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
@@ -589,7 +589,7 @@ function NavigationContent() {
 
                 {/* App navigation for authenticated users on app subdomain */}
                 {isAppHost && user && (
-                    <div className="absolute left-[43%] hidden -translate-x-1/2 items-center gap-2 xl:left-[45%] lg:flex">
+                    <div className="absolute left-[41%] hidden -translate-x-1/2 items-center gap-2 xl:left-[43%] lg:flex">
                         {authLinks.map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
@@ -618,7 +618,7 @@ function NavigationContent() {
                         <button
                             type="button"
                             onClick={() => setIsNotificationsOpen(true)}
-                            className="relative hidden items-center justify-center rounded-lg border border-purple-200 bg-white p-1.5 shadow-sm transition-all hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:hover:bg-purple-900/30 lg:inline-flex"
+                            className="relative hidden items-center justify-center rounded-lg border border-purple-200 bg-white p-1.5 shadow-sm transition-all hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:hover:bg-purple-900/30 lg:ml-3 lg:inline-flex"
                             aria-label="Notifications"
                         >
                             <BellIcon className="h-5 w-5 text-purple-700 dark:text-purple-200" />

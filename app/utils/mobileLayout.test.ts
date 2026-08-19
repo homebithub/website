@@ -137,10 +137,17 @@ describe('mobile layout guardrails', () => {
   it('gives mobile discovery filters an independent scrollport above the bottom bar', () => {
     const css = source('app/tailwind.css');
     const savedFilters = source('app/components/SavedFilterBar.tsx');
-    expect(css).toContain('position: fixed !important');
-    expect(css).toContain('bottom: calc(6rem + env(safe-area-inset-bottom, 0px))');
-    expect(css).toContain('overflow-y: auto');
+    const householdHome = source('app/components/HouseholdJobsHome.tsx');
+    const househelpHome = source('app/components/HousehelpJobsHome.tsx');
+    const navigation = source('app/components/Navigation.tsx');
+    expect(css).toContain('touch-action: pan-y');
+    expect(householdHome).toContain('<SidePanel');
+    expect(househelpHome).toContain('<SidePanel');
+    expect(householdHome).toContain('title="Filters"');
+    expect(househelpHome).toContain('title="Filters"');
     expect(savedFilters).toContain('min-w-0 w-full');
+    expect(navigation).toContain('lg:ml-3 lg:inline-flex');
+    expect(navigation).toContain('left-[41%]');
   });
 
   it('shares the mobile contract action row between both actions', () => {

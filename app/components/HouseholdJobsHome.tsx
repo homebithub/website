@@ -41,6 +41,7 @@ import { resolveHousehelpProfile } from '~/utils/househelpProfiles';
 import { jobService as householdJobService } from '~/services/grpc/authServices';
 import JobPostModal from '~/components/modals/JobPostModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
+import { SidePanel } from '~/components/SidePanel';
 
 interface HousehelpSummary {
   id?: string;
@@ -1253,10 +1254,13 @@ export default function HouseholdJobsHome() {
             </div>
 
             {filtersOpen && (
-              <div
-                id="household-listing-filters"
-                className="hb-filter-panel absolute left-0 right-0 top-full h-[calc(100dvh-8rem)] max-h-[calc(100dvh-8rem)] overflow-y-auto border-b border-purple-200/60 bg-white/95 pb-4 shadow-2xl backdrop-blur-xl overscroll-contain touch-pan-y dark:border-purple-500/30 dark:bg-[#141020]/95 sm:h-auto sm:max-h-[calc(100vh-120px)]"
+              <SidePanel
+                isOpen
+                onClose={() => setFiltersOpen(false)}
+                title="Filters"
+                maxWidth="max-w-[560px]"
               >
+              <div id="household-listing-filters" className="hb-filter-panel w-full pb-4">
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Job type
@@ -1421,6 +1425,7 @@ export default function HouseholdJobsHome() {
                   notifySubject="new househelps"
                 />
               </div>
+              </SidePanel>
             )}
           </section>
           <div className="hb-content-rail flex flex-col">
