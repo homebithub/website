@@ -397,6 +397,28 @@ body > * {
   touch-action: pan-y;
 }
 
+/* On phones the filter controls are a sheet between the fixed page chrome.
+   Keeping the panel fixed (rather than letting an absolute child grow with
+   its contents) gives it a real scrollport. The bottom edge deliberately
+   stops above the mobile navigation, so the saved-search controls and the
+   final filter can never be hidden underneath it. */
+@media (max-width: 639px) {
+  .hb-filter-panel {
+    position: fixed !important;
+    top: calc(112px + env(safe-area-inset-top, 0px));
+    right: 0;
+    bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    z-index: 40;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 @layer utilities {
   /* A strip that scrolls sideways without a bar sitting under it.
      Two tab strips already asked for this class; it had never been defined

@@ -592,10 +592,12 @@ export default function HouseholdJobsHome() {
   const [householdJobToDelete, setHouseholdJobToDelete] = useState<HouseholdJobListing | null>(null);
   const [householdJobActionId, setHouseholdJobActionId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
   // Kept between visits. Narrowing a search used to be thrown away when the
   // tab closed, so anyone returning daily redid the same work every day — and
   // the people who return daily are the ones actually looking.
   const viewerProfileId = useMemo(() => getStoredUserProfileId() || "", []);
+  const savedFilterProfileId = currentHouseholdProfileId || viewerProfileId;
   const {
     filters,
     setFilters,
@@ -604,11 +606,10 @@ export default function HouseholdJobsHome() {
     applySaved,
     deleteSaved,
     restored: filtersRestored,
-  } = useSavedFilters(viewerProfileId, DEFAULT_OPEN_FOR_WORK_FILTERS);
+  } = useSavedFilters(savedFilterProfileId, DEFAULT_OPEN_FOR_WORK_FILTERS);
   const [sortBy, setSortBy] = useState("best_match");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [inviteDraft, setInviteDraft] = useState(loadSavedInviteMessage());
-  const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     const handleRefresh = () => {

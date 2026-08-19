@@ -123,7 +123,7 @@ export function SavedFilterBar<T>({
               }}
               placeholder="Name this search — e.g. Live-in, Westlands"
               aria-label="Name for this saved search"
-              className="h-9 min-w-[16rem] flex-1 rounded-lg border border-purple-200/70 bg-white px-3 text-sm text-gray-800 outline-none focus:border-purple-400 dark:border-purple-500/40 dark:bg-white/10 dark:text-gray-100"
+              className="h-9 min-w-0 w-full flex-1 rounded-lg border border-purple-200/70 bg-white px-3 text-sm text-gray-800 outline-none focus:border-purple-400 sm:min-w-[16rem] dark:border-purple-500/40 dark:bg-white/10 dark:text-gray-100"
             />
             <button
               type="button"

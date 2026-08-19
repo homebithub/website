@@ -431,7 +431,7 @@ export default function HousehelpJobsHome() {
     applySaved,
     deleteSaved,
     restored: filtersRestored,
-  } = useSavedFilters(viewerProfileId, DEFAULT_JOB_FILTERS);
+  } = useSavedFilters(househelpProfileId || viewerProfileId, DEFAULT_JOB_FILTERS);
   const [locationPickerKey, setLocationPickerKey] = useState(0);
   const [sortBy, setSortBy] = useState("best_match");
   const sentinelRef = useRef<HTMLDivElement | null>(null);

@@ -134,6 +134,15 @@ describe('mobile layout guardrails', () => {
     expect(householdHome).toContain("'filters'} applied`");
   });
 
+  it('gives mobile discovery filters an independent scrollport above the bottom bar', () => {
+    const css = source('app/tailwind.css');
+    const savedFilters = source('app/components/SavedFilterBar.tsx');
+    expect(css).toContain('position: fixed !important');
+    expect(css).toContain('bottom: calc(6rem + env(safe-area-inset-bottom, 0px))');
+    expect(css).toContain('overflow-y: auto');
+    expect(savedFilters).toContain('min-w-0 w-full');
+  });
+
   it('shares the mobile contract action row between both actions', () => {
     const contract = source('app/routes/household/employment-contract.tsx');
     expect(contract).toContain('grid w-full grid-cols-2 gap-3 sm:flex');

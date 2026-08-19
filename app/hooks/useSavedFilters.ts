@@ -26,6 +26,14 @@ export function useSavedFilters<T extends Record<string, unknown>>(
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
+    // A profile id can arrive a moment after the page mounts (the profile
+    // service resolves it asynchronously). Reset the hydration gate whenever
+    // that happens so defaults cannot overwrite the saved set in the gap.
+    restoredRef.current = false;
+    setRestored(false);
+    setSaved([]);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+
     if (!userProfileId) {
       setRestored(true);
       restoredRef.current = true;
@@ -82,7 +90,10 @@ export function useSavedFilters<T extends Record<string, unknown>>(
   const saveNamed = useCallback(
     async (name: string, notify = false) => {
       const trimmed = name.trim();
-      if (!userProfileId || !trimmed) return;
+      if (!trimmed) return;
+      if (!userProfileId) {
+        throw new Error('Your profile is still loading. Please try again in a moment.');
+      }
       const response = await fetch('/api/saved-filters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
