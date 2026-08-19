@@ -32,7 +32,7 @@ interface MobileBottomNavigationProps {
   profileLabel: string;
   unreadNotifications: number;
   canSeeAdmin: boolean;
-  adminUrl: string;
+  onOpenAdminDashboard: () => void | Promise<void>;
   onOpenNotifications: () => void;
   onLogout: () => void;
 }
@@ -59,7 +59,7 @@ export function MobileBottomNavigation({
   profileLabel,
   unreadNotifications,
   canSeeAdmin,
-  adminUrl,
+  onOpenAdminDashboard,
   onOpenNotifications,
   onLogout,
 }: MobileBottomNavigationProps) {
@@ -143,9 +143,9 @@ export function MobileBottomNavigation({
                     {unreadNotifications > 0 && <Badge count={unreadNotifications} />}
                   </button>
                   {canSeeAdmin && (
-                    <a href={adminUrl} target="_blank" rel="noopener noreferrer" className="hb-mobile-sheet-link">
+                    <button type="button" onClick={() => { setMoreOpen(false); void onOpenAdminDashboard(); }} className="hb-mobile-sheet-link w-full">
                       <Cog6ToothIcon className="h-5 w-5" /> Admin
-                    </a>
+                    </button>
                   )}
                 </>
               ) : (

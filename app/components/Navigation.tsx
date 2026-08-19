@@ -19,6 +19,7 @@ import { collapseApplicationContracts } from '~/utils/hiringIdentifiers';
 import { PWAInstallMenuButton } from '~/components/PWAInstallPrompt';
 import { MobileBottomNavigation } from '~/components/MobileBottomNavigation';
 import { PROFILE_AVATAR_UPDATED_EVENT, firstProfileAvatar, getStoredProfileAvatar } from '~/utils/profileAvatar';
+import { openAdminDashboard } from '~/utils/adminDashboard';
 
 const NAV_COUNT_STALE_MS = 2 * 60_000;
 const NAV_ADMIN_STALE_MS = 10 * 60_000;
@@ -127,6 +128,10 @@ function NavigationContent() {
     // the site's own navigation, and dashboardPath is already exactly the
     // "household or househelp" test.
     const canSeeAdminDashboard = Boolean(user && isAdmin && dashboardPath);
+    const handleAdminDashboard = React.useCallback((event?: React.MouseEvent<HTMLAnchorElement>) => {
+        event?.preventDefault();
+        void openAdminDashboard(adminDashboardUrl);
+    }, [adminDashboardUrl]);
 
     const authLinks = React.useMemo(() => {
         const role = normalizeProfileRole(profileType);
@@ -632,7 +637,7 @@ function NavigationContent() {
                             href={adminDashboardUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hidden lg:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105 transition-all duration-200"
+                            className="hidden"
                         >
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -727,7 +732,24 @@ function NavigationContent() {
                                                 </Link>
                                             )}
                                         </Menu.Item>
-                                        <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                                        {canSeeAdminDashboard && (
+                                            <>
+                                                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <a
+                                                            href={adminDashboardUrl}
+                                                            onClick={handleAdminDashboard}
+                                                            className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-purple-600 dark:text-purple-400'} flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
+                                                        >
+                                                            <CogIcon className="mr-3 h-5 w-5" />
+                                                            Admin Dashboard
+                                                        </a>
+                                                    )}
+                                                </Menu.Item>
+                                                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                                            </>
+                                        )}
                                         <Menu.Item>
                                             {({ active }) => (
                                                 <button
@@ -942,8 +964,7 @@ function NavigationContent() {
                                                     {({ active }) => (
                                                         <a
                                                             href={adminDashboardUrl}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                                            onClick={(event) => handleAdminDashboard(event)}
                                                             className={`${
                                                                 active ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'text-purple-600 dark:text-purple-400'
                                                             } flex items-center px-4 py-1 text-xs font-semibold`}
@@ -995,7 +1016,7 @@ function NavigationContent() {
             profileLabel={accountProfileLabel}
             unreadNotifications={unreadCount}
             canSeeAdmin={canSeeAdminDashboard}
-            adminUrl={adminDashboardUrl}
+            onOpenAdminDashboard={() => openAdminDashboard(adminDashboardUrl)}
             onOpenNotifications={() => setIsNotificationsOpen(true)}
             onLogout={() => void handleLogout()}
         />

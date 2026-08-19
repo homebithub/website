@@ -54,6 +54,20 @@ describe('mobile layout guardrails', () => {
     expect(launch).toContain('setLeaving(true), 1200');
   });
 
+  it('keeps admin access in the account menu and supports installed-admin handoff', () => {
+    const navigation = source('app/components/Navigation.tsx');
+    const mobileNavigation = source('app/components/MobileBottomNavigation.tsx');
+    const launcher = source('app/utils/adminDashboard.ts');
+    const manifest = source('public/manifest.webmanifest');
+    expect(navigation).toContain('onClick={handleAdminDashboard}');
+    expect(navigation).toContain('Admin Dashboard');
+    expect(navigation).toContain('my-2 border-t border-gray-200');
+    expect(mobileNavigation).toContain('onOpenAdminDashboard');
+    expect(launcher).toContain('getInstalledRelatedApps');
+    expect(launcher).toContain('window.location.assign(url)');
+    expect(manifest).toContain('preprod-hba.homebit.co.ke/manifest.webmanifest');
+  });
+
   it('lets the resolved client session override stale homepage cookies', () => {
     const home = source('app/routes/_index.tsx');
     expect(home).toContain('authLoading ? loaderAuth : Boolean(user)');
