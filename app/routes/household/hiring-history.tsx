@@ -337,7 +337,7 @@ export default function HiringHistory() {
       window.removeEventListener('hiring-attention-updated', refreshAttention);
       window.removeEventListener('storage', refreshAttention);
     };
-  }, []);
+  }, [attentionScope]);
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);

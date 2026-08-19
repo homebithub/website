@@ -311,7 +311,7 @@ export default function HousehelpHiringHistory() {
       window.removeEventListener('hiring-attention-updated', refreshAttention);
       window.removeEventListener('storage', refreshAttention);
     };
-  }, []);
+  }, [attentionScope]);
 
   const handleTabChange = (tab: TabType) => {
 
