@@ -253,6 +253,54 @@ export namespace SavedFilterRequest {
   };
 }
 
+export class HiringAttentionRequest extends jspb.Message {
+  getUserProfileId(): string;
+  setUserProfileId(value: string): HiringAttentionRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): HiringAttentionRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: HiringAttentionRequest): HiringAttentionRequest.AsObject;
+  static serializeBinaryToWriter(message: HiringAttentionRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): HiringAttentionRequest;
+  static deserializeBinaryFromReader(message: HiringAttentionRequest, reader: jspb.BinaryReader): HiringAttentionRequest;
+}
+
+export namespace HiringAttentionRequest {
+  export type AsObject = {
+    userProfileId: string;
+  };
+}
+
+export class MarkHiringRecordAttendedRequest extends jspb.Message {
+  getUserProfileId(): string;
+  setUserProfileId(value: string): MarkHiringRecordAttendedRequest;
+
+  getKind(): string;
+  setKind(value: string): MarkHiringRecordAttendedRequest;
+
+  getRecordId(): string;
+  setRecordId(value: string): MarkHiringRecordAttendedRequest;
+
+  getVersion(): string;
+  setVersion(value: string): MarkHiringRecordAttendedRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MarkHiringRecordAttendedRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: MarkHiringRecordAttendedRequest): MarkHiringRecordAttendedRequest.AsObject;
+  static serializeBinaryToWriter(message: MarkHiringRecordAttendedRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MarkHiringRecordAttendedRequest;
+  static deserializeBinaryFromReader(message: MarkHiringRecordAttendedRequest, reader: jspb.BinaryReader): MarkHiringRecordAttendedRequest;
+}
+
+export namespace MarkHiringRecordAttendedRequest {
+  export type AsObject = {
+    userProfileId: string;
+    kind: string;
+    recordId: string;
+    version: string;
+  };
+}
+
 export class MatchListingsRequest extends jspb.Message {
   getUserProfileId(): string;
   setUserProfileId(value: string): MatchListingsRequest;

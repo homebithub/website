@@ -30,6 +30,20 @@ export class ClientProfileServiceClient {
                response: shared_shared_pb.GenericResponse) => void
   ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
 
+  getHiringAttention(
+    request: client_profile_client_profile_pb.HiringAttentionRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: shared_shared_pb.GenericResponse) => void
+  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+
+  markHiringRecordAttended(
+    request: client_profile_client_profile_pb.MarkHiringRecordAttendedRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: shared_shared_pb.GenericResponse) => void
+  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+
   createJobType(
     request: client_profile_client_profile_pb.CreateJobTypeRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -147,6 +161,16 @@ export class ClientProfileServicePromiseClient {
 
   deleteSavedFilter(
     request: client_profile_client_profile_pb.SavedFilterRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<shared_shared_pb.GenericResponse>;
+
+  getHiringAttention(
+    request: client_profile_client_profile_pb.HiringAttentionRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<shared_shared_pb.GenericResponse>;
+
+  markHiringRecordAttended(
+    request: client_profile_client_profile_pb.MarkHiringRecordAttendedRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<shared_shared_pb.GenericResponse>;
 

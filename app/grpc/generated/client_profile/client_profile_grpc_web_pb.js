@@ -263,6 +263,128 @@ proto.client_profile.ClientProfileServicePromiseClient.prototype.deleteSavedFilt
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.client_profile.HiringAttentionRequest,
+ *   !proto.shared.GenericResponse>}
+ */
+const methodDescriptor_ClientProfileService_GetHiringAttention = new grpc.web.MethodDescriptor(
+  '/client_profile.ClientProfileService/GetHiringAttention',
+  grpc.web.MethodType.UNARY,
+  proto.client_profile.HiringAttentionRequest,
+  shared_shared_pb.GenericResponse,
+  /**
+   * @param {!proto.client_profile.HiringAttentionRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  shared_shared_pb.GenericResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.client_profile.HiringAttentionRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.shared.GenericResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.shared.GenericResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.client_profile.ClientProfileServiceClient.prototype.getHiringAttention =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/client_profile.ClientProfileService/GetHiringAttention',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_GetHiringAttention,
+      callback);
+};
+
+
+/**
+ * @param {!proto.client_profile.HiringAttentionRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.shared.GenericResponse>}
+ *     Promise that resolves to the response
+ */
+proto.client_profile.ClientProfileServicePromiseClient.prototype.getHiringAttention =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/client_profile.ClientProfileService/GetHiringAttention',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_GetHiringAttention);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.client_profile.MarkHiringRecordAttendedRequest,
+ *   !proto.shared.GenericResponse>}
+ */
+const methodDescriptor_ClientProfileService_MarkHiringRecordAttended = new grpc.web.MethodDescriptor(
+  '/client_profile.ClientProfileService/MarkHiringRecordAttended',
+  grpc.web.MethodType.UNARY,
+  proto.client_profile.MarkHiringRecordAttendedRequest,
+  shared_shared_pb.GenericResponse,
+  /**
+   * @param {!proto.client_profile.MarkHiringRecordAttendedRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  shared_shared_pb.GenericResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.client_profile.MarkHiringRecordAttendedRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.shared.GenericResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.shared.GenericResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.client_profile.ClientProfileServiceClient.prototype.markHiringRecordAttended =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/client_profile.ClientProfileService/MarkHiringRecordAttended',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_MarkHiringRecordAttended,
+      callback);
+};
+
+
+/**
+ * @param {!proto.client_profile.MarkHiringRecordAttendedRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.shared.GenericResponse>}
+ *     Promise that resolves to the response
+ */
+proto.client_profile.ClientProfileServicePromiseClient.prototype.markHiringRecordAttended =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/client_profile.ClientProfileService/MarkHiringRecordAttended',
+      request,
+      metadata || {},
+      methodDescriptor_ClientProfileService_MarkHiringRecordAttended);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.client_profile.CreateJobTypeRequest,
  *   !proto.shared.GenericResponse>}
  */

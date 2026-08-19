@@ -11,8 +11,19 @@ export interface HiringAttentionRecord {
   createdAt?: string | null;
 }
 
-function storageKey(scope: string) {
-  return `${STORAGE_PREFIX}:${scope}`;
+interface ServerAttentionRow {
+  kind?: string | null;
+  record_id?: string | null;
+  version?: string | null;
+}
+
+const serverLedgers = new Map<string, Record<string, string>>();
+const hydrationRequests = new Map<string, Promise<void>>();
+
+function storageKey(scope: string) { return `${STORAGE_PREFIX}:${scope}`; }
+
+function scopeProfileId(scope: string) {
+  return scope.includes(':') ? scope.slice(scope.indexOf(':') + 1) : '';
 }
 
 function recordKey(kind: HiringAttentionKind, record: HiringAttentionRecord) {
@@ -20,10 +31,10 @@ function recordKey(kind: HiringAttentionKind, record: HiringAttentionRecord) {
   return id ? `${kind}:${id}` : '';
 }
 
-function recordVersion(record: HiringAttentionRecord) {
+export function hiringRecordVersion(record: HiringAttentionRecord) {
   return [
     String(record?.status ?? '').trim().toLowerCase(),
-    String(record?.created_at ?? record?.createdAt ?? '').trim(),
+    String(record?.updated_at ?? record?.updatedAt ?? record?.created_at ?? record?.createdAt ?? '').trim(),
   ].join('|');
 }
 
@@ -32,19 +43,53 @@ function readLedger(scope: string): Record<string, string> {
   try {
     const parsed = JSON.parse(window.localStorage.getItem(storageKey(scope)) || '{}');
     return parsed && typeof parsed === 'object' ? parsed : {};
-  } catch {
-    return {};
-  }
+  } catch { return {}; }
 }
 
-export function isHiringRecordUnattended(
-  scope: string,
-  kind: HiringAttentionKind,
-  record: HiringAttentionRecord,
-) {
+function dispatchAttentionUpdate(scope: string, kind?: HiringAttentionKind, id?: string | number | null) {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('hiring-attention-updated', { detail: { scope, kind, id } }));
+  window.dispatchEvent(new Event('hiring-updated'));
+}
+
+/** Hydrate the attended ledger from the authenticated backend for this profile. */
+export async function hydrateHiringAttention(scope: string) {
+  if (typeof window === 'undefined' || !scope || serverLedgers.has(scope)) return;
+  const profileId = scopeProfileId(scope);
+  if (!profileId) return;
+  const existing = hydrationRequests.get(scope);
+  if (existing) return existing;
+
+  const request = (async () => {
+    try {
+      const { clientProfileService } = await import('~/services/grpc/authServices');
+      const response = await clientProfileService.getHiringAttention(profileId);
+      const rows = Array.isArray(response?.data) ? response.data as ServerAttentionRow[] : [];
+      const ledger: Record<string, string> = {};
+      for (const row of rows) {
+        const kind = String(row?.kind ?? '').trim() as HiringAttentionKind;
+        const id = String(row?.record_id ?? '').trim();
+        if (kind && id) ledger[`${kind}:${id}`] = String(row?.version ?? '');
+      }
+      serverLedgers.set(scope, ledger);
+      dispatchAttentionUpdate(scope);
+    } catch {
+      // Keep the local cache available when the profile service is temporarily offline.
+    } finally {
+      hydrationRequests.delete(scope);
+    }
+  })();
+  hydrationRequests.set(scope, request);
+  return request;
+}
+
+export function isHiringRecordUnattended(scope: string, kind: HiringAttentionKind, record: HiringAttentionRecord) {
   const key = recordKey(kind, record);
   if (!scope || !key) return false;
-  return readLedger(scope)[key] !== recordVersion(record);
+  const version = hiringRecordVersion(record);
+  const ledger = serverLedgers.get(scope);
+  if (ledger) return ledger[key] !== version;
+  return readLedger(scope)[key] !== version;
 }
 
 export function countUnattendedHiringRecords(
@@ -53,30 +98,32 @@ export function countUnattendedHiringRecords(
 ) {
   const seen = new Set<string>();
   let total = 0;
-  for (const group of groups) {
-    for (const record of group.records) {
-      const key = recordKey(group.kind, record);
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      if (isHiringRecordUnattended(scope, group.kind, record)) total += 1;
-    }
+  for (const group of groups) for (const record of group.records) {
+    const key = recordKey(group.kind, record);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    if (isHiringRecordUnattended(scope, group.kind, record)) total += 1;
   }
   return total;
 }
 
-export function markHiringRecordAttended(
-  scope: string,
-  kind: HiringAttentionKind,
-  record: HiringAttentionRecord,
-) {
+export function markHiringRecordAttended(scope: string, kind: HiringAttentionKind, record: HiringAttentionRecord) {
   if (typeof window === 'undefined') return false;
   const key = recordKey(kind, record);
   if (!scope || !key || !isHiringRecordUnattended(scope, kind, record)) return false;
-  const ledger = readLedger(scope);
-  ledger[key] = recordVersion(record);
+  const version = hiringRecordVersion(record);
+  const ledger = serverLedgers.get(scope) ?? readLedger(scope);
+  ledger[key] = version;
+  serverLedgers.set(scope, ledger);
   window.localStorage.setItem(storageKey(scope), JSON.stringify(ledger));
-  window.dispatchEvent(new CustomEvent('hiring-attention-updated', { detail: { scope, kind, id: record.id } }));
-  window.dispatchEvent(new Event('hiring-updated'));
+  dispatchAttentionUpdate(scope, kind, record.id);
+
+  const profileId = scopeProfileId(scope);
+  if (profileId) void import('~/services/grpc/authServices')
+    .then(({ clientProfileService }) => clientProfileService.markHiringRecordAttended({
+      userProfileId: profileId, kind, recordId: String(record.id), version,
+    }))
+    .catch(() => undefined);
   return true;
 }
 

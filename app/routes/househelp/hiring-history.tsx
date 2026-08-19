@@ -13,7 +13,7 @@ import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensat
 import { buildApplicationContractMap, buildIdentifierMap, collapseApplicationContracts, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
 import { useSSEContextSafe } from '~/contexts/SSEContext';
-import { hiringAttentionScope, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
+import { hiringAttentionScope, hydrateHiringAttention, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
 import { HiringCardModal, isHiringCardAction } from '~/components/hiring/HiringCardModal';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { 
@@ -303,6 +303,7 @@ export default function HousehelpHiringHistory() {
   const attentionScope = hiringAttentionScope(getStoredUserProfileId(), 'househelp');
 
   useEffect(() => {
+    void hydrateHiringAttention(attentionScope);
     const refreshAttention = () => setAttentionRevision((value) => value + 1);
     window.addEventListener('hiring-attention-updated', refreshAttention);
     window.addEventListener('storage', refreshAttention);
@@ -940,21 +941,21 @@ export default function HousehelpHiringHistory() {
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
+                      <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap lg:w-auto lg:flex-col lg:items-end lg:self-end">
                         {request.listing && (
-                          <button type="button" onClick={() => openJobListing(request.listing_id, request.listing)} className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-1 text-xs font-medium text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30">
+                          <button type="button" onClick={() => openJobListing(request.listing_id, request.listing)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-purple-300 px-4 py-2 text-xs font-medium text-purple-700 hover:bg-purple-50 sm:w-auto sm:py-1 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30">
                             <Briefcase className="h-4 w-4" /> View job listing
                           </button>
                         )}
-                        <button onClick={() => navigate(buildHouseholdProfileLink({ household: request.household, fallbackProfileId: request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: request.household?.id || request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => navigate(buildHouseholdProfileLink({ household: request.household, fallbackProfileId: request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: request.household?.id || request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all sm:w-auto sm:py-1">
                           View Profile
                         </button>
                         {request.status === 'pending' && (
                           <>
-                            <button onClick={() => openAcceptConfirm(request.id)} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50">
+                            <button onClick={() => openAcceptConfirm(request.id)} disabled={actionLoading === request.id} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 sm:w-auto sm:py-1">
                               <CheckCircle className="w-4 h-4" /> Accept
                             </button>
-                            <button onClick={() => { setSelectedRequest(request.id); setShowDeclineModal(true); }} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
+                            <button onClick={() => { setSelectedRequest(request.id); setShowDeclineModal(true); }} disabled={actionLoading === request.id} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 sm:w-auto sm:py-1">
                               <XCircle className="w-4 h-4" /> Decline
                             </button>
                           </>
@@ -970,7 +971,7 @@ export default function HousehelpHiringHistory() {
                                 });
                                 navigate(`/household/employment-contract?${params.toString()}`);
                               }}
-                              className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
+                              className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all sm:w-auto sm:py-1"
                             >
                               <FileText className="w-4 h-4" /> View Contract
                             </button>
@@ -991,7 +992,7 @@ export default function HousehelpHiringHistory() {
                                 });
                                 navigate(`/household/employment-contract?${params.toString()}`);
                               }}
-                              className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
+                              className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all sm:w-auto sm:py-1"
                             >
                               <FileText className="w-4 h-4" /> View Contract
                             </button>
@@ -1056,9 +1057,9 @@ export default function HousehelpHiringHistory() {
                             <p className="text-xs text-gray-400 dark:text-gray-500">Created {formatDate(ec.created_at)}</p>
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
+                        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap lg:w-auto lg:flex-col lg:items-end lg:self-end">
                           {ec.listing_id && (
-                            <button type="button" onClick={() => openJobListing(ec.listing_id)} className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-1 text-xs font-medium text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30">
+                            <button type="button" onClick={() => openJobListing(ec.listing_id)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-purple-300 px-4 py-2 text-xs font-medium text-purple-700 hover:bg-purple-50 sm:w-auto sm:py-1 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30">
                               <Briefcase className="h-4 w-4" /> View job listing
                             </button>
                           )}
@@ -1071,7 +1072,7 @@ export default function HousehelpHiringHistory() {
                               });
                               navigate(`/household/employment-contract?${params.toString()}`);
                             }}
-                            className={`inline-flex items-center gap-2 px-4 py-1 text-xs font-medium rounded-xl transition-all ${
+                            className={`inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium rounded-xl transition-all sm:w-auto sm:py-1 ${
                               ec.status === 'pending_househelp'
                                 ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
                                 : 'text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
@@ -1137,9 +1138,9 @@ export default function HousehelpHiringHistory() {
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
+                      <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap lg:w-auto lg:flex-col lg:items-end lg:self-end">
                         {contract.listing_id && (
-                          <button type="button" onClick={() => openJobListing(contract.listing_id)} className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-1 text-xs font-medium text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30">
+                          <button type="button" onClick={() => openJobListing(contract.listing_id)} className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-purple-300 px-4 py-2 text-xs font-medium text-purple-700 hover:bg-purple-50 sm:w-auto sm:py-1 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30">
                             <Briefcase className="h-4 w-4" /> View job listing
                           </button>
                         )}
@@ -1149,12 +1150,12 @@ export default function HousehelpHiringHistory() {
                               const profileLink = buildHouseholdProfileLink({ household: contract.household, fallbackProfileId: contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' });
                               navigate(`${profileLink}&review=1`, { state: { profileId: contract.household?.id || contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } });
                             }}
-                            className="inline-flex items-center gap-2 rounded-xl border border-amber-300 px-4 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:border-amber-500/40 dark:text-amber-200 dark:hover:bg-amber-500/10"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300 px-4 py-2 text-xs font-medium text-amber-700 hover:bg-amber-50 sm:w-auto sm:py-1 dark:border-amber-500/40 dark:text-amber-200 dark:hover:bg-amber-500/10"
                           >
                             <Star className="h-4 w-4" /> Leave a review
                           </button>
                         )}
-                        <button onClick={() => navigate(buildHouseholdProfileLink({ household: contract.household, fallbackProfileId: contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: contract.household?.id || contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => navigate(buildHouseholdProfileLink({ household: contract.household, fallbackProfileId: contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: contract.household?.id || contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all sm:w-auto sm:py-1">
                           View Profile
                         </button>
                       </div>
@@ -1231,8 +1232,8 @@ export default function HousehelpHiringHistory() {
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
-                        <button onClick={() => { setSelectedInterest(interest); setShowInterestModal(true); }} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
+                      <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap lg:w-auto lg:flex-col lg:items-end">
+                        <button onClick={() => { setSelectedInterest(interest); setShowInterestModal(true); }} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all sm:w-auto sm:py-1">
                           <Briefcase className="h-4 w-4" /> View job listing
                         </button>
                         {/* Only a household-initiated offer waits for the
@@ -1244,21 +1245,21 @@ export default function HousehelpHiringHistory() {
                             <button
                               onClick={() => answerInterest(interest, 'accepted')}
                               disabled={actionLoading === interest.id}
-                              className="inline-flex items-center gap-2 px-4 py-1 text-xs font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                              className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 sm:w-auto sm:py-1"
                             >
                               <CheckCircle className="w-4 h-4" /> Accept
                             </button>
                             <button
                               onClick={() => setAnsweringInterest(interest)}
                               disabled={actionLoading === interest.id}
-                              className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                              className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 sm:w-auto sm:py-1"
                             >
                               <XCircle className="w-4 h-4" /> Decline
                             </button>
                           </>
                         )}
                         {interest.status === 'pending' && (
-                          <button onClick={() => openWithdrawConfirm(interest.id)} disabled={actionLoading === interest.id} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
+                          <button onClick={() => openWithdrawConfirm(interest.id)} disabled={actionLoading === interest.id} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 sm:w-auto sm:py-1">
                             <XCircle className="w-4 h-4" /> Withdraw
                           </button>
                         )}
@@ -1276,12 +1277,12 @@ export default function HousehelpHiringHistory() {
                         />
                       </div>
                     )}
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-4 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
                       <button
                         type="button"
                         onClick={() => setHistoryFor((current) => current === interest.id ? null : interest.id)}
                         aria-expanded={historyFor === interest.id}
-                        className="inline-flex items-center gap-2 rounded-xl border border-purple-300 px-4 py-1 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-purple-300 px-4 py-2 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-50 sm:w-auto sm:py-1 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30"
                       >
                         <Clock className="h-4 w-4" aria-hidden />
                         {historyFor === interest.id ? 'Hide history' : 'View application history'}

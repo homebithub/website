@@ -1276,6 +1276,28 @@ export const hireNegotiationService = {
 };
 
 export const clientProfileService = {
+  async getHiringAttention(userProfileId = getStoredUserProfileId()): Promise<any> {
+    const req = new client_profile_pb.HiringAttentionRequest();
+    req.setUserProfileId(String(userProfileId || ''));
+    const res = await grpcCall((cb) => clientProfileClient.getHiringAttention(req, getMetadata(), cb));
+    return dataEnvelope(res, 'records');
+  },
+
+  async markHiringRecordAttended(payload: {
+    userProfileId?: string;
+    kind: string;
+    recordId: string | number;
+    version: string;
+  }): Promise<any> {
+    const req = new client_profile_pb.MarkHiringRecordAttendedRequest();
+    req.setUserProfileId(String(payload.userProfileId || getStoredUserProfileId() || ''));
+    req.setKind(String(payload.kind || ''));
+    req.setRecordId(String(payload.recordId ?? ''));
+    req.setVersion(String(payload.version || ''));
+    const res = await grpcCall((cb) => clientProfileClient.markHiringRecordAttended(req, getMetadata(), cb));
+    return dataEnvelope(res);
+  },
+
   async listJobTypes(activeOnly = true): Promise<any> {
     const req = new client_profile_pb.ListJobTypesRequest();
     req.setActiveOnly(activeOnly);

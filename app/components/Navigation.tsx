@@ -11,10 +11,10 @@ import { useSSESubscriptionSafe } from "~/hooks/useSSESubscription";
 import { useWebSocketContextSafe } from "~/contexts/WebSocketContext";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import notificationsService from '~/services/grpc/notifications.service';
-import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
+import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { cachedRequest } from '~/utils/requestCache';
-import { countUnattendedHiringRecords, hiringAttentionScope } from '~/utils/hiringAttention';
+import { countUnattendedHiringRecords, hiringAttentionScope, hydrateHiringAttention } from '~/utils/hiringAttention';
 import { collapseApplicationContracts } from '~/utils/hiringIdentifiers';
 import { PWAInstallMenuButton } from '~/components/PWAInstallPrompt';
 import { MobileBottomNavigation } from '~/components/MobileBottomNavigation';
@@ -401,6 +401,10 @@ function NavigationContent() {
     useEffect(() => {
         if (isInSetupMode || !allowAuxiliaryAccountCalls) return;
 
+        const storedProfileId = getStoredUserProfileId();
+        const attentionRole = getStoredCanonicalProfileType();
+        if (storedProfileId && attentionRole) void hydrateHiringAttention(hiringAttentionScope(storedProfileId, attentionRole));
+
         const handleHiringUpdate = () => {
             if (getAccessTokenFromCookies()) refreshHiring();
         };
@@ -430,7 +434,7 @@ function NavigationContent() {
             window.removeEventListener('inbox-updated', handleInboxUpdate);
             window.removeEventListener('shortlist-updated', handleShortlistUpdate);
         };
-    }, [isInSetupMode, allowAuxiliaryAccountCalls, refreshHiring, refreshInbox, refreshSaved]);
+    }, [isInSetupMode, allowAuxiliaryAccountCalls, profileType, refreshHiring, refreshInbox, refreshSaved]);
 
     const badgesAreLive = Boolean(user) && !isInSetupMode && allowAuxiliaryAccountCalls;
 
