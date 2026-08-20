@@ -81,3 +81,27 @@ export function formatOnboardingBudgetRange(
 
   return 'Negotiable';
 }
+
+/**
+ * Formats a salary range together with its pay period without rendering a
+ * placeholder for a missing end of the range. A listing often stores a single
+ * expected amount in `salary_min` and leaves `salary_max` empty; interpolating
+ * both fields directly turns that valid value into output such as
+ * `KES 2,000 – — monthly`.
+ */
+export function formatOnboardingBudgetRangeWithFrequency(
+  min?: string | number | null,
+  max?: string | number | null,
+  frequency?: SalaryFrequency,
+  emptyLabel = 'Not specified',
+): string {
+  const normalizedMin = normalizeOnboardingAmountFromStorage(min, frequency);
+  const normalizedMax = normalizeOnboardingAmountFromStorage(max, frequency);
+  if (!normalizedMin && !normalizedMax) return emptyLabel;
+
+  const amount = normalizedMin && normalizedMax && normalizedMin !== normalizedMax
+    ? `KES ${normalizedMin.toLocaleString()} - ${normalizedMax.toLocaleString()}`
+    : `KES ${(normalizedMin || normalizedMax).toLocaleString()}`;
+  const frequencyLabel = typeof frequency === 'string' ? frequency.trim() : '';
+  return `${amount}${frequencyLabel ? ` / ${frequencyLabel}` : ''}`;
+}

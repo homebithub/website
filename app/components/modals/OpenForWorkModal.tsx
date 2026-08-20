@@ -4,7 +4,10 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import { CalendarDays, Check, Pencil, Trash2 } from "lucide-react";
 import { openForWorkService, profileService } from "~/services/grpc/authServices";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
-import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
+import {
+  formatOnboardingBudgetRangeWithFrequency,
+  normalizeOnboardingAmountFromStorage,
+} from "~/utils/onboardingCompensation";
 import { FormError } from '~/components/FormError';
 import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
@@ -226,7 +229,13 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
               </div>
               <div className="rounded-xl border border-gray-200 p-3 dark:border-white/10">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Salary expectation</p>
-                <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{listing?.salary_min || listing?.salary_max ? `KES ${listing?.salary_min || "—"} – ${listing?.salary_max || "—"} ${listing?.salary_frequency || ""}` : "Not specified"}</p>
+                <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                  {formatOnboardingBudgetRangeWithFrequency(
+                    listing?.salary_min,
+                    listing?.salary_max,
+                    listing?.salary_frequency,
+                  )}
+                </p>
               </div>
             </div>
 
