@@ -22,6 +22,7 @@ import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/au
 import { resolveHouseholdProfile } from '~/utils/householdProfiles';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 import { InboxPageSkeleton, ShimmerLine, ShimmerSection } from "~/components/ShimmerLoader";
+import { CHAT_MESSAGE_LIMIT } from "~/config/chat";
 
 type Conversation = {
   id: string;
@@ -1329,7 +1330,7 @@ export default function InboxPage() {
       } catch {}
     }
     if (!emoji) return;
-    setInput((prev) => prev + emoji);
+    setInput((prev) => (prev + emoji).slice(0, CHAT_MESSAGE_LIMIT));
     setShowEmojiPicker(false);
   }, []);
 
@@ -1343,6 +1344,10 @@ export default function InboxPage() {
     }
     const body = input.trim();
     if (!body) return;
+    if (body.length > CHAT_MESSAGE_LIMIT) {
+      pushToast(`Messages are limited to ${CHAT_MESSAGE_LIMIT.toLocaleString()} characters`, 'error');
+      return;
+    }
     try {
       const tempId = `temp-${Date.now()}`;
       const optimistic: Message = {
@@ -2346,8 +2351,9 @@ export default function InboxPage() {
             <textarea
               ref={textareaRef}
               value={input}
+              maxLength={CHAT_MESSAGE_LIMIT}
               onChange={(e) => {
-                setInput(e.target.value);
+                setInput(e.target.value.slice(0, CHAT_MESSAGE_LIMIT));
                 sendTypingUpdate(e.target.value.trim().length > 0);
                 // Auto-resize textarea
                 e.target.style.height = 'auto';
@@ -2584,6 +2590,9 @@ export default function InboxPage() {
               }}
               title="Profile"
             />
+            <span className={`pb-2 text-[10px] tabular-nums ${CHAT_MESSAGE_LIMIT - input.length < 100 ? 'text-amber-500' : 'text-gray-400'}`}>
+              {(CHAT_MESSAGE_LIMIT - input.length).toLocaleString()}
+            </span>
           </div>
         </div>
       )}

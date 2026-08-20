@@ -1,9 +1,11 @@
 name: Build, Push to GHCR, and Deploy to LKE
 
 on:
-  push:
-    branches:
-      - feat/preprod
+  # Preproduction is owned by the staging branch. This legacy feature branch
+  # once deployed to the same Kubernetes workload and could replace months of
+  # staging changes with its older tree. Keep this workflow inert here; the
+  # staging copy is the sole preproduction publisher.
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -72,7 +74,6 @@ jobs:
           kubectl config set-credentials github-deployer --token=$TOKEN
           kubectl config set-context --current --user=github-deployer
           kubectl apply -f ./k8s/preprod-deployment.yaml
-
 
 
 
