@@ -201,10 +201,13 @@ describe('mobile layout guardrails', () => {
     expect(button).toContain('max-w-full flex flex-col gap-2');
   });
 
-  it('keeps the jobs feed focused on unapplied opportunities with one save action', () => {
+  it('keeps interacted jobs visible with statuses and one save action', () => {
     const home = source('app/components/HousehelpJobsHome.tsx');
     const navigation = source('app/components/Navigation.tsx');
-    expect(home).toContain('!appliedJobIds.has(jobKey(job)) && !job.has_applied');
+    expect(home).toContain('matchesInteractionFilters(filters');
+    expect(home).toContain('You applied for this job');
+    expect(home).toContain('You two are in contact');
+    expect(home).toContain('!hasApplied && (');
     expect(home).not.toContain('<Heart');
     expect(navigation).toContain("item.name === 'Saved' && renderBadge(savedCount)");
   });

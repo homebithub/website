@@ -45,7 +45,10 @@ import { humanizeFeatureName, listingHighlights, remainingFeatureGroups } from "
 import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
 import { ListingCardFacts } from "~/components/listing/ListingCardFacts";
+import { InteractionFilterControls } from "~/components/listing/InteractionFilterControls";
 import { SidePanel } from "~/components/SidePanel";
+import { notificationsService } from "~/services/grpc/notifications.service";
+import { matchesInteractionFilters } from "~/utils/interactionFilters";
 
 interface JobListing {
   id: string;
@@ -127,6 +130,9 @@ const DEFAULT_JOB_FILTERS = {
   childrenAgeRangeId: "",
   childrenCapacityId: "",
   minRating: "",
+  hideSaved: false,
+  hideContacted: false,
+  hideApplied: false,
 };
 
 
@@ -417,6 +423,7 @@ export default function HousehelpJobsHome() {
   }, [householdProfiles]);
   const [shortlistedJobIds, setShortlistedJobIds] = useState<Set<string>>(() => new Set());
   const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(() => new Set());
+  const [contactedJobIds, setContactedJobIds] = useState<Set<string>>(() => new Set());
   const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -505,17 +512,19 @@ export default function HousehelpJobsHome() {
   // Open-only stays local: it reads status, which the response does carry, and
   // the toggle is meant to feel instant.
   const filteredJobs = useMemo(
-    // Discovery only contains actionable roles. Applied jobs remain available
-    // under Hiring, where their status and history belong, instead of making
-    // this feed grow into a mixture of opportunities and past actions.
     () => jobs
-      .filter((job) => isJobOpen(job) && !appliedJobIds.has(jobKey(job)) && !job.has_applied)
+      .filter((job) => isJobOpen(job))
+      .filter((job) => matchesInteractionFilters(filters, {
+        saved: shortlistedJobIds.has(jobKey(job)),
+        contacted: contactedJobIds.has(jobKey(job)),
+        applied: appliedJobIds.has(jobKey(job)) || Boolean(job.has_applied),
+      }))
       .filter((job) => {
         const minimum = Number(filters.minRating || 0);
         const rating = Number(job.owner_rating ?? 0);
         return !minimum || rating >= minimum;
       }),
-    [appliedJobIds, jobs, filters.minRating],
+    [appliedJobIds, contactedJobIds, shortlistedJobIds, jobs, filters],
   );
   const sortedJobs = useMemo(() => {
     if (!sortBy) return filteredJobs;
@@ -559,7 +568,10 @@ export default function HousehelpJobsHome() {
   }, []);
 
   const searchKey = useMemo(
-    () => JSON.stringify({ filters, sortBy, salaryRangeId: filters.salaryRangeId }),
+    () => {
+      const { hideSaved: _hideSaved, hideContacted: _hideContacted, hideApplied: _hideApplied, ...serverFilters } = filters;
+      return JSON.stringify({ filters: serverFilters, sortBy, salaryRangeId: filters.salaryRangeId });
+    },
     [filters, sortBy]
   );
 
@@ -653,6 +665,36 @@ export default function HousehelpJobsHome() {
     void fetchAppliedListings();
     return () => { cancelled = true; };
   }, [househelpProfileId]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    let cancelled = false;
+
+    const fetchContactedJobs = async () => {
+      try {
+        const raw = await notificationsService.listConversations(currentUserId, 0, 200);
+        if (cancelled) return;
+        const conversations = Array.isArray(raw?.conversations)
+          ? raw.conversations
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : Array.isArray(raw)
+              ? raw
+              : [];
+        const ids = conversations
+          .map((conversation: Record<string, any>) => conversation.listing_id ?? conversation.listingId)
+          .filter((id: unknown) => id !== undefined && id !== null && String(id) !== '')
+          .map(String);
+        setContactedJobIds(new Set(ids));
+      } catch {
+        // Contact status is a card decoration and optional filter; chat itself
+        // remains available if this lookup is temporarily unavailable.
+      }
+    };
+
+    void fetchContactedJobs();
+    return () => { cancelled = true; };
+  }, [currentUserId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -940,6 +982,7 @@ export default function HousehelpJobsHome() {
       if (job.id) payload.listing_id = job.id;
 
       const conversationId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      setContactedJobIds((previous) => new Set(previous).add(jobKey(job)));
       navigate(getInboxRoute(conversationId));
     } catch (err) {
       setError("Could not open chat. Please try again.");
@@ -1197,6 +1240,12 @@ export default function HousehelpJobsHome() {
                       placeholder="Any rating"
                     />
                   </label>
+                  <InteractionFilterControls
+                    hideSaved={Boolean(filters.hideSaved)}
+                    hideContacted={Boolean(filters.hideContacted)}
+                    hideApplied={Boolean(filters.hideApplied)}
+                    onChange={(name, checked) => setFilters((prev) => ({ ...prev, [name]: checked }))}
+                  />
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -1285,6 +1334,7 @@ export default function HousehelpJobsHome() {
                   const householdName = renderHouseholdName(job);
                   const shortlisted = shortlistedJobIds.has(jobKey(job));
                   const hasApplied = appliedJobIds.has(jobKey(job)) || Boolean(job.has_applied);
+                  const contacted = contactedJobIds.has(jobKey(job));
                   const householdKey = householdProfileKey(job);
                     const householdProfile = householdKey ? householdProfiles[householdKey] : null;
                   const responseBadge = deriveHouseholdResponsivenessBadge(householdProfile);
@@ -1311,6 +1361,16 @@ export default function HousehelpJobsHome() {
                             {typeof job.fit_score === "number" && job.fit_score >= 0 && (
                               <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${matchScoreClasses(job.fit_score)}`}>
                                 Match {job.fit_score}%
+                              </span>
+                            )}
+                            {hasApplied && (
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                                You applied for this job
+                              </span>
+                            )}
+                            {contacted && (
+                              <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+                                You two are in contact
                               </span>
                             )}
                           </div>
@@ -1460,16 +1520,18 @@ export default function HousehelpJobsHome() {
                                 ? "Saved"
                                 : "Save"}
                           </button>
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleOpenApplyModal(job);
-                            }}
-                            disabled={!isJobOpen(job) || hasApplied}
-                            className={`rounded-xl px-4 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed ${hasApplied ? "bg-emerald-600" : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"}`}
-                          >
-                            {hasApplied ? "Applied" : "Apply"}
-                          </button>
+                          {!hasApplied && (
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleOpenApplyModal(job);
+                              }}
+                              disabled={!isJobOpen(job)}
+                              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1.5 text-xs font-semibold text-white hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              Apply
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1593,6 +1655,7 @@ export default function HousehelpJobsHome() {
       {selectedJobDetail && (() => {
         const shortlisted = shortlistedJobIds.has(jobKey(selectedJobDetail));
         const hasApplied = appliedJobIds.has(jobKey(selectedJobDetail)) || Boolean(selectedJobDetail.has_applied);
+        const contacted = contactedJobIds.has(jobKey(selectedJobDetail));
         const scheduleSlots = [
           hasScheduleSlot(selectedJobDetail.work_schedule, "morning") && "Morning",
           hasScheduleSlot(selectedJobDetail.work_schedule, "afternoon") && "Afternoon",
@@ -1615,6 +1678,20 @@ export default function HousehelpJobsHome() {
                   <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Job opening</p>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selectedJobDetail.title || "Household Job"}</h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {formatListingPlace(selectedJobDetail)}</p>
+                  {(hasApplied || contacted) && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {hasApplied && (
+                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                          You applied for this job
+                        </span>
+                      )}
+                      {contacted && (
+                        <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+                          You two are in contact
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {responseBadge && (
                     <div className="mt-3 space-y-1">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
@@ -1764,16 +1841,18 @@ export default function HousehelpJobsHome() {
                       ? "Saved"
                       : "Save"}
                 </button>
-                <button
-                  onClick={() => {
-                    handleOpenApplyModal(selectedJobDetail);
-                    handleCloseJobDetail();
-                  }}
-                  disabled={!isJobOpen(selectedJobDetail) || hasApplied}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {hasApplied ? "Applied" : "Apply"}
-                </button>
+                {!hasApplied && (
+                  <button
+                    onClick={() => {
+                      handleOpenApplyModal(selectedJobDetail);
+                      handleCloseJobDetail();
+                    }}
+                    disabled={!isJobOpen(selectedJobDetail)}
+                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Apply
+                  </button>
+                )}
               </div>
             </div>
           </div>

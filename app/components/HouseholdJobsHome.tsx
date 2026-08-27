@@ -38,6 +38,8 @@ import { SubscriptionRequiredModal } from "~/components/subscriptions/Subscripti
 import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
 import { HousehelpCardDetails } from "~/components/listing/HousehelpCardDetails";
+import { InteractionFilterControls } from "~/components/listing/InteractionFilterControls";
+import { matchesInteractionFilters } from "~/utils/interactionFilters";
 import { resolveHousehelpProfile } from '~/utils/househelpProfiles';
 import { jobService as householdJobService } from '~/services/grpc/authServices';
 import JobPostModal from '~/components/modals/JobPostModal';
@@ -207,6 +209,8 @@ const DEFAULT_OPEN_FOR_WORK_FILTERS = {
   startTimingId: "",
   shiftWindowId: "",
   minRating: "",
+  hideSaved: false,
+  hideContacted: false,
 };
 
 
@@ -683,15 +687,15 @@ export default function HouseholdJobsHome() {
   const filteredListings = useMemo(
     () => listings.filter((listing) => {
       if (!isServiceProvider && !isOpenForWorkListingActive(listing)) return false;
-      // Saving is the household's explicit signal to move this result out of
-      // discovery and into Saved. Messaging, inviting, viewing the profile, or
-      // opening the card must not silently change the discovery results.
-      if (!isServiceProvider && shortlistedListingIds.has(String(listing.id))) return false;
+      if (!isServiceProvider && !matchesInteractionFilters(filters, {
+        saved: shortlistedListingIds.has(String(listing.id)),
+        contacted: contactedListingIds.has(String(listing.id)),
+      })) return false;
       const minimum = Number(filters.minRating || 0);
       const rating = Number(listing.househelp?.rating ?? 0);
       return !minimum || rating >= minimum;
     }),
-    [listings, isServiceProvider, filters.minRating, shortlistedListingIds],
+    [listings, isServiceProvider, filters, shortlistedListingIds, contactedListingIds],
   );
 
   useEffect(() => {
@@ -835,7 +839,10 @@ export default function HouseholdJobsHome() {
   }, [filteredListings, sortBy]);
 
   const searchKey = useMemo(
-    () => JSON.stringify({ filters, sortBy, salaryRangeId: filters.salaryRangeId, isServiceProvider }),
+    () => {
+      const { hideSaved: _hideSaved, hideContacted: _hideContacted, ...serverFilters } = filters;
+      return JSON.stringify({ filters: serverFilters, sortBy, salaryRangeId: filters.salaryRangeId, isServiceProvider });
+    },
     [filters, sortBy, isServiceProvider]
   );
 
@@ -1386,6 +1393,14 @@ export default function HouseholdJobsHome() {
                       placeholder="Any rating"
                     />
                   </label>
+                  {!isServiceProvider && (
+                    <InteractionFilterControls
+                      hideSaved={Boolean(filters.hideSaved)}
+                      hideContacted={Boolean(filters.hideContacted)}
+                      contactedLabel="Messaged or invited"
+                      onChange={(name, checked) => setFilters((prev) => ({ ...prev, [name]: checked }))}
+                    />
+                  )}
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -1487,6 +1502,7 @@ export default function HouseholdJobsHome() {
                   const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
                   const experienceYears = toFiniteNumber(househelp.years_of_experience);
                   const shortlisted = shortlistedListingIds.has(listing.id);
+                  const contacted = contactedListingIds.has(String(listing.id));
                   const responseBadge = deriveHousehelpResponsivenessBadge(listing.househelp);
                   const featureGroups = listingFeatureGroups(listing);
                   const salaryLabel = formatSalary(listing.salary_min ?? househelp.salary_expectation, listing.salary_max, listing.salary_frequency || househelp.salary_frequency);
@@ -1538,6 +1554,11 @@ export default function HouseholdJobsHome() {
                                 {typeof listing.fit_score === "number" && listing.fit_score >= 0 && (
                                   <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${matchScoreClasses(listing.fit_score)}`}>
                                     Match {listing.fit_score}%
+                                  </span>
+                                )}
+                                {contacted && (
+                                  <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+                                    You two are in contact
                                   </span>
                                 )}
                               </div>
@@ -1695,15 +1716,17 @@ export default function HouseholdJobsHome() {
                           )}
                           {!isServiceProvider && (
                             <>
-                              <button
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleOpenInviteModal(listing);
-                                }}
-                                className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-green-200/60 dark:border-green-500/30 text-green-700 dark:text-green-200 hover:bg-green-50 dark:hover:bg-green-500/10"
-                              >
-                                Invite
-                              </button>
+                              {!contacted && (
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleOpenInviteModal(listing);
+                                  }}
+                                  className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-green-200/60 dark:border-green-500/30 text-green-700 dark:text-green-200 hover:bg-green-50 dark:hover:bg-green-500/10"
+                                >
+                                  Invite
+                                </button>
+                              )}
                               <button
                                 onClick={(event) => {
                                   event.stopPropagation();

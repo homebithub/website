@@ -49,15 +49,16 @@ describe('household househelp cards', () => {
     expect(home).not.toContain('{formatListingStatus(listing.status)}');
   });
 
-  it('removes only saved househelps from homepage discovery', () => {
+  it('shows interactions by default and makes hiding them an explicit filter', () => {
     const home = readFileSync('app/components/HouseholdJobsHome.tsx', 'utf8');
     const discoveryFilter = home.slice(
       home.indexOf('const filteredListings = useMemo'),
       home.indexOf('const filteredListings = useMemo') + 1_200,
     );
 
+    expect(discoveryFilter).toContain('matchesInteractionFilters(filters');
     expect(discoveryFilter).toContain('shortlistedListingIds.has(String(listing.id))');
-    expect(discoveryFilter).not.toContain('contactedListingIds.has(String(listing.id))');
-    expect(discoveryFilter).toContain('[listings, isServiceProvider, filters.minRating, shortlistedListingIds]');
+    expect(discoveryFilter).toContain('contactedListingIds.has(String(listing.id))');
+    expect(home).toContain('contactedLabel="Messaged or invited"');
   });
 });
