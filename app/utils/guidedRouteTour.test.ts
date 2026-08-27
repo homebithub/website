@@ -28,4 +28,16 @@ describe('guided route tours', () => {
     expect(source('app/components/HousehelpJobsHome.tsx')).toContain('data-tour="discovery-filters"');
     expect(source('app/components/HouseholdJobsHome.tsx')).toContain('data-tour="discovery-filters"');
   });
+
+  it('persists first display locally and restores it from the tour service', () => {
+    expect(tour).toContain('tourService.getProgress');
+    expect(tour).toContain("status: 'started'");
+    expect(tour).toContain("recordTourEvent('started', 0)");
+    expect(tour).toContain("recordTourEvent('step_viewed', index)");
+  });
+
+  it('tracks skip and completion as distinct outcomes', () => {
+    expect(tour).toContain("finish('skipped')");
+    expect(tour).toContain("finish('completed')");
+  });
 });

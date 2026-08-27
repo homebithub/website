@@ -3563,6 +3563,100 @@ export namespace MigratePrefsReq {
   };
 }
 
+export class TourProgressRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): TourProgressRequest;
+
+  getTourId(): string;
+  setTourId(value: string): TourProgressRequest;
+
+  getTourVersion(): number;
+  setTourVersion(value: number): TourProgressRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TourProgressRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: TourProgressRequest): TourProgressRequest.AsObject;
+  static serializeBinaryToWriter(message: TourProgressRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): TourProgressRequest;
+  static deserializeBinaryFromReader(message: TourProgressRequest, reader: jspb.BinaryReader): TourProgressRequest;
+}
+
+export namespace TourProgressRequest {
+  export type AsObject = {
+    userId: string;
+    tourId: string;
+    tourVersion: number;
+  };
+}
+
+export class RecordTourEventRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): RecordTourEventRequest;
+
+  getTourId(): string;
+  setTourId(value: string): RecordTourEventRequest;
+
+  getTourVersion(): number;
+  setTourVersion(value: number): RecordTourEventRequest;
+
+  getEventType(): string;
+  setEventType(value: string): RecordTourEventRequest;
+
+  getStepIndex(): number;
+  setStepIndex(value: number): RecordTourEventRequest;
+
+  getTotalSteps(): number;
+  setTotalSteps(value: number): RecordTourEventRequest;
+
+  getPagePath(): string;
+  setPagePath(value: string): RecordTourEventRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RecordTourEventRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: RecordTourEventRequest): RecordTourEventRequest.AsObject;
+  static serializeBinaryToWriter(message: RecordTourEventRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RecordTourEventRequest;
+  static deserializeBinaryFromReader(message: RecordTourEventRequest, reader: jspb.BinaryReader): RecordTourEventRequest;
+}
+
+export namespace RecordTourEventRequest {
+  export type AsObject = {
+    userId: string;
+    tourId: string;
+    tourVersion: number;
+    eventType: string;
+    stepIndex: number;
+    totalSteps: number;
+    pagePath: string;
+  };
+}
+
+export class TourAnalyticsRequest extends jspb.Message {
+  getTourId(): string;
+  setTourId(value: string): TourAnalyticsRequest;
+
+  getTourVersion(): number;
+  setTourVersion(value: number): TourAnalyticsRequest;
+
+  getDays(): number;
+  setDays(value: number): TourAnalyticsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TourAnalyticsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: TourAnalyticsRequest): TourAnalyticsRequest.AsObject;
+  static serializeBinaryToWriter(message: TourAnalyticsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): TourAnalyticsRequest;
+  static deserializeBinaryFromReader(message: TourAnalyticsRequest, reader: jspb.BinaryReader): TourAnalyticsRequest;
+}
+
+export namespace TourAnalyticsRequest {
+  export type AsObject = {
+    tourId: string;
+    tourVersion: number;
+    days: number;
+  };
+}
+
 export class UpdateKYCStatusReq extends jspb.Message {
   getId(): string;
   setId(value: string): UpdateKYCStatusReq;

@@ -1556,6 +1556,67 @@ proto.auth.AdminServicePromiseClient.prototype.adminGetPWAAnalytics =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.TourAnalyticsRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_AdminService_AdminGetTourAnalytics = new grpc.web.MethodDescriptor(
+  '/auth.AdminService/AdminGetTourAnalytics',
+  grpc.web.MethodType.UNARY,
+  proto.auth.TourAnalyticsRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.TourAnalyticsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.TourAnalyticsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.AdminServiceClient.prototype.adminGetTourAnalytics =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.AdminService/AdminGetTourAnalytics',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetTourAnalytics,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.TourAnalyticsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.AdminServicePromiseClient.prototype.adminGetTourAnalytics =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.AdminService/AdminGetTourAnalytics',
+      request,
+      metadata || {},
+      methodDescriptor_AdminService_AdminGetTourAnalytics);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.google.protobuf.Empty,
  *   !proto.auth.JsonResponse>}
  */
@@ -15820,6 +15881,180 @@ proto.auth.PreferencesServicePromiseClient.prototype.getAnalytics =
  * @struct
  * @final
  */
+proto.auth.TourServiceClient =
+    function(hostname, credentials, options) {
+  if (!options) options = {};
+  options.format = 'text';
+
+  /**
+   * @private @const {!grpc.web.GrpcWebClientBase} The client
+   */
+  this.client_ = new grpc.web.GrpcWebClientBase(options);
+
+  /**
+   * @private @const {string} The hostname
+   */
+  this.hostname_ = hostname.replace(/\/+$/, '');
+
+};
+
+
+/**
+ * @param {string} hostname
+ * @param {?Object} credentials
+ * @param {?grpc.web.ClientOptions} options
+ * @constructor
+ * @struct
+ * @final
+ */
+proto.auth.TourServicePromiseClient =
+    function(hostname, credentials, options) {
+  if (!options) options = {};
+  options.format = 'text';
+
+  /**
+   * @private @const {!grpc.web.GrpcWebClientBase} The client
+   */
+  this.client_ = new grpc.web.GrpcWebClientBase(options);
+
+  /**
+   * @private @const {string} The hostname
+   */
+  this.hostname_ = hostname.replace(/\/+$/, '');
+
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.TourProgressRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_TourService_GetProgress = new grpc.web.MethodDescriptor(
+  '/auth.TourService/GetProgress',
+  grpc.web.MethodType.UNARY,
+  proto.auth.TourProgressRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.TourProgressRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.TourProgressRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.TourServiceClient.prototype.getProgress =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.TourService/GetProgress',
+      request,
+      metadata || {},
+      methodDescriptor_TourService_GetProgress,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.TourProgressRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.TourServicePromiseClient.prototype.getProgress =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.TourService/GetProgress',
+      request,
+      metadata || {},
+      methodDescriptor_TourService_GetProgress);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.RecordTourEventRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_TourService_RecordEvent = new grpc.web.MethodDescriptor(
+  '/auth.TourService/RecordEvent',
+  grpc.web.MethodType.UNARY,
+  proto.auth.RecordTourEventRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.RecordTourEventRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.RecordTourEventRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.TourServiceClient.prototype.recordEvent =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.TourService/RecordEvent',
+      request,
+      metadata || {},
+      methodDescriptor_TourService_RecordEvent,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.RecordTourEventRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.TourServicePromiseClient.prototype.recordEvent =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.TourService/RecordEvent',
+      request,
+      metadata || {},
+      methodDescriptor_TourService_RecordEvent);
+};
+
+
+/**
+ * @param {string} hostname
+ * @param {?Object} credentials
+ * @param {?grpc.web.ClientOptions} options
+ * @constructor
+ * @struct
+ * @final
+ */
 proto.auth.ProfileSetupServiceClient =
     function(hostname, credentials, options) {
   if (!options) options = {};
@@ -21226,6 +21461,8 @@ export const {
   ProfileViewServicePromiseClient,
   PreferencesServiceClient,
   PreferencesServicePromiseClient,
+  TourServiceClient,
+  TourServicePromiseClient,
   ProfileSetupServiceClient,
   ProfileSetupServicePromiseClient,
   OnboardingOptionsServiceClient,

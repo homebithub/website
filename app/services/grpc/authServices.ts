@@ -47,6 +47,7 @@ const {
   HouseholdMemberServiceClient,
   ProfileViewServiceClient,
   PreferencesServiceClient,
+  TourServiceClient,
   OnboardingOptionsServiceClient,
   ContactServiceClient,
   KYCServiceClient,
@@ -304,6 +305,7 @@ const householdPrefsClient = new HouseholdPreferencesServiceClient(GRPC_WEB_BASE
 const householdMemberClient = new HouseholdMemberServiceClient(GRPC_WEB_BASE_URL, null, null);
 const profileViewClient = new ProfileViewServiceClient(GRPC_WEB_BASE_URL, null, null);
 const preferencesClient = new PreferencesServiceClient(GRPC_WEB_BASE_URL, null, null);
+const tourClient = new TourServiceClient(GRPC_WEB_BASE_URL, null, null);
 const onboardingOptionsClient = new OnboardingOptionsServiceClient(GRPC_WEB_BASE_URL, null, null);
 const contactClient = new ContactServiceClient(GRPC_WEB_BASE_URL, null, null);
 const kycClient = new KYCServiceClient(GRPC_WEB_BASE_URL, null, null);
@@ -1079,6 +1081,48 @@ export const preferencesService = {
     req.setSessionId(sessionId);
     const res = await grpcCall((cb) => preferencesClient.migrateAnonymousToUser(req, getMetadata(), cb));
     return jsonResponseToJs(res);
+  },
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// Guided tour progress and analytics events
+// ══════════════════════════════════════════════════════════════════════════
+export type TourEventType = 'started' | 'step_viewed' | 'completed' | 'skipped';
+export type TourProgress = {
+  seen: boolean;
+  status?: 'started' | 'completed' | 'skipped';
+  last_step?: number;
+  total_steps?: number;
+};
+
+export const tourService = {
+  async getProgress(userId: string, tourId: string, tourVersion: number): Promise<TourProgress> {
+    const req = new auth_pb.TourProgressRequest();
+    req.setUserId(resolveUserId(userId));
+    req.setTourId(tourId);
+    req.setTourVersion(tourVersion);
+    const res = await grpcCall((cb) => tourClient.getProgress(req, getMetadata(), cb));
+    return jsonResponseToJs(res) as TourProgress;
+  },
+  async recordEvent(input: {
+    userId: string;
+    tourId: string;
+    tourVersion: number;
+    eventType: TourEventType;
+    stepIndex: number;
+    totalSteps: number;
+    pagePath: string;
+  }): Promise<TourProgress> {
+    const req = new auth_pb.RecordTourEventRequest();
+    req.setUserId(resolveUserId(input.userId));
+    req.setTourId(input.tourId);
+    req.setTourVersion(input.tourVersion);
+    req.setEventType(input.eventType);
+    req.setStepIndex(input.stepIndex);
+    req.setTotalSteps(input.totalSteps);
+    req.setPagePath(input.pagePath);
+    const res = await grpcCall((cb) => tourClient.recordEvent(req, getMetadata(), cb));
+    return jsonResponseToJs(res) as TourProgress;
   },
 };
 

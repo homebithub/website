@@ -178,6 +178,13 @@ export class AdminServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  adminGetTourAnalytics(
+    request: auth_auth_pb.TourAnalyticsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   adminGetPlatformSettings(
     request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | undefined,
@@ -1839,6 +1846,27 @@ export class PreferencesServiceClient {
 
 }
 
+export class TourServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  getProgress(
+    request: auth_auth_pb.TourProgressRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  recordEvent(
+    request: auth_auth_pb.RecordTourEventRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+}
+
 export class ProfileSetupServiceClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
@@ -2584,6 +2612,11 @@ export class AdminServicePromiseClient {
 
   adminGetPWAAnalytics(
     request: auth_auth_pb.AdminPWAAnalyticsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  adminGetTourAnalytics(
+    request: auth_auth_pb.TourAnalyticsRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
@@ -3813,6 +3846,23 @@ export class PreferencesServicePromiseClient {
 
   getAnalytics(
     request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+}
+
+export class TourServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  getProgress(
+    request: auth_auth_pb.TourProgressRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  recordEvent(
+    request: auth_auth_pb.RecordTourEventRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
