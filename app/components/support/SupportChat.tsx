@@ -5,7 +5,7 @@ import EmojiPicker, { Theme, type EmojiClickData } from 'emoji-picker-react';
 import { API_BASE_URL } from '~/config/api';
 import { useAuth } from '~/contexts/useAuth';
 import { CHAT_ALLOWED_FILE_TYPES, CHAT_ATTACHMENT_LIMIT_BYTES, CHAT_MESSAGE_LIMIT } from '~/config/chat';
-import { supportService, type SupportChat as Chat, type SupportMessage } from '~/services/support.service';
+import { SupportRequestError, supportService, type SupportChat as Chat, type SupportMessage } from '~/services/support.service';
 
 const STORAGE_KEY = 'homebit_support_chat';
 const LAUNCHER_POSITION_KEY = 'homebit_support_launcher_position';
@@ -30,20 +30,58 @@ export default function SupportChat() {
   const launcherRef = useRef<HTMLButtonElement>(null);
   const launcherDrag = useRef<{pointerId:number;startX:number;startY:number;originX:number;originY:number;moved:boolean}|null>(null);
   const typingTimer = useRef<number | undefined>(undefined);
+  const refreshInFlight = useRef(false);
 
-  useEffect(() => { setName(account?.first_name || account?.firstName || ''); setEmail(account?.email || ''); const saved = localStorage.getItem(STORAGE_KEY); if (saved) { try { setChat(JSON.parse(saved)); } catch {} } }, [account]);
+  useEffect(() => {
+    setName(account?.first_name || account?.firstName || '');
+    setEmail(account?.email || '');
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved);
+      if (typeof parsed?.id === 'string' && typeof parsed?.access_token === 'string' && parsed.id && parsed.access_token) {
+        setChat(parsed);
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [account]);
   useEffect(() => { const show = () => setOpen(true); window.addEventListener('open-support-chat', show); return () => window.removeEventListener('open-support-chat', show); }, []);
   useEffect(()=>{if(!launcherPosition)return;try{localStorage.setItem(LAUNCHER_POSITION_KEY,JSON.stringify(launcherPosition))}catch{}},[launcherPosition]);
 
   const refresh = useCallback(async () => {
-    if (!chat) return;
+    if (!chat || refreshInFlight.current) return;
+    refreshInFlight.current = true;
     try {
       const data = await supportService.messages(chat.id, chat.access_token);
       setUnread(open ? 0 : data.messages.filter((message) => message.sender_type === 'agent' && !message.read_at).length);
       setMessages(data.messages); setChat((old) => old ? { ...old, ...data.chat, access_token: old.access_token } : old);
-    } catch (e) { setError(e instanceof Error ? e.message : 'Could not refresh chat'); }
+      setError('');
+    } catch (e) {
+      if (e instanceof SupportRequestError && (e.status === 404 || e.status === 401)) {
+        // The ticket may have been removed by account cleanup or its scoped
+        // secret may no longer be valid. It can never recover by retrying, so
+        // retire the browser copy once instead of polling a dead ID forever.
+        localStorage.removeItem(STORAGE_KEY);
+        setChat(null);
+        setMessages([]);
+        setUnread(0);
+        setError('Your previous support chat is no longer available. You can start a new chat whenever you need help.');
+      } else {
+        setError(e instanceof Error ? e.message : 'Could not refresh chat');
+      }
+    } finally {
+      refreshInFlight.current = false;
+    }
   }, [chat?.id, chat?.access_token, open]);
-  useEffect(() => { refresh(); if (!chat) return; const id = window.setInterval(refresh, open?1000:5000); return () => window.clearInterval(id); }, [chat?.id, open, refresh]);
+  useEffect(() => {
+    void refresh();
+    if (!chat) return;
+    const id = window.setInterval(() => void refresh(), open ? 5_000 : 30_000);
+    return () => window.clearInterval(id);
+  }, [chat?.id, open, refresh]);
   useEffect(() => { if (open) { setUnread(0); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50); } }, [open, messages.length]);
   useEffect(()=>{if(!chat||!open)return; const seen=()=>supportService.presence(chat.id,chat.access_token,false).then(p=>setChat(old=>old?{...old,...p,access_token:old.access_token}:old)).catch(()=>{});seen();const id=window.setInterval(seen,15000);return()=>window.clearInterval(id)},[chat?.id,chat?.access_token,open]);
   const clampLauncherPosition = useCallback((x:number,y:number) => {

@@ -15,9 +15,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const message = typeof data?.error === 'string'
       ? data.error
       : data?.error?.message || data?.message;
-    throw new Error(message || 'Support is temporarily unavailable. Please try again.');
+    throw new SupportRequestError(
+      message || 'Support is temporarily unavailable. Please try again.',
+      response.status,
+    );
   }
   return data as T;
+}
+
+export class SupportRequestError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message);
+    this.name = 'SupportRequestError';
+  }
 }
 
 export type SupportMessage = {
@@ -30,7 +40,7 @@ export type SupportChat = { id: string; ticket_number: number; access_token: str
 export const supportService = {
   create: (payload: { name: string; email?: string; subject?: string; message: string; sourceURL: string }) =>
     request<SupportChat>('/api/v1/support/chats', { method: 'POST', body: JSON.stringify(payload) }),
-  messages: (id: string, token: string) => request<{chat: SupportChat; messages: SupportMessage[]}>(`/api/v1/support/chats/${id}/messages?access_token=${encodeURIComponent(token)}`),
+  messages: (id: string, token: string) => request<{chat: SupportChat; messages: SupportMessage[]}>(`/api/v1/support/chats/${id}/messages`, { headers: { 'X-Support-Token': token } }),
   send: (id: string, token: string, payload: Record<string, unknown>) => request<SupportMessage>(`/api/v1/support/chats/${id}/messages`, { method: 'POST', headers: { 'X-Support-Token': token }, body: JSON.stringify(payload) }),
   react: (messageId: string, token: string, emoji: string) => request<SupportMessage>(`/api/v1/support/messages/${messageId}/reactions`, { method: 'POST', headers: { 'X-Support-Token': token }, body: JSON.stringify({ emoji }) }),
   presence: (id: string, token: string, typing: boolean) => request<SupportChat>(`/api/v1/support/chats/${id}/presence`, { method: 'POST', headers: { 'X-Support-Token': token }, body: JSON.stringify({ typing }) }),
