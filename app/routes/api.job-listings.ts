@@ -663,11 +663,20 @@ export async function action({ request }: { request: Request }) {
           ? '/auth.ListingService/ReopenListing'
           : '/auth.ListingService/DeleteJob';
 
+      const metadata = authMetadata(request);
+      if (action === 'close') {
+        const reason = String(body.closure_reason || body.closureReason || '').trim();
+        const feedback = String(body.closure_feedback || body.closureFeedback || '').trim();
+        if (!reason) return Response.json({ message: 'closure_reason is required' }, { status: 400 });
+        metadata['x-homebit-closure-reason'] = encodeURIComponent(reason);
+        if (feedback) metadata['x-homebit-closure-feedback'] = encodeURIComponent(feedback);
+      }
+
       const { body: responseBody } = await callUnaryGrpc(
         resolveAuthGrpcBaseUrl(request),
         rpcPath,
         encodeIdRequest(id),
-        authMetadata(request),
+        metadata,
       );
 
       return Response.json({ data: responseBody.data ?? responseBody });

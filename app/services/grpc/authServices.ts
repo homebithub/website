@@ -1687,10 +1687,16 @@ export const jobService = {
     return payload.data ?? payload;
   },
 
-  async closeJob(id: string, userId?: string): Promise<any> {
+  async closeJob(id: string, userId?: string, closureReason = '', closureFeedback = ''): Promise<any> {
     const payload = await jobListingsApi('', {
       method: 'DELETE',
-      body: JSON.stringify({ id, user_id: userId || '', action: 'close' }),
+      body: JSON.stringify({
+        id,
+        user_id: userId || '',
+        action: 'close',
+        closure_reason: closureReason,
+        closure_feedback: closureFeedback,
+      }),
     });
     return payload.data ?? payload;
   },

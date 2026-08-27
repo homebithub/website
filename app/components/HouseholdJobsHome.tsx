@@ -580,6 +580,9 @@ export default function HouseholdJobsHome() {
   const [showActiveJobs, setShowActiveJobs] = useState(false);
   const [editingHouseholdJob, setEditingHouseholdJob] = useState<HouseholdJobListing | null>(null);
   const [householdJobToDelete, setHouseholdJobToDelete] = useState<HouseholdJobListing | null>(null);
+  const [householdJobToClose, setHouseholdJobToClose] = useState<HouseholdJobListing | null>(null);
+  const [jobClosureReason, setJobClosureReason] = useState("");
+  const [jobClosureFeedback, setJobClosureFeedback] = useState("");
   const [householdJobActionId, setHouseholdJobActionId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
@@ -739,8 +742,11 @@ export default function HouseholdJobsHome() {
     setError(null);
     try {
       if (action === "close") {
-        await householdJobService.closeJob(job.id, currentUserId);
+        await householdJobService.closeJob(job.id, currentUserId, jobClosureReason, jobClosureFeedback);
         setActionSuccess("Job listing closed.");
+        setHouseholdJobToClose(null);
+        setJobClosureReason("");
+        setJobClosureFeedback("");
       } else {
         await householdJobService.renewListing(job.id, currentHouseholdProfileId || undefined);
         setActionSuccess("Job kept open for another three weeks.");
@@ -2079,7 +2085,7 @@ export default function HouseholdJobsHome() {
                   </div>
                   <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-purple-100 pt-4 dark:border-purple-500/20">
                     <button type="button" onClick={() => setEditingHouseholdJob(job)} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">Edit</button>
-                    <button type="button" onClick={() => void updateHouseholdJob(job, "close")} disabled={householdJobActionId === job.id} className="rounded-xl border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white/5">Close</button>
+                    <button type="button" onClick={() => setHouseholdJobToClose(job)} disabled={householdJobActionId === job.id} className="rounded-xl border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white/5">Close</button>
                     <button type="button" onClick={() => void updateHouseholdJob(job, "renew")} disabled={householdJobActionId === job.id} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 disabled:opacity-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">{householdJobActionId === job.id ? "Updating…" : "Keep open"}</button>
                     <button type="button" onClick={() => setHouseholdJobToDelete(job)} disabled={householdJobActionId === job.id} className="rounded-xl border border-red-300 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10">Delete</button>
                   </div>
@@ -2109,6 +2115,34 @@ export default function HouseholdJobsHome() {
         onCancel={() => setHouseholdJobToDelete(null)}
         variant="danger"
       />
+      {householdJobToClose && (
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="hb-mobile-modal-panel w-full max-w-lg rounded-t-3xl border border-purple-200 bg-white p-5 shadow-2xl dark:border-purple-500/30 dark:bg-[#171122] sm:rounded-3xl sm:p-6">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">Close this job?</h2>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">The reason appears with the closed job. Optional feedback is private and helps Homebit improve.</p>
+            <label className="mt-4 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+              Reason for closing
+              <select value={jobClosureReason} onChange={(event) => setJobClosureReason(event.target.value)} className="mt-2 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm dark:border-purple-500/30 dark:bg-[#0d0d14] dark:text-white">
+                <option value="">Select a reason</option>
+                <option value="I hired someone through Homebit">I hired someone through Homebit</option>
+                <option value="I hired someone elsewhere">I hired someone elsewhere</option>
+                <option value="My needs changed">My needs changed</option>
+                <option value="I did not find a suitable match">I did not find a suitable match</option>
+                <option value="The job is no longer available">The job is no longer available</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label className="mt-4 block text-xs font-semibold text-gray-700 dark:text-gray-300">
+              Feedback for Homebit <span className="font-normal text-gray-400">(optional)</span>
+              <textarea value={jobClosureFeedback} onChange={(event) => setJobClosureFeedback(event.target.value)} rows={3} maxLength={1000} placeholder="What could Homebit improve about this experience?" className="mt-2 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm dark:border-purple-500/30 dark:bg-[#0d0d14] dark:text-white" />
+            </label>
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => { setHouseholdJobToClose(null); setJobClosureReason(""); setJobClosureFeedback(""); }} disabled={Boolean(householdJobActionId)} className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300">Keep open</button>
+              <button type="button" onClick={() => void updateHouseholdJob(householdJobToClose, "close")} disabled={!jobClosureReason || Boolean(householdJobActionId)} className="rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">{householdJobActionId ? "Closing…" : "Close job"}</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Same wording and destination as the home screen, so the two places a
           household can start a conversation now behave identically. */}
       <SubscriptionRequiredModal

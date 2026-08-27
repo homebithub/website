@@ -33,8 +33,9 @@ export function ListingDetails({
     record.description ?? record.job_description ?? record.jobDescription ??
     record.attributes?.description ?? record.listing?.description ?? '',
   ).trim();
+  const closureReason = String(record.closure_reason ?? record.closureReason ?? '').trim();
 
-  if (groups.length === 0 && !description) {
+  if (groups.length === 0 && !description && !closureReason) {
     return (
       <p className={`text-xs text-gray-500 dark:text-gray-400 ${className}`}>
         {emptyMessage}
@@ -48,6 +49,12 @@ export function ListingDetails({
         <section className="rounded-2xl border border-purple-200 bg-white p-3 dark:border-purple-500/20 dark:bg-white/5">
           <p className="mb-1 text-xs font-bold uppercase tracking-wide text-purple-700 dark:text-purple-200">Job description</p>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-200">{description}</p>
+        </section>
+      )}
+      {closureReason && (
+        <section className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+          <h3 className="text-xs font-semibold text-amber-900 dark:text-amber-100">Reason this job closed</h3>
+          <p className="mt-1 text-xs leading-relaxed text-amber-800 dark:text-amber-200">{closureReason}</p>
         </section>
       )}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
