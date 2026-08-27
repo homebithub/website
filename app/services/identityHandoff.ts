@@ -63,6 +63,18 @@ export const redeemIdentityHandoff = async (token: string): Promise<SmileSession
   return (await response.json()) as SmileSession;
 };
 
+/** Records that the phone capture was accepted, using the redeemed QR secret. */
+export const confirmIdentityHandoffSubmission = async (token: string): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/api/v1/kyc/smileid/handoff/submitted`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  if (!response.ok) {
+    throw new Error(await readError(response, "We could not confirm that your photos were received."));
+  }
+};
+
 /**
  * The link the QR encodes, built from the page's own origin so it is correct on
  * localhost, staging and production without another configured URL to keep in

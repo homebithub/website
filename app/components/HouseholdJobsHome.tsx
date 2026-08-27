@@ -27,7 +27,6 @@ import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensa
 import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionReminder";
 import CustomSelect from "~/components/ui/CustomSelect";
-import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
 import { ProfileCompletionCelebrationModal } from "~/components/profile/ProfileCompletionCelebrationModal";
 import { Briefcase, Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
@@ -45,6 +44,8 @@ import { jobService as householdJobService } from '~/services/grpc/authServices'
 import JobPostModal from '~/components/modals/JobPostModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { SidePanel } from '~/components/SidePanel';
+import { useMarketplaceReadiness } from "~/hooks/useMarketplaceReadiness";
+import { MarketplaceReadinessBanner, MarketplaceReadinessRequiredModal } from "~/components/marketplace/MarketplaceReadiness";
 
 interface HousehelpSummary {
   id?: string;
@@ -564,6 +565,8 @@ export default function HouseholdJobsHome() {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const profileType = useMemo(() => getStoredCanonicalProfileType(), []);
   const isServiceProvider = profileType === "househelp";
+  const marketplaceReadiness = useMarketplaceReadiness(currentUserId, "household");
+  const [readinessModalOpen, setReadinessModalOpen] = useState(false);
 
   const [listings, setListings] = useState<OpenForWorkListing[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -1003,6 +1006,10 @@ export default function HouseholdJobsHome() {
     // nothing in the console. There is no way to tell that apart from a broken
     // app, and the person clicking has no idea whether to wait, retry, or pay
     // for something.
+    if (!marketplaceReadiness.interactionAllowed) {
+      setReadinessModalOpen(true);
+      return;
+    }
     if (!currentUserId) {
       setError("Please sign in again before starting a conversation.");
       return;
@@ -1038,6 +1045,10 @@ export default function HouseholdJobsHome() {
   const handleOpenInviteModal = (listing: OpenForWorkListing, options?: { template?: "skills" | "availability" }) => {
     if (contactedListingIds.has(String(listing.id))) {
       setActionSuccess("You have already contacted this househelp about this listing. Open Inbox to continue the conversation.");
+      return;
+    }
+    if (!marketplaceReadiness.interactionAllowed) {
+      setReadinessModalOpen(true);
       return;
     }
     // Invite sends a message too, so gating one path and not the other would be
@@ -1440,17 +1451,7 @@ export default function HouseholdJobsHome() {
             )}
           </section>
           <div className="hb-content-rail flex flex-col">
-            {profileCompletionReminder.shouldShow && (
-              <ProfileCompletionBanner
-                title={profileCompletionReminder.title}
-                description={profileCompletionReminder.description}
-                ctaLabel={profileCompletionReminder.ctaLabel}
-                completedItems={profileCompletionReminder.completedItems}
-                totalItems={profileCompletionReminder.totalItems}
-                progressValue={profileCompletionReminder.progressValue}
-                onContinue={() => navigate(profileCompletionReminder.destination)}
-              />
-            )}
+            <MarketplaceReadinessBanner readiness={marketplaceReadiness} />
             {profileCompletionReminder.shouldShowCelebration && (
               <ProfileCompletionCelebrationModal
                 isOpen
@@ -2079,7 +2080,7 @@ export default function HouseholdJobsHome() {
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Create or reopen a listing from Hiring when you are ready.</p>
                 </div>
               ) : activeHouseholdJobs.map((job) => (
-                <article
+                <div
                   key={job.id}
                   role="button"
                   tabIndex={0}
@@ -2114,7 +2115,7 @@ export default function HouseholdJobsHome() {
                     <button type="button" onClick={() => void updateHouseholdJob(job, "renew")} disabled={householdJobActionId === job.id} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 disabled:opacity-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">{householdJobActionId === job.id ? "Updating…" : "Keep open"}</button>
                     <button type="button" onClick={() => setHouseholdJobToDelete(job)} disabled={householdJobActionId === job.id} className="rounded-xl border border-red-300 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10">Delete</button>
                   </div>
-                </article>
+                </div>
               ))}
             </div>
           </section>
@@ -2177,6 +2178,7 @@ export default function HouseholdJobsHome() {
         actionLabel="message househelps"
         plansHref="/plans"
       />
+      <MarketplaceReadinessRequiredModal readiness={marketplaceReadiness} open={readinessModalOpen} onClose={() => setReadinessModalOpen(false)} />
       <Footer />
     </div>
   );

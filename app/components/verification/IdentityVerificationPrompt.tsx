@@ -71,10 +71,10 @@ export function IdentityVerificationPrompt({
     in_progress: waiting
       ? {
           icon: Clock3,
-          eyebrow: "VERIFICATION IN PROGRESS",
-          title: "Your identity is being reviewed",
-          description: "You can continue using Homebit. We’ll notify you as soon as the review is complete.",
-          action: "Check status",
+          eyebrow: "DOCUMENTS RECEIVED",
+          title: "Your documents are under review",
+          description: "Your documents have been received. There is nothing more to submit; we’ll notify you as soon as the review is complete.",
+          action: "",
           tone: "blue",
         }
       : {

@@ -1879,6 +1879,13 @@ export class ProfileSetupServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  getMarketplaceReadiness(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   updateProgress(
     request: auth_auth_pb.JsonPayload,
     metadata: grpcWeb.Metadata | undefined,
@@ -2280,6 +2287,13 @@ export class KYCServiceClient {
 
   getSmileIDToken(
     request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  confirmSmileIDSubmission(
+    request: auth_auth_pb.UserIdRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
                response: auth_auth_pb.JsonResponse) => void
@@ -3878,6 +3892,11 @@ export class ProfileSetupServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
+  getMarketplaceReadiness(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
   updateProgress(
     request: auth_auth_pb.JsonPayload,
     metadata?: grpcWeb.Metadata
@@ -4175,6 +4194,11 @@ export class KYCServicePromiseClient {
 
   getSmileIDToken(
     request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  confirmSmileIDSubmission(
+    request: auth_auth_pb.UserIdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 

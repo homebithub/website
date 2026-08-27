@@ -31,7 +31,6 @@ import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionReminder";
 import CustomSelect from "~/components/ui/CustomSelect";
 import LocationPicker, { type LocationSelection } from "~/components/ui/LocationPicker";
-import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
 import { ProfileCompletionCelebrationModal } from "~/components/profile/ProfileCompletionCelebrationModal";
 import { ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, SlidersHorizontal, X } from "lucide-react";
 import { useAuth } from "~/contexts/useAuth";
@@ -49,6 +48,8 @@ import { InteractionFilterControls } from "~/components/listing/InteractionFilte
 import { SidePanel } from "~/components/SidePanel";
 import { notificationsService } from "~/services/grpc/notifications.service";
 import { matchesInteractionFilters } from "~/utils/interactionFilters";
+import { useMarketplaceReadiness } from "~/hooks/useMarketplaceReadiness";
+import { MarketplaceReadinessBanner, MarketplaceReadinessRequiredModal } from "~/components/marketplace/MarketplaceReadiness";
 
 interface JobListing {
   id: string;
@@ -373,6 +374,8 @@ export default function HousehelpJobsHome() {
   } = useSubscription(currentUserId);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [subscriptionActionLabel, setSubscriptionActionLabel] = useState("continue");
+  const marketplaceReadiness = useMarketplaceReadiness(currentUserId, "househelp");
+  const [readinessModalOpen, setReadinessModalOpen] = useState(false);
   const [previewProfileJob, setPreviewProfileJob] = useState<JobListing | null>(null);
 
   const openSubscriptionGate = useCallback((actionLabel: string) => {
@@ -886,6 +889,10 @@ export default function HousehelpJobsHome() {
       setSuccess("You have already applied to this job.");
       return;
     }
+    if (!marketplaceReadiness.interactionAllowed) {
+      setReadinessModalOpen(true);
+      return;
+    }
     if (requireSubscription("apply to jobs")) {
       return;
     }
@@ -958,6 +965,10 @@ export default function HousehelpJobsHome() {
   };
 
   const handleChatWithHousehold = async (job: JobListing) => {
+    if (!marketplaceReadiness.interactionAllowed) {
+      setReadinessModalOpen(true);
+      return;
+    }
     if (requireSubscription("message households")) {
       return;
     }
@@ -1289,18 +1300,7 @@ export default function HousehelpJobsHome() {
               <OpenForWorkButton className="w-full" />
             </div>
             <IdentityVerificationPrompt verification={identityVerification} />
-
-            {profileCompletionReminder.shouldShow && (
-              <ProfileCompletionBanner
-                title={profileCompletionReminder.title}
-                description={profileCompletionReminder.description}
-                ctaLabel={profileCompletionReminder.ctaLabel}
-                completedItems={profileCompletionReminder.completedItems}
-                totalItems={profileCompletionReminder.totalItems}
-                progressValue={profileCompletionReminder.progressValue}
-                onContinue={() => navigate(profileCompletionReminder.destination)}
-              />
-            )}
+            <MarketplaceReadinessBanner readiness={marketplaceReadiness} />
             {profileCompletionReminder.shouldShowCelebration && (
               <ProfileCompletionCelebrationModal
                 isOpen
@@ -1554,6 +1554,7 @@ export default function HousehelpJobsHome() {
           </div>
         </main>
       </PurpleThemeWrapper>
+      <MarketplaceReadinessRequiredModal readiness={marketplaceReadiness} open={readinessModalOpen} onClose={() => setReadinessModalOpen(false)} />
       <Footer />
 
       {previewProfileJob && (() => {

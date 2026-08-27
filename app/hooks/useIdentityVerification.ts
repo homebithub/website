@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSSESubscriptionSafe } from "~/hooks/useSSESubscription";
 import { kycService } from "~/services/grpc/authServices";
 import { createIdentityHandoff, handoffLink, type HandoffCode } from "~/services/identityHandoff";
 import { launchSmileSession, loadSmileScript, type SmileSession } from "~/services/smileIdentity";
@@ -169,6 +170,9 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
         clearSubmittedLocally(userId);
       }
       setError("");
+      window.dispatchEvent(new CustomEvent("homebit:identity-verification-changed", {
+        detail: { status: awaitingWebhook ? "in_progress" : next.status, internalStatus: awaitingWebhook ? "submitted" : next.internalStatus },
+      }));
     } catch (refreshError: any) {
       setError(refreshError?.message || "We could not check your verification status.");
     } finally {
@@ -178,6 +182,20 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
 
   useEffect(() => {
     void refresh();
+  }, [refresh]);
+
+  const refreshFromRealtime = useCallback(() => void refresh(), [refresh]);
+  useSSESubscriptionSafe("notifications.created", refreshFromRealtime, Boolean(userId));
+  useSSESubscriptionSafe("notifications.snapshot", refreshFromRealtime, Boolean(userId));
+
+  useEffect(() => {
+    const refreshFromLocalEvent = () => void refresh();
+    window.addEventListener("notifications-updated", refreshFromLocalEvent);
+    window.addEventListener("homebit:identity-verification-submitted", refreshFromLocalEvent);
+    return () => {
+      window.removeEventListener("notifications-updated", refreshFromLocalEvent);
+      window.removeEventListener("homebit:identity-verification-submitted", refreshFromLocalEvent);
+    };
   }, [refresh]);
 
   useEffect(() => {
@@ -234,7 +252,9 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
           setModalOpen(false);
           setInternalStatus("submitted");
           window.dispatchEvent(new CustomEvent("homebit:identity-verification-submitted"));
-          window.setTimeout(() => void refresh(), 1_500);
+          void kycService.confirmSmileIDSubmission(userId)
+            .catch(() => undefined)
+            .finally(() => window.setTimeout(() => void refresh(), 250));
         },
         onClose: () => {
           setModalOpen(false);
@@ -292,15 +312,15 @@ export function useIdentityVerification(userIdInput?: string): IdentityVerificat
   }, [handoff, modalOpen, refresh, status]);
 
   useEffect(() => {
-    if (!modalOpen || !handoff) return;
+    if (!modalOpen) return;
     const phoneHasMovedPastSessionStart =
-      status === "under_review" ||
+      status === "under_review" || status === "approved" ||
       (status === "in_progress" && internalStatus !== "session_created");
     if (!phoneHasMovedPastSessionStart) return;
 
     // The QR has done its job. Close the handoff UI and leave the banner in its
     // honest waiting state; reopening a new Smile session is no longer offered.
-    clearHandoff();
+    if (handoff) clearHandoff();
     setModalOpen(false);
   }, [clearHandoff, handoff, internalStatus, modalOpen, status]);
 

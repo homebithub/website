@@ -14,7 +14,6 @@ import {
   getStoredUserId,
 } from '~/utils/authStorage';
 
-// @ts-ignore - Generated protobuf code
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const { ProfileSetupServiceClient } = auth_grpc_web_module as any;
 const struct_pb: any = (struct_pb_module as any).default ?? struct_pb_module;
@@ -57,6 +56,14 @@ export const profileSetupService = {
     const resolvedProfileType = profileType || getStoredProfileType();
     if (resolvedProfileType) request.setProfileType(resolvedProfileType);
     const res = await grpcCall((cb) => profileSetupClient.getProgress(request, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async getMarketplaceReadiness(userId: string, profileType?: string): Promise<any> {
+    const request = new auth_pb.UserIdRequest();
+    request.setUserId(resolveUserId(userId));
+    const resolvedProfileType = profileType || getStoredProfileType();
+    if (resolvedProfileType) request.setProfileType(resolvedProfileType);
+    const res = await grpcCall((cb) => profileSetupClient.getMarketplaceReadiness(request, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
   async markCompletionCelebrationSeen(userId: string, profileType?: string): Promise<any> {

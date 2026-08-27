@@ -16163,6 +16163,67 @@ proto.auth.ProfileSetupServicePromiseClient.prototype.getProgress =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.UserIdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileSetupService_GetMarketplaceReadiness = new grpc.web.MethodDescriptor(
+  '/auth.ProfileSetupService/GetMarketplaceReadiness',
+  grpc.web.MethodType.UNARY,
+  proto.auth.UserIdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.UserIdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileSetupServiceClient.prototype.getMarketplaceReadiness =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileSetupService/GetMarketplaceReadiness',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileSetupService_GetMarketplaceReadiness,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileSetupServicePromiseClient.prototype.getMarketplaceReadiness =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileSetupService/GetMarketplaceReadiness',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileSetupService_GetMarketplaceReadiness);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.auth.JsonPayload,
  *   !proto.auth.JsonResponse>}
  */
@@ -19650,6 +19711,67 @@ proto.auth.KYCServicePromiseClient.prototype.getSmileIDToken =
       request,
       metadata || {},
       methodDescriptor_KYCService_GetSmileIDToken);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.UserIdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_KYCService_ConfirmSmileIDSubmission = new grpc.web.MethodDescriptor(
+  '/auth.KYCService/ConfirmSmileIDSubmission',
+  grpc.web.MethodType.UNARY,
+  proto.auth.UserIdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.UserIdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.KYCServiceClient.prototype.confirmSmileIDSubmission =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.KYCService/ConfirmSmileIDSubmission',
+      request,
+      metadata || {},
+      methodDescriptor_KYCService_ConfirmSmileIDSubmission,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.KYCServicePromiseClient.prototype.confirmSmileIDSubmission =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.KYCService/ConfirmSmileIDSubmission',
+      request,
+      metadata || {},
+      methodDescriptor_KYCService_ConfirmSmileIDSubmission);
 };
 
 

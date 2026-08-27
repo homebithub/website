@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import { BadgeCheck, Briefcase, CreditCard, Loader2 } from "lucide-react";
+import { Briefcase, Loader2 } from "lucide-react";
 
 import OpenForWorkModal from "~/components/modals/OpenForWorkModal";
 import { ConfirmDialog } from "~/components/ui/ConfirmDialog";
 import { useSubscription } from "~/hooks/useSubscription";
-import { useIdentityVerification } from "~/hooks/useIdentityVerification";
 import { openForWorkService } from "~/services/grpc/authServices";
 import { getStoredUser, getStoredUserId } from "~/utils/authStorage";
 
@@ -28,10 +26,9 @@ const resolveListingId = (listing?: Record<string, any> | null): string => {
  * find. The modal that writes one already existed and was reachable from
  * nowhere, so nobody could publish one at all.
  *
- * Two things must be true before it can be switched on: an active subscription,
- * and an approved identity check. Households search these listings to decide who
- * comes into their home, so an unverified one is worth less than none — and the
- * subscription is what the marketplace runs on.
+ * The form is available before the other setup actions are complete. The
+ * readiness checklist may be completed in any order; marketplace interaction
+ * and discoverability are what remain locked until every action is done.
  *
  * The button is always visible, which is the deliberate part. Hiding it until
  * somebody qualifies means the people who most need to know what to do next are
@@ -47,11 +44,9 @@ export function OpenForWorkButton({
   onChanged?: () => void;
   showStatus?: boolean;
 }) {
-  const navigate = useNavigate();
   const userId = getStoredUserId() || "";
 
-  const { isActive: hasSubscription, loading: subscriptionLoading, daysRemaining, expiresAt } = useSubscription(userId);
-  const verification = useIdentityVerification(userId);
+  const { isActive: hasSubscription, daysRemaining, expiresAt } = useSubscription(userId);
 
   const [listing, setListing] = useState<Record<string, any> | null>(null);
   const [loadingListing, setLoadingListing] = useState(true);
@@ -89,26 +84,12 @@ export function OpenForWorkButton({
     void loadListing();
   }, [loadListing]);
 
-  const verified = verification.status === "approved";
-  const checking = subscriptionLoading || verification.status === "loading" || loadingListing;
-  const eligible = hasSubscription && verified;
+  const checking = loadingListing;
   const hasListing = Boolean(listing);
   const isLive = hasListing && String(listing?.status ?? "active").toLowerCase() === "active";
 
-  // What is missing, said in the order somebody should deal with it: the
-  // identity check takes days and the subscription takes a minute.
-  const blockedBy = !verified ? "verification" : !hasSubscription ? "subscription" : null;
-
   const handleClick = () => {
     if (checking) return;
-    if (blockedBy === "verification") {
-      navigate("/househelp/profile?verify=1");
-      return;
-    }
-    if (blockedBy === "subscription") {
-      navigate("/subscriptions");
-      return;
-    }
     if (hasListing && !isLive) {
       void setListingLive(true);
       return;
@@ -126,6 +107,7 @@ export function OpenForWorkButton({
       await openForWorkService.updateOpenForWork(listingId, "", { status: live ? "active" : "paused" });
       await loadListing();
       setRemoveOpen(false);
+      window.dispatchEvent(new CustomEvent("homebit:marketplace-readiness-changed"));
       onChanged?.();
     } catch (error: any) {
       setRemoveError(error?.message || `We could not turn your Open for Work listing ${live ? "on" : "off"}. Please try again.`);
@@ -146,17 +128,11 @@ export function OpenForWorkButton({
     ? "Checking…"
     : hasListing
       ? isLive ? "Open for work is active" : "Open for work is off"
-      : blockedBy === "verification"
-        ? "Verify to go open for work"
-        : blockedBy === "subscription"
-          ? "Subscribe to go open for work"
-          : "Go open for work";
+      : "Go open for work";
 
   const tone = isLive
     ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200"
-    : eligible
-      ? "border-transparent bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700"
-      : "border-purple-200 bg-white text-purple-700 dark:border-purple-500/30 dark:bg-white/5 dark:text-purple-200";
+    : "border-transparent bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700";
 
   return (
     <>
@@ -175,20 +151,12 @@ export function OpenForWorkButton({
         title={
           hasListing
             ? "View and manage your Open for Work listing."
-            : blockedBy === "verification"
-              ? "Households search these listings to decide who comes into their home, so an identity check comes first."
-              : blockedBy === "subscription"
-                ? "An active subscription is needed to be listed."
-                : "Tell households what you are available for."
+            : "Tell households what you are available for. You can complete the other setup actions in any order."
         }
         className={`inline-flex max-w-full items-center gap-2 rounded-xl border px-4 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${tone}`}
       >
         {checking ? (
           <Loader2 className="h-4 w-4 animate-spin" />
-        ) : blockedBy === "verification" ? (
-          <BadgeCheck className="h-4 w-4" />
-        ) : blockedBy === "subscription" ? (
-          <CreditCard className="h-4 w-4" />
         ) : (
           <Briefcase className="h-4 w-4" />
         )}
@@ -218,6 +186,7 @@ export function OpenForWorkButton({
             setModalOpen(false);
             setEditing(false);
             void loadListing();
+            window.dispatchEvent(new CustomEvent("homebit:marketplace-readiness-changed"));
             onChanged?.();
           }}
         />

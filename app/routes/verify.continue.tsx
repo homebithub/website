@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { CheckCircle2, Fingerprint, RefreshCw, ShieldCheck } from "lucide-react";
-import { redeemIdentityHandoff } from "~/services/identityHandoff";
+import { confirmIdentityHandoffSubmission, redeemIdentityHandoff } from "~/services/identityHandoff";
 import { launchSmileSession, loadSmileScript } from "~/services/smileIdentity";
 
 /**
@@ -38,7 +38,12 @@ export default function VerifyContinue() {
       const [, session] = await Promise.all([loadSmileScript(), redeemIdentityHandoff(token)]);
       setState("capturing");
       launchSmileSession(session, {
-        onSuccess: () => setState("done"),
+        onSuccess: () => {
+          setState("done");
+          void confirmIdentityHandoffSubmission(token).catch((failure: any) => {
+            setError(failure?.message || "Your photos were received, but the computer may take a moment to update.");
+          });
+        },
         onClose: () => setState((current) => (current === "done" ? current : "ready")),
         onError: (message) => {
           setError(message);
