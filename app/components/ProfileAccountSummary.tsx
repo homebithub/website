@@ -9,6 +9,7 @@ import authService from '~/services/grpc/auth.service';
 import { handleApiError } from '~/utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { RequiredLegend, RequiredMark } from '~/components/ui/formStyles';
+import { formatDisplayName } from '~/utils/displayName';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -328,12 +329,12 @@ export function ProfileAccountSummary({
             profileId={uploadProfileId}
             userId={currentUserId}
             currentUrl={resolvedAvatarUrl}
-            name={[firstName, lastName].filter(Boolean).join(' ')}
+            name={formatDisplayName(firstName, lastName, 'Account')}
           />
           <div className="pr-0 lg:pr-28">
             <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-300">My Account</p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-              {[firstName, lastName].filter(Boolean).join(' ') || 'Account details'}
+              {formatDisplayName(firstName, lastName, 'Account details')}
             </h2>
           </div>
         </div>

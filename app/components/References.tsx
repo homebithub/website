@@ -50,7 +50,13 @@ const References: React.FC = () => {
           try {
             const refs = typeof data.reference === 'string' ? JSON.parse(data.reference) : data.reference;
             if (Array.isArray(refs) && refs.length > 0) {
-              setReferences(refs.map((r: any) => ({ name: r.referee_name || '', relationship: '', phone: r.referee_tel || '', email: '', duration: '' })));
+              setReferences(refs.map((r: any) => ({
+                name: r.name || r.referee_name || '',
+                relationship: r.relationship || '',
+                phone: r.phone || r.referee_tel || '',
+                email: r.email || '',
+                duration: r.duration || r.time_known || '',
+              })));
             }
           } catch (e) {
             console.error('Failed to parse references:', e);
@@ -141,7 +147,7 @@ const References: React.FC = () => {
     <div className="max-w-2xl mx-auto">
       <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">📞 References</h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
-        Provide contact information for people who can vouch for your work (Optional but recommended)
+        Add up to three people who can vouch for your work (optional but recommended). Ask for their consent first: Homebit may contact them to verify your experience. Their contact details are never shown on your public profile.
       </p>
       
       <form onSubmit={handleSubmit} className="space-y-6">

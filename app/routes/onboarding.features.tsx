@@ -50,9 +50,14 @@ type LocationState = {
 };
 
 const JOB_ELIGIBILITY_THRESHOLD = 70;
+const REMOVED_PROFILE_FEATURES = new Set([
+  'PetTraitOption',
+  'FamilyTypePreference',
+  'ReferenceRelationship',
+]);
 
-function getFeatureName(bundle: FeatureBundle) {
-  return profileFeatureLabel(bundle.feature?.name || '') || `Feature ${bundle.feature_id}`;
+function getFeatureName(bundle: FeatureBundle, profileType?: string) {
+  return profileFeatureLabel(bundle.feature?.name || '', profileType) || `Feature ${bundle.feature_id}`;
 }
 
 function getStoredValue(key: string) {
@@ -152,7 +157,11 @@ export default function OnboardingFeaturesPage() {
         ]);
 
         if (!cancelled) {
-          const nextFeatures = normalizeFeaturePayload(payload);
+          // Keep removed questions out during a rolling deploy even if this
+          // browser briefly talks to an auth instance that has not migrated.
+          const nextFeatures = normalizeFeaturePayload(payload).filter(
+            (feature) => !REMOVED_PROFILE_FEATURES.has(String(feature.feature?.name || '')),
+          );
           const propertyToFeature = new Map<number, number>();
           nextFeatures.forEach((feature) => {
             (feature.properties || []).forEach((property) => {
@@ -369,7 +378,7 @@ export default function OnboardingFeaturesPage() {
                       return (
                         <PreferenceAccordion
                           key={feature.feature_id}
-                          title={getFeatureName(feature)}
+                          title={getFeatureName(feature, profileType)}
                           summary={featureComplete
                             ? `${featureSelections.length} selected`
                             : `${(feature.properties || []).length} options`}
@@ -406,7 +415,7 @@ export default function OnboardingFeaturesPage() {
                                       maxLength={MAX_OTHER_LENGTH}
                                       required
                                       aria-required="true"
-                                      placeholder={`Add a ${getFeatureName(feature).toLowerCase()} not listed above`}
+                                      placeholder={`Add a ${getFeatureName(feature, profileType).toLowerCase()} not listed above`}
                                       className={INPUT_CLASS}
                                     />
                                     <span className="mt-1 block text-[11px] text-gray-500 dark:text-gray-400">

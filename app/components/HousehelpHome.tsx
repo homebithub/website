@@ -25,6 +25,7 @@ import { useSubscription } from '~/hooks/useSubscription';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 import { matchScoreClasses } from '~/utils/matchScore';
 import { resolveHouseholdProfile } from '~/utils/householdProfiles';
+import { formatDisplayName } from '~/utils/displayName';
 
 interface HouseholdItem {
   id?: string; // household user id
@@ -573,7 +574,7 @@ export default function HousehelpHome() {
                                 Match {household.fit_score}%
                               </p>
                               <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-1 line-clamp-2">
-                                {household.first_name} {household.last_name}
+                                {formatDisplayName(household, undefined, 'Household')}
                               </h3>
                             </div>
                             {household.created_at && (
@@ -728,7 +729,7 @@ export default function HousehelpHome() {
                             {r.avatar_url || (r.id && profilePhotos[r.id]) ? (
                               <OptimizedImage
                                 path={r.avatar_url || (r.id && profilePhotos[r.id]) || ''}
-                                alt={(r.first_name || 'H') + ' ' + (r.last_name || 'H')}
+                                alt={formatDisplayName(r, undefined, 'Household')}
                                 className="w-full h-full object-cover"
                                 onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
                               />
@@ -741,7 +742,7 @@ export default function HousehelpHome() {
                         <div className="min-w-0 flex-1 sm:pr-8">
                           {/* Name */}
                           <h3 className="text-lg font-bold text-left text-gray-900 dark:text-white mb-2">
-                            {r.first_name} {r.last_name}
+                            {formatDisplayName(r, undefined, 'Household')}
                           </h3>
 
                           {/* Town */}

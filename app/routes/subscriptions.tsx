@@ -27,6 +27,7 @@ import { ChangePlanModal } from '~/components/subscriptions/ChangePlanModal';
 import { CreditBalanceCard } from '~/components/subscriptions/CreditBalanceCard';
 import type { CreditBalanceResponse, CancelReason } from '~/types/payments';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { notifySubscriptionChanged } from '~/utils/subscriptionEvents';
 import {
   extractPayments,
   extractPlans,
@@ -90,48 +91,11 @@ export default function SubscriptionsPage() {
   const [checkoutError, setCheckoutError] = useState('');
   const [checkoutPolling, setCheckoutPolling] = useState<NodeJS.Timeout | null>(null);
 
-  // Hardcoded pricing plans (same as pricing page)
-  const allPlans: SubscriptionPlan[] = [
-    {
-      id: 'household-monthly', name: 'Monthly',
-      description: 'Monthly subscription with 1-month free trial',
-      price_amount: 49900, billing_cycle: 'monthly', profile_type: 'household',
-      trial_days: 30, is_active: true,
-      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true },
-    },
-    {
-      id: 'household-quarterly', name: 'Quarterly',
-      description: '3-month subscription - Save 10%! (1-month free trial)',
-      price_amount: 134900, billing_cycle: 'quarterly', profile_type: 'household',
-      trial_days: 30, is_active: true,
-      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true, savings: 'Save KES 150' },
-    },
-    {
-      id: 'household-semi-annual', name: 'Semi-Annual',
-      description: '6-month subscription - Save 20%! (1-month free trial)',
-      price_amount: 239900, billing_cycle: 'semi-annual', profile_type: 'household',
-      trial_days: 30, is_active: true,
-      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true, savings: 'Save KES 600' },
-    },
-    {
-      id: 'household-annual', name: 'Annual',
-      description: '1-year subscription - Save 30%! (1-month free trial)',
-      price_amount: 419900, billing_cycle: 'yearly', profile_type: 'household',
-      trial_days: 30, is_active: true,
-      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true, savings: 'Save KES 1,800' },
-    },
-    {
-      id: 'househelp-annual', name: 'Annual Access',
-      description: 'One-time annual payment with 1-month free trial',
-      price_amount: 99900, billing_cycle: 'yearly', profile_type: 'househelp',
-      trial_days: 30, is_active: true,
-      features: { direct_messaging: true, profile_verification: true, job_applications: 'unlimited', profile_visibility: true, job_alerts: true, application_tracking: true },
-    },
-  ];
-
   // Filter plans by user's profile type
   const profileType: string = currentUser?.profile_type || getStoredProfileType() || '';
-  const availablePlans = (plans.length > 0 ? plans : allPlans).filter(p => p.is_active && p.profile_type === profileType);
+  // The server's plan rows are the source of truth for price and trial wording.
+  // A hardcoded fallback can advertise a trial that an administrator disabled.
+  const availablePlans = plans.filter(p => p.is_active && p.profile_type === profileType);
   const relevantPlans = availablePlans;
   const changePlanOptions = subscription
     ? relevantPlans.filter((plan) => plan.is_active && plan.id !== subscription.plan_id)
@@ -194,12 +158,14 @@ export default function SubscriptionsPage() {
   };
 
   const initiateCheckout = async () => {
-    if (!selectedCheckoutPlan || !checkoutPhone) {
+    if (!selectedCheckoutPlan) return;
+    const expectsTrial = (selectedCheckoutPlan.trial_days ?? 0) > 0;
+    if (!expectsTrial && !checkoutPhone) {
       setCheckoutError('Please enter your phone number');
       return;
     }
     const formatted = formatPhoneNumber(checkoutPhone);
-    if (!isValidPhoneNumber(formatted)) {
+    if (formatted && !isValidPhoneNumber(formatted)) {
       setCheckoutError('Please enter a valid Kenyan phone number (e.g., 0712345678)');
       return;
     }
@@ -209,8 +175,21 @@ export default function SubscriptionsPage() {
     try {
       const data = await paymentsService.createSubscriptionCheckout('', selectedCheckoutPlan.id, formatted, '', '') as any;
       const result = data?.toObject?.() ?? data;
+      const paymentId = result.paymentId || result.payment_id;
+      if (!paymentId && (result.status === 'trial' || result.status === 'completed')) {
+        notifySubscriptionChanged(currentUserId);
+        setCheckoutStatus('success');
+        setCheckoutProcessing(false);
+        setSuccessMessage(result.message || 'Your subscription is active.');
+        setTimeout(() => {
+          setShowCheckoutModal(false);
+          void fetchSubscriptionData();
+        }, 1200);
+        return;
+      }
+      if (!paymentId) throw new Error('Checkout did not return a payment reference. Please try again.');
       setCheckoutStatus('processing');
-      startCheckoutPolling(result.paymentId || result.payment_id);
+      startCheckoutPolling(paymentId);
     } catch (error) {
       setCheckoutStatus('failed');
       setCheckoutError(error instanceof Error ? error.message : 'Failed to initiate payment.');
@@ -226,6 +205,7 @@ export default function SubscriptionsPage() {
         const response = await paymentsService.checkPaymentStatus(paymentId, '') as any;
         const data = response?.toObject?.() ?? response;
         if (data?.status === 'completed') {
+          notifySubscriptionChanged(currentUserId);
           setCheckoutStatus('success');
           clearInterval(interval);
           setCheckoutPolling(null);
@@ -1469,14 +1449,16 @@ export default function SubscriptionsPage() {
                               / {getBillingCycleLabel(selectedCheckoutPlan.billing_cycle)}
                             </span>
                           </p>
-                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                            Includes 30-day free trial
-                          </p>
+                          {(selectedCheckoutPlan.trial_days ?? 0) > 0 && (
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                              Eligible new subscribers start with a {selectedCheckoutPlan.trial_days}-day trial. No payment is taken today.
+                            </p>
+                          )}
                         </div>
 
                         <div>
                           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            M-Pesa Phone Number
+                            M-Pesa Phone Number{(selectedCheckoutPlan.trial_days ?? 0) > 0 ? ' (only needed if your trial was already used)' : ''}
                           </label>
                           <input
                             type="tel"
@@ -1501,10 +1483,10 @@ export default function SubscriptionsPage() {
                           </button>
                           <button
                             onClick={initiateCheckout}
-                            disabled={!checkoutPhone || checkoutProcessing}
+                            disabled={checkoutProcessing || ((selectedCheckoutPlan.trial_days ?? 0) <= 0 && !checkoutPhone)}
                             className="flex-1 px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Start Free Trial
+                            {(selectedCheckoutPlan.trial_days ?? 0) > 0 ? 'Continue' : 'Pay with M-Pesa'}
                           </button>
                         </div>
                       </div>
@@ -1534,7 +1516,7 @@ export default function SubscriptionsPage() {
                   {checkoutStatus === 'success' && (
                     <div className="text-center py-8">
                       <CheckCircleIcon className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">Payment Successful!</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">Subscription Active!</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Your subscription is now active.</p>
                     </div>
                   )}

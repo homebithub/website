@@ -178,7 +178,9 @@ describe('mobile layout guardrails', () => {
     expect(button).toContain('onEdit={() => setEditing(true)}');
     expect(button).toContain('resolveListingId(listing)');
     expect(source('app/components/modals/OpenForWorkModal.tsx')).toContain('if (!id) throw new Error');
-    expect(button).toContain('Remove Open for Work');
+    expect(button).toContain('Turn Open for Work off?');
+    expect(button).toContain('status: live ? "active" : "paused"');
+    expect(button).toContain('saved listing details, profile, and applications stay intact');
     expect(button).toContain('daysRemaining');
     expect(hiring).toContain('<OpenForWorkButton showStatus');
   });

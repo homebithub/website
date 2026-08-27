@@ -25,6 +25,7 @@ import { SubscriptionRequiredModal } from '~/components/subscriptions/Subscripti
 import { resolveHousehelpProfile, resolveHousehelpUserId } from '~/utils/househelpProfiles';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { matchScoreClasses } from '~/utils/matchScore';
+import { formatDisplayName } from '~/utils/displayName';
 
 interface HousehelpProfile {
   id: number | string;
@@ -934,7 +935,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                                     }
                                     thumbnailPath={(househelp as any).thumbnail_path}
                                     mediumPath={(househelp as any).medium_path}
-                                    alt={`${househelp.first_name} ${househelp.last_name}`}
+                                    alt={formatDisplayName(househelp, undefined, 'Househelp')}
                                     className={`w-full h-full object-cover transition-opacity duration-300 ${
                                       imageLoadingStates[househelp.profile_id] === false ? 'opacity-100' : 'opacity-0'
                                     }`}
@@ -958,7 +959,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-2">
                               <div>
                                 <h3 className="text-lg font-bold text-left text-gray-900 dark:text-white">
-                                  {househelp.first_name} {househelp.last_name}
+                                  {formatDisplayName(househelp, undefined, 'Househelp')}
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
                                   📍 {househelp.county_of_residence || househelp.location || 'No location specified'}

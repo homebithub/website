@@ -6,6 +6,7 @@ import { employmentService } from '~/services/grpc/authServices';
 import { FormError } from '~/components/FormError';
 import { PHOTO_ACCEPT_ATTRIBUTE, selectPhotosForUpload, uploadDocuments } from '~/utils/documentUploads';
 import { useSearchParams } from 'react-router';
+import { formatDisplayName } from '~/utils/displayName';
 
 interface Review {
   id: string;
@@ -71,6 +72,7 @@ export default function ProfileReviews({
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<{ id: string; type: 'household' | 'househelp'; name: string } | null>(null);
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
     title: '',
@@ -271,15 +273,16 @@ export default function ProfileReviews({
         }));
       }
       await reviewService.createReview(userId, {
-        reviewee_id: profileId,
+        reviewee_id: reviewTarget?.id || profileId,
         rating: reviewForm.rating,
         title: reviewForm.title.trim(),
         content: reviewForm.content.trim(),
-        type: profileType,
+        type: reviewTarget?.type || profileType,
         service_type: 'domestic_service',
         images,
       });
       setShowReviewForm(false);
+      setReviewTarget(null);
       setReviewForm({ rating: 5, title: '', content: '' });
       setReviewImages([]);
       setActionSuccess('Your review has been published.');
@@ -352,6 +355,7 @@ export default function ProfileReviews({
             }
             onClick={() => {
               setActionError('');
+              setReviewTarget(null);
               setShowReviewForm(true);
             }}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:from-purple-600 disabled:hover:to-pink-600"
@@ -375,7 +379,7 @@ export default function ProfileReviews({
           >
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">Leave a review</h3>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">{reviewTarget ? `Review ${reviewTarget.name}` : 'Leave a review'}</h3>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Reviews are available only where HomeBit can verify a working relationship.
                 </p>
@@ -581,7 +585,7 @@ export default function ProfileReviews({
                         </div>
                         <div>
                           <p className="font-bold text-gray-900 dark:text-white">
-                            {review.reviewer_profile.first_name} {review.reviewer_profile.last_name}
+                            {formatDisplayName(review.reviewer_profile, undefined, 'Homebit user')}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             {new Date(review.created_at).toLocaleDateString('en-US', { 
@@ -673,6 +677,25 @@ export default function ProfileReviews({
                     </button>
                   </div>
                 </div>
+              )}
+
+              {isOwnProfile && review.reviewer_profile?.id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targetType = String(review.reviewer_profile?.type || '').toLowerCase() === 'househelp' ? 'househelp' : 'household';
+                    setReviewTarget({
+                      id: review.reviewer_profile!.id,
+                      type: targetType,
+                      name: formatDisplayName(review.reviewer_profile, undefined, 'this person'),
+                    });
+                    setActionError('');
+                    setShowReviewForm(true);
+                  }}
+                  className="mt-3 inline-flex items-center gap-2 rounded-xl border border-purple-300 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-50 dark:border-purple-500/50 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                >
+                  <Star className="h-4 w-4" /> Review back
+                </button>
               )}
 
               {/* Actions */}

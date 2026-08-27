@@ -16,6 +16,7 @@ import {
   getStoredUser,
   normalizeProfileType,
 } from "~/utils/authStorage";
+import { clearRequestCache } from '~/utils/requestCache';
 
 interface User {
   id: string;
@@ -100,6 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       clearStoredAuthSession();
+      clearRequestCache();
 
       setUser(null);
 
@@ -262,6 +264,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const signedIn = { ...userData, user_id: authId, id: authId, profile_type: profileType };
       // Cookies are already set by the response; this keeps localStorage, which
       // is where the app reads the access token from for gRPC metadata.
+      clearRequestCache();
       cacheAuthSession({ token, user: signedIn, provider: 'password' });
       setUser({ token, user: signedIn } as unknown as LoginResponse);
 
@@ -313,6 +316,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userProto = signupResponse?.getUser?.();
       const user = userProto?.toObject?.() || {};
 
+      clearRequestCache();
       cacheAuthSession({ token, refreshToken, user });
       setUser({ token, user } as unknown as LoginResponse);
       

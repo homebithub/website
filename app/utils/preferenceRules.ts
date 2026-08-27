@@ -5,6 +5,7 @@ export const SINGLE_SELECT_FEATURES = new Set([
   'WashingMachineAvailable', 'MobilitySupportNeeded', 'MedicalSupportNeeded',
   'SpecialNeedsExperience', 'CareRecipientCount', 'Urgency', 'EventSize',
   'PropertyFloors',
+  'ChildrenCapacity', 'HouseholdSizePreference', 'DwellingType',
 ]);
 
 export const featureKey = (name: string) => name.replace(/\s+/g, '').toLowerCase();

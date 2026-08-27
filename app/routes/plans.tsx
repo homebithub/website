@@ -18,6 +18,7 @@ import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { paymentsService } from "~/services/grpc/payments.service";
 import { getStoredProfileType } from "~/utils/authStorage";
+import { notifySubscriptionChanged } from "~/utils/subscriptionEvents";
 
 export const meta = () => [
   { title: "Choose a Plan — Homebit" },
@@ -312,7 +313,9 @@ export default function PlansPage() {
 
   // ── Initiate M-Pesa payment ────────────────────────────────────────────────
   const initiatePayment = async () => {
-    if (!selectedPlan || !phoneNumber) {
+    if (!selectedPlan) return;
+    const expectsTrial = selectedPlan.trial_days > 0;
+    if (!expectsTrial && !phoneNumber) {
       setErrorMessage("Please enter your phone number");
       return;
     }
@@ -321,7 +324,7 @@ export default function PlansPage() {
       return;
     }
     const formattedPhone = formatPhoneNumber(phoneNumber);
-    if (!isValidPhoneNumber(formattedPhone)) {
+    if (formattedPhone && !isValidPhoneNumber(formattedPhone)) {
       setErrorMessage("Please enter a valid Kenyan phone number (e.g., 0712345678)");
       return;
     }
@@ -346,6 +349,14 @@ export default function PlansPage() {
       )) as any;
       const result = data?.toObject?.() ?? data;
       const paymentId = result.paymentId ?? result.payment_id;
+      if (!paymentId && (result.status === "trial" || result.status === "completed")) {
+        notifySubscriptionChanged(userObj?.user_id || userObj?.id);
+        setPaymentStatus("success");
+        setProcessingPayment(false);
+        setTimeout(() => navigate(returnTo), 1200);
+        return;
+      }
+      if (!paymentId) throw new Error("Checkout did not return a payment reference. Please try again.");
       setPaymentStatus("processing");
       startPolling(paymentId);
     } catch (error) {
@@ -367,6 +378,7 @@ export default function PlansPage() {
         const response = (await paymentsService.checkPaymentStatus(paymentId, "")) as any;
         const data = response?.toObject?.() ?? response;
         if (data?.status === "completed") {
+          notifySubscriptionChanged(userObj?.user_id || userObj?.id);
           setPaymentStatus("success");
           clearInterval(interval);
           setPollingInterval(null);
@@ -502,7 +514,9 @@ export default function PlansPage() {
         {/* Fine print */}
         {!plansLoading && !plansError && myPlans.length > 0 && (
           <p className="text-center text-xs text-gray-500 mt-8">
-            All plans include a free trial. No payment required upfront. Cancel anytime.
+            {myPlans.some((plan) => plan.trial_days > 0)
+              ? "Eligible new subscribers start with a free trial and are not charged upfront."
+              : "Choose the billing period that works for you. You will confirm the displayed amount in M-Pesa."}
           </p>
         )}
       </main>
@@ -560,7 +574,7 @@ export default function PlansPage() {
                         {/* Phone */}
                         <div>
                           <label className="block text-xs font-medium text-gray-300 mb-2">
-                            M-Pesa Phone Number
+                            M-Pesa Phone Number{selectedPlan && selectedPlan.trial_days > 0 ? " (only needed if your trial was already used)" : ""}
                           </label>
                           <input
                             type="tel"
@@ -586,12 +600,17 @@ export default function PlansPage() {
                         {/* What happens next */}
                         <div className="bg-[#0d0d14] border border-[#1e1e2e] rounded-xl p-4">
                           <p className="text-xs font-medium text-gray-300 mb-2">What happens next?</p>
-                          <ol className="text-xs text-gray-400 space-y-1 list-decimal list-inside">
-                            <li>You'll receive an M-Pesa prompt on your phone</li>
-                            <li>Enter your M-Pesa PIN to authorise payment</li>
-                            <li>You'll receive a confirmation SMS</li>
-                            <li>Your subscription will be activated immediately</li>
-                          </ol>
+                          {selectedPlan && selectedPlan.trial_days > 0 ? (
+                            <p className="text-xs text-gray-400">
+                              If you are eligible, your {selectedPlan.trial_days}-day trial starts immediately and you are not charged. If you already used a trial, Homebit will request the displayed amount through M-Pesa.
+                            </p>
+                          ) : (
+                            <ol className="text-xs text-gray-400 space-y-1 list-decimal list-inside">
+                              <li>You'll receive an M-Pesa prompt for the displayed amount</li>
+                              <li>Enter your M-Pesa PIN to authorise payment</li>
+                              <li>Your subscription will be activated immediately</li>
+                            </ol>
+                          )}
                         </div>
 
                         {errorMessage && <ErrorAlert message={errorMessage} />}
@@ -606,10 +625,10 @@ export default function PlansPage() {
                           </button>
                           <button
                             onClick={initiatePayment}
-                            disabled={!phoneNumber || processingPayment || planResolving || !resolvedPlanId}
+                            disabled={processingPayment || planResolving || !resolvedPlanId || Boolean(selectedPlan && selectedPlan.trial_days <= 0 && !phoneNumber)}
                             className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold shadow-lg"
                           >
-                            Pay Now
+                            {selectedPlan && selectedPlan.trial_days > 0 ? "Continue" : "Pay Now"}
                           </button>
                         </div>
                       </div>
@@ -646,7 +665,7 @@ export default function PlansPage() {
                   {paymentStatus === "success" && (
                     <div className="text-center py-10">
                       <CheckCircleIcon className="w-20 h-20 mx-auto mb-4 text-green-500" />
-                      <p className="text-xl font-bold text-white mb-2">Payment Successful!</p>
+                      <p className="text-xl font-bold text-white mb-2">Subscription Active!</p>
                       <p className="text-xs text-gray-400">Your subscription is now active. Redirecting you back...</p>
                     </div>
                   )}

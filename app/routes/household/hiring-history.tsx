@@ -21,6 +21,7 @@ import { ListPageSkeleton } from "~/components/ShimmerLoader";
 import { hiringAttentionScope, hydrateHiringAttention, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
 import { HiringCardModal, isHiringCardAction } from '~/components/hiring/HiringCardModal';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
+import { formatDisplayName } from '~/utils/displayName';
 
 interface HireRequest {
   id: string;
@@ -261,8 +262,7 @@ const getHousehelpInitials = (househelp?: HireRequest['househelp']) => {
 const getHousehelpName = (househelp?: HireRequest['househelp']) => {
   const first = househelp?.user?.first_name || househelp?.first_name || '';
   const last = househelp?.user?.last_name || househelp?.last_name || '';
-  const full = `${first} ${last}`.trim();
-  return full || 'Househelp';
+  return formatDisplayName(first, last, 'Househelp');
 };
 
 export default function HiringHistory() {
@@ -927,6 +927,10 @@ export default function HiringHistory() {
     setCancelError(null);
 
     try {
+      await hireRequestService.updateHireRequest(cancelRequest.id, {
+        closure_reason: resolvedReason,
+        closure_feedback: cancelMessage.trim(),
+      });
       await hireRequestService.cancelHireRequest(cancelRequest.id);
 
       await removeHousehelpFromShortlist(cancelRequest.househelp?.id || cancelRequest.househelp_id);
@@ -1500,7 +1504,7 @@ export default function HiringHistory() {
               const profile = profileId ? profilesById[profileId] : undefined;
               const firstName = profile?.first_name || interest.househelp?.first_name || interest.househelp?.user?.first_name;
               const lastName = profile?.last_name || interest.househelp?.last_name || interest.househelp?.user?.last_name;
-              const displayName = `${firstName || ''} ${lastName || ''}`.trim() || getHousehelpName(interest.househelp as any);
+              const displayName = formatDisplayName(firstName, lastName, getHousehelpName(interest.househelp as any));
               const applicantUserId = househelpUserIdFor(interest);
               const avatarUrl = profile?.avatar_url || profile?.profile_picture || (Array.isArray(profile?.photos) ? profile?.photos?.[0] : undefined) || interest.househelp?.avatar_url || interest.househelp?.photos?.[0] || applicantProfilePhotos[applicantUserId];
               const locationCandidate = [profile?.county_of_residence, profile?.location, (profile as any)?.neighborhood, (profile as any)?.region, (profile as any)?.city].find((value) => typeof value === 'string' && value.length > 0);
@@ -1565,11 +1569,11 @@ export default function HiringHistory() {
               // false for every row ever rendered and the buttons under it had
               // never once appeared.
               const canActOnInterest =
-                (canAcceptApplicant || interest.status === 'shortlisted' || interest.status === 'accepted') && !hasExistingContract;
+                (canAcceptApplicant || interest.status === 'shortlisted' || interest.status === 'accepted' || interest.status === 'approved') && !hasExistingContract;
               // What the next step actually is, named as the household would
               // name it: an offer to somebody set aside, a contract to somebody
               // who has already said yes.
-              const advanceLabel = interest.status === 'accepted'
+              const advanceLabel = interest.status === 'accepted' || interest.status === 'approved'
                 ? 'Send contract'
                 : canAcceptApplicant
                   ? 'Accept'
@@ -1818,7 +1822,7 @@ export default function HiringHistory() {
                         <>
                           <button
                             onClick={() =>
-                              interest.status === 'accepted'
+                              interest.status === 'accepted' || interest.status === 'approved'
                                 ? createContractFromApplication(interest)
                                 : handleAcceptInterest(interest)
                             }
@@ -1879,7 +1883,11 @@ export default function HiringHistory() {
         const isJob = kind === 'job';
         const profileId = !isJob ? record.househelp_id || record.househelp?.id : '';
         const profile = profileId ? profilesById[profileId] : undefined;
-        const personName = `${profile?.first_name || record.househelp?.first_name || record.househelp?.user?.first_name || ''} ${profile?.last_name || record.househelp?.last_name || record.househelp?.user?.last_name || ''}`.trim() || 'Househelp';
+        const personName = formatDisplayName(
+          profile?.first_name || record.househelp?.first_name || record.househelp?.user?.first_name,
+          profile?.last_name || record.househelp?.last_name || record.househelp?.user?.last_name,
+          'Househelp',
+        );
         const applicantUserId = !isJob ? househelpUserIdFor(record) : '';
         const imageUrl = !isJob ? profile?.avatar_url || profile?.profile_picture || profile?.photos?.[0] || record.househelp?.avatar_url || record.househelp?.photos?.[0] || applicantProfilePhotos[applicantUserId] : undefined;
         const listing = !isJob ? jobs.find((job) => String(job.id) === String(record.listing_id || '')) : record;
@@ -1907,6 +1915,7 @@ export default function HiringHistory() {
               { label: 'Salary', value: listingHighlights(listing).salary || 'Not specified' },
               { label: 'Available', value: record.available_from ? formatDate(record.available_from) : 'Flexible' },
               { label: 'Applied', value: formatDate(record.created_at) },
+              { label: 'Closure reason', value: record.closure_reason || record.decline_reason || record.cancel_reason || undefined },
             ]}
             details={isJob ? <ListingDetails listing={record} /> : undefined}
             actions={isJob ? <>
@@ -1916,6 +1925,11 @@ export default function HiringHistory() {
               {employmentContract?.id && (
                 <button type="button" onClick={() => viewEmploymentContract(employmentContract)} className="rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-md">
                   View contract
+                </button>
+              )}
+              {!isJob && !employmentContract?.id && ['accepted', 'approved'].includes(String(record.status).toLowerCase()) && (
+                <button type="button" onClick={() => void createContractFromApplication(record)} disabled={contractCreating === record.id} className="rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-50">
+                  {contractCreating === record.id ? 'Creating…' : 'Create contract'}
                 </button>
               )}
               <button type="button" onClick={() => { setSelectedHiringCard(null); setHistoryFor(record.id); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">History</button>
@@ -2188,7 +2202,7 @@ export default function HiringHistory() {
             {getHousehelpName(cancelRequest.househelp)}
           </h3>
           <p className="text-xs sm:text-xs text-gray-500 dark:text-gray-400">
-            Select a reason and optionally leave a message the househelp will see.
+            Select a reason and optionally leave private feedback to help Homebit improve hiring.
           </p>
         </div>
         <button
@@ -2251,13 +2265,13 @@ export default function HiringHistory() {
 
       <div className="mb-5 sm:mb-6">
         <label className="block text-xs sm:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-          Additional message to the househelp (optional)
+          Feedback for Homebit (optional)
         </label>
         <textarea
           rows={4}
           value={cancelMessage}
           onChange={(e) => setCancelMessage(e.target.value)}
-          placeholder="Let them know anything specific about the cancellation..."
+          placeholder="What could Homebit improve about this hiring experience?"
           className="
             w-full px-3 sm:px-4 py-2.5 sm:py-3 text-xs
             rounded-xl sm:rounded-2xl

@@ -16,6 +16,9 @@ import { useSSEContextSafe } from '~/contexts/SSEContext';
 import { hiringAttentionScope, hydrateHiringAttention, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
 import { HiringCardModal, isHiringCardAction } from '~/components/hiring/HiringCardModal';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
+import { formatDisplayName } from '~/utils/displayName';
+import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
   Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User, FileText
@@ -118,11 +121,11 @@ function normalizeHiringProfileRole(profileType?: string | null): HiringProfileR
 
 const getHouseholdName = (household?: HireRequest['household'] | HireContract['household'] | Interest['household']) => {
   if (!household) return 'Household';
-  if (household.household_name) return household.household_name;
-  const directName = `${household.first_name || ''} ${household.last_name || ''}`.trim();
+  if (household.household_name) return formatDisplayName(household.household_name, undefined, 'Household');
+  const directName = formatDisplayName(household, undefined, '');
   if (directName) return directName;
   if (household.user) {
-    const name = `${household.user.first_name || ''} ${household.user.last_name || ''}`.trim();
+    const name = formatDisplayName(household.user, undefined, '');
     if (name) return name;
   }
   return 'Household';
@@ -293,6 +296,8 @@ export default function HousehelpHiringHistory() {
   const [historyFor, setHistoryFor] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [attentionRevision, setAttentionRevision] = useState(0);
+  const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
   
   // Confirmation dialog states
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
@@ -301,6 +306,32 @@ export default function HousehelpHiringHistory() {
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
   const attentionScope = hiringAttentionScope(getStoredUserProfileId(), 'househelp');
+
+  const openHouseholdChat = async (record: any) => {
+    const householdUserId = String(record.household?.user_id || record.household?.user?.id || '');
+    const househelpUserId = getStoredUserId() || '';
+    if (!householdUserId || !househelpUserId) {
+      setChatError('We could not identify both people for this conversation. Refresh and try again.');
+      return;
+    }
+    setChatLoadingId(String(record.id));
+    setChatError(null);
+    try {
+      const payload: StartConversationPayload = {
+        household_user_id: householdUserId,
+        househelp_user_id: househelpUserId,
+        househelp_profile_id: getStoredUserProfileId() || undefined,
+        household_profile_id: record.household?.id || record.household_profile_id || record.household_id || undefined,
+        listing_id: record.listing_id || record.listing?.id || undefined,
+      };
+      const conversationId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      navigate(getInboxRoute(conversationId));
+    } catch {
+      setChatError('Could not open the conversation. Please try again.');
+    } finally {
+      setChatLoadingId(null);
+    }
+  };
 
   useEffect(() => {
     void hydrateHiringAttention(attentionScope);
@@ -1336,8 +1367,10 @@ export default function HousehelpHiringHistory() {
               { label: 'Created', value: record.created_at ? formatDate(record.created_at) : undefined },
               { label: 'End', value: record.end_date ? formatDate(record.end_date) : undefined },
               { label: 'Signature', value: isEmploymentContract ? (record.househelp_signed_at ? 'Signed' : 'Awaiting your signature') : undefined },
+              { label: 'Closure reason', value: record.closure_reason || record.decline_reason || record.cancel_reason || undefined },
             ]}
             actions={<>
+              <button type="button" onClick={() => void openHouseholdChat(record)} disabled={chatLoadingId === String(record.id)} className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"><MessageCircle className="h-4 w-4" />{chatLoadingId === String(record.id) ? 'Opening…' : 'Chat'}</button>
               {record.listing_id && <button type="button" onClick={() => { setSelectedHiringCard(null); void openJobListing(record.listing_id, record.listing); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
               <button type="button" onClick={() => navigate(profileLink, { state: { profileId: record.household?.id || record.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View household</button>
               {isRequest && normalizeStatus(record.status) === 'pending' && <>
@@ -1349,6 +1382,8 @@ export default function HousehelpHiringHistory() {
           />
         );
       })()}
+
+      {chatError && <div className="fixed bottom-4 left-1/2 z-[70] w-[min(92vw,28rem)] -translate-x-1/2"><ErrorAlert message={chatError} /></div>}
 
       {/* Decline Modal */}
       <ConfirmDialog

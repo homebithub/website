@@ -31,6 +31,7 @@ import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionB
 import { ProfileCompletionCelebrationModal } from "~/components/profile/ProfileCompletionCelebrationModal";
 import { Briefcase, Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
+import { formatDisplayName } from "~/utils/displayName";
 import { humanizeFeatureName, listingHighlights, readFeatureGroups } from "~/utils/listingFeatures";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
@@ -158,10 +159,6 @@ interface HouseholdJobListing {
   status?: string;
   created_at?: string;
   expires_at?: string;
-  salary_min?: number;
-  salary_max?: number;
-  salary_frequency?: string;
-  salary_range?: { min?: number; max?: number; currency?: string };
   [key: string]: any;
 }
 
@@ -177,15 +174,7 @@ const describeJobExpiry = (value?: string): string => {
 };
 
 const formatJobSalary = (job: HouseholdJobListing): string => {
-  const featureSalary = listingHighlights(job).salary;
-  if (featureSalary) return featureSalary;
-  const min = Number(job.salary_min ?? job.salary_range?.min ?? 0);
-  const max = Number(job.salary_max ?? job.salary_range?.max ?? 0);
-  if (!min && !max) return "Salary not specified";
-  const amount = min && max && min !== max
-    ? `${min.toLocaleString()}–${max.toLocaleString()}`
-    : (min || max).toLocaleString();
-  return `${job.salary_range?.currency || "KES"} ${amount}${job.salary_frequency ? ` / ${job.salary_frequency}` : ""}`;
+  return listingHighlights(job).salary || "Salary not specified";
 };
 
 type SalaryRangeOption = {
@@ -1480,7 +1469,7 @@ export default function HouseholdJobsHome() {
                 {sortedListings.map((listing) => {
                   const househelp = listing.househelp || {};
                   const user = househelp.user || {};
-                  const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || "Househelp";
+                  const name = formatDisplayName(firstString(user.first_name, househelp.first_name), firstString(user.last_name, househelp.last_name), "Househelp");
                   const jobTypes = toStringArray(listing.job_types);
                   const cardTitle = isServiceProvider ? (listing.title || jobTypes[0] || "Job listing") : name;
                   const initials = cardTitle.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || (isServiceProvider ? "JL" : "HW");
@@ -1743,7 +1732,7 @@ export default function HouseholdJobsHome() {
       {selectedListing && (() => {
         const househelp = selectedListing.househelp || {};
         const user = househelp.user || {};
-        const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || "Househelp";
+        const name = formatDisplayName(firstString(user.first_name, househelp.first_name), firstString(user.last_name, househelp.last_name), "Househelp");
         const jobTypes = toStringArray(selectedListing.job_types);
         const modalTitle = isServiceProvider ? (selectedListing.title || jobTypes[0] || "Job listing") : name;
         const initials = name
@@ -1945,7 +1934,7 @@ export default function HouseholdJobsHome() {
       {selectedInviteListing && (() => {
         const househelp = selectedInviteListing.househelp || {};
         const user = househelp.user || {};
-        const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || 'Househelp';
+        const name = formatDisplayName(firstString(user.first_name, househelp.first_name), firstString(user.last_name, househelp.last_name), 'Househelp');
         const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
         return (
           <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">

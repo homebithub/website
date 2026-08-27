@@ -28,8 +28,13 @@ export function ListingDetails({
   emptyMessage?: string;
 }) {
   const groups = readFeatureGroups(listing);
+  const record = listing && typeof listing === 'object' ? listing as Record<string, any> : {};
+  const description = String(
+    record.description ?? record.job_description ?? record.jobDescription ??
+    record.attributes?.description ?? record.listing?.description ?? '',
+  ).trim();
 
-  if (groups.length === 0) {
+  if (groups.length === 0 && !description) {
     return (
       <p className={`text-xs text-gray-500 dark:text-gray-400 ${className}`}>
         {emptyMessage}
@@ -38,7 +43,14 @@ export function ListingDetails({
   }
 
   return (
-    <div className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-3 ${className}`}>
+    <div className={`space-y-3 ${className}`}>
+      {description && (
+        <section className="rounded-2xl border border-purple-200 bg-white p-3 dark:border-purple-500/20 dark:bg-white/5">
+          <p className="mb-1 text-xs font-bold uppercase tracking-wide text-purple-700 dark:text-purple-200">Job description</p>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-200">{description}</p>
+        </section>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {groups.map((group) => (
         <div
           key={group.key || group.name}
@@ -59,6 +71,7 @@ export function ListingDetails({
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }

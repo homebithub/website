@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { useLocation } from 'react-router';
 import { API_BASE_URL } from '~/config/api';
 import { useAuth } from '~/contexts/useAuth';
 import { isLocalGatewayUrl } from '~/services/grpc/client';
@@ -47,8 +46,9 @@ interface SSEProviderProps {
 
 export function SSEProvider({ children }: SSEProviderProps) {
   const { user } = useAuth();
-  const location = useLocation();
-  const disabledOnProfileAccount = location.pathname === '/profile';
+  // Realtime account chrome must remain live on every authenticated route.
+  // Disabling the shared stream on /profile made badges silently stale there.
+  const disabledOnProfileAccount = false;
   const [isConnected, setIsConnected] = useState(false);
   const [connectionUptime, setConnectionUptime] = useState(0);
   const [historyGapCount, setHistoryGapCount] = useState(0);
@@ -64,8 +64,8 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const connectRef = useRef<() => void>(() => {});
   // So exhausting the budget is reported once, not on every subsequent error.
   const exhaustedLoggedRef = useRef(false);
+  const lastEventIdRef = useRef('');
 
-  const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000;
 
   const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
@@ -92,14 +92,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
     // the outage leaves nothing for when connectivity returns. Stay dormant;
     // the online listener resumes us.
     if (isOffline()) return;
-
-    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-      if (!exhaustedLoggedRef.current) {
-        exhaustedLoggedRef.current = true;
-        console.warn('[SSE] Paused retries; will resume when the network or tab returns');
-      }
-      return;
-    }
 
     reconnectAttemptsRef.current++;
     const backoff = Math.min(baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
@@ -166,9 +158,13 @@ export function SSEProvider({ children }: SSEProviderProps) {
     }
 
     const token = getAccessTokenFromCookies() || localStorage.getItem('token') || null;
-    const url = token 
+    const baseUrl = token
       ? `${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`
       : `${API_BASE_URL}/api/v1/notifications/stream`;
+    const cursorSeparator = baseUrl.includes('?') ? '&' : '?';
+    const url = lastEventIdRef.current
+      ? `${baseUrl}${cursorSeparator}last_event_id=${encodeURIComponent(lastEventIdRef.current)}`
+      : baseUrl;
 
     const es = new EventSource(url, { withCredentials: true });
     eventSourceRef.current = es;
@@ -198,6 +194,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
     // dispatched on the event_type inside the payload.
     es.onmessage = (ev) => {
       try {
+        if (ev.lastEventId) lastEventIdRef.current = ev.lastEventId;
         const payload = JSON.parse(ev.data);
         const eventType = payload.event_type;
 
@@ -207,6 +204,12 @@ export function SSEProvider({ children }: SSEProviderProps) {
           // rather than carrying on as if the state were complete.
           console.warn('[SSE] Reconnected with a gap in history:', payload.data);
           setHistoryGapCount((count) => count + 1);
+          // A gap means deltas are no longer sufficient. Existing consumers
+          // already use these events to force authoritative snapshots.
+          window.dispatchEvent(new Event('inbox-updated'));
+          window.dispatchEvent(new Event('hiring-updated'));
+          window.dispatchEvent(new Event('notifications-updated'));
+          window.dispatchEvent(new CustomEvent('homebit:subscription-changed'));
         }
 
         dispatchMessage(eventType, payload);

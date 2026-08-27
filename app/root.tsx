@@ -16,6 +16,7 @@ import { PWARegistration } from "~/components/PWARegistration";
 import { PWAInstallPrompt } from "~/components/PWAInstallPrompt";
 import { AppLaunchScreen } from "~/components/AppLaunchScreen";
 import { PullToRefresh } from "~/components/PullToRefresh";
+import GuidedRouteTour from '~/components/GuidedRouteTour';
 import stylesheet from "./tailwind.css?url";
 
 export const meta: Route.MetaFunction = () => [
@@ -227,6 +228,7 @@ export default function App() {
                                     <RouteProgress/>
                                     <DeviceRevocationWatcher/>
                                     <PersistentNavigation/>
+                                    {!isEmbeddedRoute && <GuidedRouteTour />}
                                     <Outlet/>
                                     {!isEmbeddedRoute && <SupportChat />}
                                     <PWAInstallPrompt />

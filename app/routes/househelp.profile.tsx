@@ -23,6 +23,7 @@ import type { MissingRequirement } from '~/hooks/useOnboardingProgress';
 import EditSectionModal from '~/components/ui/EditSectionModal';
 import Location from '~/components/Location';
 import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { formatDisplayName } from '~/utils/displayName';
 import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 import { IdentityVerificationPrompt } from '~/components/verification/IdentityVerificationPrompt';
 import { useIdentityVerification } from '~/hooks/useIdentityVerification';
@@ -440,7 +441,7 @@ export default function HousehelpProfile() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mt-2 flex items-center gap-2">
-              {profile.first_name} {profile.last_name}
+              {formatDisplayName(profile, undefined, 'Househelp')}
               {/* Read from the verification hook this page already loads, not
                   from the profile payload, so what somebody is told about their
                   own status here and in the verification panel below cannot

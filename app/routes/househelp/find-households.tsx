@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { profileService } from '~/services/grpc/authServices';
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { formatDisplayName } from '~/utils/displayName';
 
 // Dropdown-only options (no text inputs)
 const HOUSE_SIZES = ["", "bedsitter", "1br", "2br", "3br+", "mansion"];
@@ -246,14 +247,14 @@ export default function HousehelpFindHouseholds() {
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-lg font-bold">
                 {r.avatar_url ? (
-                  <img src={r.avatar_url} alt={`${r.first_name} ${r.last_name}`} className="w-full h-full object-cover" />
+                  <img src={r.avatar_url} alt={formatDisplayName(r, undefined, 'Household')} className="w-full h-full object-cover" />
                 ) : (
                   getInitials(r.first_name, r.last_name)
                 )}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-base font-semibold text-white">{r.first_name} {r.last_name}</h3>
+                  <h3 className="text-base font-semibold text-white">{formatDisplayName(r, undefined, 'Household')}</h3>
                   {r.verified && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
                       Verified

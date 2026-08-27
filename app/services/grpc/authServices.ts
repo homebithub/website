@@ -542,7 +542,7 @@ export const profileService = {
   },
   async updateHousehelpFields(userId: string, profileType: string, updates: Record<string, any>, stepMetadata?: Record<string, any>): Promise<any> {
     const req = new auth_pb.UpdateHousehelpFieldsRequest();
-    req.setUserId(resolveUserId(userId));
+    req.setUserId(resolveUserId(userId || ''));
     req.setProfileType(profileType);
     const updatesStruct = toStruct(updates);
     if (updatesStruct) req.setUpdates(updatesStruct);
@@ -556,7 +556,7 @@ export const profileService = {
   },
   async saveUserLocation(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.SaveUserLocationRequest();
-    req.setUserId(resolveUserId(userId));
+    req.setUserId(resolveUserId(userId || ''));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => profileClient.saveUserLocation(req, getMetadata(), cb));
@@ -1152,6 +1152,15 @@ export const hireRequestService = {
   },
   async getHireRequest(id: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => hireRequestClient.getHireRequest(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async updateHireRequest(id: string, data: Record<string, any>, userId?: string): Promise<any> {
+    const req = new auth_pb.UpdateHireRequestReq();
+    req.setId(id);
+    req.setUserId(resolveUserId(userId || ''));
+    const struct = toStruct(data);
+    if (struct) req.setData(struct);
+    const res = await grpcCall((cb) => hireRequestClient.updateHireRequest(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
   async listHireRequests(userId: string, profileType: string, status?: string): Promise<any> {

@@ -10,13 +10,19 @@ const PROFILE_FEATURE_LABELS: Record<string, string> = {
   PetTypeOption: 'Pet types',
   PetTraitOption: 'Pet traits',
   Religion: 'Religion',
-  HouseSize: 'House size',
-  HouseholdSizePreference: 'Preferred household size',
+  HouseSize: 'Bedrooms in this household',
+  DwellingType: 'Type of home',
+  HouseholdSizePreference: 'Largest number of adults you prefer to work for',
   LocationTypePreference: 'Preferred location type',
   FamilyTypePreference: 'Preferred family type',
   ReferenceRelationship: 'Reference relationships',
 };
 
-export function profileFeatureLabel(name: string) {
+export function profileFeatureLabel(name: string, profileType?: string) {
+  if (name === 'ChildrenCapacity') {
+    return profileType === 'household'
+      ? 'Children in this household'
+      : 'Maximum number of children you are comfortable caring for';
+  }
   return PROFILE_FEATURE_LABELS[name] || name;
 }

@@ -26,6 +26,7 @@ import { resolveHouseholdProfile } from '~/utils/householdProfiles';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 import { InboxPageSkeleton, ShimmerLine, ShimmerSection } from "~/components/ShimmerLoader";
 import { CHAT_MESSAGE_LIMIT } from "~/config/chat";
+import { formatDisplayName } from '~/utils/displayName';
 
 const EmojiPicker = lazy(() => import('~/components/chat/LazyEmojiPicker'));
 
@@ -143,9 +144,10 @@ function extractEnvelopeObject<T = any>(response: any): T {
 
 function getNameFromUser(user: any): string {
   if (!user || typeof user !== 'object') return '';
-  const firstName = String(user.first_name || user.firstName || user.FirstName || '').trim();
-  const lastName = String(user.last_name || user.lastName || user.LastName || '').trim();
-  return `${firstName} ${lastName}`.trim();
+  return formatDisplayName({
+    first_name: user.first_name || user.firstName || user.FirstName,
+    last_name: user.last_name || user.lastName || user.LastName,
+  }, undefined, '');
 }
 
 function getNameFromProfile(profile: any, fallback: string): string {
@@ -159,13 +161,12 @@ function getNameFromProfile(profile: any, fallback: string): string {
     profile.householdName ||
     ''
   ).trim();
-  if (directName) return directName;
+  if (directName) return formatDisplayName(directName, undefined, fallback);
 
   const nestedName = getNameFromUser(profile.user) || getNameFromUser(profile.owner);
   if (nestedName) return nestedName;
 
-  const fallbackName = `${String(profile.first_name || profile.firstName || '').trim()} ${String(profile.last_name || profile.lastName || '').trim()}`.trim();
-  return fallbackName || fallback;
+  return formatDisplayName(profile, undefined, fallback);
 }
 
 function normalizeMessage(raw: any): Message | null {

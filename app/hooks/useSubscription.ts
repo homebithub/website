@@ -3,6 +3,7 @@ import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { useSubscriptionSSE } from './useSubscriptionSSE';
 import { extractSubscription, extractSubscriptionAccess } from '~/utils/subscriptionData';
 import { cachedRequest } from '~/utils/requestCache';
+import { SUBSCRIPTION_CHANGED_EVENT } from '~/utils/subscriptionEvents';
 
 const SUBSCRIPTION_STALE_MS = 2 * 60_000;
 
@@ -152,6 +153,15 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   const refreshSubscription = useCallback(() => {
     void fetchSubscription(true);
   }, [fetchSubscription]);
+
+  useEffect(() => {
+    const onSubscriptionChanged = (event: Event) => {
+      const changedUserId = (event as CustomEvent<{ userId?: string | null }>).detail?.userId;
+      if (!changedUserId || changedUserId === userId) refreshSubscription();
+    };
+    window.addEventListener(SUBSCRIPTION_CHANGED_EVENT, onSubscriptionChanged);
+    return () => window.removeEventListener(SUBSCRIPTION_CHANGED_EVENT, onSubscriptionChanged);
+  }, [refreshSubscription, userId]);
 
   // SSE for real-time subscription updates
   useSubscriptionSSE(

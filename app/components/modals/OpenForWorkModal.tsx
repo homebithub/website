@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { CalendarDays, Check, Pencil, Trash2 } from "lucide-react";
+import { CalendarDays, Check, Pencil, Power } from "lucide-react";
 import { openForWorkService, profileService } from "~/services/grpc/authServices";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import {
@@ -130,6 +130,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
   }, [isOpen, listing?.id]);
 
   if (!isOpen) return null;
+  const isLive = String(listing?.status ?? "active").toLowerCase() === "active";
 
   const toggleJobType = (value: string) => {
     setJobTypes((prev) =>
@@ -202,8 +203,8 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
         {readOnly ? (
           <div className="min-w-0 max-w-full space-y-4 overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
-              <p className="font-semibold">Open for work is active</p>
-              <p className="mt-0.5 opacity-80">Households can find you using these availability details.</p>
+              <p className="font-semibold">Open for work is {isLive ? "active" : "off"}</p>
+              <p className="mt-0.5 opacity-80">{isLive ? "Households can find you using these availability details." : "Your details are saved, but households cannot currently find this listing."}</p>
             </div>
 
             <section>
@@ -246,7 +247,9 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
 
             <div className="sticky bottom-0 -mx-4 flex gap-3 border-t border-gray-200 bg-white px-4 pt-4 dark:border-white/10 dark:bg-[#13131a] sm:-mx-6 sm:px-6">
               <button type="button" onClick={onEdit} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-xs font-semibold text-white"><Pencil className="h-4 w-4" />Edit</button>
-              <button type="button" onClick={onRemove} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-2.5 text-xs font-semibold text-red-700 dark:text-red-200"><Trash2 className="h-4 w-4" />Remove</button>
+              {isLive ? (
+                <button type="button" onClick={onRemove} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-400 px-4 py-2.5 text-xs font-semibold text-red-700 dark:text-red-200"><Power className="h-4 w-4" />Turn off</button>
+              ) : null}
             </div>
           </div>
         ) : <form onSubmit={handleSubmit} className="min-w-0 max-w-full space-y-5 overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">

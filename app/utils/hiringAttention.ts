@@ -123,12 +123,26 @@ export function markHiringRecordAttended(scope: string, kind: HiringAttentionKin
     .then(({ clientProfileService }) => clientProfileService.markHiringRecordAttended({
       userProfileId: profileId, kind, recordId: String(record.id), version,
     }))
-    .catch(() => undefined);
+    .catch(() => {
+      // The server is authoritative. Roll back an optimistic local mark when
+      // persistence fails so a refresh/device does not contradict this tab.
+      delete ledger[key];
+      serverLedgers.set(scope, ledger);
+      window.localStorage.setItem(storageKey(scope), JSON.stringify(ledger));
+      dispatchAttentionUpdate(scope, kind, record.id);
+    });
   return true;
 }
 
 export function hiringAttentionScope(profileId?: string | null, role?: string | null) {
   const id = String(profileId || '').trim();
-  const normalizedRole = String(role || '').trim().toLowerCase();
+  const rawRole = String(role || '').trim().toLowerCase();
+  // Navigation used service-provider/client while the pages used
+  // househelp/household, creating two independent ledgers for one profile.
+  const normalizedRole = ['service-provider', 'svc_pvd', 'househelp'].includes(rawRole)
+    ? 'househelp'
+    : ['client', 'clt', 'household'].includes(rawRole)
+      ? 'household'
+      : rawRole;
   return id && normalizedRole ? `${normalizedRole}:${id}` : '';
 }

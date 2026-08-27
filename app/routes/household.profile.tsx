@@ -25,6 +25,7 @@ import { profileFeatureLabel } from '~/utils/profileFeatures';
 import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 import { useProfileCompletionReminder } from '~/hooks/useProfileCompletionReminder';
 import { ProfileCompletionCelebrationModal } from '~/components/profile/ProfileCompletionCelebrationModal';
+import { formatDisplayName } from '~/utils/displayName';
 
 interface HouseholdData {
   id?: string;
@@ -858,7 +859,7 @@ export default function HouseholdProfile() {
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">
                       {member.user?.first_name && member.user?.last_name
-                        ? `${member.user.first_name} ${member.user.last_name}`
+                        ? formatDisplayName(member.user.first_name, member.user.last_name)
                         : member.user?.email || "Unknown Member"}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">

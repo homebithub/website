@@ -109,22 +109,26 @@ export function OpenForWorkButton({
       navigate("/subscriptions");
       return;
     }
+    if (hasListing && !isLive) {
+      void setListingLive(true);
+      return;
+    }
     setEditing(!hasListing);
     setModalOpen(true);
   };
 
-  const removeListing = async () => {
+  const setListingLive = async (live: boolean) => {
     const listingId = resolveListingId(listing);
     if (!listingId || removing) return;
     setRemoving(true);
     setRemoveError("");
     try {
-      await openForWorkService.deleteOpenForWork(listingId, "");
-      setListing(null);
+      await openForWorkService.updateOpenForWork(listingId, "", { status: live ? "active" : "paused" });
+      await loadListing();
       setRemoveOpen(false);
       onChanged?.();
     } catch (error: any) {
-      setRemoveError(error?.message || "We could not remove your Open for Work listing. Please try again.");
+      setRemoveError(error?.message || `We could not turn your Open for Work listing ${live ? "on" : "off"}. Please try again.`);
     } finally {
       setRemoving(false);
     }
@@ -222,10 +226,10 @@ export function OpenForWorkButton({
       <ConfirmDialog
         isOpen={removeOpen}
         onClose={() => { if (!removing) setRemoveOpen(false); }}
-        onConfirm={() => void removeListing()}
-        title="Remove Open for Work?"
-        message={`Households will no longer find you in search results. Your profile and applications will stay intact, and you can publish one new Open for Work listing later when you have an active subscription. ${expiryText}`}
-        confirmText={removing ? "Removing…" : "Remove listing"}
+        onConfirm={() => void setListingLive(false)}
+        title="Turn Open for Work off?"
+        message={`Households will no longer find you in search results. Your saved listing details, profile, and applications stay intact, so turning it on again is one click. ${expiryText}`}
+        confirmText={removing ? "Turning off…" : "Turn off"}
         cancelText="Keep me searchable"
         variant="danger"
         isLoading={removing}

@@ -61,3 +61,8 @@ export function invalidateCached(prefix: string): void {
     if (key === prefix || key.startsWith(prefix)) memoryCache.delete(key);
   }
 }
+
+/** Clear every in-memory response at an authentication/profile boundary. */
+export function clearRequestCache(): void {
+  memoryCache.clear();
+}
