@@ -37,7 +37,7 @@ import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
-import { ListingCardFacts } from "~/components/listing/ListingCardFacts";
+import { HousehelpCardDetails } from "~/components/listing/HousehelpCardDetails";
 import { resolveHousehelpProfile } from '~/utils/househelpProfiles';
 import { jobService as householdJobService } from '~/services/grpc/authServices';
 import JobPostModal from '~/components/modals/JobPostModal';
@@ -1487,9 +1487,10 @@ export default function HouseholdJobsHome() {
                   const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
                   const experienceYears = toFiniteNumber(househelp.years_of_experience);
                   const shortlisted = shortlistedListingIds.has(listing.id);
-                  const isOpen = isOpenForWorkListingActive(listing);
                   const responseBadge = deriveHousehelpResponsivenessBadge(listing.househelp);
                   const featureGroups = listingFeatureGroups(listing);
+                  const salaryLabel = formatSalary(listing.salary_min ?? househelp.salary_expectation, listing.salary_max, listing.salary_frequency || househelp.salary_frequency);
+                  const worksWith = [listing.can_work_with_kids ? "children" : "", listing.can_work_with_pets ? "pets" : ""].filter(Boolean);
 
                   return (
                     <div
@@ -1520,7 +1521,7 @@ export default function HouseholdJobsHome() {
                           )}
                         </div>
                         <div className="flex-1">
-                          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8">
+                          <div className="grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(260px,0.85fr)_minmax(360px,1.4fr)] lg:gap-10">
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="min-w-0 text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{cardTitle}</h3>
@@ -1560,38 +1561,15 @@ export default function HouseholdJobsHome() {
                                 </div>
                               )}
                             </div>
-                            <ListingCardFacts listing={listing} />
-                            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-                              <button
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  handleShortlist(listing);
-                                }}
-                                disabled={shortlistLoadingId === listing.id}
-                                className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition sm:h-9 sm:w-9 ${
-                                  shortlisted
-                                    ? "border-pink-400 bg-pink-500 text-white"
-                                    : "border-purple-200/70 bg-white text-purple-700 hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
-                                } disabled:opacity-60`}
-                                aria-label={shortlisted ? "Remove listing from saved" : "Save listing"}
-                                title={shortlisted ? "Remove from shortlist" : "Add to shortlist"}
-                              >
-                                {shortlistLoadingId === listing.id ? (
-                                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                ) : (
-                                  <Heart className={`h-4 w-4 ${shortlisted ? "fill-current" : ""}`} />
-                                )}
-                              </button>
-                              <span
-                                className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                                  isOpen
-                                    ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200"
-                                    : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300"
-                                }`}
-                              >
-                                {formatListingStatus(listing.status)}
-                              </span>
-                            </div>
+                            <HousehelpCardDetails
+                              description={listing.description}
+                              workTypes={jobTypes.map((type) => type.replace(/_/g, " "))}
+                              availability={formatDate(listing.available_from)}
+                              schedule={scheduleLabel}
+                              experience={experienceYears ? `${experienceYears} yrs` : "Not specified"}
+                              salary={salaryLabel}
+                              worksWith={worksWith}
+                            />
                           </div>
 
                           <div className="mt-3 flex flex-wrap gap-2">
@@ -1655,7 +1633,7 @@ export default function HouseholdJobsHome() {
                             <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
                               <p>Experience: {experienceYears ? `${experienceYears} yrs` : "Not specified"}</p>
                               <p>
-                                Salary: {formatSalary(listing.salary_min ?? househelp.salary_expectation, listing.salary_max, listing.salary_frequency || househelp.salary_frequency)}
+                                Salary: {salaryLabel}
                               </p>
                               <div className="flex flex-wrap gap-2">
                                 {listing.can_work_with_kids && (
@@ -1670,9 +1648,9 @@ export default function HouseholdJobsHome() {
                         </div>
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between">
+                      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-xs text-gray-400">Updated {formatTimeAgo(listing.created_at)}</span>
-                        <div className="flex gap-2">
+                        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
                           {isServiceProvider ? (
                             <button
                               onClick={(event) => { event.stopPropagation(); handleOpenListingModal(listing); }}
@@ -1681,17 +1659,39 @@ export default function HouseholdJobsHome() {
                               View Details
                             </button>
                           ) : (
-                            <Link
-                              to={`/househelp/public-profile?profileId=${encodeURIComponent(String(listing.househelp?.id || ''))}&openForWorkId=${encodeURIComponent(String(listing.id))}`}
-                              prefetch="intent"
-                              onPointerEnter={() => {
-                                if (listing.househelp?.id) void resolveHousehelpProfile(String(listing.househelp.id), { identifierType: 'auto' });
-                              }}
-                              onClick={(event) => event.stopPropagation()}
-                              className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
-                            >
-                              View Profile
-                            </Link>
+                            <>
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleShortlist(listing);
+                                }}
+                                disabled={shortlistLoadingId === listing.id}
+                                className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-1.5 text-xs font-semibold transition ${
+                                  shortlisted
+                                    ? "border-pink-400 bg-pink-500 text-white hover:bg-pink-600"
+                                    : "border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                                } disabled:opacity-60`}
+                                aria-label={shortlisted ? "Remove listing from saved" : "Save listing"}
+                              >
+                                {shortlistLoadingId === listing.id ? (
+                                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                ) : (
+                                  <Heart className={`h-3.5 w-3.5 ${shortlisted ? "fill-current" : ""}`} />
+                                )}
+                                {shortlisted ? "Saved" : "Save"}
+                              </button>
+                              <Link
+                                to={`/househelp/public-profile?profileId=${encodeURIComponent(String(listing.househelp?.id || ''))}&openForWorkId=${encodeURIComponent(String(listing.id))}`}
+                                prefetch="intent"
+                                onPointerEnter={() => {
+                                  if (listing.househelp?.id) void resolveHousehelpProfile(String(listing.househelp.id), { identifierType: 'auto' });
+                                }}
+                                onClick={(event) => event.stopPropagation()}
+                                className="px-4 py-1.5 text-center text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                              >
+                                View Profile
+                              </Link>
+                            </>
                           )}
                           {!isServiceProvider && (
                             <>

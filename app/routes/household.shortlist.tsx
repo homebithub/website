@@ -16,7 +16,7 @@ import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { formatTimeAgo } from '~/utils/timeAgo';
 import { normalizeOnboardingAmountFromStorage } from '~/utils/onboardingCompensation';
 import { formatPlaceOrFallback } from '~/utils/place';
-import { ListingCardFacts } from '~/components/listing/ListingCardFacts';
+import { HousehelpCardDetails } from '~/components/listing/HousehelpCardDetails';
 
 const formatDate = (value?: string) => {
   if (!value) return 'Flexible';
@@ -95,11 +95,6 @@ const summarizeSchedule = (schedule?: Record<string, { morning?: boolean; aftern
 const isOpenForWorkListingActive = (listing: { status?: string }) => {
   const status = (listing.status || 'active').toLowerCase();
   return ['active', 'open', 'available'].includes(status);
-};
-
-const formatListingStatus = (status?: string) => {
-  if (!status) return 'Open';
-  return status.replace(/_/g, ' ');
 };
 
 // Types
@@ -230,6 +225,13 @@ export default function HouseholdShortlistPage() {
     () => (items || []).filter((s) => s.profile_type === 'open_for_work'),
     [items],
   );
+  const visibleSavedHousehelps = useMemo(
+    () => savedHousehelps.filter((item) => {
+      const listing = profilesById[item.profile_id];
+      return !listing || isOpenForWorkListingActive(listing);
+    }),
+    [profilesById, savedHousehelps],
+  );
 
   // Load open-for-work records for shortlisted househelp listings.
   useEffect(() => {
@@ -331,7 +333,7 @@ export default function HouseholdShortlistPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">Saved</h1>
 
-            {savedHousehelps.length === 0 && !loading && !error && (
+            {visibleSavedHousehelps.length === 0 && !loading && !loadingProfiles && !error && (
               <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
@@ -354,7 +356,7 @@ export default function HouseholdShortlistPage() {
             {error && <ErrorAlert message={error} className="mb-4" />}
 	
             <div className="flex flex-col gap-4">
-              {savedHousehelps
+              {visibleSavedHousehelps
                 .map((s) => {
                   const listing = profilesById[s.profile_id] || {};
                   const househelp = listing?.househelp || {};
@@ -381,8 +383,13 @@ export default function HouseholdShortlistPage() {
                   const jobTypes = toStringArray(listing?.job_types);
                   const location = formatPlaceOrFallback(househelp.location, { town: househelp.town || listing?.town });
                   const experienceYears = toFiniteNumber(househelp.years_of_experience ?? listing?.years_of_experience);
-                  const isOpen = isOpenForWorkListingActive(listing);
                   const updatedAt = listing?.created_at || s.created_at;
+                  const salaryLabel = formatSalary(
+                    listing?.salary_min ?? househelp.salary_expectation,
+                    listing?.salary_max,
+                    listing?.salary_frequency || househelp.salary_frequency
+                  );
+                  const worksWith = [listing?.can_work_with_kids ? 'children' : '', listing?.can_work_with_pets ? 'pets' : ''].filter(Boolean);
                   return (
                     <div
                       key={s.id}
@@ -402,32 +409,20 @@ export default function HouseholdShortlistPage() {
                           )}
                         </div>
                         <div className="flex-1">
-                          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8">
+                          <div className="grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(260px,0.85fr)_minmax(360px,1.4fr)] lg:gap-10">
                             <div className="min-w-0">
                               <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{name}</h3>
                               <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
                             </div>
-                            <ListingCardFacts listing={listing} />
-                            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-                              <button
-                                onClick={() => handleRemove(s.profile_id)}
-                                disabled={removingId === s.profile_id}
-                                className="inline-flex h-9 items-center justify-center rounded-xl border border-pink-400 bg-pink-500 px-3 text-xs font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-60"
-                                aria-label="Unsave househelp"
-                                title="Click to unsave"
-                              >
-                                {removingId === s.profile_id ? 'Removing...' : 'Saved'}
-                              </button>
-                              <span
-                                className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                                  isOpen
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'
-                                    : 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
-                                }`}
-                              >
-                                {formatListingStatus(listing?.status)}
-                              </span>
-                            </div>
+                            <HousehelpCardDetails
+                              description={firstString(listing?.description)}
+                              workTypes={jobTypes.map((type) => type.replace(/_/g, ' '))}
+                              availability={formatDate(listing?.available_from)}
+                              schedule={scheduleLabel}
+                              experience={experienceYears ? `${experienceYears} yrs` : 'Not specified'}
+                              salary={salaryLabel}
+                              worksWith={worksWith}
+                            />
                           </div>
 
                           <div className="mt-3 flex flex-wrap gap-2">
@@ -458,11 +453,7 @@ export default function HouseholdShortlistPage() {
                           <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
                             <p>Experience: {experienceYears ? `${experienceYears} yrs` : 'Not specified'}</p>
                             <p>
-                              Salary: {formatSalary(
-                                listing?.salary_min ?? househelp.salary_expectation,
-                                listing?.salary_max,
-                                listing?.salary_frequency || househelp.salary_frequency
-                              )}
+                              Salary: {salaryLabel}
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {listing?.can_work_with_kids && (
@@ -476,9 +467,17 @@ export default function HouseholdShortlistPage() {
                         </div>
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between">
+                      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <span className="text-xs text-gray-400">Updated {formatTimeAgo(updatedAt)}</span>
-                        <div className="flex gap-2">
+                        <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                          <button
+                            onClick={() => handleRemove(s.profile_id)}
+                            disabled={removingId === s.profile_id}
+                            className="inline-flex items-center justify-center rounded-xl border border-pink-400 bg-pink-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-60"
+                            aria-label="Unsave househelp"
+                          >
+                            {removingId === s.profile_id ? 'Removing...' : 'Saved'}
+                          </button>
                           <button
                             onClick={() => {
                               if (!targetProfileId) return;
