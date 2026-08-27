@@ -1297,6 +1297,7 @@ export default function HiringHistory() {
                 past the edge, and no-scrollbar meant nothing showed that there
                 was more to reach. */}
             <nav
+              data-tour="hiring-tabs"
               className="flex max-w-full snap-x snap-mandatory gap-4 overflow-x-auto px-3 text-gray-600 no-scrollbar dark:text-purple-200 sm:gap-6 sm:px-6"
               aria-label="Tabs"
             >
@@ -1314,7 +1315,7 @@ export default function HiringHistory() {
                   {tab.key === 'jobs' && <Briefcase className="w-4 h-4" />}
                   {tab.label}
                   {tab.count !== undefined && tab.count > 0 && (
-                    <span className="ml-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-0.5 text-xs font-bold text-white shadow-sm shadow-purple-500/20">
+                    <span data-tour="hiring-attention" className="ml-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-0.5 text-xs font-bold text-white shadow-sm shadow-purple-500/20">
                       {tab.count}
                     </span>
                   )}
@@ -1743,6 +1744,7 @@ export default function HiringHistory() {
                   <div className="mt-6 grid gap-3 lg:flex lg:items-center">
                     <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                       <button
+                        data-tour="hiring-chat"
                         onClick={() => handleChatWithApplicant(interest)}
                         disabled={chatLoading}
                         className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-purple-200/70 bg-purple-50 px-2 py-2 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 sm:w-auto sm:px-3 sm:py-1.5 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
@@ -1933,7 +1935,7 @@ export default function HiringHistory() {
                 </button>
               )}
               <button type="button" onClick={() => { setSelectedHiringCard(null); setHistoryFor(record.id); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">History</button>
-              <button type="button" onClick={() => handleChatWithApplicant(record)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Chat</button>
+              <button data-tour="hiring-chat" type="button" onClick={() => handleChatWithApplicant(record)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Chat</button>
               {listing && <button type="button" onClick={() => { setSelectedHiringCard(null); setViewingJob(listing); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
               <button type="button" onClick={() => handleViewInterest(record)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white">View profile</button>
             </>}

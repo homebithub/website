@@ -1728,7 +1728,7 @@ export default function InboxPage() {
 
   // Conversations list JSX (left sidebar)
   const conversationsList = (
-    <div className="flex flex-col h-full bg-white dark:bg-[#13131a]">
+    <div data-tour="inbox-conversations" className="flex flex-col h-full bg-white dark:bg-[#13131a]">
       <div className="px-4 py-3 border-b border-purple-200 dark:border-purple-500/30 flex items-center justify-between">
         <h2 className="text-xs font-semibold text-gray-800 dark:text-gray-100">Conversations</h2>
         {loading && (
@@ -1904,7 +1904,7 @@ export default function InboxPage() {
             </div>
 
             {/* Messages - Scrollable */}
-            <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="homebit-scrollbar relative min-h-0 min-w-0 space-y-2 overflow-x-hidden overflow-y-auto p-2 sm:p-4">
+            <div data-tour="inbox-messages" ref={messagesContainerRef} onScroll={handleMessagesScroll} className="homebit-scrollbar relative min-h-0 min-w-0 space-y-2 overflow-x-hidden overflow-y-auto p-2 sm:p-4">
               <div className={lockMessages ? 'pointer-events-none select-none blur-sm transition duration-150' : ''}>
                 <div ref={messagesSentinelRef} className="h-4" />
                 
@@ -1916,7 +1916,8 @@ export default function InboxPage() {
 
                 {/* Hire Context Banner */}
                 {selectedConversation && (
-                  <HireContextBanner
+                  <div data-tour="inbox-job-context">
+                    <HireContextBanner
                     hireRequestStatus={hireRequestStatus}
                     hireRequestId={hireRequestId}
                     onViewDetails={() => {
@@ -1950,7 +1951,8 @@ export default function InboxPage() {
                     onDecline={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
                     actionLoading={hireActionLoading}
                     userRole={currentUserProfileType?.toLowerCase() as 'household' | 'househelp'}
-                  />
+                    />
+                  </div>
                 )}
 
             {messagesLoading && messages.length === 0 && (
@@ -2471,7 +2473,7 @@ export default function InboxPage() {
               </p>
             </div>
           ) : (
-          <form onSubmit={handleSend} className="flex min-w-0 items-end gap-1.5 sm:gap-2">
+          <form data-tour="inbox-compose" onSubmit={handleSend} className="flex min-w-0 items-end gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={(e) => {

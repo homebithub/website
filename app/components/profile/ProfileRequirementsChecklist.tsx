@@ -33,7 +33,7 @@ export function ProfileRequirementsChecklist({
   }
 
   return (
-    <div className="bg-white p-6 border-t border-purple-200/40 dark:bg-[#13131a] dark:border-purple-500/30">
+    <div data-tour="profile-completion" className="bg-white p-6 border-t border-purple-200/40 dark:bg-[#13131a] dark:border-purple-500/30">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">

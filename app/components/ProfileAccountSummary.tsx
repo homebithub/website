@@ -321,7 +321,7 @@ export function ProfileAccountSummary({
   };
 
   return (
-    <section className="relative rounded-2xl bg-white dark:bg-[#13131a] p-4 sm:p-6 border border-purple-200/40 dark:border-purple-500/30 mb-4">
+    <section data-tour="profile-account" className="relative rounded-2xl bg-white dark:bg-[#13131a] p-4 sm:p-6 border border-purple-200/40 dark:border-purple-500/30 mb-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-start gap-3">
           <ProfileAvatarControl

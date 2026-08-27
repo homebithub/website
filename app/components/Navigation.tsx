@@ -582,6 +582,7 @@ function NavigationContent() {
                             return (
                             <Link
                                 key={item.name}
+                                data-tour={item.name === 'Hiring' ? 'nav-hiring' : item.name === 'Inbox' ? 'nav-inbox' : undefined}
                                 to={item.href}
                                 prefetch="intent"
                                 className={`link relative rounded-xl px-3.5 py-2 text-sm font-semibold tracking-[0.01em] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 ${isActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25 ring-1 ring-white/10' : 'text-gray-900 hover:bg-purple-100 hover:text-purple-800 dark:text-white dark:hover:bg-white/10 dark:hover:text-white'}`}
@@ -604,6 +605,7 @@ function NavigationContent() {
                             return (
                             <Link
                                 key={item.name}
+                                data-tour={item.name === 'Hiring' ? 'nav-hiring' : item.name === 'Inbox' ? 'nav-inbox' : undefined}
                                 to={item.href}
                                 prefetch="intent"
                                 className={`link relative rounded-xl px-3.5 py-2 text-sm font-semibold tracking-[0.01em] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 ${isActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25 ring-1 ring-white/10' : 'text-gray-900 hover:bg-purple-100 hover:text-purple-800 dark:text-white dark:hover:bg-white/10 dark:hover:text-white'}`}

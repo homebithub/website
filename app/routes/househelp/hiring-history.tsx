@@ -853,7 +853,7 @@ export default function HousehelpHiringHistory() {
           {/* Four tabs with long names do not fit a phone, so this strip
               scrolls. Tightened at narrow widths so more of it is reachable
               without scrolling at all. */}
-          <nav className="flex gap-4 sm:gap-6 overflow-x-auto no-scrollbar" aria-label="Tabs">
+          <nav data-tour="hiring-tabs" className="flex gap-4 sm:gap-6 overflow-x-auto no-scrollbar" aria-label="Tabs">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
@@ -870,7 +870,7 @@ export default function HousehelpHiringHistory() {
                 {tab.key === 'interests' && <HandHeart className="w-4 h-4" />}
                 {tab.label}
                 {tab.count !== undefined && tab.count > 0 && (
-                  <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300">
+                  <span data-tour="hiring-attention" className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-300">
                     {tab.count}
                   </span>
                 )}
@@ -1370,7 +1370,7 @@ export default function HousehelpHiringHistory() {
               { label: 'Closure reason', value: record.closure_reason || record.decline_reason || record.cancel_reason || undefined },
             ]}
             actions={<>
-              <button type="button" onClick={() => void openHouseholdChat(record)} disabled={chatLoadingId === String(record.id)} className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"><MessageCircle className="h-4 w-4" />{chatLoadingId === String(record.id) ? 'Opening…' : 'Chat'}</button>
+              <button data-tour="hiring-chat" type="button" onClick={() => void openHouseholdChat(record)} disabled={chatLoadingId === String(record.id)} className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"><MessageCircle className="h-4 w-4" />{chatLoadingId === String(record.id) ? 'Opening…' : 'Chat'}</button>
               {record.listing_id && <button type="button" onClick={() => { setSelectedHiringCard(null); void openJobListing(record.listing_id, record.listing); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
               <button type="button" onClick={() => navigate(profileLink, { state: { profileId: record.household?.id || record.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View household</button>
               {isRequest && normalizeStatus(record.status) === 'pending' && <>

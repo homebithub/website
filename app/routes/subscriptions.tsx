@@ -641,9 +641,9 @@ export default function SubscriptionsPage() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
-        <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        <main data-tour="subscription-management" className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
-              <h1 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-300 mb-1">
+              <h1 data-tour="subscription-heading" className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-300 mb-1">
                 Subscriptions & Wallet
               </h1>
               <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -659,7 +659,7 @@ export default function SubscriptionsPage() {
               <div className="space-y-8">
                 {subscription ? (
                   <>
-                    <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
+                    <div data-tour="subscription-status" className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
@@ -829,7 +829,7 @@ export default function SubscriptionsPage() {
                       Choose Your Plan
                     </h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                      All plans include a 30-day free trial. Cancel anytime.
+                      Trial availability and price come from the plan shown below.
                     </p>
 
                     {relevantPlans.length > 0 ? (
@@ -840,6 +840,7 @@ export default function SubscriptionsPage() {
                           return (
                             <div
                               key={plan.id}
+                              data-tour="subscription-plan"
                               className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5 hover:border-purple-400 dark:hover:border-purple-400 transition-colors flex flex-col"
                             >
                               <div className="flex-1">
@@ -863,6 +864,11 @@ export default function SubscriptionsPage() {
                                   <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
                                     / {getBillingCycleLabel(plan.billing_cycle)}
                                   </span>
+                                  {(plan.trial_days ?? 0) > 0 && (
+                                    <p data-tour="subscription-trial" className="mt-1 text-xs font-medium text-green-600 dark:text-green-400">
+                                      {plan.trial_days}-day trial for eligible new subscribers
+                                    </p>
+                                  )}
                                 </div>
 
                                 <div className="space-y-2 mb-4">
@@ -879,7 +885,7 @@ export default function SubscriptionsPage() {
                                 onClick={() => handleSelectCheckoutPlan(plan)}
                                 className="w-full px-4 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                               >
-                                Start Free Trial
+                                {(plan.trial_days ?? 0) > 0 ? 'Continue' : 'Choose plan'}
                               </button>
                             </div>
                           );

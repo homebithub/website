@@ -229,6 +229,7 @@ export function ProfileChoicesSection({
 
   return (
     <section
+      data-tour="profile-choices"
       className={`border-t border-purple-200/40 bg-white p-6 dark:border-purple-500/30 dark:bg-[#13131a] ${
         roundedBottom ? 'rounded-b-3xl' : ''
       }`}

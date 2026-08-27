@@ -117,6 +117,7 @@ function PlanCard({
 
   return (
     <div
+      data-tour="subscription-plan"
       className={`relative flex flex-col rounded-2xl border-2 p-6 transition-all duration-200 ${
         highlighted
           ? "border-purple-500 bg-purple-900/10 shadow-[0_0_24px_rgba(168,85,247,0.25)]"
@@ -143,7 +144,7 @@ function PlanCard({
           <span className="text-xs text-gray-400 mb-1">/ {billingLabel(plan.billing_cycle)}</span>
         </div>
         {plan.trial_days > 0 && (
-          <p className="text-xs text-green-400 mt-1">{plan.trial_days}-day free trial included</p>
+          <p data-tour="subscription-trial" className="text-xs text-green-400 mt-1">{plan.trial_days}-day free trial included</p>
         )}
       </div>
 
@@ -457,7 +458,7 @@ export default function PlansPage() {
                 {profileLabel ? `${profileLabel} Plans` : "Subscription Plans"}
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-white mb-2">
+            <h1 data-tour="subscription-heading" className="text-xl sm:text-2xl font-extrabold text-white mb-2">
               Choose Your Plan
             </h1>
             <p className="text-gray-400 text-xs">

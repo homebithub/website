@@ -137,7 +137,7 @@ export function IdentityVerificationPrompt({
 
   return (
     <>
-      <section className={`mb-5 mt-4 rounded-2xl border px-4 py-4 shadow-lg backdrop-blur-md sm:px-5 ${toneClasses} ${className}`}>
+      <section data-tour="profile-verification" className={`mb-5 mt-4 rounded-2xl border px-4 py-4 shadow-lg backdrop-blur-md sm:px-5 ${toneClasses} ${className}`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="flex min-w-0 flex-1 items-start gap-3">
             <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-black/5 dark:bg-white/10">
