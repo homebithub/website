@@ -683,15 +683,15 @@ export default function HouseholdJobsHome() {
   const filteredListings = useMemo(
     () => listings.filter((listing) => {
       if (!isServiceProvider && !isOpenForWorkListingActive(listing)) return false;
-      // A listing the household has already approached belongs in Inbox/Hiring,
-      // not discovery. Conversations are listing-scoped, so this remains
-      // correct when the same househelp publishes a future opportunity.
-      if (!isServiceProvider && contactedListingIds.has(String(listing.id))) return false;
+      // Saving is the household's explicit signal to move this result out of
+      // discovery and into Saved. Messaging, inviting, viewing the profile, or
+      // opening the card must not silently change the discovery results.
+      if (!isServiceProvider && shortlistedListingIds.has(String(listing.id))) return false;
       const minimum = Number(filters.minRating || 0);
       const rating = Number(listing.househelp?.rating ?? 0);
       return !minimum || rating >= minimum;
     }),
-    [listings, isServiceProvider, filters.minRating, contactedListingIds],
+    [listings, isServiceProvider, filters.minRating, shortlistedListingIds],
   );
 
   useEffect(() => {

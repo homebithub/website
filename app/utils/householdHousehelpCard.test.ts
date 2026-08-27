@@ -48,4 +48,16 @@ describe('household househelp cards', () => {
     expect(saved).toContain('isOpenForWorkListingActive(listing)');
     expect(home).not.toContain('{formatListingStatus(listing.status)}');
   });
+
+  it('removes only saved househelps from homepage discovery', () => {
+    const home = readFileSync('app/components/HouseholdJobsHome.tsx', 'utf8');
+    const discoveryFilter = home.slice(
+      home.indexOf('const filteredListings = useMemo'),
+      home.indexOf('const filteredListings = useMemo') + 1_200,
+    );
+
+    expect(discoveryFilter).toContain('shortlistedListingIds.has(String(listing.id))');
+    expect(discoveryFilter).not.toContain('contactedListingIds.has(String(listing.id))');
+    expect(discoveryFilter).toContain('[listings, isServiceProvider, filters.minRating, shortlistedListingIds]');
+  });
 });
