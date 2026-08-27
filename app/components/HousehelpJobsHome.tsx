@@ -39,7 +39,7 @@ import { SubscriptionRequiredModal } from "~/components/subscriptions/Subscripti
 import { IdentityVerificationPrompt } from "~/components/verification/IdentityVerificationPrompt";
 import { useIdentityVerification } from "~/hooks/useIdentityVerification";
 import { formatListingPlace, formatPlaceOrFallback } from "~/utils/place";
-import { OpenForWorkButton } from "~/components/OpenForWorkButton";
+import { OpenForWorkButton, type OpenForWorkButtonHandle } from "~/components/OpenForWorkButton";
 import { humanizeFeatureName, listingHighlights, remainingFeatureGroups } from "~/utils/listingFeatures";
 import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
@@ -375,6 +375,7 @@ export default function HousehelpJobsHome() {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [subscriptionActionLabel, setSubscriptionActionLabel] = useState("continue");
   const marketplaceReadiness = useMarketplaceReadiness(currentUserId, "househelp");
+  const openForWorkButtonRef = useRef<OpenForWorkButtonHandle>(null);
   const [readinessModalOpen, setReadinessModalOpen] = useState(false);
   const [previewProfileJob, setPreviewProfileJob] = useState<JobListing | null>(null);
 
@@ -1088,7 +1089,7 @@ export default function HousehelpJobsHome() {
               {/* Always on screen while browsing. A househelp reading job
                   adverts is exactly the person who should be told they can be
                   found instead. */}
-              <OpenForWorkButton className="hidden shrink-0 sm:flex" />
+              <OpenForWorkButton ref={openForWorkButtonRef} className="hidden shrink-0 sm:flex" />
 
               <label className="min-w-0 flex-1 sm:flex-none">
                 <span className="sr-only">Sort job openings</span>
@@ -1300,7 +1301,10 @@ export default function HousehelpJobsHome() {
               <OpenForWorkButton className="w-full" />
             </div>
             <IdentityVerificationPrompt verification={identityVerification} />
-            <MarketplaceReadinessBanner readiness={marketplaceReadiness} />
+            <MarketplaceReadinessBanner
+              readiness={marketplaceReadiness}
+              onListingAction={() => openForWorkButtonRef.current?.open()}
+            />
             {profileCompletionReminder.shouldShowCelebration && (
               <ProfileCompletionCelebrationModal
                 isOpen

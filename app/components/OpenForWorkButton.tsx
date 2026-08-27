@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
 import { Briefcase, Loader2 } from "lucide-react";
 
 import OpenForWorkModal from "~/components/modals/OpenForWorkModal";
@@ -35,15 +35,19 @@ const resolveListingId = (listing?: Record<string, any> | null): string => {
  * the ones who never see it exists. Shown and unmet, it names the missing thing
  * and links to it.
  */
-export function OpenForWorkButton({
-  className = "",
-  onChanged,
-  showStatus = false,
-}: {
+export interface OpenForWorkButtonHandle {
+  open: () => void;
+}
+
+export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
   className?: string;
   onChanged?: () => void;
   showStatus?: boolean;
-}) {
+}>(function OpenForWorkButton({
+  className = "",
+  onChanged,
+  showStatus = false,
+}, ref) {
   const userId = getStoredUserId() || "";
 
   const { isActive: hasSubscription, daysRemaining, expiresAt } = useSubscription(userId);
@@ -51,6 +55,7 @@ export function OpenForWorkButton({
   const [listing, setListing] = useState<Record<string, any> | null>(null);
   const [loadingListing, setLoadingListing] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [openAfterLoad, setOpenAfterLoad] = useState(false);
   const [editing, setEditing] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -88,14 +93,34 @@ export function OpenForWorkButton({
   const hasListing = Boolean(listing);
   const isLive = hasListing && String(listing?.status ?? "active").toLowerCase() === "active";
 
+  const openModal = useCallback(() => {
+    setEditing(!hasListing);
+    setModalOpen(true);
+  }, [hasListing]);
+
+  const requestModal = useCallback(() => {
+    if (checking) {
+      setOpenAfterLoad(true);
+      return;
+    }
+    openModal();
+  }, [checking, openModal]);
+
+  useEffect(() => {
+    if (checking || !openAfterLoad) return;
+    setOpenAfterLoad(false);
+    openModal();
+  }, [checking, openAfterLoad, openModal]);
+
+  useImperativeHandle(ref, () => ({ open: requestModal }), [requestModal]);
+
   const handleClick = () => {
     if (checking) return;
     if (hasListing && !isLive) {
       void setListingLive(true);
       return;
     }
-    setEditing(!hasListing);
-    setModalOpen(true);
+    openModal();
   };
 
   const setListingLive = async (live: boolean) => {
@@ -205,4 +230,4 @@ export function OpenForWorkButton({
       />
     </>
   );
-}
+});

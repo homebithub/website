@@ -10,8 +10,21 @@ const stepDestination = (profileType: string, stepId: string, supplied: string) 
   return supplied || "/";
 };
 
-export function MarketplaceReadinessBanner({ readiness }: { readiness: MarketplaceReadiness }) {
+export function MarketplaceReadinessBanner({
+  readiness,
+  onListingAction,
+}: {
+  readiness: MarketplaceReadiness;
+  onListingAction?: () => void;
+}) {
   const navigate = useNavigate();
+  const runStepAction = (stepId: string, actionPath: string) => {
+    if (stepId === "listing" && onListingAction) {
+      onListingAction();
+      return;
+    }
+    navigate(stepDestination(readiness.profileType, stepId, actionPath));
+  };
   if (readiness.loading) {
     return <div className="mb-5 flex items-center gap-2 rounded-2xl border border-purple-200 bg-white/80 px-4 py-4 text-xs text-gray-600 dark:border-purple-500/25 dark:bg-white/[0.04] dark:text-white/65"><Loader2 className="h-4 w-4 animate-spin" /> Checking your setup…</div>;
   }
@@ -29,7 +42,7 @@ export function MarketplaceReadinessBanner({ readiness }: { readiness: Marketpla
       </div>
       <div className={`mt-4 grid gap-2 ${readiness.steps.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
         {readiness.steps.map((step) => (
-          <button key={step.id} type="button" onClick={() => navigate(stepDestination(readiness.profileType, step.id, step.action_path))} className="group flex min-h-20 items-start gap-3 rounded-xl border border-purple-100 bg-purple-50/45 p-3 text-left transition hover:border-purple-300 hover:bg-purple-50 dark:border-white/10 dark:bg-white/[0.035] dark:hover:border-purple-400/40 dark:hover:bg-purple-500/[0.08]">
+          <button key={step.id} type="button" onClick={() => runStepAction(step.id, step.action_path)} className="group flex min-h-20 items-start gap-3 rounded-xl border border-purple-100 bg-purple-50/45 p-3 text-left transition hover:border-purple-300 hover:bg-purple-50 dark:border-white/10 dark:bg-white/[0.035] dark:hover:border-purple-400/40 dark:hover:bg-purple-500/[0.08]">
             {step.completed ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" /> : <Circle className="mt-0.5 h-4 w-4 shrink-0 text-purple-400" />}
             <span className="min-w-0 flex-1"><span className="block text-xs font-semibold text-gray-900 dark:text-white">{step.label}</span><span className="mt-1 block text-[11px] leading-4 text-gray-500 dark:text-white/55">{step.description}</span></span>
             <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-gray-400 transition group-hover:translate-x-0.5" />

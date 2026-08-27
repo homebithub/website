@@ -196,9 +196,22 @@ describe('mobile layout guardrails', () => {
   it('keeps homepage availability actions out of the mobile filter toolbar', () => {
     const home = source('app/components/HousehelpJobsHome.tsx');
     const button = source('app/components/OpenForWorkButton.tsx');
-    expect(home).toContain('<OpenForWorkButton className="hidden shrink-0 sm:flex"');
+    expect(home).toMatch(/<OpenForWorkButton[^>]*className="hidden shrink-0 sm:flex"/);
     expect(home).toContain('mb-3 min-w-0 max-w-full sm:hidden');
     expect(button).toContain('max-w-full flex flex-col gap-2');
+  });
+
+  it('opens role listing modals directly from homepage setup actions', () => {
+    const readiness = source('app/components/marketplace/MarketplaceReadiness.tsx');
+    const householdHome = source('app/components/HouseholdJobsHome.tsx');
+    const househelpHome = source('app/components/HousehelpJobsHome.tsx');
+    const openForWork = source('app/components/OpenForWorkButton.tsx');
+    expect(readiness).toContain('stepId === "listing" && onListingAction');
+    expect(householdHome).toContain('onListingAction={() => setCreatingHouseholdJob(true)}');
+    expect(householdHome).toContain('aria-label="Create a job listing"');
+    expect(householdHome).toContain('isOpen={creatingHouseholdJob || Boolean(editingHouseholdJob)}');
+    expect(househelpHome).toContain('onListingAction={() => openForWorkButtonRef.current?.open()}');
+    expect(openForWork).toContain('useImperativeHandle(ref, () => ({ open: requestModal })');
   });
 
   it('keeps interacted jobs visible with statuses and one save action', () => {

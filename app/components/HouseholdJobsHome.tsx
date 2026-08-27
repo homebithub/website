@@ -28,7 +28,7 @@ import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionReminder";
 import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionCelebrationModal } from "~/components/profile/ProfileCompletionCelebrationModal";
-import { Briefcase, Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { Briefcase, Heart, ChevronDown, Plus, SlidersHorizontal, X } from "lucide-react";
 import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
 import { formatDisplayName } from "~/utils/displayName";
 import { humanizeFeatureName, listingHighlights, readFeatureGroups } from "~/utils/listingFeatures";
@@ -585,6 +585,7 @@ export default function HouseholdJobsHome() {
   const [activeHouseholdJobs, setActiveHouseholdJobs] = useState<HouseholdJobListing[]>([]);
   const [activeJobsLoading, setActiveJobsLoading] = useState(false);
   const [showActiveJobs, setShowActiveJobs] = useState(false);
+  const [creatingHouseholdJob, setCreatingHouseholdJob] = useState(false);
   const [editingHouseholdJob, setEditingHouseholdJob] = useState<HouseholdJobListing | null>(null);
   const [householdJobToDelete, setHouseholdJobToDelete] = useState<HouseholdJobListing | null>(null);
   const [householdJobToClose, setHouseholdJobToClose] = useState<HouseholdJobListing | null>(null);
@@ -1206,21 +1207,32 @@ export default function HouseholdJobsHome() {
               </div>
 
               {!isServiceProvider && (
-                <button
-                  type="button"
-                  onClick={() => setShowActiveJobs(true)}
-                  disabled={activeJobsLoading}
-                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-500/15 disabled:cursor-wait disabled:opacity-70 dark:text-emerald-200"
-                  aria-label="View your active job listings"
-                >
-                  <Briefcase className="h-4 w-4" />
-                  <span className="hidden md:inline">
-                    {activeJobsLoading
-                      ? "Checking active jobs…"
-                      : `${activeHouseholdJobs.length} ${activeHouseholdJobs.length === 1 ? "job listing" : "job listings"} active`}
-                  </span>
-                  <span className={`h-2 w-2 rounded-full ${activeHouseholdJobs.length > 0 ? "bg-emerald-400" : "bg-gray-400"}`} />
-                </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowActiveJobs(true)}
+                    disabled={activeJobsLoading}
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-500/15 disabled:cursor-wait disabled:opacity-70 dark:text-emerald-200"
+                    aria-label="View your active job listings"
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    <span className="hidden md:inline">
+                      {activeJobsLoading
+                        ? "Checking active jobs…"
+                        : `${activeHouseholdJobs.length} ${activeHouseholdJobs.length === 1 ? "job listing" : "job listings"} active`}
+                    </span>
+                    <span className={`h-2 w-2 rounded-full ${activeHouseholdJobs.length > 0 ? "bg-emerald-400" : "bg-gray-400"}`} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCreatingHouseholdJob(true)}
+                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-3 text-xs font-semibold text-white shadow-lg shadow-purple-500/20 transition hover:from-purple-700 hover:to-pink-700"
+                    aria-label="Create a job listing"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="hidden lg:inline">Create job listing</span>
+                  </button>
+                </div>
               )}
 
 
@@ -1451,7 +1463,10 @@ export default function HouseholdJobsHome() {
             )}
           </section>
           <div className="hb-content-rail flex flex-col">
-            <MarketplaceReadinessBanner readiness={marketplaceReadiness} />
+            <MarketplaceReadinessBanner
+              readiness={marketplaceReadiness}
+              onListingAction={() => setCreatingHouseholdJob(true)}
+            />
             {profileCompletionReminder.shouldShowCelebration && (
               <ProfileCompletionCelebrationModal
                 isOpen
@@ -2122,13 +2137,19 @@ export default function HouseholdJobsHome() {
         </div>
       )}
       <JobPostModal
-        isOpen={Boolean(editingHouseholdJob)}
-        onClose={() => setEditingHouseholdJob(null)}
+        isOpen={creatingHouseholdJob || Boolean(editingHouseholdJob)}
+        onClose={() => {
+          setCreatingHouseholdJob(false);
+          setEditingHouseholdJob(null);
+        }}
         job={editingHouseholdJob}
         onSaved={() => {
+          const wasEditing = Boolean(editingHouseholdJob);
+          setCreatingHouseholdJob(false);
           setEditingHouseholdJob(null);
-          setActionSuccess("Job listing updated.");
+          setActionSuccess(wasEditing ? "Job listing updated." : "Job listing created.");
           void fetchActiveHouseholdJobs();
+          window.dispatchEvent(new CustomEvent("homebit:marketplace-readiness-changed"));
         }}
       />
       <ConfirmDialog
