@@ -36,8 +36,11 @@ const resolveTheme = (preference: ThemePreference): Theme => {
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const location = useLocation();
   const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
-  const [theme, setThemeState] = useState<Theme>(() => resolveTheme('system'));
-  const [mounted, setMounted] = useState(false);
+  // Keep the first server and browser renders identical. The blocking script in
+  // root.tsx applies the stored theme before paint; this context catches up in
+  // the initialization effect below. Resolving the system theme during the
+  // browser's first render makes its tree differ from SSR and breaks hydration.
+  const [theme, setThemeState] = useState<Theme>('dark');
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Public routes that don't need backend preferences
@@ -73,8 +76,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   // Initialize user tracking and load preferences
   useEffect(() => {
     const initializeTheme = async () => {
-      setMounted(true);
-
       // Initialize user tracking (generates fingerprint if needed)
       await getOrCreateUserId();
 
@@ -168,11 +169,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       console.error('Failed to migrate preferences:', error);
     }
   }, []);
-
-  // Prevent flash of incorrect theme
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <ThemeContext.Provider value={{ theme, themePreference, toggleTheme, setTheme, setThemePreference, migrateUserPreferences }}>

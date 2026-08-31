@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react';
 
 export function AppLaunchScreen() {
-  const [visible, setVisible] = useState(true);
+  // The server cannot know whether the page is running as an installed PWA.
+  // Start hidden on both server and client so hydration sees identical markup,
+  // then show the hand-off only after the browser confirms standalone mode.
+  const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     const standalone = window.matchMedia('(display-mode: standalone)').matches
       || Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
     if (!standalone) {
-      setVisible(false);
       return;
     }
+
+    setVisible(true);
 
     // Keep the hand-off from the native launch image smooth, but never hold up
     // an already interactive app for the sake of an artificial animation.

@@ -49,6 +49,7 @@ describe('mobile layout guardrails', () => {
     expect(root).toContain('apple-touch-startup-image');
     expect(root).toContain('<AppLaunchScreen />');
     expect(launch).toContain("window.matchMedia('(display-mode: standalone)')");
+    expect(launch).toContain('useState(false)');
     expect(css).toContain('@media (display-mode: standalone)');
     expect(css).toContain('.hb-launch-screen--leaving');
     expect(launch).toContain('setLeaving(true), 1200');
