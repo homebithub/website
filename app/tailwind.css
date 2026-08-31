@@ -271,6 +271,14 @@ body > * {
   min-height: 0;
 }
 
+/* Direct custom panels (including Open for Work) do not carry role=dialog on
+   their outer scroll container. Constrain them too, otherwise bottom alignment
+   can push a tall panel's header above the mobile viewport. */
+.hb-modal-shell > .hb-modal-panel {
+  max-height: 100% !important;
+  min-height: 0;
+}
+
 /* Custom modal implementations do not always use Headless UI's Dialog.Panel.
    Keep their direct content panels inside the same usable viewport as shared
    dialogs so close buttons and action rows cannot slide beneath mobile chrome. */

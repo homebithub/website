@@ -16,6 +16,7 @@ import { useSSEContextSafe } from '~/contexts/SSEContext';
 import { hiringAttentionScope, hydrateHiringAttention, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
 import { HiringCardModal, isHiringCardAction } from '~/components/hiring/HiringCardModal';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
+import { useIdentityVerification } from '~/hooks/useIdentityVerification';
 import { formatDisplayName } from '~/utils/displayName';
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
@@ -247,6 +248,7 @@ export default function HousehelpHiringHistory() {
   const currentProfileType = (getStoredUser() as any)?.profile_type || getStoredProfileType();
   const profileRole = normalizeHiringProfileRole(currentProfileType);
   const isClientProfile = profileRole === 'client';
+  const identityVerification = useIdentityVerification(getStoredUserId());
   // A service provider's normal journey starts with an application, then
   // converges with inbound requests into contracts and finally work history.
   // Preserve Requests as the legacy client default when this shared route is
@@ -844,7 +846,7 @@ export default function HousehelpHiringHistory() {
               <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{pageTitle}</h1>
               <p className="text-gray-600 dark:text-gray-400 text-xs">{pageDescription}</p>
             </div>
-            {!isClientProfile ? <OpenForWorkButton showStatus className="sm:justify-center" /> : null}
+            {!isClientProfile ? <OpenForWorkButton showStatus className="sm:justify-center" verification={identityVerification} /> : null}
           </div>
         </div>
 

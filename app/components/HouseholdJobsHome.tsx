@@ -2199,7 +2199,12 @@ export default function HouseholdJobsHome() {
         actionLabel="message househelps"
         plansHref="/plans"
       />
-      <MarketplaceReadinessRequiredModal readiness={marketplaceReadiness} open={readinessModalOpen} onClose={() => setReadinessModalOpen(false)} />
+      <MarketplaceReadinessRequiredModal
+        readiness={marketplaceReadiness}
+        open={readinessModalOpen}
+        onClose={() => setReadinessModalOpen(false)}
+        onListingAction={() => setCreatingHouseholdJob(true)}
+      />
       <Footer />
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { CalendarDays, Check, Pencil, Power } from "lucide-react";
-import { openForWorkService, profileService } from "~/services/grpc/authServices";
+import { openForWorkService, profileFeatureService, profileService, userProfilePicksService } from "~/services/grpc/authServices";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import {
   formatOnboardingBudgetRangeWithFrequency,
@@ -10,6 +10,8 @@ import {
 } from "~/utils/onboardingCompensation";
 import { FormError } from '~/components/FormError';
 import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
+import { buildHousehelpListingDefaults } from '~/utils/listingProfileDefaults';
+import { getStoredUser, getStoredUserProfileId } from '~/utils/authStorage';
 
 const JOB_TYPES = [
   { value: "live_in", label: "Live-in" },
@@ -98,28 +100,36 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
     if (!isOpen || listing?.id) return;
     let cancelled = false;
     profileService.getCurrentHousehelpProfile('')
-      .then((raw) => {
+      .then(async (raw) => {
         if (cancelled) return;
         const profile = raw?.data ?? raw ?? {};
-        const arrangements = [
-          (profile.live_in ?? profile.offers_live_in) ? 'live_in' : '',
-          (profile.day_worker ?? profile.offers_day_worker) ? 'day_worker' : '',
-        ].filter(Boolean);
-        if (arrangements.length > 0) setJobTypes(arrangements);
-        setAvailableFrom(toDateInputValue(profile.available_from));
-        setCanWorkWithKids(Boolean(profile.work_with_kids ?? profile.can_work_with_kids));
-        setCanWorkWithPets(Boolean(profile.work_with_pets ?? profile.can_work_with_pets));
-        setSalaryFrequency(String(profile.salary_frequency || 'monthly'));
-        const expectation = toSalaryInputValue(profile.salary_expectation, profile.salary_frequency);
-        if (expectation) {
-          setSalaryMin(expectation);
-          setSalaryMax(expectation);
-        }
-        setProfileHighlights({
-          languages: Array.isArray(profile.languages) ? profile.languages : [],
-          skills: Array.isArray(profile.skills) ? profile.skills : [],
-          certifications: Array.isArray(profile.certifications) ? profile.certifications : [],
-        });
+        const storedUser = getStoredUser() || {};
+        const catalogueProfileId = String(
+          profile.profile_id || profile.profileId || profile.profile?.id ||
+          storedUser.profile_id || storedUser.profileId ||
+          window.localStorage.getItem('profile_id') || '',
+        );
+        const userProfileId = String(
+          profile.user_profile_id || profile.userProfileId || profile.user_profile?.id ||
+          getStoredUserProfileId() || '',
+        );
+        const [featuresResult, picksResult] = await Promise.allSettled([
+          catalogueProfileId ? profileFeatureService.getProfileFeatures(catalogueProfileId) : Promise.resolve([]),
+          userProfileId ? userProfilePicksService.listPicks(userProfileId) : Promise.resolve([]),
+        ]);
+        if (cancelled) return;
+        const features = featuresResult.status === 'fulfilled' ? featuresResult.value : [];
+        const picks = picksResult.status === 'fulfilled' ? picksResult.value : [];
+        const defaults = buildHousehelpListingDefaults(profile, features, picks);
+        if (defaults.jobTypes.length > 0) setJobTypes(defaults.jobTypes);
+        setAvailableFrom(toDateInputValue(defaults.availableFrom));
+        setCanWorkWithKids(defaults.canWorkWithKids);
+        setCanWorkWithPets(defaults.canWorkWithPets);
+        setSalaryFrequency(defaults.salaryFrequency);
+        setSalaryMin(toSalaryInputValue(defaults.salaryMin, defaults.salaryFrequency));
+        setSalaryMax(toSalaryInputValue(defaults.salaryMax, defaults.salaryFrequency));
+        setDescription((current) => current.trim() ? current : defaults.description);
+        setProfileHighlights(defaults.highlights);
         setPrefilled(true);
       })
       .catch(() => {
@@ -190,18 +200,18 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
   return createPortal(
     <div className="hb-modal-shell w-screen max-w-[100vw] overflow-x-hidden">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="hb-modal-panel min-w-0 overflow-x-hidden sm:mx-4">
-        <div className="sticky top-0 z-10 flex min-w-0 items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-4 dark:border-purple-500/20 dark:bg-[#13131a] sm:px-6">
+      <div className="hb-modal-panel flex max-h-full min-w-0 flex-col overflow-hidden sm:mx-4">
+        <div className="sticky top-0 z-10 flex min-w-0 shrink-0 items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-4 dark:border-purple-500/20 dark:bg-[#13131a] sm:px-6">
           <h2 className="text-base font-bold text-gray-900 dark:text-white">
             {readOnly ? "Your Open for Work details" : listing ? "Update Open for Work" : "Go Open for Work"}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <button type="button" onClick={onClose} aria-label="Close Open for Work" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
 
         {readOnly ? (
-          <div className="min-w-0 max-w-full space-y-4 overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
+          <div className="min-h-0 min-w-0 max-w-full flex-1 space-y-4 overflow-y-auto overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
               <p className="font-semibold">Open for work is {isLive ? "active" : "off"}</p>
               <p className="mt-0.5 opacity-80">{isLive ? "Households can find you using these availability details." : "Your details are saved, but households cannot currently find this listing."}</p>
@@ -252,7 +262,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
               ) : null}
             </div>
           </div>
-        ) : <form onSubmit={handleSubmit} className="min-w-0 max-w-full space-y-5 overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
+        ) : <form onSubmit={handleSubmit} className="min-h-0 min-w-0 max-w-full flex-1 space-y-5 overflow-y-auto overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
           {success && <SuccessAlert message={success} />}
           <p className="rounded-xl border border-purple-200 bg-purple-50 px-3 py-2 text-xs text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-100">
             Open for Work makes you searchable by households using the skills, availability and preferences below. You can have one listing at a time, and it stays online only while your subscription is active.
@@ -294,18 +304,18 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
           </div>
 
           <div>
-            <label htmlFor="open-for-work-description" className="text-xs font-semibold text-gray-700 dark:text-gray-200">About me / cover letter</label>
+            <label htmlFor="open-for-work-description" className="text-xs font-semibold text-gray-700 dark:text-gray-200">Introduce yourself to potential employers</label>
             <textarea
               id="open-for-work-description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               rows={4}
               maxLength={1000}
-              placeholder="Introduce yourself, your experience, the work you enjoy, and what a household can expect from you."
+              placeholder="Tell potential employers about yourself, your experience, the work you enjoy, and what they can expect from you."
               className="mt-2 min-h-28 w-full min-w-0 resize-y rounded-xl border border-gray-200 bg-white px-3 py-3 text-[16px] text-gray-900 placeholder:text-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 dark:border-purple-500/30 dark:bg-[#0f0b1a] dark:text-gray-100 sm:px-4 sm:text-sm"
             />
             <div className="mt-1 flex items-start justify-between gap-3 text-[11px] text-gray-500 dark:text-gray-400">
-              <span>This appears on your Open for Work listing as your introduction.</span>
+              <span>This introduction appears on your Open for Work listing.</span>
               <span className="shrink-0">{description.length}/1000</span>
             </div>
           </div>

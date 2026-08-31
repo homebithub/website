@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { profileService as grpcProfileService, documentService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
@@ -33,6 +33,7 @@ import { CertificationDocuments } from '~/components/profile/CertificationDocume
 import { PHOTO_ACCEPT_ATTRIBUTE, selectPhotosForUpload, uploadDocuments } from '~/utils/documentUploads';
 import { useProfileCompletionReminder } from '~/hooks/useProfileCompletionReminder';
 import { ProfileCompletionCelebrationModal } from '~/components/profile/ProfileCompletionCelebrationModal';
+import { rememberProfileCompletionBaseline, useProfileCompletionTransition } from '~/hooks/useProfileCompletionTransition';
 
 interface HousehelpData {
   id?: string;
@@ -128,10 +129,36 @@ const MAX_PHOTOS = 5;
 
 export default function HousehelpProfile() {
   const navigate = useNavigate();
-  const identityVerification = useIdentityVerification(getStoredUserId());
-  const { progress, refetch: refetchProgress } = useOnboardingProgress(getStoredUserId() || '', 'househelp');
-  const profileCompletionReminder = useProfileCompletionReminder(getStoredUserId() || '', 'househelp');
+  const location = useLocation();
+  const userId = getStoredUserId() || '';
+  const identityVerification = useIdentityVerification(userId);
+  const {
+    loading: identityVerificationLoading,
+    openModal: openIdentityVerification,
+    status: identityVerificationStatus,
+  } = identityVerification;
+
+  useEffect(() => {
+    if (
+      location.hash !== '#identity-verification' ||
+      identityVerificationLoading ||
+      identityVerificationStatus === 'approved'
+    ) return;
+    openIdentityVerification();
+    navigate(`${location.pathname}${location.search}`, { replace: true });
+  }, [identityVerificationLoading, identityVerificationStatus, location.hash, location.pathname, location.search, navigate, openIdentityVerification]);
+  const { progress, refetch: refetchProgress } = useOnboardingProgress(userId, 'househelp');
+  const profileCompletionReminder = useProfileCompletionReminder(userId, 'househelp');
+  const profileCompletion = useProfileCompletionTransition(
+    `${userId}:househelp`,
+    progress?.completion_percentage,
+  );
   const [editingLocation, setEditingLocation] = useState(false);
+
+  const closeLocationEditor = () => {
+    setEditingLocation(false);
+    void refetchProgress();
+  };
 
   // Each outstanding requirement opens whatever satisfies it. Location has no
   // permanent section on this page, so it opens in a modal from the checklist.
@@ -239,6 +266,7 @@ export default function HousehelpProfile() {
   }, [navigate, retryKey]);
 
   const handleCompleteFeaturePicks = () => {
+    rememberProfileCompletionBaseline(`${userId}:househelp`, progress?.completion_percentage);
     const storedProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('profile_id') || '' : '';
     const storedUserProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('user_profile_id') || '' : '';
 
@@ -424,13 +452,14 @@ export default function HousehelpProfile() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      {profileCompletionReminder.shouldShowCelebration && (
+      {profileCompletion.completedNow && (
         <ProfileCompletionCelebrationModal
           isOpen
           profileType="househelp"
           celebration={profileCompletionReminder.celebration}
           onSeen={profileCompletionReminder.markCelebrationSeen}
-          onClose={() => void profileCompletionReminder.markCelebrationSeen()}
+          onClose={profileCompletion.dismiss}
+          completionDestination="/"
         />
       )}
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
@@ -454,7 +483,7 @@ export default function HousehelpProfile() {
           <div className="flex items-center gap-2 self-start">
             {/* On the profile too: this is the page somebody lands on to get
                 themselves ready to be hired. */}
-            <OpenForWorkButton />
+            <OpenForWorkButton verification={identityVerification} />
             {profile?.id && (
               <button
                 onClick={() => setShowViewsModal(true)}
@@ -644,14 +673,11 @@ export default function HousehelpProfile() {
 
       <EditSectionModal
         isOpen={editingLocation}
-        onClose={() => {
-          setEditingLocation(false);
-          void refetchProgress();
-        }}
+        onClose={closeLocationEditor}
         title="📍 Edit Location"
         profileType="househelp"
       >
-        <Location />
+        <Location onSaved={closeLocationEditor} />
       </EditSectionModal>
     </div>
       </main>

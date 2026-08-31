@@ -1,8 +1,10 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react";
-import { Briefcase, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router";
+import { Briefcase, Loader2, ShieldCheck } from "lucide-react";
 
 import OpenForWorkModal from "~/components/modals/OpenForWorkModal";
 import { ConfirmDialog } from "~/components/ui/ConfirmDialog";
+import type { IdentityVerificationState } from "~/hooks/useIdentityVerification";
 import { useSubscription } from "~/hooks/useSubscription";
 import { openForWorkService } from "~/services/grpc/authServices";
 import { getStoredUser, getStoredUserId } from "~/utils/authStorage";
@@ -26,9 +28,9 @@ const resolveListingId = (listing?: Record<string, any> | null): string => {
  * find. The modal that writes one already existed and was reachable from
  * nowhere, so nobody could publish one at all.
  *
- * The form is available before the other setup actions are complete. The
- * readiness checklist may be completed in any order; marketplace interaction
- * and discoverability are what remain locked until every action is done.
+ * The form is available before the other setup actions are complete, but only
+ * after identity verification is approved. The readiness checklist may be
+ * completed in any order; KYC is the safety gate for becoming discoverable.
  *
  * The button is always visible, which is the deliberate part. Hiding it until
  * somebody qualifies means the people who most need to know what to do next are
@@ -43,11 +45,14 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
   className?: string;
   onChanged?: () => void;
   showStatus?: boolean;
+  verification: Pick<IdentityVerificationState, "status" | "loading">;
 }>(function OpenForWorkButton({
   className = "",
   onChanged,
   showStatus = false,
+  verification,
 }, ref) {
+  const navigate = useNavigate();
   const userId = getStoredUserId() || "";
 
   const { isActive: hasSubscription, daysRemaining, expiresAt } = useSubscription(userId);
@@ -58,6 +63,7 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
   const [openAfterLoad, setOpenAfterLoad] = useState(false);
   const [editing, setEditing] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
+  const [verificationGateOpen, setVerificationGateOpen] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [removeError, setRemoveError] = useState("");
 
@@ -89,7 +95,8 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
     void loadListing();
   }, [loadListing]);
 
-  const checking = loadingListing;
+  const checking = loadingListing || verification.loading;
+  const hasApprovedKyc = verification.status === "approved";
   const hasListing = Boolean(listing);
   const isLive = hasListing && String(listing?.status ?? "active").toLowerCase() === "active";
 
@@ -103,19 +110,28 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
       setOpenAfterLoad(true);
       return;
     }
+    if (!hasApprovedKyc) {
+      setVerificationGateOpen(true);
+      return;
+    }
     openModal();
-  }, [checking, openModal]);
+  }, [checking, hasApprovedKyc, openModal]);
 
   useEffect(() => {
     if (checking || !openAfterLoad) return;
     setOpenAfterLoad(false);
-    openModal();
-  }, [checking, openAfterLoad, openModal]);
+    if (hasApprovedKyc) openModal();
+    else setVerificationGateOpen(true);
+  }, [checking, hasApprovedKyc, openAfterLoad, openModal]);
 
   useImperativeHandle(ref, () => ({ open: requestModal }), [requestModal]);
 
   const handleClick = () => {
     if (checking) return;
+    if (!hasApprovedKyc) {
+      setVerificationGateOpen(true);
+      return;
+    }
     if (hasListing && !isLive) {
       void setListingLive(true);
       return;
@@ -150,10 +166,12 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
       : "An active subscription is required for households to find this listing.";
 
   const label = checking
-    ? "Checking…"
-    : hasListing
-      ? isLive ? "Open for work is active" : "Open for work is off"
-      : "Go open for work";
+    ? "Checking verification…"
+    : !hasApprovedKyc
+      ? "Complete KYC to go open for work"
+      : hasListing
+        ? isLive ? "Open for work is active" : "Open for work is off"
+        : "Go open for work";
 
   const tone = isLive
     ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200"
@@ -163,9 +181,9 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
     <>
       <div className={`min-w-0 max-w-full flex flex-col gap-2 ${showStatus ? "items-stretch" : "items-start"} ${className}`}>
         {showStatus ? (
-          <div className={`rounded-xl border px-3 py-2 text-xs ${isLive ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100" : "border-purple-200 bg-purple-50 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-100"}`}>
-            <p className="font-semibold">{isLive ? "Households can currently find you" : "You are not currently searchable"}</p>
-            <p className="mt-0.5 opacity-80">{expiryText}</p>
+          <div className={`rounded-xl border px-3 py-2 text-xs ${hasApprovedKyc && isLive ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100" : "border-purple-200 bg-purple-50 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-100"}`}>
+            <p className="font-semibold">{!hasApprovedKyc ? "Approved KYC is required" : isLive ? "Households can currently find you" : "You are not currently searchable"}</p>
+            <p className="mt-0.5 opacity-80">{!hasApprovedKyc ? "Complete identity verification before publishing your availability." : expiryText}</p>
           </div>
         ) : null}
         <div className="flex min-w-0 max-w-full flex-wrap gap-2">
@@ -174,7 +192,9 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
         onClick={handleClick}
         disabled={checking}
         title={
-          hasListing
+          !hasApprovedKyc
+            ? "Complete identity verification and receive KYC approval before going open for work."
+            : hasListing
             ? "View and manage your Open for Work listing."
             : "Tell households what you are available for. You can complete the other setup actions in any order."
         }
@@ -182,6 +202,8 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
       >
         {checking ? (
           <Loader2 className="h-4 w-4 animate-spin" />
+        ) : !hasApprovedKyc ? (
+          <ShieldCheck className="h-4 w-4" />
         ) : (
           <Briefcase className="h-4 w-4" />
         )}
@@ -216,6 +238,24 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
           }}
         />
       ) : null}
+
+      <ConfirmDialog
+        isOpen={verificationGateOpen}
+        onClose={() => setVerificationGateOpen(false)}
+        onConfirm={() => {
+          setVerificationGateOpen(false);
+          navigate("/househelp/profile#identity-verification");
+        }}
+        title="Complete KYC to go open for work"
+        message={
+          verification.status === "under_review" || verification.status === "in_progress"
+            ? "Your identity verification must be approved before you can go open for work. Your KYC is still being reviewed; check its current status on your profile."
+            : "Your identity verification must be approved before you can go open for work. Complete KYC so households can trust who they are hiring."
+        }
+        confirmText={verification.status === "under_review" || verification.status === "in_progress" ? "View KYC status" : "Complete KYC"}
+        cancelText="Not now"
+        variant="info"
+      />
 
       <ConfirmDialog
         isOpen={removeOpen}

@@ -25,6 +25,7 @@ import { profileFeatureLabel } from '~/utils/profileFeatures';
 import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 import { useProfileCompletionReminder } from '~/hooks/useProfileCompletionReminder';
 import { ProfileCompletionCelebrationModal } from '~/components/profile/ProfileCompletionCelebrationModal';
+import { rememberProfileCompletionBaseline, useProfileCompletionTransition } from '~/hooks/useProfileCompletionTransition';
 import { formatDisplayName } from '~/utils/displayName';
 
 interface HouseholdData {
@@ -174,6 +175,7 @@ const MAX_PHOTOS = 5;
 
 export default function HouseholdProfile() {
   const navigate = useNavigate();
+  const userId = getStoredUserId() || '';
   const [profile, setProfile] = useState<HouseholdData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -311,6 +313,7 @@ export default function HouseholdProfile() {
   }, [profile]);
 
   const handleCompleteFeaturePicks = () => {
+    rememberProfileCompletionBaseline(`${userId}:household`, progress?.completion_percentage);
     const storedProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('profile_id') || '' : '';
     const storedUserProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('user_profile_id') || '' : '';
 
@@ -366,8 +369,12 @@ export default function HouseholdProfile() {
   }, [retryKey]);
 
   const [showViewsModal, setShowViewsModal] = useState(false);
-  const { progress } = useOnboardingProgress(getStoredUserId() || '', 'household');
-  const profileCompletionReminder = useProfileCompletionReminder(getStoredUserId() || '', 'household');
+  const { progress } = useOnboardingProgress(userId, 'household');
+  const profileCompletionReminder = useProfileCompletionReminder(userId, 'household');
+  const profileCompletion = useProfileCompletionTransition(
+    `${userId}:household`,
+    progress?.completion_percentage,
+  );
 
   // Each outstanding requirement opens the editor that satisfies it.
   //
@@ -661,13 +668,14 @@ export default function HouseholdProfile() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      {profileCompletionReminder.shouldShowCelebration && (
+      {profileCompletion.completedNow && (
         <ProfileCompletionCelebrationModal
           isOpen
           profileType="household"
           celebration={profileCompletionReminder.celebration}
           onSeen={profileCompletionReminder.markCelebrationSeen}
-          onClose={() => void profileCompletionReminder.markCelebrationSeen()}
+          onClose={profileCompletion.dismiss}
+          completionDestination="/"
         />
       )}
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">

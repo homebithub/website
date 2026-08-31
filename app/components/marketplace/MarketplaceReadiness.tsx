@@ -10,6 +10,12 @@ const stepDestination = (profileType: string, stepId: string, supplied: string) 
   return supplied || "/";
 };
 
+export const shouldHideMarketplaceReadiness = (
+  readiness: Pick<MarketplaceReadiness, "interactionAllowed" | "steps">,
+) => readiness.interactionAllowed || (
+  readiness.steps.length > 0 && readiness.steps.every((step) => step.completed)
+);
+
 export function MarketplaceReadinessBanner({
   readiness,
   onListingAction,
@@ -28,6 +34,7 @@ export function MarketplaceReadinessBanner({
   if (readiness.loading) {
     return <div className="mb-5 flex items-center gap-2 rounded-2xl border border-purple-200 bg-white/80 px-4 py-4 text-xs text-gray-600 dark:border-purple-500/25 dark:bg-white/[0.04] dark:text-white/65"><Loader2 className="h-4 w-4 animate-spin" /> Checking your setup…</div>;
   }
+  if (shouldHideMarketplaceReadiness(readiness)) return null;
   return (
     <section className="mb-5 rounded-2xl border border-purple-200 bg-white/90 p-4 shadow-lg dark:border-purple-500/30 dark:bg-[#15101f]/95 sm:p-5" aria-label="Marketplace setup actions">
       <div className="flex items-start gap-3">
@@ -53,9 +60,27 @@ export function MarketplaceReadinessBanner({
   );
 }
 
-export function MarketplaceReadinessRequiredModal({ readiness, open, onClose }: { readiness: MarketplaceReadiness; open: boolean; onClose: () => void }) {
+export function MarketplaceReadinessRequiredModal({
+  readiness,
+  open,
+  onClose,
+  onListingAction,
+}: {
+  readiness: MarketplaceReadiness;
+  open: boolean;
+  onClose: () => void;
+  onListingAction?: () => void;
+}) {
   const navigate = useNavigate();
   if (!open || typeof document === "undefined") return null;
+  const runStepAction = (stepId: string, actionPath: string) => {
+    onClose();
+    if (stepId === "listing" && onListingAction) {
+      onListingAction();
+      return;
+    }
+    navigate(stepDestination(readiness.profileType, stepId, actionPath));
+  };
   return createPortal(
     <div className="fixed inset-0 z-[160] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-5">
       <section role="dialog" aria-modal="true" aria-labelledby="readiness-required-title" className="relative w-full max-w-lg rounded-t-3xl border border-purple-200 bg-white p-5 shadow-2xl dark:border-purple-500/30 dark:bg-[#15101f] sm:rounded-3xl sm:p-6">
@@ -65,7 +90,7 @@ export function MarketplaceReadinessRequiredModal({ readiness, open, onClose }: 
         <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-white/65">You can browse profiles and save them now. Complete the remaining actions below before applying, inviting, or messaging.</p>
         <div className="mt-5 space-y-2">
           {readiness.steps.filter((step) => !step.completed).map((step) => (
-            <button key={step.id} type="button" onClick={() => { onClose(); navigate(stepDestination(readiness.profileType, step.id, step.action_path)); }} className="flex w-full items-center gap-3 rounded-xl border border-purple-200 px-4 py-3 text-left text-xs font-semibold text-gray-800 hover:bg-purple-50 dark:border-purple-500/25 dark:text-white dark:hover:bg-purple-500/10"><Circle className="h-4 w-4 text-purple-400" /><span className="flex-1">{step.label}</span><ChevronRight className="h-4 w-4" /></button>
+            <button key={step.id} type="button" onClick={() => runStepAction(step.id, step.action_path)} className="flex w-full items-center gap-3 rounded-xl border border-purple-200 px-4 py-3 text-left text-xs font-semibold text-gray-800 hover:bg-purple-50 dark:border-purple-500/25 dark:text-white dark:hover:bg-purple-500/10"><Circle className="h-4 w-4 text-purple-400" /><span className="flex-1">{step.label}</span><ChevronRight className="h-4 w-4" /></button>
           ))}
         </div>
       </section>

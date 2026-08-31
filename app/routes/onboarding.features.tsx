@@ -13,6 +13,7 @@ import { INPUT_CLASS, RequiredMark } from '~/components/ui/formStyles';
 import { FeatureOptionPicker } from '~/components/preferences/FeatureOptionPicker';
 import { PreferenceAccordion } from '~/components/preferences/PreferenceAccordion';
 import { isSingleSelectFeature } from '~/utils/preferenceRules';
+import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 
 // Mirrors MaxPickValueLength in the auth service, so the field cannot submit
 // something the backend will reject.
@@ -275,6 +276,7 @@ export default function OnboardingFeaturesPage() {
       })));
 
       setSaved(true);
+      notifyProfileProgressChanged();
       navigate(nextDestination, { replace: true });
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Unable to save your choices'));

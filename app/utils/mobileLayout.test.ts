@@ -81,6 +81,14 @@ describe('mobile layout guardrails', () => {
     expect(source('app/components/modals/OpenForWorkModal.tsx')).toContain('hb-modal-shell');
   });
 
+  it('closes the househelp location editor after a successful save', () => {
+    const profile = source('app/routes/househelp.profile.tsx');
+    const location = source('app/components/Location.tsx');
+    expect(location).toContain('onSaved?.({');
+    expect(profile).toContain('onClose={closeLocationEditor}');
+    expect(profile).toContain('<Location onSaved={closeLocationEditor} />');
+  });
+
   it('locks background scrolling while modal surfaces are open', () => {
     const lock = source('app/hooks/useBodyScrollLock.ts');
     const confirmation = source('app/components/ui/ConfirmDialog.tsx');
@@ -186,12 +194,51 @@ describe('mobile layout guardrails', () => {
     expect(hiring).toContain('<OpenForWorkButton showStatus');
   });
 
+  it('requires approved KYC at every open-for-work entry point', () => {
+    const button = source('app/components/OpenForWorkButton.tsx');
+    const home = source('app/components/HousehelpJobsHome.tsx');
+    const hiring = source('app/routes/househelp/hiring-history.tsx');
+    const profile = source('app/routes/househelp.profile.tsx');
+    expect(button).toContain('verification.status === "approved"');
+    expect(button).toContain('Complete KYC to go open for work');
+    expect(button).toContain('if (!hasApprovedKyc)');
+    expect(button).toContain('navigate("/househelp/profile#identity-verification")');
+    expect(home.match(/<OpenForWorkButton[^>]+verification={identityVerification}/g)?.length).toBe(2);
+    expect(hiring).toContain('verification={identityVerification}');
+    expect(profile).toContain('verification={identityVerification}');
+    expect(profile).toContain("location.hash !== '#identity-verification'");
+  });
+
   it('constrains every open-for-work control to the mobile sheet', () => {
     const modal = source('app/components/modals/OpenForWorkModal.tsx');
+    const jobModal = source('app/components/modals/JobPostModal.tsx');
+    const css = source('app/tailwind.css');
     expect(modal).toContain('w-screen max-w-[100vw] overflow-x-hidden');
-    expect(modal).toContain('hb-modal-panel min-w-0 overflow-x-hidden');
+    expect(modal).toContain('hb-modal-panel flex max-h-full min-w-0 flex-col overflow-hidden');
+    expect(modal).toContain('shrink-0 items-center');
+    expect(jobModal).toContain('sticky top-0 z-10 flex shrink-0');
+    expect(css).toContain('.hb-modal-shell > .hb-modal-panel');
     expect(modal).toContain('grid min-w-0 grid-cols-2');
     expect(modal.match(/min-w-0 max-w-full w-full/g)?.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('prefills both listing forms from canonical profile data', () => {
+    const openForWork = source('app/components/modals/OpenForWorkModal.tsx');
+    const jobModal = source('app/components/modals/JobPostModal.tsx');
+    expect(openForWork).toContain('buildHousehelpListingDefaults(profile, features, picks)');
+    expect(openForWork).toContain('defaults.description');
+    expect(jobModal).toContain('buildHouseholdJobDefaults(profile, petsPayload, picksPayload)');
+    expect(jobModal).toContain('userProfilePicksService.listPicks(userProfileId)');
+    expect(jobModal).toContain('profileDefaults?.location?.wardId');
+  });
+
+  it('uses plain language for the open-for-work introduction', () => {
+    const modal = source('app/components/modals/OpenForWorkModal.tsx');
+    const jobsHome = source('app/components/HousehelpJobsHome.tsx');
+    expect(modal).toContain('Introduce yourself to potential employers');
+    expect(modal).toContain('This introduction appears on your Open for Work listing.');
+    expect(jobsHome).toContain('Introduction (optional)');
+    expect(`${modal}\n${jobsHome}`.toLowerCase()).not.toContain('cover letter');
   });
 
   it('keeps homepage availability actions out of the mobile filter toolbar', () => {
@@ -208,11 +255,22 @@ describe('mobile layout guardrails', () => {
     const househelpHome = source('app/components/HousehelpJobsHome.tsx');
     const openForWork = source('app/components/OpenForWorkButton.tsx');
     expect(readiness).toContain('stepId === "listing" && onListingAction');
+    expect(readiness).toContain('if (shouldHideMarketplaceReadiness(readiness)) return null');
+    expect(readiness.match(/stepId === "listing" && onListingAction/g)?.length).toBe(2);
     expect(householdHome).toContain('onListingAction={() => setCreatingHouseholdJob(true)}');
     expect(householdHome).toContain('aria-label="Create a job listing"');
     expect(householdHome).toContain('isOpen={creatingHouseholdJob || Boolean(editingHouseholdJob)}');
     expect(househelpHome).toContain('onListingAction={() => openForWorkButtonRef.current?.open()}');
     expect(openForWork).toContain('useImperativeHandle(ref, () => ({ open: requestModal })');
+  });
+
+  it('preserves profile completion detection across the feature-editor round trip', () => {
+    const househelpProfile = source('app/routes/househelp.profile.tsx');
+    const householdProfile = source('app/routes/household.profile.tsx');
+    const featureEditor = source('app/routes/onboarding.features.tsx');
+    expect(househelpProfile).toContain('rememberProfileCompletionBaseline(`${userId}:househelp`');
+    expect(householdProfile).toContain('rememberProfileCompletionBaseline(`${userId}:household`');
+    expect(featureEditor).toContain('notifyProfileProgressChanged();');
   });
 
   it('keeps interacted jobs visible with statuses and one save action', () => {

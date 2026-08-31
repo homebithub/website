@@ -1089,7 +1089,7 @@ export default function HousehelpJobsHome() {
               {/* Always on screen while browsing. A househelp reading job
                   adverts is exactly the person who should be told they can be
                   found instead. */}
-              <OpenForWorkButton ref={openForWorkButtonRef} className="hidden shrink-0 sm:flex" />
+              <OpenForWorkButton ref={openForWorkButtonRef} className="hidden shrink-0 sm:flex" verification={identityVerification} />
 
               <label className="min-w-0 flex-1 sm:flex-none">
                 <span className="sr-only">Sort job openings</span>
@@ -1298,7 +1298,7 @@ export default function HousehelpJobsHome() {
           </section>
           <div className="hb-content-rail flex flex-col">
             <div className="mb-3 min-w-0 max-w-full sm:hidden">
-              <OpenForWorkButton className="w-full" />
+              <OpenForWorkButton className="w-full" verification={identityVerification} />
             </div>
             <IdentityVerificationPrompt verification={identityVerification} />
             <MarketplaceReadinessBanner
@@ -1558,7 +1558,12 @@ export default function HousehelpJobsHome() {
           </div>
         </main>
       </PurpleThemeWrapper>
-      <MarketplaceReadinessRequiredModal readiness={marketplaceReadiness} open={readinessModalOpen} onClose={() => setReadinessModalOpen(false)} />
+      <MarketplaceReadinessRequiredModal
+        readiness={marketplaceReadiness}
+        open={readinessModalOpen}
+        onClose={() => setReadinessModalOpen(false)}
+        onListingAction={() => openForWorkButtonRef.current?.open()}
+      />
       <Footer />
 
       {previewProfileJob && (() => {
@@ -1892,7 +1897,7 @@ export default function HousehelpJobsHome() {
 
             <form onSubmit={handleSubmitApplication} className="mt-6 space-y-5">
               <div>
-                <label className="mb-2 block text-xs font-semibold text-purple-600 dark:text-purple-300">Cover letter (optional)</label>
+                <label className="mb-2 block text-xs font-semibold text-purple-600 dark:text-purple-300">Introduction (optional)</label>
                 <textarea
                   value={pitch}
                   onChange={(event) => setPitch(event.target.value)}
@@ -1900,11 +1905,11 @@ export default function HousehelpJobsHome() {
                   placeholder="Introduce yourself and explain why you would be a good fit for this household."
                   className="w-full text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/40 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition resize-none"
                 />
-                <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">We’ll share your cover letter with the household together with your application.</p>
+                <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">We’ll share your introduction with the household together with your application.</p>
               </div>
 
               <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-800 dark:border-purple-600/30 dark:bg-purple-900/20 dark:text-purple-200">
-                Your application and cover letter will appear in the household’s applicants list immediately.
+                Your application and introduction will appear in the household’s applicants list immediately.
               </div>
 
               <div className="grid grid-cols-2 gap-3">

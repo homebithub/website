@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
-import { clientProfileService, jobService, locationService, petsService, profileService } from "~/services/grpc/authServices";
+import { clientProfileService, jobService, locationService, petsService, profileService, userProfilePicksService } from "~/services/grpc/authServices";
 import { getStoredUserProfileId } from "~/utils/authStorage";
 import { useModalDismiss } from "~/hooks/useModalDismiss";
 import {
@@ -20,6 +20,7 @@ import { FormError } from '~/components/FormError';
 import { FeatureOptionPicker } from '~/components/preferences/FeatureOptionPicker';
 import { PreferenceAccordion } from '~/components/preferences/PreferenceAccordion';
 import { allowedPropertyNames, featureKey, isSingleSelectFeature, propertyAllowed } from '~/utils/preferenceRules';
+import { buildHouseholdJobDefaults } from '~/utils/listingProfileDefaults';
 
 type JobPostModalProps = {
   isOpen: boolean;
@@ -132,11 +133,11 @@ function freeFormKey(featureID: number, propertyID: number): string {
 
 function salaryPropertyMatches(property: FeatureProperty, profile: Record<string, any>): boolean {
   const name = propertyName(property).toLowerCase();
-  const frequency = String(profile.salary_frequency || '').toLowerCase();
+  const frequency = String(profile.salaryFrequency || profile.salary_frequency || '').toLowerCase();
   if (frequency && !name.startsWith(`${frequency}:`)) return false;
   const amounts = name.match(/[\d,]+/g)?.map((value) => Number(value.replace(/,/g, ''))) || [];
-  const minimum = Number(profile.budget_min || 0);
-  const maximum = Number(profile.budget_max || 0);
+  const minimum = Number(profile.budgetMin || profile.budget_min || 0);
+  const maximum = Number(profile.budgetMax || profile.budget_max || 0);
   if (!minimum && !maximum) return false;
   if (amounts.length === 1) return minimum >= amounts[0] || maximum >= amounts[0];
   return amounts.length >= 2 && (!minimum || minimum >= amounts[0]) && (!maximum || maximum <= amounts[1]);
@@ -206,10 +207,12 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
   useEffect(() => {
     if (!isOpen || editing) return;
     let cancelled = false;
+    const userProfileId = getStoredUserProfileId();
     Promise.allSettled([
       profileService.getCurrentHouseholdProfile(''),
       petsService.listMyPets(''),
-    ]).then(([profileResult, petsResult]) => {
+      userProfileId ? userProfilePicksService.listPicks(userProfileId) : Promise.resolve([]),
+    ]).then(([profileResult, petsResult, picksResult]) => {
       if (cancelled) return;
       const profile = profileResult.status === 'fulfilled'
         ? (profileResult.value?.data ?? profileResult.value ?? {})
@@ -217,10 +220,15 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
       const petsPayload = petsResult.status === 'fulfilled'
         ? (petsResult.value?.data ?? petsResult.value ?? [])
         : [];
-      setProfileDefaults({
-        ...profile,
-        pets: Array.isArray(petsPayload) ? petsPayload : [],
-      });
+      const picksPayload = picksResult.status === 'fulfilled'
+        ? (picksResult.value?.data ?? picksResult.value ?? [])
+        : [];
+      const defaults = buildHouseholdJobDefaults(profile, petsPayload, picksPayload);
+      setProfileDefaults(defaults);
+      setDescription((current) => current.trim() ? current : defaults.description);
+      if (defaults.jobTypeId) {
+        setSelectedJobTypeId((current) => current || String(defaults.jobTypeId));
+      }
     });
     return () => { cancelled = true; };
   }, [editing, isOpen]);
@@ -299,13 +307,9 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
 
     const wantedByFeature: Record<string, string[]> = {
       chore: Array.isArray(profileDefaults.chores) ? profileDefaults.chores : [],
-      housesize: profileDefaults.house_size ? [String(profileDefaults.house_size)] : [],
-      pettypeoption: Array.isArray(profileDefaults.pets)
-        ? profileDefaults.pets.map((pet: any) => String(pet.type || pet.pet_type || pet.name || ''))
-        : [],
-      workarrangement: profileDefaults.needs_live_in
-        ? ['Live-in']
-        : profileDefaults.needs_day_worker ? ['Day worker'] : [],
+      housesize: profileDefaults.houseSize ? [String(profileDefaults.houseSize)] : [],
+      pettypeoption: Array.isArray(profileDefaults.petTypes) ? profileDefaults.petTypes : [],
+      workarrangement: Array.isArray(profileDefaults.workArrangements) ? profileDefaults.workArrangements : [],
     };
 
     const next: Record<number, number[]> = {};
@@ -313,9 +317,11 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
       const key = featureKey(catalogueFeatureName(bundle));
       const wanted = wantedByFeature[key] || [];
       const properties = featureProperties(bundle);
-      const startDefault = key === 'starttiming' ? startTimingDefault(profileDefaults.available_from) : '';
+      const startDefault = key === 'starttiming' ? startTimingDefault(profileDefaults.availableFrom) : '';
+      const profilePropertyIds = new Set<number>(profileDefaults.profilePropertyIds || []);
       const ids = properties
         .filter((property) =>
+          profilePropertyIds.has(propertyId(property)) ||
           wanted.some((value) => value.trim().toLowerCase() === propertyName(property).trim().toLowerCase()) ||
           (key === 'salaryrange' && salaryPropertyMatches(property, profileDefaults)) ||
           (startDefault && propertyName(property) === startDefault)
@@ -597,7 +603,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
         // the header's padding or type size changes.
         className="hb-mobile-modal-panel flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-purple-200 bg-white shadow-2xl dark:border-purple-500/40 dark:bg-dark-card dark:shadow-[0_0_42px_rgba(168,85,247,0.35)] sm:h-auto sm:rounded-3xl"
       >
-        <div className="flex items-start justify-between border-b border-purple-100 px-6 py-4 dark:border-purple-500/25">
+        <div className="sticky top-0 z-10 flex shrink-0 items-start justify-between border-b border-purple-100 bg-white px-4 py-4 dark:border-purple-500/25 dark:bg-dark-card sm:px-6">
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">{titleOverride || (editing ? "Edit Job Posting" : "Create Job Posting")}</h2>
             <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
@@ -614,7 +620,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-6 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))]">
+        <form onSubmit={handleSubmit} className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:px-6">
           {success && <SuccessAlert title="Job Posting" message={success} durationMs={3000} />}
 
           <RequiredLegend className="mb-4" />
@@ -689,10 +695,10 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
                 // already is. The key remounts the picker when the modal is
                 // reopened on a different listing, which otherwise keeps the
                 // previous job's selection.
-                key={String(job?.id || "new")}
-                initialWardId={numericId(job?.ward_id ?? job?.wardId) || null}
-                initialSubcountyId={numericId(job?.subcounty_id ?? job?.subcountyId) || null}
-                initialCountyId={numericId(job?.county_id ?? job?.countyId) || null}
+                key={`${String(job?.id || "new")}:${numericId(job?.ward_id ?? job?.wardId) || profileDefaults?.location?.wardId || 0}`}
+                initialWardId={numericId(job?.ward_id ?? job?.wardId) || profileDefaults?.location?.wardId || null}
+                initialSubcountyId={numericId(job?.subcounty_id ?? job?.subcountyId) || profileDefaults?.location?.subcountyId || null}
+                initialCountyId={numericId(job?.county_id ?? job?.countyId) || profileDefaults?.location?.countyId || null}
               />
             </section>
 
