@@ -2,7 +2,7 @@ import React, { Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon, UserGroupIcon, HomeIcon } from '@heroicons/react/24/outline';
 
-type UserType = 'househelp' | 'household';
+type UserType = 'service_provider' | 'household';
 
 interface SignupFlowProps {
   isOpen: boolean;
@@ -81,9 +81,9 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
 
                     <div className="grid grid-cols-1 gap-5">
                       <button
-                        onClick={() => handleUserTypeSelect('househelp')}
+                        onClick={() => handleUserTypeSelect('service_provider')}
                         className={`group relative p-8 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
-                          userType === 'househelp'
+                          userType === 'service_provider'
                             ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-purple-100 shadow-lg'
                             : 'border-gray-200 hover:border-purple-300 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-purple-100/50 hover:shadow-md'
                         }`}
@@ -94,10 +94,10 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
                             <UserGroupIcon className="h-8 w-8 text-white" />
                           </div>
                           <div className="ml-6 flex-1">
-                            <h4 className="text-lg font-bold text-gray-900 mb-1">Househelp</h4>
+                            <h4 className="text-lg font-bold text-gray-900 mb-1">Service provider</h4>
                             <p className="text-sm text-gray-600 leading-relaxed">I'm looking for work opportunities and want to offer my services</p>
                           </div>
-                          {isSubmitting && userType === 'househelp' && (
+                          {isSubmitting && userType === 'service_provider' && (
                             <div className="ml-4">
                               <div className="h-6 w-6 border-3 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                             </div>

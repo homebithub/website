@@ -3,8 +3,9 @@ import * as marketplacePbModule from '~/grpc/lite/marketplace/marketplace_pb';
 import structPb from 'google-protobuf/google/protobuf/struct_pb.js';
 
 import { GRPC_WEB_BASE_URL, callWithAuthRetry } from './client';
-import { getStoredAccessToken, getStoredProfileType, getStoredUserId } from '~/utils/authStorage';
+import { getStoredAccessToken, getStoredCanonicalProfileType, getStoredUserId } from '~/utils/authStorage';
 import { cachedRequest, invalidateCached } from '~/utils/requestCache';
+import { normalizeProfileType } from '~/utils/profileType';
 
 const BROWSE_STALE_MS = 30_000;
 const SAVED_STALE_MS = 2 * 60_000;
@@ -19,7 +20,7 @@ function metadata(): Record<string, string> {
   const result: Record<string, string> = {};
   const token = getStoredAccessToken();
   if (token) result.authorization = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = getStoredCanonicalProfileType();
   if (profileType) result['x-profile-type'] = profileType;
   return result;
 }
@@ -39,7 +40,7 @@ function call(start: (callback: (error: any, response?: any) => void) => void): 
 function userRequest(userId = '', profileType = ''): any {
   const request = new pb.UserIdRequest();
   request.setUserId(resolveUserId(userId));
-  if (profileType) request.setProfileType(profileType);
+  if (profileType) request.setProfileType(normalizeProfileType(profileType));
   return request;
 }
 
@@ -65,7 +66,7 @@ export const marketplaceShortlistService = {
   async createShortlist(userId: string, profileType: string, data: Record<string, any>): Promise<any> {
     const request = new pb.CreateShortlistReq();
     request.setUserId(resolveUserId(userId));
-    request.setProfileType(profileType);
+    request.setProfileType(normalizeProfileType(profileType));
     request.setData(StructClass.fromJavaScript(data));
     const response = responseData(await call(callback => shortlistClient.createShortlist(request, metadata(), callback)));
     invalidateCached(`marketplace:shortlist:${resolveUserId(userId)}:`);
@@ -98,7 +99,7 @@ export const marketplaceHireRequestService = {
   async listHireRequests(userId = '', profileType = '', status = ''): Promise<any> {
     const request = new pb.ListHireRequestsReq();
     request.setUserId(resolveUserId(userId));
-    request.setProfileType(profileType);
+    request.setProfileType(normalizeProfileType(profileType));
     if (status) request.setStatus(status);
     request.setLimit(50);
     request.setOffset(0);

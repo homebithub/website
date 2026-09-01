@@ -358,7 +358,7 @@ const deriveHouseholdResponsivenessBadge = (profile?: HouseholdProfileLike | nul
   return null;
 };
 
-export default function HousehelpJobsHome() {
+export default function ServiceProviderJobsHome() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -374,7 +374,7 @@ export default function HousehelpJobsHome() {
   } = useSubscription(currentUserId);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [subscriptionActionLabel, setSubscriptionActionLabel] = useState("continue");
-  const marketplaceReadiness = useMarketplaceReadiness(currentUserId, "househelp");
+  const marketplaceReadiness = useMarketplaceReadiness(currentUserId, "service_provider");
   const openForWorkButtonRef = useRef<OpenForWorkButtonHandle>(null);
   const [readinessModalOpen, setReadinessModalOpen] = useState(false);
   const [previewProfileJob, setPreviewProfileJob] = useState<JobListing | null>(null);
@@ -451,12 +451,12 @@ export default function HousehelpJobsHome() {
   const limit = 12;
   // The board's own address.
   //
-  // This said "/househelp/jobs", which is routed nowhere: flat-routes renders
+  // This said "/service-provider/jobs", which is routed nowhere: flat-routes renders
   // this component from _index, so the board is "/". Every Back to jobs link
   // built from it therefore led to a dead route — including the one on the
   // household profile a househelp reaches from these very cards.
   const backToPath = "/";
-  const profileCompletionReminder = useProfileCompletionReminder(currentUserId || "", "househelp");
+  const profileCompletionReminder = useProfileCompletionReminder(currentUserId || "", "service_provider");
   const identityVerification = useIdentityVerification(currentUserId);
 
   const { options: onboardingOptions } = useOnboardingOptions("household");
@@ -704,7 +704,7 @@ export default function HousehelpJobsHome() {
     let cancelled = false;
     const fetchProfile = async () => {
       try {
-        const profile = await grpcProfileService.getCurrentHousehelpProfile("");
+        const profile = await grpcProfileService.getCurrentServiceProviderProfile("");
         const resolvedId = profile?.id || profile?.profile_id || "";
         if (!cancelled) setHousehelpProfileId(resolvedId);
       } catch (err) {
@@ -926,7 +926,7 @@ export default function HousehelpJobsHome() {
     }
 
     if (!househelpProfileId) {
-      setApplyError("Please complete your househelp profile before applying.");
+      setApplyError("Please complete your service provider profile before applying.");
       return;
     }
 
@@ -983,12 +983,12 @@ export default function HousehelpJobsHome() {
     try {
       const payload: StartConversationPayload = {
         household_user_id: householdUserId,
-        househelp_user_id: currentUserId,
+        service_provider_user_id: currentUserId,
       };
 
       const householdProfileId = getHouseholdProfileId(job);
       if (householdProfileId) payload.household_profile_id = householdProfileId;
-      if (househelpProfileId) payload.househelp_profile_id = househelpProfileId;
+      if (househelpProfileId) payload.service_provider_profile_id = househelpProfileId;
       // The job this chat is about, so it gets its own thread rather than
       // joining whatever these two last talked about.
       if (job.id) payload.listing_id = job.id;
@@ -1034,7 +1034,7 @@ export default function HousehelpJobsHome() {
         // protobuf NumberValue, and the handler reads that field with a string
         // type assertion, which fails and leaves it empty: "profile_id is
         // required", for a request that carried one.
-        await shortlistService.createShortlist('', 'househelp', {
+        await shortlistService.createShortlist('', 'service_provider', {
           profile_id: String(job.id),
           profile_type: 'job',
         });
@@ -1308,7 +1308,7 @@ export default function HousehelpJobsHome() {
             {profileCompletionReminder.shouldShowCelebration && (
               <ProfileCompletionCelebrationModal
                 isOpen
-                profileType="househelp"
+                profileType="service_provider"
                 celebration={profileCompletionReminder.celebration}
                 onSeen={profileCompletionReminder.markCelebrationSeen}
                 onClose={() => void profileCompletionReminder.markCelebrationSeen()}

@@ -1,4 +1,4 @@
-type HousehelpCardDetailsProps = {
+type ServiceProviderCardDetailsProps = {
   description?: string;
   workTypes: string[];
   availability: string;
@@ -12,7 +12,7 @@ type HousehelpCardDetailsProps = {
  * Desktop-only detail panel for househelp discovery cards. Mobile keeps the
  * compact chips and summary already used by the marketplace.
  */
-export function HousehelpCardDetails({
+export function ServiceProviderCardDetails({
   description,
   workTypes,
   availability,
@@ -20,7 +20,7 @@ export function HousehelpCardDetails({
   experience,
   salary,
   worksWith = [],
-}: HousehelpCardDetailsProps) {
+}: ServiceProviderCardDetailsProps) {
   const facts = [
     { label: 'Preferred work', value: workTypes.length > 0 ? workTypes.join(', ') : 'Flexible role' },
     { label: 'Available from', value: availability },

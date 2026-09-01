@@ -4,7 +4,7 @@ function normalizeImagePath(path: string): string {
   return path.replace(/^src\//, '').replace(/^\/+/, '');
 }
 
-export function resolveHousehelpImageUrl(image: any): string {
+export function resolveServiceProviderImageUrl(image: any): string {
   if (!image) return '';
 
   if (typeof image === 'string') {

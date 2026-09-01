@@ -56,7 +56,7 @@ function normalizeProfileRole(profileType?: string | null): 'client' | 'service-
     const normalized = String(profileType || '').trim().toUpperCase();
     if (!normalized) return null;
     if (normalized === 'CLT' || normalized === 'CLIENT' || normalized === 'HOUSEHOLD') return 'client';
-    if (normalized === 'SVC_PVD' || normalized === 'SVD_PDD' || normalized === 'SERVICE_PROVIDER' || normalized === 'HOUSEHELP') return 'service-provider';
+    if (normalized === 'SVC_PVD' || normalized === 'SVD_PDD' || normalized === 'SERVICE_PROVIDER' || normalized === 'SERVICE PROVIDER') return 'service-provider';
     if (normalized === 'BUREAU') return 'bureau';
     return null;
 }
@@ -111,7 +111,7 @@ function NavigationContent() {
     }, []);
 
     // The root route is the real dashboard for both profiles: it resolves the
-    // signed-in role and renders HouseholdJobsHome or HousehelpJobsHome. The
+    // signed-in role and renders HouseholdJobsHome or ServiceProviderJobsHome. The
     // /household and /househelp paths are layout namespaces, not home pages;
     // linking the mobile Home tab to them produced a 404 on direct navigation.
     const dashboardPath = React.useMemo(() => {
@@ -137,7 +137,7 @@ function NavigationContent() {
         const role = normalizeProfileRole(profileType);
         const isClient = role === 'client';
         const shortlistHref = isClient ? '/household/shortlist' : '/shortlist';
-        const hiringHistoryHref = isClient ? '/household/hiring' : '/househelp/hiring';
+        const hiringHistoryHref = isClient ? '/household/hiring' : '/service-provider/hiring';
         // One word for both sides. The page is where a person manages their own
         // hiring over time — requests, contracts, work history — and that is the
         // same activity whether you are filling a job or taking one. Browsing
@@ -165,7 +165,7 @@ function NavigationContent() {
     const accountProfileHref = profileRole === 'client'
         ? '/household/profile'
         : profileRole === 'service-provider'
-            ? '/househelp/profile'
+            ? '/service-provider/profile'
             : '/profile';
     const accountProfileLabel = profileRole === 'client'
         ? 'My Household'
@@ -206,18 +206,18 @@ function NavigationContent() {
                 } = await import('~/services/grpc/authServices');
                 const applicantPromise = listingApplicationService.listApplications({ applicantProfileId: profileId, limit: 200 });
                 const [requestsRaw, applicationsRaw, employmentContractsRaw, legacyContractsRaw, workRaw] = await Promise.all([
-                    hireRequestService.listHireRequests('', 'househelp'),
+                    hireRequestService.listHireRequests('', 'service_provider'),
                     applicantPromise,
                     employmentContractService.listEmploymentContracts('', undefined, 200, 0),
-                    hireContractService.listHireContracts('', 'househelp'),
-                    employmentService.listByHousehelp(userId, 200, 0),
+                    hireContractService.listHireContracts('', 'service_provider'),
+                    employmentService.listByServiceProvider(userId, 200, 0),
                 ]);
                 const rows = (raw: any) => {
                     const value = raw?.data?.data ?? raw?.data ?? raw ?? [];
                     return Array.isArray(value) ? value : [];
                 };
                 const visibleEmploymentContracts = collapseApplicationContracts(rows(employmentContractsRaw));
-                return countUnattendedHiringRecords(hiringAttentionScope(profileId, 'househelp'), [
+                return countUnattendedHiringRecords(hiringAttentionScope(profileId, 'service_provider'), [
                     { kind: 'request', records: rows(requestsRaw) },
                     { kind: 'application', records: rows(applicationsRaw) },
                     { kind: 'employment-contract', records: visibleEmploymentContracts },
@@ -266,7 +266,7 @@ function NavigationContent() {
         try {
             if (!getAccessTokenFromCookies()) return;
             const role = normalizeProfileRole(profileType);
-            const savedProfileType = role === 'client' ? 'household' : role === 'service-provider' ? 'househelp' : undefined;
+            const savedProfileType = role === 'client' ? 'household' : role === 'service-provider' ? 'service_provider' : undefined;
             if (!savedProfileType) {
                 setSavedCount(0);
                 return;
@@ -361,7 +361,7 @@ function NavigationContent() {
                         const { profileService } = await import('~/services/grpc/authServices');
                         const profileData = role === 'client'
                             ? await profileService.getCurrentHouseholdProfile('')
-                            : await profileService.getCurrentHousehelpProfile('');
+                            : await profileService.getCurrentServiceProviderProfile('');
                         const avatar = firstProfileAvatar(
                             profileData?.avatar_url,
                             profileData?.avatarUrl,
@@ -590,7 +590,7 @@ function NavigationContent() {
                                 {item.name}
                                 {'count' in item && item.name === 'Saved' && renderBadge((item as any).count)}
                                 {'count' in item && item.name === 'Inbox' && renderBadge((item as any).count)}
-                                {'count' in item && (item.href === '/household/hiring' || item.href === '/househelp/hiring') && renderBadge((item as any).count)}
+                                {'count' in item && (item.href === '/household/hiring' || item.href === '/service-provider/hiring') && renderBadge((item as any).count)}
                             </Link>
                             );
                         })}
@@ -614,7 +614,7 @@ function NavigationContent() {
                                 {item.name}
                                 {item.name === 'Saved' && renderBadge(savedCount)}
                                 {item.name === 'Inbox' && renderBadge(inboxCount)}
-                                {(item.href === '/household/hiring' || item.href === '/househelp/hiring') && renderBadge(hireRequestCount)}
+                                {(item.href === '/household/hiring' || item.href === '/service-provider/hiring') && renderBadge(hireRequestCount)}
                             </Link>
                             );
                         })}
@@ -914,7 +914,7 @@ function NavigationContent() {
                                                                         {inboxCount > 9 ? '9+' : inboxCount}
                                                                     </span>
                                                                 )}
-                                                                {(item.href === '/household/hiring' || item.href === '/househelp/hiring') && hireRequestCount > 0 && (
+                                                                {(item.href === '/household/hiring' || item.href === '/service-provider/hiring') && hireRequestCount > 0 && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
                                                                         {hireRequestCount > 9 ? '9+' : hireRequestCount}
                                                                     </span>

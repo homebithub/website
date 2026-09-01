@@ -1,4 +1,4 @@
-export type UserRole = 'household' | 'househelp' | 'agency' | 'admin';
+export type UserRole = 'household' | 'service_provider' | 'agency' | 'admin';
 
 export interface BaseUser {
   id: string;
@@ -29,8 +29,8 @@ export interface Household extends BaseUser {
   unlockedProfiles: string[]; // Legacy shortlist-lock field retained for compatibility
 }
 
-export interface Househelp extends BaseUser {
-  role: 'househelp';
+export interface ServiceProvider extends BaseUser {
+  role: 'service_provider';
   location: string;
   agencyId?: string;
   skills: string[];
@@ -64,6 +64,9 @@ export interface Househelp extends BaseUser {
   reviewCount: number;
 }
 
+/** @deprecated Use ServiceProvider; retained while imports migrate. */
+export type Househelp = ServiceProvider;
+
 export interface Agency extends BaseUser {
   role: 'agency';
   businessName: string;
@@ -75,7 +78,7 @@ export interface Agency extends BaseUser {
   }[];
   location: string;
   verificationStatus: 'pending' | 'approved' | 'rejected';
-  managedHousehelps: string[]; // IDs of managed househelp profiles
+  managedServiceProviders: string[]; // IDs of managed service provider profiles
   rating: number;
   reviewCount: number;
   commissionRate: number;

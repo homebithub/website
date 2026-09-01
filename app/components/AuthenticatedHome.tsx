@@ -8,8 +8,8 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
-import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
-import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
+import { type ServiceProviderSearchFields } from "~/components/features/ServiceProviderFilters";
+import ServiceProviderMoreFilters from "~/components/features/ServiceProviderMoreFilters";
 import { SidePanel } from '~/components/SidePanel';
 import { ChatBubbleLeftRightIcon, HeartIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
@@ -18,16 +18,17 @@ import { fetchPreferences } from "~/utils/preferencesApi";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 import CustomSelect from "~/components/ui/CustomSelect";
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
-import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { isServiceProviderProfileType, normalizeProfileType, SERVICE_PROVIDER_PROFILE_TYPE } from '~/utils/profileType';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSubscription } from '~/hooks/useSubscription';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
-import { resolveHousehelpProfile, resolveHousehelpUserId } from '~/utils/househelpProfiles';
+import { resolveServiceProviderProfile, resolveServiceProviderUserId } from '~/utils/serviceProviderProfiles';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { matchScoreClasses } from '~/utils/matchScore';
 import { formatDisplayName } from '~/utils/displayName';
 
-interface HousehelpProfile {
+interface ServiceProviderProfile {
   id: number | string;
   user_id?: string;
   profile_id: string;
@@ -89,7 +90,7 @@ const formatAge = (dob?: string) => {
 };
 
 export default function AuthenticatedHome({ variant = 'default' }: AuthenticatedHomeProps) {
-  const initialFields: HousehelpSearchFields = {
+  const initialFields: ServiceProviderSearchFields = {
     status: "",
     househelp_type: "",
     gender: "",
@@ -120,7 +121,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   // Current user (used for chat payloads)
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
-  const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
+  const currentProfileType: string | undefined = normalizeProfileType(
+    currentUser?.profile_type || getStoredCanonicalProfileType(),
+  ) || undefined;
   const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
@@ -155,12 +158,12 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
 
   // Card actions
   const handleViewProfile = (profileId: string) => {
-    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}`, {
+    navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(profileId)}`, {
       state: { profileId },
     });
   };
 
-  const handleStartChat = async (targetUserId?: string, househelpProfileId?: string) => {
+  const handleStartChat = async (targetUserId?: string, serviceProviderProfileId?: string) => {
     // The same silent return that made the Message button on the open-for-work
     // card look broken. A button that does nothing and says nothing is
     // indistinguishable from a broken app.
@@ -177,22 +180,22 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       return;
     }
     try {
-      const profileType = (currentProfileType || '').toLowerCase();
+      const profileType = getStoredCanonicalProfileType();
       let householdId = currentUserId;
-      let househelpId = targetUserId;
+      let serviceProviderId = targetUserId;
 
-      // If somehow a househelp is browsing this view, flip roles
-      if (profileType === 'househelp') {
+      // If somehow a service provider is browsing this view, flip roles
+      if (isServiceProviderProfileType(profileType)) {
         householdId = targetUserId;
-        househelpId = currentUserId;
+        serviceProviderId = currentUserId;
       }
 
       const payload: StartConversationPayload = {
         household_user_id: householdId,
-        househelp_user_id: househelpId,
+        service_provider_user_id: serviceProviderId,
       };
-      if (househelpProfileId) {
-        payload.househelp_profile_id = househelpProfileId;
+      if (serviceProviderProfileId) {
+        payload.service_provider_profile_id = serviceProviderProfileId;
       }
       
       // Include household_profile_id if current user is household
@@ -203,7 +206,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
       navigate(getInboxRoute(convId));
     } catch (e) {
-      console.error('Failed to start chat from househelps search', e);
+      console.error('Failed to start chat from service providers search', e);
       navigate('/inbox');
     }
   };
@@ -215,7 +218,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
 
       // Get the button element and shortlist link
       const button = event.currentTarget;
-      const card = button.closest('.househelp-card');
+      const card = button.closest('.service-provider-card');
       const shortlistLink = document.getElementById('shortlist-link');
 
       if (isShortlisted) {
@@ -229,7 +232,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         });
       } else {
         // Add to shortlist
-        await shortlistService.createShortlist('', 'household', { profile_id: profileId, profile_type: 'househelp' });
+        await shortlistService.createShortlist('', 'household', { profile_id: profileId, profile_type: SERVICE_PROVIDER_PROFILE_TYPE });
 
         setShortlistedProfiles(prev => new Set(prev).add(profileId));
 
@@ -277,9 +280,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       setActionError('Failed to update shortlist. Please check your connection and try again.');
     }
   };
-  const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
-  const [househelps, setHousehelps] = useState<HousehelpProfile[]>([]);
-  const topMatches = useMemo(() => househelps.filter((h) => (h?.fit_score ?? 0) >= 10).slice(0, 6), [househelps]);
+  const [fields, setFields] = useState<ServiceProviderSearchFields>(initialFields);
+  const [serviceProviders, setServiceProviders] = useState<ServiceProviderProfile[]>([]);
+  const topMatches = useMemo(() => serviceProviders.filter((h) => (h?.fit_score ?? 0) >= 10).slice(0, 6), [serviceProviders]);
   const topMatchProfileIds = useMemo(() => {
     const ids = new Set<string>();
     topMatches.forEach((match) => {
@@ -289,12 +292,12 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     return ids;
   }, [topMatches]);
 
-  // Fetch profile photos from documents table for all househelps
-  const househelpUserIds = useMemo(
-    () => househelps.map((h) => resolveHousehelpUserId(h)).filter(Boolean),
-    [househelps]
+  // Fetch profile photos from documents table for all service providers
+  const serviceProviderUserIds = useMemo(
+    () => serviceProviders.map((h) => resolveServiceProviderUserId(h)).filter(Boolean),
+    [serviceProviders]
   );
-  const profilePhotos = useProfilePhotos(househelpUserIds);
+  const profilePhotos = useProfilePhotos(serviceProviderUserIds);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -414,7 +417,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     return Number.isNaN(parsed) ? undefined : parsed;
   };
 
-  const deriveHousehelpType = (f: HousehelpSearchFields) => {
+  const deriveServiceProviderType = (f: ServiceProviderSearchFields) => {
     const liveIn = f.offers_live_in === "true";
     const dayWorker = f.offers_day_worker === "true";
     if (liveIn && !dayWorker) return "live_in";
@@ -422,7 +425,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     return f.househelp_type || undefined;
   };
 
-  const buildCountPayload = (f: HousehelpSearchFields) => {
+  const buildCountPayload = (f: ServiceProviderSearchFields) => {
     return Object.fromEntries(
       Object.entries({
         ...f,
@@ -432,7 +435,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         salary_max: f.salary_max ? Number(f.salary_max) : undefined,
         salary_expectation_min: f.salary_min ? Number(f.salary_min) : undefined,
         salary_expectation_max: f.salary_max ? Number(f.salary_max) : undefined,
-        househelp_type: deriveHousehelpType(f),
+        househelp_type: deriveServiceProviderType(f),
         can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
         can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
         offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
@@ -449,7 +452,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     const payload = buildCountPayload(fields);
     countTimerRef.current = setTimeout(async () => {
       try {
-        const count = await grpcProfileService.countHousehelps('', 'household', payload);
+        const count = await grpcProfileService.countServiceProviders('', 'household', payload);
         setTotalCount(typeof count === 'number' ? count : 0);
       } catch (e) {
         setTotalCount(null);
@@ -463,11 +466,11 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
 
   // Fetch shortlist status for loaded profiles
   useEffect(() => {
-    if (househelps.length === 0) return;
+    if (serviceProviders.length === 0) return;
 
     const fetchShortlistStatus = async () => {
       try {
-        const profileIds = househelps.map(h => h.profile_id).filter(Boolean);
+        const profileIds = serviceProviders.map(h => h.profile_id).filter(Boolean);
 
         const results = await Promise.all(
           profileIds.map(async (profileId) => {
@@ -490,13 +493,13 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     };
 
     fetchShortlistStatus();
-  }, [househelps]);
+  }, [serviceProviders]);
 
-  const enrichHousehelpProfiles = async (rows: HousehelpProfile[]) => {
+  const enrichServiceProviderProfiles = async (rows: ServiceProviderProfile[]) => {
     const profileIds = Array.from(new Set((rows || []).map((row) => row.profile_id).filter(Boolean)));
     if (profileIds.length === 0) return rows;
     try {
-      const response = await grpcProfileService.searchMultipleWithUser('', 'househelp', { profile_ids: profileIds });
+      const response = await grpcProfileService.searchMultipleWithUser('', 'service_provider', { profile_ids: profileIds });
       const data = response?.data?.data || response?.data || response;
       const profiles = Array.isArray(data) ? data : [];
       if (profiles.length === 0) return rows;
@@ -513,15 +516,15 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           match_reasons: row.match_reasons,
           id: row.id ?? merged.user_id ?? merged.id,
           profile_id: row.profile_id || merged.profile_id || details.id,
-        } as HousehelpProfile;
+        } as ServiceProviderProfile;
       });
     } catch (err) {
-      console.error('Failed to load househelp profile details:', err);
+      console.error('Failed to load service provider profile details:', err);
       return rows;
     }
   };
 
-  const handleSearch = async (e?: React.FormEvent, overrideFields?: HousehelpSearchFields) => {
+  const handleSearch = async (e?: React.FormEvent, overrideFields?: ServiceProviderSearchFields) => {
     if (e) e.preventDefault();
     setLoading(true);
     setError('');
@@ -552,7 +555,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           salary_max: f.salary_max ? Number(f.salary_max) : undefined,
           salary_expectation_min: f.salary_min ? Number(f.salary_min) : undefined,
           salary_expectation_max: f.salary_max ? Number(f.salary_max) : undefined,
-          househelp_type: deriveHousehelpType(f),
+          househelp_type: deriveServiceProviderType(f),
           can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
           can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
           offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
@@ -565,15 +568,15 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           offset: 0,
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
       );
-      const data = await grpcProfileService.searchHousehelps(currentUserId || '', 'household', payload, limit, 0);
+      const data = await grpcProfileService.searchServiceProviders(currentUserId || '', 'household', payload, limit, 0);
       const inner = data?.data || data;
-      const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
-      const enrichedRows = await enrichHousehelpProfiles(rows);
-      setHousehelps(enrichedRows);
+      const rows: ServiceProviderProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
+      const enrichedRows = await enrichServiceProviderProfiles(rows);
+      setServiceProviders(enrichedRows);
       setHasMore(rows.length === limit);
     } catch (err) {
-      console.error('Error loading househelps:', err);
-      setError('Failed to load househelps');
+      console.error('Error loading service providers:', err);
+      setError('Failed to load service providers');
     } finally {
       setLoading(false);
     }
@@ -599,7 +602,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           salary_max: f.salary_max ? Number(f.salary_max) : undefined,
           salary_expectation_min: f.salary_min ? Number(f.salary_min) : undefined,
           salary_expectation_max: f.salary_max ? Number(f.salary_max) : undefined,
-          househelp_type: deriveHousehelpType(f),
+          househelp_type: deriveServiceProviderType(f),
           can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
           can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
           offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
@@ -612,11 +615,11 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           offset: nextOffset,
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
       );
-      const data = await grpcProfileService.searchHousehelps(currentUserId || '', 'household', payload, limit, nextOffset);
+      const data = await grpcProfileService.searchServiceProviders(currentUserId || '', 'household', payload, limit, nextOffset);
       const inner = data?.data || data;
-      const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
-      const enrichedRows = await enrichHousehelpProfiles(rows);
-      setHousehelps(prev => [...prev, ...enrichedRows]);
+      const rows: ServiceProviderProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
+      const enrichedRows = await enrichServiceProviderProfiles(rows);
+      setServiceProviders(prev => [...prev, ...enrichedRows]);
       setOffset(nextOffset);
       setHasMore(rows.length === limit);
     } catch (err) {
@@ -642,7 +645,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   }, [sentinelRef.current, hasSearched, offset, loading, hasMore, fields]);
 
   // Helper: map URLSearchParams to fields
-  function paramsToFields(sp: URLSearchParams, base: HousehelpSearchFields): HousehelpSearchFields {
+  function paramsToFields(sp: URLSearchParams, base: ServiceProviderSearchFields): ServiceProviderSearchFields {
     const keys = [
       'status','househelp_type','gender','experience','town','salary_frequency','skill','traits','min_rating','salary_min','salary_max','can_work_with_kids','can_work_with_pets','offers_live_in','offers_day_worker','available_from','language','min_age','max_age'
     ];
@@ -651,7 +654,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       const v = sp.get(k);
       if (v !== null) obj[k] = v;
     });
-    return { ...base, ...obj } as HousehelpSearchFields;
+    return { ...base, ...obj } as ServiceProviderSearchFields;
   }
 
   const isHome1 = variant === 'home1';
@@ -722,7 +725,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                   className={`group flex-1 flex items-center justify-between gap-3 rounded-2xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 transition-colors ${filtersExpanded ? '' : 'hover:bg-gray-50/70 dark:hover:bg-white/5'}`}
                 >
                   <span className="flex flex-col">
-                    <span className={`${isHome3 ? 'text-sm sm:text-base' : 'text-base sm:text-lg'} font-bold text-gray-900 dark:text-white`}>Find Househelps</span>
+                    <span className={`${isHome3 ? 'text-sm sm:text-base' : 'text-base sm:text-lg'} font-bold text-gray-900 dark:text-white`}>Find Service providers</span>
                     {filterDescription && (
                       <span className={`${cardTextClass} text-gray-600 dark:text-gray-400 mt-1`}>{filterDescription}</span>
                     )}
@@ -751,7 +754,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                       />
                     </div>
                     <div className="flex flex-col">
-                      <label className={quickLabelClass}>Type of Househelp</label>
+                      <label className={quickLabelClass}>Type of Service provider</label>
                       <CustomSelect
                         value={getTypeValue()}
                         onChange={(val) => setTypeValue(val)}
@@ -802,7 +805,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
 
             {/* Slide-over Drawer for full filters */}
             <SidePanel isOpen={showMoreFilters} onClose={() => setShowMoreFilters(false)} title="More Filters">
-              <HousehelpMoreFilters
+              <ServiceProviderMoreFilters
                 fields={fields}
                 onChange={handleFieldChange}
                 onSearch={() => { setShowMoreFilters(false); handleSearch(); }}
@@ -812,7 +815,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
 
             <div className="mt-6 sm:mt-8">
               <h2 className={`${isHome3 ? 'text-base' : 'text-lg'} font-bold text-gray-900 dark:text-white mb-6`}>
-                Available Househelps
+                Available Service providers
               </h2>
               {loading ? (
                 <div className="flex justify-center items-center py-20">
@@ -825,9 +828,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Househelps Available</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Service providers Available</h3>
                   <p className="text-gray-500 dark:text-gray-400 text-xs max-w-sm mx-auto">
-                    We couldn't load househelp profiles right now. Please try again in a moment.
+                    We couldn't load service provider profiles right now. Please try again in a moment.
                   </p>
                   <button
                     onClick={() => handleSearch()}
@@ -844,10 +847,10 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                     </svg>
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                    Ready to find your perfect househelp?
+                    Ready to find your perfect service provider?
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 text-base mb-4">
-                    Use the filters above to search for househelps, or click Search to see all available profiles.
+                    Use the filters above to search for service providers, or click Search to see all available profiles.
                   </p>
                   <button
                     onClick={() => handleSearch()}
@@ -856,10 +859,10 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                     <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    Show All Househelps
+                    Show All Service providers
                   </button>
                 </div>
-              ) : househelps.length === 0 ? (
+              ) : serviceProviders.length === 0 ? (
                 <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                   <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800">
                     <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -868,29 +871,29 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Results Found</h3>
                   <p className="text-gray-500 dark:text-gray-400 text-xs max-w-sm mx-auto">
-                    No househelps match your current filters. Try adjusting your search criteria or clear filters to see all profiles.
+                    No service providers match your current filters. Try adjusting your search criteria or clear filters to see all profiles.
                   </p>
                 </div>
               ) : (
                 <div className={gridClass}>
-                  {househelps.map((househelp) => {
-                    const profileKey = String(househelp.profile_id ?? househelp.id ?? '');
+                  {serviceProviders.map((serviceProvider) => {
+                    const profileKey = String(serviceProvider.profile_id ?? serviceProvider.id ?? '');
                     const isTopMatch = profileKey && topMatchProfileIds.has(profileKey);
-                    const experienceYears = househelp.years_of_experience ?? househelp.experience;
+                    const experienceYears = serviceProvider.years_of_experience ?? serviceProvider.experience;
                     return (
                       <div
-                        key={househelp.id}
-                        onClick={() => househelp.profile_id && handleViewProfile(String(househelp.profile_id))}
-                        className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 ${isHome2 ? 'p-4 sm:p-5 hover:-translate-y-0.5 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : isHome3 ? 'p-4 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : compactView ? 'p-4 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : 'p-6 hover:shadow-light-glow-md dark:hover:shadow-glow-md'} ${isHome2 ? '' : 'hover:scale-105'} transition-all duration-300 cursor-pointer`}
+                        key={serviceProvider.id}
+                        onClick={() => serviceProvider.profile_id && handleViewProfile(String(serviceProvider.profile_id))}
+                        className={`service-provider-card relative bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 ${isHome2 ? 'p-4 sm:p-5 hover:-translate-y-0.5 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : isHome3 ? 'p-4 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : compactView ? 'p-4 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : 'p-6 hover:shadow-light-glow-md dark:hover:shadow-glow-md'} ${isHome2 ? '' : 'hover:scale-105'} transition-all duration-300 cursor-pointer`}
                       >
                         {/* Top-right actions */}
                         <div className="absolute top-3 right-3 flex items-center gap-2">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              const targetUserId = resolveHousehelpUserId(househelp);
+                              const targetUserId = resolveServiceProviderUserId(serviceProvider);
                               if (targetUserId) {
-                                handleStartChat(String(targetUserId), househelp.profile_id);
+                                handleStartChat(String(targetUserId), serviceProvider.profile_id);
                               }
                             }}
                             className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-purple-700 dark:text-purple-200 shadow"
@@ -900,16 +903,16 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                             <ChatBubbleLeftRightIcon className="w-5 h-5" />
                           </button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleShortlist(String(househelp.profile_id), e); }}
+                            onClick={(e) => { e.stopPropagation(); if (serviceProvider.profile_id) handleShortlist(String(serviceProvider.profile_id), e); }}
                             className={`inline-flex items-center justify-center w-9 h-9 rounded-full border shadow transition-all ${
-                              shortlistedProfiles.has(househelp.profile_id)
+                              shortlistedProfiles.has(serviceProvider.profile_id)
                                 ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white hover:from-purple-700 hover:to-pink-700'
                                 : 'bg-white/80 dark:bg-white/10 border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300'
                             }`}
-                            aria-label={shortlistedProfiles.has(househelp.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
-                            title={shortlistedProfiles.has(househelp.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
+                            aria-label={shortlistedProfiles.has(serviceProvider.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
+                            title={shortlistedProfiles.has(serviceProvider.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
                           >
-                            {shortlistedProfiles.has(househelp.profile_id) ? (
+                            {shortlistedProfiles.has(serviceProvider.profile_id) ? (
                               <HeartIconSolid className="w-5 h-5" />
                             ) : (
                               <HeartIcon className="w-5 h-5" />
@@ -920,36 +923,36 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                           {/* Profile Picture */}
                           <div className="flex justify-center sm:justify-start mb-4 sm:mb-0 shrink-0">
                             <div className={`${isHome2 ? 'w-20 h-20' : isHome3 ? 'w-20 h-20' : 'w-24 h-24'} rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white ${isHome3 ? 'text-base' : 'text-lg'} font-bold shadow-lg overflow-hidden relative`}>
-                              {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) || profilePhotos[househelp.user_id || String(househelp.id)] ? (
+                              {serviceProvider.avatar_url || serviceProvider.profile_picture || (serviceProvider.photos && serviceProvider.photos.length > 0) || profilePhotos[serviceProvider.user_id || String(serviceProvider.id)] ? (
                                 <>
-                                  {imageLoadingStates[househelp.profile_id] !== false && (
+                                  {imageLoadingStates[serviceProvider.profile_id] !== false && (
                                     <div className="hb-shimmer-piece absolute inset-0" />
                                   )}
                                   <OptimizedImage
                                     path={
-                                      (househelp.avatar_url as string) ||
-                                      (househelp.profile_picture as string) ||
-                                      (househelp.photos && househelp.photos[0]) ||
-                                      profilePhotos[resolveHousehelpUserId(househelp)] ||
+                                      (serviceProvider.avatar_url as string) ||
+                                      (serviceProvider.profile_picture as string) ||
+                                      (serviceProvider.photos && serviceProvider.photos[0]) ||
+                                      profilePhotos[resolveServiceProviderUserId(serviceProvider)] ||
                                       ''
                                     }
-                                    thumbnailPath={(househelp as any).thumbnail_path}
-                                    mediumPath={(househelp as any).medium_path}
-                                    alt={formatDisplayName(househelp, undefined, 'Househelp')}
+                                    thumbnailPath={(serviceProvider as any).thumbnail_path}
+                                    mediumPath={(serviceProvider as any).medium_path}
+                                    alt={formatDisplayName(serviceProvider, undefined, 'Service provider')}
                                     className={`w-full h-full object-cover transition-opacity duration-300 ${
-                                      imageLoadingStates[househelp.profile_id] === false ? 'opacity-100' : 'opacity-0'
+                                      imageLoadingStates[serviceProvider.profile_id] === false ? 'opacity-100' : 'opacity-0'
                                     }`}
                                     onLoad={() => {
-                                      setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
+                                      setImageLoadingStates(prev => ({ ...prev, [serviceProvider.profile_id]: false }));
                                     }}
                                     onError={(e: any) => {
-                                      setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
+                                      setImageLoadingStates(prev => ({ ...prev, [serviceProvider.profile_id]: false }));
                                       e.currentTarget.style.display = 'none';
                                     }}
                                   />
                                 </>
                               ) : (
-                                `${househelp.first_name?.[0] || ''}${househelp.last_name?.[0] || ''}`
+                                `${serviceProvider.first_name?.[0] || ''}${serviceProvider.last_name?.[0] || ''}`
                               )}
                             </div>
                           </div>
@@ -959,44 +962,44 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-2">
                               <div>
                                 <h3 className="text-lg font-bold text-left text-gray-900 dark:text-white">
-                                  {formatDisplayName(househelp, undefined, 'Househelp')}
+                                  {formatDisplayName(serviceProvider, undefined, 'Service provider')}
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                                  📍 {househelp.county_of_residence || househelp.location || 'No location specified'}
+                                  📍 {serviceProvider.county_of_residence || serviceProvider.location || 'No location specified'}
                                   {experienceYears ? <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-100 text-[11px]">{experienceYears}+ yrs experience</span> : null}
                                 </p>
                               </div>
-                              {typeof househelp.fit_score === 'number' && (
-                                <div className={`flex items-center gap-2 rounded-full border px-3 py-1 ${matchScoreClasses(househelp.fit_score)}`}>
+                              {typeof serviceProvider.fit_score === 'number' && (
+                                <div className={`flex items-center gap-2 rounded-full border px-3 py-1 ${matchScoreClasses(serviceProvider.fit_score)}`}>
                                   {isTopMatch && <span className="text-[10px] uppercase font-semibold tracking-[0.2em]">Top match</span>}
-                                  <span className="text-sm font-semibold">Match {househelp.fit_score}%</span>
+                                  <span className="text-sm font-semibold">Match {serviceProvider.fit_score}%</span>
                                 </div>
                               )}
                             </div>
 
-                            {(househelp.county_of_residence || househelp.location) && (
+                            {(serviceProvider.county_of_residence || serviceProvider.location) && (
                               <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
-                                📍 {househelp.county_of_residence || househelp.location}
+                                📍 {serviceProvider.county_of_residence || serviceProvider.location}
                               </p>
                             )}
 
-                          {((househelp.years_of_experience ?? househelp.experience) as number) > 0 && (
+                          {((serviceProvider.years_of_experience ?? serviceProvider.experience) as number) > 0 && (
                             <p className={`${cardTextClass} text-purple-600 dark:text-purple-400 text-left mb-2`}>
-                              ⭐ {househelp.years_of_experience ?? househelp.experience} years experience
+                              ⭐ {serviceProvider.years_of_experience ?? serviceProvider.experience} years experience
                             </p>
                           )}
 
                           <p className={`${cardTextClass} font-semibold text-gray-700 dark:text-gray-300 text-left mb-2`}>
                             💰 {formatOnboardingAmountWithFrequency(
-                              househelp.salary_expectation,
-                              househelp.salary_frequency,
+                              serviceProvider.salary_expectation,
+                              serviceProvider.salary_frequency,
                               'Salary not yet specified'
                             )}
                           </p>
 
-                          {househelp.match_reasons && househelp.match_reasons.length > 0 && (
+                          {serviceProvider.match_reasons && serviceProvider.match_reasons.length > 0 && (
                             <div className="flex flex-wrap gap-2 justify-start mb-3">
-                              {househelp.match_reasons.slice(0, 3).map((reason) => (
+                              {serviceProvider.match_reasons.slice(0, 3).map((reason) => (
                                 <span
                                   key={reason}
                                   className="inline-block text-[11px] px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded"
@@ -1008,76 +1011,76 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                           )}
 
                           <div className="flex flex-wrap gap-2 justify-start mb-3">
-                            {typeof househelp.fit_score === 'number' && househelp.fit_score >= 0 && (
-                              <span className={`inline-block rounded border px-2 py-0.5 text-xs ${matchScoreClasses(househelp.fit_score)}`}>
-                                Match {househelp.fit_score}%
+                            {typeof serviceProvider.fit_score === 'number' && serviceProvider.fit_score >= 0 && (
+                              <span className={`inline-block rounded border px-2 py-0.5 text-xs ${matchScoreClasses(serviceProvider.fit_score)}`}>
+                                Match {serviceProvider.fit_score}%
                               </span>
                             )}
-                            {househelp.verified && (
+                            {serviceProvider.verified && (
                               <span className="inline-block text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">Verified</span>
                             )}
-                            {househelp.househelp_type && (
+                            {serviceProvider.househelp_type && (
                               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                                {househelp.househelp_type}
+                                {serviceProvider.househelp_type}
                               </span>
                             )}
-                            {househelp.offers_day_worker && (
+                            {serviceProvider.offers_day_worker && (
                               <span className="inline-block text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">
                                 Day worker
                               </span>
                             )}
-                            {typeof househelp.can_work_with_kids === 'boolean' && (
+                            {typeof serviceProvider.can_work_with_kids === 'boolean' && (
                               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                                {househelp.can_work_with_kids ? 'Works with kids' : 'No kids'}
+                                {serviceProvider.can_work_with_kids ? 'Works with kids' : 'No kids'}
                               </span>
                             )}
-                            {typeof househelp.can_work_with_pets === 'boolean' && (
+                            {typeof serviceProvider.can_work_with_pets === 'boolean' && (
                               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
-                                {househelp.can_work_with_pets ? 'Pet friendly' : 'No pets'}
+                                {serviceProvider.can_work_with_pets ? 'Pet friendly' : 'No pets'}
                               </span>
                             )}
-                            {(househelp.rating || househelp.review_count) && (
+                            {(serviceProvider.rating || serviceProvider.review_count) && (
                               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300">
-                                ★ {househelp.rating ? Number(househelp.rating).toFixed(1) : 'New'}{househelp.review_count ? ` (${househelp.review_count})` : ''}
+                                ★ {serviceProvider.rating ? Number(serviceProvider.rating).toFixed(1) : 'New'}{serviceProvider.review_count ? ` (${serviceProvider.review_count})` : ''}
                               </span>
                             )}
-                            {typeof househelp.is_available === 'boolean' && (
+                            {typeof serviceProvider.is_available === 'boolean' && (
                               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-                                {househelp.is_available ? 'Available now' : 'Busy'}
+                                {serviceProvider.is_available ? 'Available now' : 'Busy'}
                               </span>
                             )}
                           </div>
 
-                          {Array.isArray(househelp.skills) && househelp.skills.length > 0 && (
+                          {Array.isArray(serviceProvider.skills) && serviceProvider.skills.length > 0 && (
                             <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
-                              🧹 {househelp.skills.slice(0, 3).join(', ')}
-                              {househelp.skills.length > 3 ? ` +${househelp.skills.length - 3} more` : ''}
+                              🧹 {serviceProvider.skills.slice(0, 3).join(', ')}
+                              {serviceProvider.skills.length > 3 ? ` +${serviceProvider.skills.length - 3} more` : ''}
                             </p>
                           )}
 
-                          {Array.isArray(househelp.languages) && househelp.languages.length > 0 && (
+                          {Array.isArray(serviceProvider.languages) && serviceProvider.languages.length > 0 && (
                             <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
-                              🗣️ {househelp.languages.slice(0, 3).join(', ')}
-                              {househelp.languages.length > 3 ? ` +${househelp.languages.length - 3} more` : ''}
+                              🗣️ {serviceProvider.languages.slice(0, 3).join(', ')}
+                              {serviceProvider.languages.length > 3 ? ` +${serviceProvider.languages.length - 3} more` : ''}
                             </p>
                           )}
 
-                          {househelp.bio && (
+                          {serviceProvider.bio && (
                             <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left ${isHome3 ? 'line-clamp-3' : 'line-clamp-4'} mb-4`}>
-                              {househelp.bio}
+                              {serviceProvider.bio}
                             </p>
                           )}
 
                           <div className={`mt-3 flex items-center ${isHome2 ? 'justify-between' : 'justify-between'} gap-2`}>
                             <div className="text-xs text-gray-400">
-                              {househelp.created_at ? `Joined ${new Date(househelp.created_at).toLocaleDateString()}` : ''}
+                              {serviceProvider.created_at ? `Joined ${new Date(serviceProvider.created_at).toLocaleDateString()}` : ''}
                             </div>
                             <Link
-                              to={`/househelp/public-profile?profileId=${encodeURIComponent(String(househelp.profile_id || ''))}`}
-                              state={{ profileId: househelp.profile_id }}
+                              to={`/service-provider/public-profile?profileId=${encodeURIComponent(String(serviceProvider.profile_id || ''))}`}
+                              state={{ profileId: serviceProvider.profile_id }}
                               prefetch="intent"
                               onPointerEnter={() => {
-                                if (househelp.profile_id) void resolveHousehelpProfile(String(househelp.profile_id), { identifierType: 'auto' });
+                                if (serviceProvider.profile_id) void resolveServiceProviderProfile(String(serviceProvider.profile_id), { identifierType: 'auto' });
                               }}
                               onClick={(e) => e.stopPropagation()}
                               className={`px-4 py-1 ${isHome3 ? 'text-xs' : 'text-xs'} bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition`}
@@ -1102,7 +1105,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         open={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
         status={subscriptionStatus}
-        actionLabel="message househelps"
+        actionLabel="message service providers"
         plansHref="/plans"
       />
       <Footer />

@@ -467,13 +467,14 @@ export async function loader({ request }: { request: Request }) {
     // Absent, ListJobs returns both sides, and that is what put "Available for
     // work" on the househelp jobs board with an Apply button under it.
     const owner = String(url.searchParams.get('owner') || '');
+    const ownerIsServiceProvider = owner === 'service_provider' || owner === 'househelp';
 
     // Two endpoints, two response messages. ListOpenForWork answers with
     // JsonResponse, whose data sits at field 1; ListJobs answers with
     // GenericResponse, whose header is at 1 and body at 2. Decoding the former
     // with the latter's reader finds no body and returns nothing — which is
     // why browsing househelps came back empty rather than erroring.
-    const { body: responseBody } = owner === 'househelp'
+    const { body: responseBody } = ownerIsServiceProvider
       ? await callUnaryGrpcJson(
         baseUrl,
         '/auth.OpenForWorkService/ListOpenForWork',
@@ -509,7 +510,7 @@ export async function loader({ request }: { request: Request }) {
     // of ids, and a badge is not worth twenty round trips to the service that
     // takes payments. A failure inside leaves the listings untouched, so the
     // page loses the badge rather than the listings.
-    if (owner === 'househelp') {
+    if (ownerIsServiceProvider) {
       const { attachPremiumStatus } = await import('~/utils/premium.server');
       enriched = await attachPremiumStatus(
         baseUrl,
@@ -803,7 +804,7 @@ export async function action({ request }: { request: Request }) {
       // Caught here as well as in the service, so the browser gets a plain
       // message instead of a gRPC status it has to unwrap.
       return Response.json(
-        { message: 'a location is required so househelps can find this job' },
+        { message: 'a location is required so service providers can find this job' },
         { status: 400 },
       );
     }

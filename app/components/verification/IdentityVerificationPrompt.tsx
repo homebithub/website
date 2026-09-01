@@ -203,7 +203,7 @@ export function IdentityVerificationPrompt({
                 Verify your identity
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-gray-600 dark:text-white/65">
-                Identity checks make Homebit safer for househelps and households. We securely compare your
+                Identity checks make Homebit safer for service providers and households. We securely compare your
                 government-issued document with a live selfie to confirm that it belongs to you.
               </p>
             </div>

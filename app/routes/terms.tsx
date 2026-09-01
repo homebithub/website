@@ -41,9 +41,9 @@ export default function Terms() {
             <h2>1. Definitions</h2>
             <ul>
               <li>"User" refers to any individual or entity that accesses the Platform.</li>
-              <li>"Household" refers to a User seeking to hire a domestic worker (househelp).</li>
-              <li>"Househelp" refers to a domestic worker offering services to households.</li>
-              <li>"Agency" refers to a third-party entity authorized to list househelps on behalf of candidates.</li>
+              <li>"Household" refers to a User seeking to hire a service provider.</li>
+              <li>"Service provider" refers to a person or business offering services to households.</li>
+              <li>"Agency" refers to a third-party entity authorized to list service providers on behalf of candidates.</li>
               <li>"Services" means all services provided via the Platform, including listing, profile viewing, and communication tools.</li>
             </ul>
 
@@ -55,9 +55,9 @@ export default function Terms() {
 
             <h2>3. Scope of Services</h2>
             <p>
-              Homebit operates as an online marketplace connecting Households with Househelps. We do not employ househelps, 
+              Homebit operates as an online marketplace connecting Households with Service providers. We do not employ service providers,
               nor do we act as an agent or representative of either party. Homebit does not guarantee the quality, safety, 
-              legality, or suitability of any Househelp or Household.
+              legality, or suitability of any Service provider or Household.
             </p>
 
             <h2>4. User Accounts</h2>
@@ -69,7 +69,7 @@ export default function Terms() {
 
             <h2>5. Payments and Fees</h2>
             <ul>
-              <li>Househelps pay a listing fee upon profile submission.</li>
+              <li>Service providers pay a listing fee upon profile submission.</li>
               <li>Users may browse profiles and manage shortlists freely. Active subscription access, including free trials, is required for messaging, sending hire requests, and expressing interest.</li>
               <li>All payments are processed through integrated third-party providers (e.g., M-Pesa, bank transfer).</li>
               <li>No commissions are charged on job placements.</li>
@@ -77,13 +77,13 @@ export default function Terms() {
 
             <h2>6. Limited Background Checks</h2>
             <p>
-              We perform limited ID verification and basic onboarding questionnaires for Househelps. We do not conduct in-depth 
+              We perform limited ID verification and basic onboarding questionnaires for Service providers. We do not conduct in-depth
               background or criminal checks and make no warranties regarding identity or qualifications.
             </p>
 
             <h2>7. Agencies</h2>
             <p>
-              Homebit may allow verified agencies to upload and manage Househelp profiles. Agencies are solely responsible for 
+              Homebit may allow verified agencies to upload and manage Service provider profiles. Agencies are solely responsible for
               the accuracy and compliance of the profiles they manage.
             </p>
 
@@ -125,7 +125,7 @@ export default function Terms() {
 
             <h2>13. Dispute Resolution</h2>
             <p>
-              Homebit does not mediate or resolve disputes between Households and Househelps. Users are encouraged to resolve 
+              Homebit does not mediate or resolve disputes between Households and Service providers. Users are encouraged to resolve
               issues independently.
             </p>
 

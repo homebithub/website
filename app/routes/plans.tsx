@@ -17,8 +17,9 @@ import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { paymentsService } from "~/services/grpc/payments.service";
-import { getStoredProfileType } from "~/utils/authStorage";
+import { getStoredCanonicalProfileType } from "~/utils/authStorage";
 import { notifySubscriptionChanged } from "~/utils/subscriptionEvents";
+import { normalizeProfileType, profileTypesMatch } from "~/utils/profileType";
 
 export const meta = () => [
   { title: "Choose a Plan — Homebit" },
@@ -48,7 +49,7 @@ function normalizePlan(p: any): Plan {
     description: p.description ?? "",
     price_amount: p.priceAmount ?? p.price_amount ?? 0,
     billing_cycle: p.billingCycle ?? p.billing_cycle ?? "",
-    profile_type: p.profileType ?? p.profile_type ?? "",
+    profile_type: normalizeProfileType(p.profileType ?? p.profile_type ?? ""),
     trial_days: p.trialDays ?? p.trial_days ?? 0,
     is_active: p.isActive ?? p.is_active ?? true,
     features: p.features ?? {},
@@ -205,10 +206,9 @@ export default function PlansPage() {
 
   // ── Profile type ───────────────────────────────────────────────────────────
   const userObj: any = (user as any)?.user ?? user;
-  const profileType: string =
-    userObj?.profile_type ||
-    getStoredProfileType() ||
-    "";
+  const profileType = normalizeProfileType(
+    userObj?.profile_type || getStoredCanonicalProfileType(),
+  );
 
   // ── Load plans from backend ────────────────────────────────────────────────
   useEffect(() => {
@@ -253,7 +253,7 @@ export default function PlansPage() {
 
   // ── Filtered plans for this user ───────────────────────────────────────────
   const myPlans = profileType
-    ? plans.filter((p) => p.profile_type === profileType)
+    ? plans.filter((p) => profileTypesMatch(p.profile_type, profileType))
     : plans;
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -289,14 +289,14 @@ export default function PlansPage() {
         let match = raw.find((p: any) => {
           const pt = normalize(p.profileType ?? p.profile_type ?? "");
           const bc = normalizeCycle(p.billingCycle ?? p.billing_cycle ?? "");
-          return pt === normalize(plan.profile_type) && bc === normalizeCycle(plan.billing_cycle);
+          return profileTypesMatch(pt, plan.profile_type) && bc === normalizeCycle(plan.billing_cycle);
         });
 
         if (!match) {
           match = raw.find((p: any) => {
             const pt = normalize(p.profileType ?? p.profile_type ?? "");
             const amt = p.priceAmount ?? p.price_amount ?? 0;
-            return pt === normalize(plan.profile_type) && amt === plan.price_amount;
+            return profileTypesMatch(pt, plan.profile_type) && amt === plan.price_amount;
           });
         }
 
@@ -330,11 +330,9 @@ export default function PlansPage() {
       return;
     }
 
-    const pt =
-      userObj?.profile_type ||
-      getStoredProfileType() ||
-      selectedPlan.profile_type ||
-      "";
+    const pt = normalizeProfileType(
+      userObj?.profile_type || getStoredCanonicalProfileType() || selectedPlan.profile_type,
+    );
 
     setProcessingPayment(true);
     setPaymentStatus("initiating");
@@ -434,7 +432,7 @@ export default function PlansPage() {
 
   if (authLoading) return <Loading text="Loading..." />;
 
-  const profileLabel = profileType === "househelp" ? "Househelp" : profileType === "household" ? "Household" : "";
+  const profileLabel = profileType === "service_provider" ? "Service Provider" : profileType === "household" ? "Household" : "";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0a0a12]">
@@ -462,7 +460,7 @@ export default function PlansPage() {
               Choose Your Plan
             </h1>
             <p className="text-gray-400 text-xs">
-              {profileType === "househelp"
+              {profileType === "service_provider"
                 ? "One simple annual plan — get found, get hired."
                 : "Start with a free trial. Cancel anytime."}
             </p>

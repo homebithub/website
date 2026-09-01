@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { BaseModal } from "~/components/ui/BaseModal";
 import type { ProfileCompletionReminderState } from "~/hooks/useProfileCompletionReminder";
 
-type ProfileType = "household" | "househelp";
+type ProfileType = "household" | "service_provider";
 
 interface ProfileCompletionCelebrationModalProps {
   isOpen: boolean;

@@ -13,7 +13,7 @@ export function ProfileSelectionModal({ isOpen, onClose, waitlistUrl }: ProfileS
 
   if (!isOpen) return null;
 
-  const handleProfileSelect = (profile: "household" | "househelp") => {
+  const handleProfileSelect = (profile: "household" | "service_provider") => {
     const url = `${waitlistUrl}?profile=${profile}`;
     navigate(url);
     onClose();
@@ -47,10 +47,10 @@ export function ProfileSelectionModal({ isOpen, onClose, waitlistUrl }: ProfileS
           </button>
           <button
             type="button"
-            onClick={() => handleProfileSelect("househelp")}
+            onClick={() => handleProfileSelect("service_provider")}
             className="w-full py-3 rounded-xl border-2 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 text-sm font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
           >
-            I offer services (Househelp)
+            I offer services (Service provider)
           </button>
         </div>
 

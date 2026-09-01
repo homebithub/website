@@ -8,7 +8,7 @@ interface EditSectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  profileType: 'household' | 'househelp';
+  profileType: 'household' | 'service_provider';
   children: React.ReactNode;
 }
 

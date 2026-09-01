@@ -239,7 +239,7 @@ const extractTotal = (raw: any, fallbackLength: number): number => {
 
 const CANCEL_REASONS = [
   { value: 'schedule_change', label: 'My schedule changed' },
-  { value: 'found_alternative', label: 'Found another househelp' },
+  { value: 'found_alternative', label: 'Found another service provider' },
   { value: 'budget', label: 'Budget or salary mismatch' },
   { value: 'no_longer_needed', label: 'No longer need assistance' },
   { value: 'communication', label: 'Communication issues' },
@@ -262,7 +262,7 @@ const getHousehelpInitials = (househelp?: HireRequest['househelp']) => {
 const getHousehelpName = (househelp?: HireRequest['househelp']) => {
   const first = househelp?.user?.first_name || househelp?.first_name || '';
   const last = househelp?.user?.last_name || househelp?.last_name || '';
-  return formatDisplayName(first, last, 'Househelp');
+  return formatDisplayName(first, last, 'Service provider');
 };
 
 export default function HiringHistory() {
@@ -434,7 +434,7 @@ export default function HiringHistory() {
       await shortlistService.deleteShortlist(profileId);
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (err) {
-      console.warn('Failed to remove househelp from shortlist:', err);
+      console.warn('Failed to remove service provider from shortlist:', err);
     }
   };
 
@@ -559,10 +559,8 @@ export default function HiringHistory() {
     let cancelled = false;
 
     const loadShortlistedProfiles = async () => {
-      try {
+      if (!cancelled) {
         await refreshShortlistedProfiles();
-      } finally {
-        if (cancelled) return;
       }
     };
 
@@ -619,7 +617,7 @@ export default function HiringHistory() {
     const loadProfiles = async () => {
       try {
         setLoadingProfiles(true);
-        const raw = await grpcProfileService.searchMultipleWithUser('', 'househelp', { profile_ids: missingIds });
+        const raw = await grpcProfileService.searchMultipleWithUser('', 'service_provider', { profile_ids: missingIds });
         if (cancelled) return;
         const profileList = extractEnvelopeArray<any>(raw);
         if (!Array.isArray(profileList) || profileList.length === 0) return;
@@ -1079,10 +1077,10 @@ export default function HiringHistory() {
     // Navigate to househelp profile using profileId
     const profileId = getHousehelpCandidateIds(interest)[0];
     if (!profileId) {
-      setError("We couldn't identify this househelp's profile. Refresh the page and try again.");
+      setError("We couldn't identify this service provider's profile. Refresh the page and try again.");
       return;
     }
-    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
+    navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
       state: { profileId, backTo: backToPath, backLabel: 'Back to Hiring' },
     });
   };
@@ -1128,8 +1126,8 @@ export default function HiringHistory() {
     try {
       const payload: StartConversationPayload = {
         household_user_id: currentUserId,
-        househelp_user_id: househelpUserId,
-        househelp_profile_id: profileId,
+        service_provider_user_id: househelpUserId,
+        service_provider_profile_id: profileId,
       };
 
       if (currentHouseholdProfileId) {
@@ -1241,7 +1239,7 @@ export default function HiringHistory() {
       return;
     }
     navigate(
-      `/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&review=1&from=hiring` +
+      `/service-provider/public-profile?profileId=${encodeURIComponent(profileId)}&review=1&from=hiring` +
         `&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`,
       { state: { profileId, backTo: backToPath, backLabel: 'Back to Hiring' } },
     );
@@ -1888,7 +1886,7 @@ export default function HiringHistory() {
         const personName = formatDisplayName(
           profile?.first_name || record.househelp?.first_name || record.househelp?.user?.first_name,
           profile?.last_name || record.househelp?.last_name || record.househelp?.user?.last_name,
-          'Househelp',
+          'Service provider',
         );
         const applicantUserId = !isJob ? househelpUserIdFor(record) : '';
         const imageUrl = !isJob ? profile?.avatar_url || profile?.profile_picture || profile?.photos?.[0] || record.househelp?.avatar_url || record.househelp?.photos?.[0] || applicantProfilePhotos[applicantUserId] : undefined;
@@ -2065,7 +2063,7 @@ export default function HiringHistory() {
           {selectedRequest.cancellation_message && (
             <div className="mt-3">
               <span className="text-xs sm:text-xs font-medium text-gray-600 dark:text-gray-300">
-                Message sent to househelp:
+                Message sent to service provider:
               </span>
               <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/60 mt-1">
                 {selectedRequest.cancellation_message}
@@ -2149,7 +2147,7 @@ export default function HiringHistory() {
           "
           disabled={!selectedRequest.househelp?.id && !selectedRequest.househelp_id}
         >
-          View Househelp Profile
+          View Service provider Profile
         </button>
 
         <button

@@ -95,7 +95,7 @@ export default function EmploymentContractsList() {
   const getStatusBadge = (contract: EmploymentContract) => {
     const s = contract.status;
     if (s === 'signed_by_both') return { label: 'Fully Signed', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200', icon: CheckCircle };
-    if (s === 'pending_househelp') return { label: 'Awaiting Househelp', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200', icon: Send };
+    if (s === 'pending_househelp') return { label: 'Awaiting Service provider', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200', icon: Send };
     if (s === 'draft' && contract.household_signed_at) return { label: 'Signed - Ready to Forward', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200', icon: AlertCircle };
     if (s === 'draft') return { label: 'Draft', color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200', icon: FileText };
     return { label: s, color: 'bg-gray-100 text-gray-800', icon: FileText };
@@ -118,7 +118,7 @@ export default function EmploymentContractsList() {
               Employment Contracts
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-xs">
-              Formal employment contracts with your househelps
+              Formal employment contracts with your service providers
             </p>
           </div>
           <button

@@ -16,7 +16,7 @@ import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { formatTimeAgo } from '~/utils/timeAgo';
 import { normalizeOnboardingAmountFromStorage } from '~/utils/onboardingCompensation';
 import { formatPlaceOrFallback } from '~/utils/place';
-import { HousehelpCardDetails } from '~/components/listing/HousehelpCardDetails';
+import { ServiceProviderCardDetails } from '~/components/listing/ServiceProviderCardDetails';
 
 const formatDate = (value?: string) => {
   if (!value) return 'Flexible';
@@ -281,7 +281,7 @@ export default function HouseholdShortlistPage() {
       // Trigger event to update badge count in navigation
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (e: any) {
-      setError(e?.message || "We couldn't remove this saved househelp. Please try again.");
+      setError(e?.message || "We couldn't remove this saved service provider. Please try again.");
     } finally {
       setRemovingId(null);
     }
@@ -292,8 +292,8 @@ export default function HouseholdShortlistPage() {
     try {
       const payload: StartConversationPayload = {
         household_user_id: currentUserId,
-        househelp_user_id: househelpUserId,
-        househelp_profile_id: profileId,
+        service_provider_user_id: househelpUserId,
+        service_provider_profile_id: profileId,
       };
       
       // Include household_profile_id
@@ -304,7 +304,7 @@ export default function HouseholdShortlistPage() {
       const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
       navigate(getInboxRoute(convId));
     } catch (e) {
-      console.error('Failed to start chat from shortlist (househelp)', e);
+      console.error('Failed to start chat from shortlist (service provider)', e);
       setChatError('Could not open conversation. Please try again.');
       setTimeout(() => setChatError(null), 5000);
     }
@@ -340,14 +340,14 @@ export default function HouseholdShortlistPage() {
                   Nothing saved yet
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
-                  Use Save on a househelp you like and they will be kept here, so you can
+                  Use Save on a service provider you like and they will be kept here, so you can
                   compare them later without searching again.
                 </p>
                 <button
                   onClick={() => navigate('/')}
                   className="mt-6 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                 >
-                  Browse househelps
+                  Browse service providers
                 </button>
               </div>
             )}
@@ -374,7 +374,7 @@ export default function HouseholdShortlistPage() {
                     listing?.owner_user_id,
                     s.user_id,
                   );
-                  const name = `${firstString(user.first_name, househelp.first_name, listing?.first_name)} ${firstString(user.last_name, househelp.last_name, listing?.last_name)}`.trim() || 'Househelp';
+                  const name = `${firstString(user.first_name, househelp.first_name, listing?.first_name)} ${firstString(user.last_name, househelp.last_name, listing?.last_name)}`.trim() || 'Service provider';
                   const initials = name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'HW';
                   const userId = firstString(househelp.user_id, user.id, listing?.househelp_user_id, s.user_id);
                   const photos = toStringArray(househelp.photos);
@@ -414,7 +414,7 @@ export default function HouseholdShortlistPage() {
                               <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{name}</h3>
                               <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
                             </div>
-                            <HousehelpCardDetails
+                            <ServiceProviderCardDetails
                               description={firstString(listing?.description)}
                               workTypes={jobTypes.map((type) => type.replace(/_/g, ' '))}
                               availability={formatDate(listing?.available_from)}
@@ -474,14 +474,14 @@ export default function HouseholdShortlistPage() {
                             onClick={() => handleRemove(s.profile_id)}
                             disabled={removingId === s.profile_id}
                             className="inline-flex items-center justify-center rounded-xl border border-pink-400 bg-pink-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-60"
-                            aria-label="Unsave househelp"
+                            aria-label="Unsave service provider"
                           >
                             {removingId === s.profile_id ? 'Removing...' : 'Saved'}
                           </button>
                           <button
                             onClick={() => {
                               if (!targetProfileId) return;
-                              navigate(`/househelp/public-profile?profileId=${encodeURIComponent(targetProfileId)}&openForWorkId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
+                              navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(targetProfileId)}&openForWorkId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
                                 state: { profileId: targetProfileId, fromShortlist: true },
                               });
                             }}

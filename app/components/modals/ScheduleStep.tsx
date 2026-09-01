@@ -64,11 +64,11 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">When do you need your househelp?</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">When do you need your service provider?</h3>
         <p className="text-gray-600">
           {isDayburg 
             ? 'Select the days you need help and when you want to start'
-            : 'Choose when you want your sleep-in househelp to start'
+            : 'Choose when you want your sleep-in service provider to start'
           }
         </p>
       </div>
@@ -205,10 +205,10 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
               </div>
               <div className="ml-3">
                 <p className="text-xs font-medium text-blue-800">
-                  Sleep-in Househelp
+                  Sleep-in Service provider
                 </p>
                 <p className="text-xs text-blue-700 mt-1">
-                  Your househelp will be available 24/7 starting from the selected date. They will live with your family and provide round-the-clock support.
+                  Your service provider will be available 24/7 starting from the selected date. They will live with your family and provide round-the-clock support.
                 </p>
               </div>
             </div>

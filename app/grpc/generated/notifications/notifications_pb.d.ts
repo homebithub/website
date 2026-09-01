@@ -1011,8 +1011,7 @@ export class GetBlastStatusRequest extends jspb.Message {
 }
 
 export namespace GetBlastStatusRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class GetBlastStatusResponse extends jspb.Message {
@@ -1191,8 +1190,7 @@ export class GetDeliveryStatsRequest extends jspb.Message {
 }
 
 export namespace GetDeliveryStatsRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class GetDeliveryStatsResponse extends jspb.Message {
@@ -1225,8 +1223,7 @@ export class GetChannelPerformanceRequest extends jspb.Message {
 }
 
 export namespace GetChannelPerformanceRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class GetChannelPerformanceResponse extends jspb.Message {
@@ -1265,6 +1262,12 @@ export class StartConversationRequest extends jspb.Message {
   getListingId(): number;
   setListingId(value: number): StartConversationRequest;
 
+  getServiceProviderUserId(): string;
+  setServiceProviderUserId(value: string): StartConversationRequest;
+
+  getServiceProviderProfileId(): string;
+  setServiceProviderProfileId(value: string): StartConversationRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartConversationRequest.AsObject;
   static toObject(includeInstance: boolean, msg: StartConversationRequest): StartConversationRequest.AsObject;
@@ -1280,6 +1283,8 @@ export namespace StartConversationRequest {
     householdProfileId: string;
     househelpProfileId: string;
     listingId: number;
+    serviceProviderUserId: string;
+    serviceProviderProfileId: string;
   };
 }
 

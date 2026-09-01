@@ -22,7 +22,7 @@ import stylesheet from "./tailwind.css?url";
 export const meta: Route.MetaFunction = () => [
     { title: "Homebit — Find Trusted Home Help in Kenya" },
     { name: "description", content: "Homebit connects Kenyan households with vetted, rated housekeepers, nannies, and home-service professionals. Browse profiles, compare prices, and hire with confidence." },
-    { name: "keywords", content: "househelp Kenya, home services Nairobi, nanny Kenya, housekeeper, domestic worker, cleaning services, Homebit" },
+    { name: "keywords", content: "service provider Kenya, home services Nairobi, nanny Kenya, housekeeper, domestic worker, cleaning services, Homebit" },
     { name: "author", content: "Homebit" },
     { property: "og:type", content: "website" },
     { property: "og:site_name", content: "Homebit" },

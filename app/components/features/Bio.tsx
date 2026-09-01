@@ -10,10 +10,10 @@ const MIN_CHARACTERS = 25;
 const MAX_CHARACTERS = 2000;
 
 interface BioProps {
-  userType?: 'househelp' | 'household';
+  userType?: 'service_provider' | 'household';
 }
 
-const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
+const Bio: React.FC<BioProps> = ({ userType = 'service_provider' }) => {
   const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const [bio, setBio] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,7 +26,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
 
   // Dynamic content based on user type
   const content = {
-    househelp: {
+    service_provider: {
       title: '✍️ About You',
       description: 'Share your story, experience, and what makes you special',
       placeholder: 'Tell households about your experience, skills, personality, and why you\'re the perfect fit...'
@@ -91,7 +91,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
           bio,
         });
       } else {
-        await grpcProfileService.updateHousehelpFields('', 'househelp',
+        await grpcProfileService.updateServiceProviderFields('', 'service_provider',
           { bio }
         );
       }

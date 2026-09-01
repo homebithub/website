@@ -9,7 +9,7 @@ import CustomSelect from '~/components/ui/CustomSelect';
 
 export const meta = () => [
   { title: "Join the Waitlist — Homebit" },
-  { name: "description", content: "Join the Homebit waitlist for early access to vetted nannies, househelps, cleaners, and caregivers in Kenya." },
+  { name: "description", content: "Join the Homebit waitlist for early access to vetted nannies, service providers, cleaners, and caregivers in Kenya." },
 ];
 
 const HELP_TYPES = [
@@ -21,7 +21,7 @@ const HELP_TYPES = [
   "Special Needs People Care",
   "Pet Care",
   "Plumbing",
-  "Househelp",
+  "Service provider",
   "Early Childhood Care",
   "Post Party Cleaning",
   "Baby Sitter",
@@ -29,7 +29,7 @@ const HELP_TYPES = [
 ];
 
 const WORKER_ROLES = [
-  "Full-Time Househelp",
+  "Full-Time Service provider",
   "Home Deep Cleaning",
   "Laundry & Ironing",
   "Overnight Care for New Mothers",
@@ -37,7 +37,7 @@ const WORKER_ROLES = [
   "Special Needs People Care",
   "Pet Care",
   "Plumbing",
-  "Househelp",
+  "Service provider",
   "Early Childhood Care",
   "Post Party Cleaning",
   "Meal Preps",
@@ -338,7 +338,7 @@ export default function WaitlistPage() {
                 Find trusted home help in Kenya without the usual guesswork.
               </h1>
               <p className="text-base text-gray-600 dark:text-gray-300">
-                Join the waitlist for early access to vetted nannies, househelps, cleaners, and caregivers.
+                Join the waitlist for early access to vetted nannies, service providers, cleaners, and caregivers.
               </p>
             </div>
 
@@ -410,13 +410,13 @@ export default function WaitlistPage() {
             <div className="space-y-3">
               <RadioCard
                 label="I need home help"
-                description="Looking for a nanny, househelp, cleaner, caregiver, or similar"
+                description="Looking for a nanny, service provider, cleaner, caregiver, or similar"
                 selected={userType === "family"}
                 onClick={() => setUserType("family")}
               />
               <RadioCard
                 label="I'm looking for a job"
-                description="A nanny, househelp, cleaner, caregiver, or similar role"
+                description="A nanny, service provider, cleaner, caregiver, or similar role"
                 selected={userType === "worker"}
                 onClick={() => setUserType("worker")}
               />
@@ -803,7 +803,7 @@ export default function WaitlistPage() {
                   if (typeof window !== "undefined" && navigator.share) {
                     navigator.share({
                       title: "Homebit — Trusted Home Help in Kenya",
-                      text: "Find vetted nannies, househelps, and caregivers in Kenya. Join the waitlist!",
+                      text: "Find vetted nannies, service providers, and caregivers in Kenya. Join the waitlist!",
                       url: window.location.origin + "/waitlist",
                     });
                   }

@@ -17,7 +17,7 @@ import { registerCurrentDevice } from '~/utils/deviceFingerprint';
 
 export const meta = () => [
     { title: "Log In — Homebit" },
-    { name: "description", content: "Log in to your Homebit account to manage your home services, view your househelp shortlist, and more." },
+    { name: "description", content: "Log in to your Homebit account to manage your home services, view your service provider shortlist, and more." },
     { property: "og:title", content: "Log In — Homebit" },
     { property: "og:url", content: "https://homebit.co.ke/login" },
 ];

@@ -5,7 +5,7 @@ export const meta = () => [
   {
     name: "description",
     content:
-      "Join Homebit's pet care waitlist as a household or househelp and get early access.",
+      "Join Homebit's pet care waitlist as a household or service provider and get early access.",
   },
 ];
 
@@ -14,7 +14,7 @@ const config = {
   serviceName: "Pet Care",
   serviceOptions: [
     "Pet Care",
-    "Househelp",
+    "Service provider",
     "Indoor Cleaning",
     "Home Deep Cleaning",
     "Laundry & Ironing",
@@ -35,7 +35,7 @@ const config = {
       servicePrompt: "Would you need additional services?",
       concernPrompt: "Biggest concern",
     },
-    househelp: {
+    service_provider: {
       heading: "You offer pet care services?",
       paragraph:
         "Join the pet care waitlist to be among the first pet care professionals households discover on Homebit. We are creating a trusted marketplace where pet caregivers can present their skills with confidence and be matched to families who value compassionate animal care. If you have experience with pet sitting, dog walking, feeding, grooming assistance, or specialized care for different animals, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the kind of animals you specialize in caring for. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for pet caregivers who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent pet care work with families who appreciate compassion and reliability, the waitlist is the first step.",

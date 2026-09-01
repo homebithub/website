@@ -19,7 +19,8 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { paymentsService } from '~/services/grpc/payments.service';
-import { getStoredProfileType, getStoredUser } from "~/utils/authStorage";
+import { getStoredCanonicalProfileType, getStoredUser } from "~/utils/authStorage";
+import { normalizeProfileType, profileTypesMatch } from "~/utils/profileType";
 
 export const meta = () => [
     { title: "Pricing & Plans — Homebit Kenya" },
@@ -92,7 +93,7 @@ export default function Pricing() {
   const storedUser = getStoredUser();
   const currentUser = authUser ?? storedUser ?? null;
   const currentUserPhone = currentUser?.phone || '';
-  const currentUserProfileType = currentUser?.profile_type || getStoredProfileType() || '';
+  const currentUserProfileType = normalizeProfileType(currentUser?.profile_type || getStoredCanonicalProfileType());
   const returnTo = searchParams.get('return') || null;
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
@@ -185,12 +186,12 @@ export default function Pricing() {
       },
     },
     {
-      id: 'househelp-annual',
+      id: 'service-provider-annual',
       name: 'Annual Access',
       description: 'One-time annual payment with 1-month free trial',
       price_amount: 99900,
       billing_cycle: 'yearly',
-      profile_type: 'househelp',
+      profile_type: 'service_provider',
       trial_days: 30,
       is_active: true,
       features: {
@@ -253,7 +254,7 @@ export default function Pricing() {
       let match = rawList.find((p: any) => {
         const pt = normalize(p.profileType ?? p.profile_type ?? '');
         const bc = normalizeCycle(p.billingCycle ?? p.billing_cycle ?? '');
-        return pt === normalize(plan.profile_type ?? '') && bc === normalizeCycle(plan.billing_cycle);
+        return profileTypesMatch(pt, plan.profile_type) && bc === normalizeCycle(plan.billing_cycle);
       });
 
       // Fallback: profile_type + price_amount
@@ -261,7 +262,7 @@ export default function Pricing() {
         match = rawList.find((p: any) => {
           const pt = normalize(p.profileType ?? p.profile_type ?? '');
           const amt = p.priceAmount ?? p.price_amount ?? 0;
-          return pt === normalize(plan.profile_type ?? '') && amt === plan.price_amount;
+          return profileTypesMatch(pt, plan.profile_type) && amt === plan.price_amount;
         });
       }
 
@@ -442,7 +443,7 @@ export default function Pricing() {
   };
 
   const householdPlans = plans.filter(p => p.is_active && p.profile_type === 'household');
-  const househelpPlans = plans.filter(p => p.is_active && p.profile_type === 'househelp');
+  const serviceProviderPlans = plans.filter(p => p.is_active && profileTypesMatch(p.profile_type, 'service_provider'));
 
   if (authLoading) {
     return <Loading text="Loading..." />;
@@ -496,7 +497,7 @@ export default function Pricing() {
                     }`
                   }
                 >
-                  Househelps
+                  Service Providers
                 </Tab>
               </Tab.List>
               
@@ -592,11 +593,11 @@ export default function Pricing() {
                   )}
                 </Tab.Panel>
 
-                {/* Househelp Plans */}
+                {/* Service provider plans */}
                 <Tab.Panel>
-                  {househelpPlans.length === 0 ? (
+                  {serviceProviderPlans.length === 0 ? (
                     <div className="text-center py-16 px-8 bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
-                      <p className="text-base text-gray-600 dark:text-gray-300">No househelp plans available at the moment</p>
+                      <p className="text-base text-gray-600 dark:text-gray-300">No service provider plans available at the moment</p>
                     </div>
                   ) : (
                     <>
@@ -609,7 +610,7 @@ export default function Pricing() {
                           </h3>
                         </div>
                         <p className="text-yellow-800 dark:text-yellow-200 font-semibold text-base">
-                          First 1,000 househelps to complete their profile get <span className="text-yellow-600 dark:text-yellow-400 font-bold">FREE access for 1 YEAR!</span>
+                          First 1,000 service providers to complete their profile get <span className="text-yellow-600 dark:text-yellow-400 font-bold">FREE access for 1 YEAR!</span>
                         </p>
                         <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
                           Don't miss out on this exclusive opportunity to showcase your skills at no cost.
@@ -629,7 +630,7 @@ export default function Pricing() {
                       </div>
                       
                       <div className="max-w-md mx-auto">
-                        {househelpPlans.map((plan) => {
+                        {serviceProviderPlans.map((plan) => {
                           const features = getFeaturesList(plan.features);
                           
                           return (

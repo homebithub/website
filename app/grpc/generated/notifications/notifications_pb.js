@@ -11423,7 +11423,9 @@ householdUserId: jspb.Message.getFieldWithDefault(msg, 1, ""),
 househelpUserId: jspb.Message.getFieldWithDefault(msg, 2, ""),
 householdProfileId: jspb.Message.getFieldWithDefault(msg, 3, ""),
 househelpProfileId: jspb.Message.getFieldWithDefault(msg, 4, ""),
-listingId: jspb.Message.getFieldWithDefault(msg, 5, 0)
+listingId: jspb.Message.getFieldWithDefault(msg, 5, 0),
+serviceProviderUserId: jspb.Message.getFieldWithDefault(msg, 6, ""),
+serviceProviderProfileId: jspb.Message.getFieldWithDefault(msg, 7, "")
   };
 
   if (includeInstance) {
@@ -11479,6 +11481,14 @@ proto.notifications.StartConversationRequest.deserializeBinaryFromReader = funct
     case 5:
       var value = /** @type {number} */ (reader.readInt64());
       msg.setListingId(value);
+      break;
+    case 6:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setServiceProviderUserId(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setServiceProviderProfileId(value);
       break;
     default:
       reader.skipField();
@@ -11541,6 +11551,20 @@ proto.notifications.StartConversationRequest.serializeBinaryToWriter = function(
   if (f !== 0) {
     writer.writeInt64(
       5,
+      f
+    );
+  }
+  f = message.getServiceProviderUserId();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
+      f
+    );
+  }
+  f = message.getServiceProviderProfileId();
+  if (f.length > 0) {
+    writer.writeString(
+      7,
       f
     );
   }
@@ -11634,6 +11658,42 @@ proto.notifications.StartConversationRequest.prototype.getListingId = function()
  */
 proto.notifications.StartConversationRequest.prototype.setListingId = function(value) {
   return jspb.Message.setProto3IntField(this, 5, value);
+};
+
+
+/**
+ * optional string service_provider_user_id = 6;
+ * @return {string}
+ */
+proto.notifications.StartConversationRequest.prototype.getServiceProviderUserId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.notifications.StartConversationRequest} returns this
+ */
+proto.notifications.StartConversationRequest.prototype.setServiceProviderUserId = function(value) {
+  return jspb.Message.setProto3StringField(this, 6, value);
+};
+
+
+/**
+ * optional string service_provider_profile_id = 7;
+ * @return {string}
+ */
+proto.notifications.StartConversationRequest.prototype.getServiceProviderProfileId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.notifications.StartConversationRequest} returns this
+ */
+proto.notifications.StartConversationRequest.prototype.setServiceProviderProfileId = function(value) {
+  return jspb.Message.setProto3StringField(this, 7, value);
 };
 
 

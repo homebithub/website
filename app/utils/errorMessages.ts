@@ -86,7 +86,7 @@ const ERROR_MAPPINGS: { [key: string]: string } = {
   '"location" is not allowed to be empty': 'Please select your location',
   '"availability" is not allowed to be empty': 'Please set your availability',
   '"available_from" is not allowed to be empty': 'Please select when you are available from',
-  '"service_type" is not allowed to be empty': 'Please select the type of househelp service',
+  '"service_type" is not allowed to be empty': 'Please select the type of service provider service',
   '"certifications" is not allowed to be empty': 'Please add your certifications or select "None"',
   '"photos" is not allowed to be empty': 'Please upload at least one photo',
 };
@@ -146,8 +146,8 @@ const CONTEXT_SPECIFIC_ERRORS: { [context: string]: FieldErrorMap } = {
     'required': 'Please select your location'
   },
   nannyType: {
-    '"value" is not allowed to be empty': 'Please select the type of househelp service',
-    'required': 'Please select the type of househelp service'
+    '"value" is not allowed to be empty': 'Please select the type of service provider service',
+    'required': 'Please select the type of service provider service'
   },
   certifications: {
     '"value" is not allowed to be empty': 'Please add your certifications or select "None"',

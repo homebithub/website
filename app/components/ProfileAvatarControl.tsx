@@ -5,7 +5,7 @@ import { PHOTO_ACCEPT_ATTRIBUTE, PHOTO_MIME_TYPES, MAX_PHOTO_SIZE, uploadDocumen
 import { notifyProfileAvatarUpdated } from '~/utils/profileAvatar';
 
 type ProfileAvatarControlProps = {
-  profileType: 'househelp' | 'household';
+  profileType: 'service_provider' | 'household';
   profileId?: string;
   userId?: string;
   currentUrl?: string;
@@ -69,7 +69,7 @@ export function ProfileAvatarControl({
       if (profileType === 'household') {
         await grpcProfileService.updateHouseholdProfile('', 'household', { avatar_url: nextUrl });
       } else {
-        await grpcProfileService.updateHousehelpFields('', 'househelp', { avatar_url: nextUrl });
+        await grpcProfileService.updateServiceProviderFields('', 'service_provider', { avatar_url: nextUrl });
       }
 
       setUrl(nextUrl);

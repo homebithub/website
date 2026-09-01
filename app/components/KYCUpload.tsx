@@ -17,7 +17,7 @@ interface UploadedImage {
 }
 
 interface KYCUploadProps {
-  userType?: 'househelp' | 'household';
+  userType?: 'service_provider' | 'household';
   onComplete?: () => void;
 }
 
@@ -50,7 +50,7 @@ const validateFile = (file: File): { valid: boolean; message?: string } => {
   return { valid: true };
 };
 
-const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplete }) => {
+const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'service_provider', onComplete }) => {
   const [subStep, setSubStep] = useState<number>(SUB_STEPS.ID_TYPE);
   const [idType, setIdType] = useState<IDType | null>(null);
   const [idNumber, setIdNumber] = useState('');
@@ -315,7 +315,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
 
         if (imageUrls.length > 0) {
           try {
-            await grpcProfileService.updateHousehelpFields('', 'househelp',
+            await grpcProfileService.updateServiceProviderFields('', 'service_provider',
               { photos: imageUrls }
             );
           } catch (err) {

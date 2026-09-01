@@ -132,7 +132,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Type of Househelp</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Type of Service provider</label>
                 <CustomSelect
                   value={fields.type_of_househelp || ""}
                   onChange={(val) => onChange("type_of_househelp", val)}

@@ -10,10 +10,10 @@ import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext
 // Religions are now fetched from backend via context
 
 interface ReligionProps {
-  userType?: 'househelp' | 'household';
+  userType?: 'service_provider' | 'household';
 }
 
-const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
+const Religion: React.FC<ReligionProps> = ({ userType = 'service_provider' }) => {
   const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedReligion, setSelectedReligion] = useState<string>('');

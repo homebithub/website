@@ -177,7 +177,7 @@ describe("budget ordering", () => {
     yearly: 1 / 12,
   };
 
-  // Mirrors getJobBudgetValue in HousehelpJobsHome; kept here because the
+  // Mirrors getJobBudgetValue in ServiceProviderJobsHome; kept here because the
   // component is not importable without a DOM.
   const budgetOf = (salary: string): number | null => {
     if (!salary) return null;
@@ -231,7 +231,7 @@ describe("budget ordering", () => {
 describe("an application carries the job it is for", () => {
   it("keeps the listing, not only its title", () => {
     const { readFileSync } = require("node:fs");
-    const source = readFileSync("app/routes/househelp/hiring-history.tsx", "utf8");
+    const source = readFileSync("app/components/service-provider-pages/hiring-history.tsx", "utf8");
     expect(source, "the fetched listing is being discarded again").toMatch(
       /\n\s+listing,\n/,
     );
@@ -239,7 +239,7 @@ describe("an application carries the job it is for", () => {
 
   it("shows the job's salary rather than a field an application never carries", () => {
     const { readFileSync } = require("node:fs");
-    const source = readFileSync("app/routes/househelp/hiring-history.tsx", "utf8");
+    const source = readFileSync("app/components/service-provider-pages/hiring-history.tsx", "utf8");
     expect(source).toMatch(/listingSalary\(interest\.listing\)/);
     // salary_expectation described an interest's asking rate and is always 0 on
     // an application, so rendering it read "Not specified" on every row.

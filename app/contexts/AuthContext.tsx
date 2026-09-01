@@ -290,7 +290,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // the OTP detour hardcoded '/' as its destination — so following a link
       // into the site and signing in always landed on the homepage instead.
       const destination = profileType === 'bureau'
-        ? '/bureau/househelps'
+        ? '/bureau/service-providers'
         : (redirectTo || '/');
       navigate(destination, { replace: true });
       return;

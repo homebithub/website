@@ -13,14 +13,16 @@ import { Button, Input, BaseModal } from '~/components/ui';
 import { cacheAuthSession, getStoredProfileType, getStoredUser, getStoredUserId } from "~/utils/authStorage";
 import { profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 import { profileFeatureLabel } from '~/utils/profileFeatures';
+import { isServiceProviderProfileType, normalizeProfileType } from '~/utils/profileType';
 
 const PROFILE_IDS_BY_TYPE: Record<string, string> = {
-  househelp: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
+  service_provider: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
+  househelp: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff', // legacy cached sessions
   household: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1',
 };
 
 const PROFILE_LABELS_BY_ID: Record<string, string> = {
-  '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff': 'HouseHelp',
+  '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff': 'Service Provider',
   '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1': 'Household',
 };
 
@@ -71,7 +73,7 @@ function genericResponseBodyToJs(response: any) {
 function resolveProfileId(profileType?: string) {
   const storedProfileId = getStoredValue('profile_id');
   if (storedProfileId) return storedProfileId;
-  return PROFILE_IDS_BY_TYPE[String(profileType || '').toLowerCase()] || '';
+  return PROFILE_IDS_BY_TYPE[normalizeProfileType(profileType)] || '';
 }
 
 function resolveUserProfileId(...sources: unknown[]) {
@@ -85,8 +87,8 @@ function resolveUserProfileId(...sources: unknown[]) {
 
 function resolveProfileLabel(profileId?: string, profileType?: string) {
   if (profileId && PROFILE_LABELS_BY_ID[profileId]) return PROFILE_LABELS_BY_ID[profileId];
-  const normalized = String(profileType || '').toLowerCase();
-  if (normalized === 'househelp') return 'HouseHelp';
+  const normalized = normalizeProfileType(profileType);
+  if (isServiceProviderProfileType(normalized)) return 'Service Provider';
   if (normalized === 'household') return 'Household';
   return profileType || '-';
 }

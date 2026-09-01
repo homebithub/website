@@ -240,7 +240,7 @@ function buildHouseholdProfileLink(options: {
   return `${base}&from=hiring&backTo=${encodeURIComponent(backTo)}&backLabel=${encodeURIComponent(backLabel)}`;
 }
 
-export default function HousehelpHiringHistory() {
+export default function ServiceProviderHiringHistory() {
   const navigate = useNavigate();
   const location = useLocation();
   const sseContext = useSSEContextSafe();
@@ -307,12 +307,12 @@ export default function HousehelpHiringHistory() {
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
-  const attentionScope = hiringAttentionScope(getStoredUserProfileId(), 'househelp');
+  const attentionScope = hiringAttentionScope(getStoredUserProfileId(), 'service_provider');
 
   const openHouseholdChat = async (record: any) => {
     const householdUserId = String(record.household?.user_id || record.household?.user?.id || '');
-    const househelpUserId = getStoredUserId() || '';
-    if (!householdUserId || !househelpUserId) {
+    const serviceProviderUserId = getStoredUserId() || '';
+    if (!householdUserId || !serviceProviderUserId) {
       setChatError('We could not identify both people for this conversation. Refresh and try again.');
       return;
     }
@@ -321,8 +321,8 @@ export default function HousehelpHiringHistory() {
     try {
       const payload: StartConversationPayload = {
         household_user_id: householdUserId,
-        househelp_user_id: househelpUserId,
-        househelp_profile_id: getStoredUserProfileId() || undefined,
+        service_provider_user_id: serviceProviderUserId,
+        service_provider_profile_id: getStoredUserProfileId() || undefined,
         household_profile_id: record.household?.id || record.household_profile_id || record.household_id || undefined,
         listing_id: record.listing_id || record.listing?.id || undefined,
       };
@@ -378,7 +378,7 @@ export default function HousehelpHiringHistory() {
     setRequestsLoading(true);
     setError(null);
     try {
-      const raw = await hireRequestService.listHireRequests('', 'househelp');
+      const raw = await hireRequestService.listHireRequests('', 'service_provider');
       const rows = extractEnvelopeArray<any>(raw);
       const listingIds = Array.from(new Set(rows.map((row) => String(row.listing_id ?? '')).filter(Boolean)));
       const listingEntries = await Promise.all(listingIds.map(async (listingId) => {
@@ -443,11 +443,11 @@ export default function HousehelpHiringHistory() {
     try {
       const [legacy, engagements] = await Promise.all([
         hireContractService
-          .listHireContracts('', 'househelp')
+          .listHireContracts('', 'service_provider')
           .then((raw) => extractEnvelopeArray<HireContract>(raw))
           .catch(() => [] as HireContract[]),
         employmentService
-          .listByHousehelp(getStoredUserId() || '', 100, 0)
+          .listByServiceProvider(getStoredUserId() || '', 100, 0)
           .then((raw) => {
             const rows = raw?.data?.data ?? raw?.data ?? raw ?? [];
             return (Array.isArray(rows) ? rows : []).map((row: any): HireContract => ({
@@ -483,7 +483,7 @@ export default function HousehelpHiringHistory() {
     }
   };
 
-  // Fetch employment contracts for this househelp
+  // Fetch employment contracts for this service provider
   const fetchEmploymentContracts = async () => {
     setEmploymentContractsLoading(true);
     setError(null);
@@ -603,7 +603,7 @@ export default function HousehelpHiringHistory() {
           status: String(application.status ?? 'initiated'),
           // The same projection used by the household view distinguishes a
           // direct application from an offer. A direct application already
-          // contains the househelp's consent, so it must not render an
+          // contains the service provider's consent, so it must not render an
           // accept button on the applicant's own page.
           initiated_by_applicant: Boolean(
             application.initiated_by_applicant ?? application.initiatedByApplicant,
@@ -1306,7 +1306,7 @@ export default function HousehelpHiringHistory() {
                         <ApplicationHistory
                           applicationId={interest.id}
                           actorProfileId={getStoredUserProfileId() || ''}
-                          viewer="househelp"
+                          viewer="service_provider"
                         />
                       </div>
                     )}
@@ -1488,7 +1488,7 @@ export default function HousehelpHiringHistory() {
                   <ApplicationHistory
                     applicationId={selectedInterest.id}
                     actorProfileId={getStoredUserProfileId() || ''}
-                    viewer="househelp"
+                    viewer="service_provider"
                   />
                 </div>
 

@@ -10,6 +10,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Loading } from '~/components/Loading';
 import { cacheAuthSession, getStoredProfileType, getStoredUserId } from '~/utils/authStorage';
+import { normalizeProfileType, SERVICE_PROVIDER_PROFILE_TYPE } from '~/utils/profileType';
 import { registerCurrentDevice } from '~/utils/deviceFingerprint';
 
 const PENDING_VERIFICATION_KEY = 'homebit.pendingVerification';
@@ -372,7 +373,9 @@ export default function VerifyOtpPage() {
       const flatUser = {
         ...(verifyData.user || {}),
         user_id: verifyData.user?.user_id || verifyData.user?.id || user_id,
-        profile_type: verifyData.user?.profile_type || getStoredProfileType() || verificationState.profileType || '',
+        profile_type: normalizeProfileType(
+          verifyData.user?.profile_type || getStoredProfileType() || verificationState.profileType || '',
+        ),
         profile_id: verifyData.profile_id || verifyData.user?.profile_id || verificationState.profileId || storedProfileId || '',
         user_profile_id: verifyData.user_profile_id || verifyData.user?.user_profile_id || verificationState.userProfileId || storedUserProfileId || '',
       };
@@ -410,14 +413,14 @@ export default function VerifyOtpPage() {
         return;
       }
       
-      // If bureauId is present in state, redirect to /bureau/househelps after verification
+      // If bureauId is present in state, redirect to the bureau provider list after verification.
       if (verificationState.bureauId) {
-        navigate('/bureau/househelps');
+        navigate('/bureau/service-providers');
       } else if (afterAddPhone) {
         // Coming from /add-phone flow (e.g. Google login user adding phone)
         // Next: email verification if no email, otherwise the role-specific destination.
-        const pt = profileType || verificationState.profileType || '';
-        if (!flatUser.email && (pt === 'household' || pt === 'househelp')) {
+        const pt = normalizeProfileType(profileType || verificationState.profileType || '');
+        if (!flatUser.email && (pt === 'household' || pt === SERVICE_PROVIDER_PROFILE_TYPE)) {
           const params = new URLSearchParams({
             userId,
             from: 'add-phone',
@@ -433,8 +436,8 @@ export default function VerifyOtpPage() {
           navigate(afterSignupDestination('/household-choice'), { replace: true });
           return;
         }
-        if (isNewSignup && pt === 'househelp') {
-          navigate(afterSignupDestination('/househelp/profile'), { replace: true });
+        if (isNewSignup && pt === SERVICE_PROVIDER_PROFILE_TYPE) {
+          navigate(afterSignupDestination('/service-provider/profile'), { replace: true });
           return;
         }
         navigate(redirectTo, { replace: true });
@@ -447,7 +450,7 @@ export default function VerifyOtpPage() {
 
         // Step 1: After phone OTP, go to email entry page (unless already done or Google signup)
         if (!afterEmailVerification && !verificationState.isGoogleSignup) {
-          if (profileType === 'household' || profileType === 'househelp') {
+          if (profileType === 'household' || profileType === SERVICE_PROVIDER_PROFILE_TYPE) {
             const params = new URLSearchParams({
               userId,
               from: verificationState.from || 'phone-verification',
@@ -462,14 +465,14 @@ export default function VerifyOtpPage() {
           }
         }
 
-        // New households choose whether to create or join. New househelps
+        // New households choose whether to create or join. New service providers
         // complete their information directly on the profile page.
         if (isNewSignup && profileType === 'household') {
           navigate(afterSignupDestination('/household-choice'), { replace: true });
           return;
         }
-        if (isNewSignup && profileType === 'househelp') {
-          navigate(afterSignupDestination('/househelp/profile'), { replace: true });
+        if (isNewSignup && profileType === SERVICE_PROVIDER_PROFILE_TYPE) {
+          navigate(afterSignupDestination('/service-provider/profile'), { replace: true });
           return;
         }
         navigate(verificationState.redirectTo || '/', { replace: true });

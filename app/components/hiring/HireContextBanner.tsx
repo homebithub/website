@@ -9,7 +9,7 @@ interface HireContextBannerProps {
   onAccept?: () => void;
   onDecline?: () => void;
   actionLoading?: 'accept' | 'decline' | null;
-  userRole: 'household' | 'househelp';
+  userRole: 'household' | 'service_provider';
 }
 
 export default function HireContextBanner({
@@ -86,7 +86,7 @@ export default function HireContextBanner({
           subTextColor: 'text-red-700 dark:text-red-300',
           title: userRole === 'household' ? 'Hire Request Declined' : 'You Declined This Request',
           message: userRole === 'household'
-            ? 'The househelp declined your hire request.'
+            ? 'The service provider declined your hire request.'
             : 'You can discuss other opportunities.',
         };
       case 'finalized':
@@ -127,7 +127,7 @@ export default function HireContextBanner({
             </button>
           )}
 
-          {userRole === 'househelp' && hireRequestStatus === 'pending' && (onAccept || onDecline) && (
+          {userRole === 'service_provider' && hireRequestStatus === 'pending' && (onAccept || onDecline) && (
             <div className="mt-3 flex flex-wrap gap-3">
               {onAccept && (
                 <button

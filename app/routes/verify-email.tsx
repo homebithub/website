@@ -7,6 +7,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { normalizeProfileType, SERVICE_PROVIDER_PROFILE_TYPE } from '~/utils/profileType';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -75,7 +76,7 @@ export default function VerifyEmail() {
     try {
       const storedUser = getStoredUser();
       const profileType = getStoredProfileType() || '';
-      const pt = storedUser?.profile_type || profileType;
+      const pt = normalizeProfileType(storedUser?.profile_type || profileType);
       const isNewSignup = from === 'signup';
 
       if (pt === 'household') {
@@ -83,8 +84,8 @@ export default function VerifyEmail() {
         return;
       }
 
-      if (pt === 'househelp') {
-        navigate(isNewSignup ? '/househelp/profile' : '/');
+      if (pt === SERVICE_PROVIDER_PROFILE_TYPE) {
+        navigate(isNewSignup ? '/service-provider/profile' : '/');
         return;
       }
 

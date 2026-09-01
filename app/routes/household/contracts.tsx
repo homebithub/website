@@ -52,10 +52,10 @@ export default function HouseholdContracts() {
   const viewHousehelpProfile = (contract: HireContract) => {
     const profileId = getHousehelpCandidateIds(contract)[0];
     if (!profileId) {
-      setError("We couldn't identify this househelp's profile. Refresh the page and try again.");
+      setError("We couldn't identify this service provider's profile. Refresh the page and try again.");
       return;
     }
-    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Contracts')}`, {
+    navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Contracts')}`, {
       state: { profileId, backTo: backToPath, backLabel: 'Back to Contracts' },
     });
   };
@@ -148,7 +148,7 @@ export default function HouseholdContracts() {
         <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-between">
           <div>
             <h3 className="font-medium text-purple-900 dark:text-purple-200">Formal Employment Contracts</h3>
-            <p className="text-xs text-purple-700 dark:text-purple-300">Create, sign, and manage formal employment contracts with your househelps</p>
+            <p className="text-xs text-purple-700 dark:text-purple-300">Create, sign, and manage formal employment contracts with your service providers</p>
           </div>
           <button
             onClick={() => navigate('/household/employment-contracts')}

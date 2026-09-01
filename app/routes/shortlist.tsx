@@ -208,16 +208,16 @@ export default function ShortlistPage() {
       if (jobId) setChatLoadingId(jobId);
       const profileType = (currentProfileType || '').toLowerCase();
       let householdId = targetUserId;
-      let househelpId = currentUserId;
+      let serviceProviderId = currentUserId;
 
       if (profileType === 'household') {
         householdId = currentUserId;
-        househelpId = targetUserId;
+        serviceProviderId = targetUserId;
       }
 
       const payload: StartConversationPayload = {
         household_user_id: householdId,
-        househelp_user_id: househelpId,
+        service_provider_user_id: serviceProviderId,
       };
       
       if (householdProfileId) {

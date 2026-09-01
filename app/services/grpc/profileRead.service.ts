@@ -3,7 +3,8 @@ import * as profilePbModule from '~/grpc/lite/profile/profile_pb';
 import structPb from 'google-protobuf/google/protobuf/struct_pb.js';
 
 import { GRPC_WEB_BASE_URL, callWithAuthRetry } from './client';
-import { getStoredAccessToken, getStoredProfileType, getStoredUserId } from '~/utils/authStorage';
+import { getStoredAccessToken, getStoredCanonicalProfileType, getStoredUserId } from '~/utils/authStorage';
+import { normalizeProfileType } from '~/utils/profileType';
 
 const profilePb = (profilePbModule as any).default ?? profilePbModule;
 const { ProfileServiceClient } = profileGrpcModule as any;
@@ -14,7 +15,7 @@ function metadata(): Record<string, string> {
   const result: Record<string, string> = {};
   const token = getStoredAccessToken();
   if (token) result.authorization = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = getStoredCanonicalProfileType();
   if (profileType) result['x-profile-type'] = profileType;
   return result;
 }
@@ -36,7 +37,7 @@ function idRequest(id: string, userId = ''): any {
 function searchRequest(userId: string, profileType: string, filters: Record<string, any> = {}, limit?: number, offset?: number): any {
   const request = new profilePb.SearchRequest();
   request.setUserId(userId || getStoredUserId());
-  request.setProfileType(profileType);
+  request.setProfileType(normalizeProfileType(profileType));
   const values = { ...filters, ...(limit === undefined ? {} : { limit }), ...(offset === undefined ? {} : { offset }) };
   if (Object.keys(values).length) request.setFilters(StructClass.fromJavaScript(values));
   return request;
@@ -60,6 +61,22 @@ export const profileReadService = {
   searchHouseholds(userId: string, profileType: string, filters?: Record<string, any>, limit?: number, offset?: number) {
     return call(callback => client.searchHouseholds(searchRequest(userId, profileType, filters, limit, offset), metadata(), callback));
   },
+  getCurrentServiceProviderProfile(userId = '') {
+    return call(callback => client.getCurrentServiceProviderProfile(userRequest(userId), metadata(), callback));
+  },
+  getServiceProviderByID(id: string, userId = '') {
+    return call(callback => client.getServiceProviderByID(idRequest(id, userId), metadata(), callback));
+  },
+  getServiceProviderByUserID(userId: string) {
+    return call(callback => client.getServiceProviderByUserID(userRequest(userId), metadata(), callback));
+  },
+  getServiceProviderProfileWithUser(id: string, userId = '') {
+    return call(callback => client.getServiceProviderProfileWithUser(idRequest(id, userId), metadata(), callback));
+  },
+  searchServiceProviders(userId: string, profileType: string, filters?: Record<string, any>, limit?: number, offset?: number) {
+    return call(callback => client.searchServiceProviders(searchRequest(userId, profileType, filters, limit, offset), metadata(), callback));
+  },
+  /** @deprecated Use getCurrentServiceProviderProfile. */
   getCurrentHousehelpProfile(userId = '') {
     return call(callback => client.getCurrentHousehelpProfile(userRequest(userId), metadata(), callback));
   },

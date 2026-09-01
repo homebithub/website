@@ -60,10 +60,10 @@ export default function HireRequestDetail() {
   const viewHousehelpProfile = () => {
     const profileId = getHousehelpCandidateIds(hireRequest)[0];
     if (!profileId) {
-      setError("We couldn't identify this househelp's profile. Refresh the page and try again.");
+      setError("We couldn't identify this service provider's profile. Refresh the page and try again.");
       return;
     }
-    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(detailPath)}&backLabel=${encodeURIComponent('Back to Hire Request')}`, {
+    navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(detailPath)}&backLabel=${encodeURIComponent('Back to Hire Request')}`, {
       state: { profileId, backTo: detailPath, backLabel: 'Back to Hire Request' },
     });
   };
@@ -364,7 +364,7 @@ export default function HireRequestDetail() {
             {/* Househelp Info */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                Househelp Information
+                Service provider Information
               </h2>
               <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                 <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400">
@@ -534,7 +534,7 @@ export default function HireRequestDetail() {
                 onClick={viewHousehelpProfile}
                 className="w-full px-4 py-1.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-medium transition-colors"
               >
-                View Househelp Profile
+                View Service provider Profile
               </button>
             </div>
           </div>

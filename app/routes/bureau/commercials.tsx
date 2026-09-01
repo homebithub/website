@@ -14,8 +14,8 @@ export default function BureauCommercials() {
           <Link to="/bureau/home" className="btn-secondary">
             Back to Dashboard
           </Link>
-          <Link to="/bureau/househelps" className="btn-primary">
-            Manage Househelps
+          <Link to="/bureau/service-providers" className="btn-primary">
+            Manage Service providers
           </Link>
         </div>
       </div>

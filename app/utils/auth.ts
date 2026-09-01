@@ -5,6 +5,7 @@ import {
   getStoredProfileType,
   getStoredUser,
 } from '~/utils/authStorage';
+import { isServiceProviderProfileType } from '~/utils/profileType';
 
 export interface AuthUser {
   token: string;
@@ -109,7 +110,7 @@ export function redirectToLogin(returnUrl?: string): string {
 export function redirectAuthenticatedUser(): string {
   const profileType = getStoredProfileType();
   if (profileType === "household") return "/household";
-  if (profileType === "househelp") return "/househelp";
+  if (isServiceProviderProfileType(profileType)) return "/service-provider";
   if (profileType === "bureau") return "/bureau";
   return "/";
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { resolveHousehelpImageUrl } from './imageUrl';
+import { resolveServiceProviderImageUrl } from './imageUrl';
 
 interface ReadOnlyUserImageCarouselProps {
   images: any[];
@@ -28,7 +28,7 @@ export default function ReadOnlyUserImageCarousel({ images, carouselIdx, setCaro
     <div className="w-full flex flex-col items-center">
       <div className="relative w-full h-48 flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-lg mb-2">
         <img
-          src={resolveHousehelpImageUrl(images[carouselIdx])}
+          src={resolveServiceProviderImageUrl(images[carouselIdx])}
           alt={`User image ${carouselIdx + 1}`}
           className="object-contain max-h-48 max-w-full rounded-lg cursor-pointer hover:opacity-90 transition"
           onClick={() => onExpand && onExpand(carouselIdx)}
@@ -61,7 +61,7 @@ export default function ReadOnlyUserImageCarousel({ images, carouselIdx, setCaro
               aria-label={`Go to image ${idx + 1}`}
             >
               <img
-                src={resolveHousehelpImageUrl(img)}
+                src={resolveServiceProviderImageUrl(img)}
                 alt={`Thumbnail ${idx + 1}`}
                 className="object-cover w-full h-full"
               />

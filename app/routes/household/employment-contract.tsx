@@ -7,7 +7,8 @@ import {
   FileText, CheckCircle, XCircle, Download, Mail, Send,
   ChevronLeft, Edit3, Check, AlertCircle, Plus, Trash2
 } from 'lucide-react';
-import { resolveHousehelpProfile, resolveHousehelpUserId } from '~/utils/househelpProfiles';
+import { resolveServiceProviderProfile, resolveServiceProviderUserId } from '~/utils/serviceProviderProfiles';
+import { isServiceProviderProfileType, normalizeProfileType } from '~/utils/profileType';
 import { FormPageSkeleton } from "~/components/ShimmerLoader";
 import CustomSelect from '~/components/ui/CustomSelect';
 import { contractPdfBytes, downloadContractPdf } from '~/utils/contractDocument';
@@ -101,7 +102,7 @@ export default function EmploymentContractPage() {
   const [employeeName, setEmployeeName] = useState('');
   const [showSigningModal, setShowSigningModal] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [signingAs, setSigningAs] = useState<'household' | 'househelp'>('household');
+  const [signingAs, setSigningAs] = useState<'household' | 'service_provider'>('household');
 
   // Load default clauses on mount and pre-fill from URL params
   useEffect(() => {
@@ -151,17 +152,17 @@ export default function EmploymentContractPage() {
       }
 
       try {
-        const profile = await resolveHousehelpProfile(targetId, { identifierType: 'auto' });
+        const profile = await resolveServiceProviderProfile(targetId, { identifierType: 'auto' });
         // Auth matches this against user_profile.id or user_profile.user_id, so
         // send one of those — the id we were handed already is one, since it
         // comes off the application's applicant_profile_id.
         //
-        // This preferred resolveHousehelpProfileId, which returns `profile_id`
+        // This preferred resolveServiceProviderProfileId, which returns `profile_id`
         // first: the profile record, which matches neither. So a perfectly good
         // id was swapped for one that resolves to nothing, and the contract
         // stopped with "we could not find the househelp this contract is for"
         // about the applicant whose card had just been used to open it.
-        const resolved = resolveHousehelpUserId(profile) || targetId;
+        const resolved = resolveServiceProviderUserId(profile) || targetId;
         if (!cancelled) {
           setResolvedHousehelpProfileId(resolved);
         }
@@ -185,9 +186,9 @@ export default function EmploymentContractPage() {
       const u = (user as any).user || user;
       const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
       if (!fullName) return;
-      const pt = u.profile_type || localStorage.getItem('profile_type') || '';
+      const pt = normalizeProfileType(u.profile_type || localStorage.getItem('profile_type') || '');
       if (pt === 'household' && !employerName) setEmployerName(fullName);
-      if (pt === 'househelp' && !employeeName) setEmployeeName(fullName);
+      if (isServiceProviderProfileType(pt) && !employeeName) setEmployeeName(fullName);
     }
   }, [user]);
 
@@ -213,7 +214,7 @@ export default function EmploymentContractPage() {
       }
       // Fetch househelp profile to get their name
       try {
-        const hh = await resolveHousehelpProfile(hhId, { identifierType: 'auto' });
+        const hh = await resolveServiceProviderProfile(hhId, { identifierType: 'auto' });
         const profile = hh || {};
         const name = `${profile.first_name || profile.user?.first_name || ''} ${profile.last_name || profile.user?.last_name || ''}`.trim();
         if (name && !employeeName) setEmployeeName(name);
@@ -395,7 +396,7 @@ export default function EmploymentContractPage() {
 
   const [savingNames, setSavingNames] = useState(false);
 
-  const handleAcceptAndSign = async (role: 'household' | 'househelp') => {
+  const handleAcceptAndSign = async (role: 'household' | 'service_provider') => {
     if (!contract) return;
     const name = role === 'household' ? employerName.trim() : employeeName.trim();
     if (!name) {
@@ -419,13 +420,13 @@ export default function EmploymentContractPage() {
       if (role === 'household') {
         await employmentContractService.signByHousehold(contract.id, '', name, name);
       } else {
-        await employmentContractService.signByHousehelp(contract.id, '', name, name);
+        await employmentContractService.signByServiceProvider(contract.id, '', name, name);
       }
 
       // 3. If household just signed, also forward the contract to the househelp
       if (role === 'household') {
         try {
-          await employmentContractService.forwardToHousehelp(contract.id);
+          await employmentContractService.forwardToServiceProvider(contract.id);
         } catch (fwdErr: any) {
           // Don't throw — signing succeeded, forwarding is secondary
           console.warn('Forward failed:', fwdErr.message);
@@ -435,7 +436,7 @@ export default function EmploymentContractPage() {
       // 4. Re-fetch the contract to get updated state
       await fetchContract(contract.id);
       setSuccess(role === 'household'
-        ? 'Signed and forwarded! The househelp can now review and sign.'
+        ? 'Signed and forwarded! The service provider can now review and sign.'
         : 'Signed! Both parties have now signed the contract.');
     } catch (err: any) {
       setError(err.message || 'Failed to sign');
@@ -466,12 +467,12 @@ export default function EmploymentContractPage() {
       if (signingAs === 'household') {
         data = await employmentContractService.signByHousehold(contract.id, '', signerName.trim(), signerName.trim());
       } else {
-        data = await employmentContractService.signByHousehelp(contract.id, '', signerName.trim(), signerName.trim());
+        data = await employmentContractService.signByServiceProvider(contract.id, '', signerName.trim(), signerName.trim());
       }
       setContract(data?.data || data);
       setShowSigningModal(false);
       setSuccess(signingAs === 'household'
-        ? 'Contract signed! You can now forward it to the househelp.'
+        ? 'Contract signed! You can now forward it to the service provider.'
         : 'Contract signed! Both parties have now signed.');
     } catch (err: any) {
       setError(err.message || 'Failed to sign contract');
@@ -485,9 +486,9 @@ export default function EmploymentContractPage() {
     setSaving(true);
     setError(null);
     try {
-      await employmentContractService.forwardToHousehelp(contract.id);
+      await employmentContractService.forwardToServiceProvider(contract.id);
       await fetchContract(contract.id);
-      setSuccess('Contract forwarded to househelp! They will be notified via SMS and email.');
+      setSuccess('Contract forwarded to service provider! They will be notified via SMS and email.');
     } catch (err: any) {
       setError(err.message || 'Failed to forward contract');
     } finally {
@@ -578,9 +579,9 @@ export default function EmploymentContractPage() {
   };
 
   const userObj = (user as any)?.user || user;
-  const profileType = userObj?.profile_type || localStorage.getItem('profile_type') || '';
+  const profileType = normalizeProfileType(userObj?.profile_type || localStorage.getItem('profile_type') || '');
   const isHousehold = profileType === 'household';
-  const isHousehelp = profileType === 'househelp';
+  const isHousehelp = isServiceProviderProfileType(profileType);
   const isSignedByBoth = contract?.household_signed_at && contract?.househelp_signed_at;
   // Anyone party to it can take a copy, signed or not.
   //
@@ -613,7 +614,7 @@ export default function EmploymentContractPage() {
           </button>
           <div className="flex-1">
             <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1 dark:text-purple-300">
-              {isHousehelp ? 'Househelp' : 'Household'} • Contract
+              {isHousehelp ? 'Service provider' : 'Household'} • Contract
             </p>
             <h1 className="text-lg font-extrabold text-gray-900 dark:text-white">
               {contractId ? 'Employment Contract' : 'Create Employment Contract'}
@@ -663,7 +664,7 @@ export default function EmploymentContractPage() {
               {contract.status === 'signed_by_both' || (contract.household_signed_at && contract.househelp_signed_at)
                 ? 'Signed by both of you'
                 : contract.household_signed_at && !contract.househelp_signed_at
-                  ? (isHousehelp ? 'Waiting for your signature' : 'Waiting for the househelp to sign')
+                  ? (isHousehelp ? 'Waiting for your signature' : 'Waiting for the service provider to sign')
                   : contract.househelp_signed_at && !contract.household_signed_at
                     ? (isHousehelp ? 'Signed — waiting for the household' : 'Waiting for your signature')
                     : contract.status === 'terminated'
@@ -705,7 +706,7 @@ export default function EmploymentContractPage() {
                   <label htmlFor="contract-job-title" className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Title<RequiredMark /></label>
                   <input id="contract-job-title" type="text" required aria-invalid={Boolean(fieldErrors.jobTitle)} aria-describedby={fieldErrors.jobTitle ? 'contract-job-title-error' : undefined} value={jobTitle} onChange={e => { setJobTitle(e.target.value); setFieldErrors(current => ({ ...current, jobTitle: '' })); }}
                     className={`w-full px-3 py-1.5 border rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${fieldErrors.jobTitle ? 'border-red-500 focus:ring-red-500/20' : 'border-purple-200 dark:border-purple-500/30 focus:ring-purple-500 focus:border-purple-400'}`}
-                    placeholder="e.g. Live-in Househelp" />
+                    placeholder="e.g. Live-in Service provider" />
                   {fieldErrors.jobTitle && <p id="contract-job-title-error" className="mt-1 text-[11px] font-medium text-red-600 dark:text-red-300">{fieldErrors.jobTitle}</p>}
                 </div>
                 <div>
@@ -875,7 +876,7 @@ export default function EmploymentContractPage() {
                     <strong>Employer (Household):</strong> {contract.household_signer_name || 'Pending signature'}
                   </p>
                   <p className="text-gray-700">
-                    <strong>Employee (Househelp):</strong> {contract.househelp_signer_name || 'Pending signature'}
+                    <strong>Employee (Service provider):</strong> {contract.househelp_signer_name || 'Pending signature'}
                   </p>
                 </div>
 
@@ -1012,7 +1013,7 @@ export default function EmploymentContractPage() {
                   {/* Employee (Househelp) side */}
                   <div className="space-y-3">
                     <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400">
-                      Employee (Househelp)
+                      Employee (Service provider)
                     </label>
                     <input
                       type="text"
@@ -1028,7 +1029,7 @@ export default function EmploymentContractPage() {
                       </p>
                     ) : (
                       <button
-                        onClick={() => handleAcceptAndSign('househelp')}
+                        onClick={() => handleAcceptAndSign('service_provider')}
                         disabled={savingNames || !employeeName.trim() || !isHousehelp || !contractHasTerms}
                         className={`w-full px-4 py-2.5 text-white rounded-xl transition-all font-semibold flex items-center justify-center gap-2 ${
                           isHousehelp

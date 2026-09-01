@@ -6,6 +6,7 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 import LocationPicker, { type LocationSelection } from '~/components/ui/LocationPicker';
+import { isServiceProviderProfileType } from '~/utils/profileType';
 
 /** What a saved location looks like to the pages that consume this. */
 interface LocationSuggestion {
@@ -67,8 +68,8 @@ const Location: React.FC<LocationProps> = ({ onSelect, onSaved }) => {
         const loadLocation = async () => {
             try {
                 const profileType = localStorage.getItem('profile_type');
-                const raw = profileType === 'househelp'
-                    ? await grpcProfileService.getHousehelpProfileWithUser('')
+                const raw = isServiceProviderProfileType(profileType)
+                    ? await grpcProfileService.getServiceProviderProfileWithUser('')
                     : await grpcProfileService.getCurrentHouseholdProfile('');
                 if (!active) return;
 

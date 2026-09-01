@@ -99,7 +99,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
   useEffect(() => {
     if (!isOpen || listing?.id) return;
     let cancelled = false;
-    profileService.getCurrentHousehelpProfile('')
+    profileService.getCurrentServiceProviderProfile('')
       .then(async (raw) => {
         if (cancelled) return;
         const profile = raw?.data ?? raw ?? {};

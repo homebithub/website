@@ -12,7 +12,7 @@ export const meta = () => [
   {
     name: "description",
     content:
-      "Join Homebit's elder care waitlist as a household or househelp and get early access.",
+      "Join Homebit's elder care waitlist as a household or service provider and get early access.",
   },
 ];
 
@@ -20,7 +20,7 @@ const SERVICE_OPTIONS = [
   "Elderly Care",
   "Special Needs People Care",
   "Overnight Care",
-  "Househelp",
+  "Service provider",
   "Indoor Cleaning",
   "Home Deep Cleaning",
   "Laundry & Ironing",
@@ -281,7 +281,7 @@ const COUNTRY_CODES = [
   { name: "Zimbabwe", dialCode: "+263", iso: "ZW" },
 ];
 
-type ProfileType = "household" | "househelp";
+type ProfileType = "household" | "service_provider";
 
 interface ElderCareFormData {
   first_name: string;
@@ -311,14 +311,14 @@ const PROFILE_COPY: Record<ProfileType, { heading: string; paragraph: string; se
   household: {
     heading: "Looking for help for your elders?",
     paragraph:
-      "Join the elder-care waitlist to get early access to Homebit's trusted caregivers and household support professionals. We know how hard it is to find someone you can invite into a parent or grandparent's home with complete peace of mind. Homebit is building a safer, faster way for families to find dependable care for seniors at home by combining real human vetting with smart matching. Every caregiver and househelp on our platform goes through identity checks, reference reviews, and skills screening, so you are not starting from scratch or guessing based on a few text messages. We focus on care that respects dignity, culture, and routines, whether you need daily companionship, overnight support, or help with household tasks that keep your loved one comfortable. You will be able to describe your elder's needs, the kind of personality that works best for your home, preferred schedules, and any medical or mobility considerations. As the waitlist moves forward, we will share updates, service availability, and onboarding timelines so you can plan with confidence. Homebit is not just a list of names; it is a care experience built around trust, safety, and reliability. If you want a single place to find elder care, househelp, and additional support services without the stress of endless searching, this is the right place to start.",
+      "Join the elder-care waitlist to get early access to Homebit's trusted caregivers and household support professionals. We know how hard it is to find someone you can invite into a parent or grandparent's home with complete peace of mind. Homebit is building a safer, faster way for families to find dependable care for seniors at home by combining real human vetting with smart matching. Every caregiver and service provider on our platform goes through identity checks, reference reviews, and skills screening, so you are not starting from scratch or guessing based on a few text messages. We focus on care that respects dignity, culture, and routines, whether you need daily companionship, overnight support, or help with household tasks that keep your loved one comfortable. You will be able to describe your elder's needs, the kind of personality that works best for your home, preferred schedules, and any medical or mobility considerations. As the waitlist moves forward, we will share updates, service availability, and onboarding timelines so you can plan with confidence. Homebit is not just a list of names; it is a care experience built around trust, safety, and reliability. If you want a single place to find elder care, service provider, and additional support services without the stress of endless searching, this is the right place to start.",
     servicePrompt: "Would you need additional services?",
     concernPrompt: "Biggest concern",
   },
-  househelp: {
+  service_provider: {
     heading: "You offer elder care?",
     paragraph:
-      "Join the elder-care waitlist to be among the first care professionals households discover on Homebit. We are creating a trusted marketplace where caregivers and househelps can present their skills with confidence and be matched to families who value quality care. If you have experience with elder support, companionship, medication reminders, mobility assistance, or household routines that keep seniors safe and comfortable, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the kind of care environments you work best in. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for caregivers who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent elder-care work with families who appreciate reliability and heart, the waitlist is the first step.",
+      "Join the elder-care waitlist to be among the first care professionals households discover on Homebit. We are creating a trusted marketplace where caregivers and service providers can present their skills with confidence and be matched to families who value quality care. If you have experience with elder support, companionship, medication reminders, mobility assistance, or household routines that keep seniors safe and comfortable, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the kind of care environments you work best in. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for caregivers who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent elder-care work with families who appreciate reliability and heart, the waitlist is the first step.",
     servicePrompt: "What other services can you offer?",
     concernPrompt: "What should families value most about your profile?",
   },
@@ -430,7 +430,10 @@ function DialCodePicker({
 
 export default function ElderCareWaitlistPage() {
   const [searchParams] = useSearchParams();
-  const profile: ProfileType = searchParams.get("profile") === "househelp" ? "househelp" : "household";
+  const requestedProfile = searchParams.get("profile");
+  const profile: ProfileType = requestedProfile === "service_provider" || requestedProfile === "househelp"
+    ? "service_provider"
+    : "household";
   const copy = PROFILE_COPY[profile];
 
   const [form, setForm] = useState<ElderCareFormData>(emptyForm);
@@ -539,7 +542,7 @@ export default function ElderCareWaitlistPage() {
       message: form.message.trim(),
       concerns: form.concerns,
       help_types: profile === "household" ? form.services : [],
-      roles_sought: profile === "househelp" ? form.services : [],
+      roles_sought: profile === "service_provider" ? form.services : [],
     };
 
     console.groupCollapsed("[WAITLIST_DEBUG] Elder-care waitlist submit");

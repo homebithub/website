@@ -3,7 +3,7 @@ import { useOnboardingProgress } from "~/hooks/useOnboardingProgress";
 import { profileSetupService } from "~/services/grpc/profileSetup.service";
 import { notifyProfileProgressChanged } from "~/utils/profileProgress";
 
-type SupportedProfileType = "household" | "househelp";
+type SupportedProfileType = "household" | "service_provider";
 
 type ReminderCopy = {
   title: string;
@@ -21,11 +21,11 @@ const REMINDER_COPY: Record<SupportedProfileType, ReminderCopy> = {
   household: {
     title: "Finish your household profile",
     description:
-      "You can keep browsing, but completing your profile helps househelps understand your location, service needs, and budget before you reach out.",
+      "You can keep browsing, but completing your profile helps service providers understand your location, service needs, and budget before you reach out.",
     ctaLabel: "Complete your profile",
   },
-  househelp: {
-    title: "Finish your househelp profile",
+  service_provider: {
+    title: "Finish your service provider profile",
     description:
       "You can keep browsing, but completing your profile helps households review your experience, availability, and verification details with confidence.",
     ctaLabel: "Complete your profile",
@@ -37,18 +37,18 @@ const CELEBRATION_COPY: Record<SupportedProfileType, CelebrationCopy> = {
     title: "Your household profile is complete!",
     description: "You’re ready to find the right help and make your home run smoothly.",
     steps: [
-      { title: "Browse househelps", description: "See people who are open to work and start a conversation.", action: "Browse househelps", href: "/" },
-      { title: "Post a job listing", description: "Share what you need so suitable househelps can apply.", action: "Open hiring", href: "/household/hiring" },
+      { title: "Browse service providers", description: "See people who are open to work and start a conversation.", action: "Browse providers", href: "/" },
+      { title: "Post a job listing", description: "Share what you need so suitable service providers can apply.", action: "Open hiring", href: "/household/hiring" },
       { title: "Choose a plan", description: "Unlock the tools you need when you’re ready to hire.", action: "View subscriptions", href: "/subscriptions" },
     ],
   },
-  househelp: {
-    title: "Your househelp profile is complete!",
+  service_provider: {
+    title: "Your service provider profile is complete!",
     description: "You’re ready to be discovered and find work that fits your skills and schedule.",
     steps: [
       { title: "Browse open jobs", description: "Explore current opportunities and apply to a role that fits.", action: "Browse jobs", href: "/" },
-      { title: "Manage your availability", description: "Keep your open-for-work status and preferences up to date.", action: "Open hiring", href: "/househelp/hiring" },
-      { title: "Make your profile stand out", description: "Add experience and documents any time to build trust.", action: "View profile", href: "/househelp/profile" },
+      { title: "Manage your availability", description: "Keep your open-for-work status and preferences up to date.", action: "Open hiring", href: "/service-provider/hiring" },
+      { title: "Make your profile stand out", description: "Add experience and documents any time to build trust.", action: "View profile", href: "/service-provider/profile" },
     ],
   },
 };
@@ -103,7 +103,7 @@ export function useProfileCompletionReminder(
     const status = String(progress?.status || "");
     const isComplete = status === "completed" || completedItems >= totalItems;
     const destination =
-      profileType === "household" ? "/household/profile" : "/househelp/profile";
+      profileType === "household" ? "/household/profile" : "/service-provider/profile";
     const progressValue = Number(progress?.completion_percentage ?? Math.round((completedItems / totalItems) * 100));
     const copy = REMINDER_COPY[profileType];
     const celebration = CELEBRATION_COPY[profileType];

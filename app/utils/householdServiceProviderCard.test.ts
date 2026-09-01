@@ -2,11 +2,11 @@ import React from 'react';
 import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { HousehelpCardDetails } from '~/components/listing/HousehelpCardDetails';
+import { ServiceProviderCardDetails } from '~/components/listing/ServiceProviderCardDetails';
 
 describe('household househelp cards', () => {
   it('uses the available description and labels desktop details', () => {
-    const markup = renderToStaticMarkup(React.createElement(HousehelpCardDetails, {
+    const markup = renderToStaticMarkup(React.createElement(ServiceProviderCardDetails, {
       description: 'Experienced nanny and cook',
       workTypes: ['live in', 'part time'],
       availability: 'Sep 1, 2026',
@@ -25,7 +25,7 @@ describe('household househelp cards', () => {
   });
 
   it('provides useful fallbacks when optional values are absent', () => {
-    const markup = renderToStaticMarkup(React.createElement(HousehelpCardDetails, {
+    const markup = renderToStaticMarkup(React.createElement(ServiceProviderCardDetails, {
       workTypes: [],
       availability: 'Flexible',
       experience: 'Not specified',
@@ -42,8 +42,8 @@ describe('household househelp cards', () => {
     const home = readFileSync('app/components/HouseholdJobsHome.tsx', 'utf8');
     const saved = readFileSync('app/routes/household.shortlist.tsx', 'utf8');
 
-    expect(home).toContain('<HousehelpCardDetails');
-    expect(saved).toContain('<HousehelpCardDetails');
+    expect(home).toContain('<ServiceProviderCardDetails');
+    expect(saved).toContain('<ServiceProviderCardDetails');
     expect(saved).toContain('visibleSavedHousehelps');
     expect(saved).toContain('isOpenForWorkListingActive(listing)');
     expect(home).not.toContain('{formatListingStatus(listing.status)}');

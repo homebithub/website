@@ -4037,6 +4037,189 @@ proto.auth.BureauServicePromiseClient.prototype.resendHousehelpLinkOTP =
 
 
 /**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.BureauServiceProviderLinkInitiateRequest,
+ *   !proto.auth.BureauServiceProviderLinkResponse>}
+ */
+const methodDescriptor_BureauService_InitiateServiceProviderLink = new grpc.web.MethodDescriptor(
+  '/auth.BureauService/InitiateServiceProviderLink',
+  grpc.web.MethodType.UNARY,
+  proto.auth.BureauServiceProviderLinkInitiateRequest,
+  proto.auth.BureauServiceProviderLinkResponse,
+  /**
+   * @param {!proto.auth.BureauServiceProviderLinkInitiateRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.BureauServiceProviderLinkResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.BureauServiceProviderLinkInitiateRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.BureauServiceProviderLinkResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.BureauServiceProviderLinkResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.BureauServiceClient.prototype.initiateServiceProviderLink =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.BureauService/InitiateServiceProviderLink',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_InitiateServiceProviderLink,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.BureauServiceProviderLinkInitiateRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.BureauServiceProviderLinkResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.BureauServicePromiseClient.prototype.initiateServiceProviderLink =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.BureauService/InitiateServiceProviderLink',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_InitiateServiceProviderLink);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.BureauServiceProviderLinkVerifyRequest,
+ *   !proto.auth.BureauServiceProviderLinkResponse>}
+ */
+const methodDescriptor_BureauService_VerifyServiceProviderLink = new grpc.web.MethodDescriptor(
+  '/auth.BureauService/VerifyServiceProviderLink',
+  grpc.web.MethodType.UNARY,
+  proto.auth.BureauServiceProviderLinkVerifyRequest,
+  proto.auth.BureauServiceProviderLinkResponse,
+  /**
+   * @param {!proto.auth.BureauServiceProviderLinkVerifyRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.BureauServiceProviderLinkResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.BureauServiceProviderLinkVerifyRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.BureauServiceProviderLinkResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.BureauServiceProviderLinkResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.BureauServiceClient.prototype.verifyServiceProviderLink =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.BureauService/VerifyServiceProviderLink',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_VerifyServiceProviderLink,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.BureauServiceProviderLinkVerifyRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.BureauServiceProviderLinkResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.BureauServicePromiseClient.prototype.verifyServiceProviderLink =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.BureauService/VerifyServiceProviderLink',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_VerifyServiceProviderLink);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.BureauServiceProviderLinkIdRequest,
+ *   !proto.auth.BureauServiceProviderLinkResponse>}
+ */
+const methodDescriptor_BureauService_ResendServiceProviderLinkOTP = new grpc.web.MethodDescriptor(
+  '/auth.BureauService/ResendServiceProviderLinkOTP',
+  grpc.web.MethodType.UNARY,
+  proto.auth.BureauServiceProviderLinkIdRequest,
+  proto.auth.BureauServiceProviderLinkResponse,
+  /**
+   * @param {!proto.auth.BureauServiceProviderLinkIdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.BureauServiceProviderLinkResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.BureauServiceProviderLinkIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.BureauServiceProviderLinkResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.BureauServiceProviderLinkResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.BureauServiceClient.prototype.resendServiceProviderLinkOTP =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.BureauService/ResendServiceProviderLinkOTP',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_ResendServiceProviderLinkOTP,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.BureauServiceProviderLinkIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.BureauServiceProviderLinkResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.BureauServicePromiseClient.prototype.resendServiceProviderLinkOTP =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.BureauService/ResendServiceProviderLinkOTP',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_ResendServiceProviderLinkOTP);
+};
+
+
+/**
  * @param {string} hostname
  * @param {?Object} credentials
  * @param {?grpc.web.ClientOptions} options
@@ -5433,6 +5616,677 @@ proto.auth.ProfileServicePromiseClient.prototype.updateHousehelpFields =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.UserIdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileService_GetCurrentServiceProviderProfile = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/GetCurrentServiceProviderProfile',
+  grpc.web.MethodType.UNARY,
+  proto.auth.UserIdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.UserIdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.getCurrentServiceProviderProfile =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/GetCurrentServiceProviderProfile',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetCurrentServiceProviderProfile,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.getCurrentServiceProviderProfile =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/GetCurrentServiceProviderProfile',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetCurrentServiceProviderProfile);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileService_GetServiceProviderByID = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/GetServiceProviderByID',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.getServiceProviderByID =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/GetServiceProviderByID',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetServiceProviderByID,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.getServiceProviderByID =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/GetServiceProviderByID',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetServiceProviderByID);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.UserIdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileService_GetServiceProviderByUserID = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/GetServiceProviderByUserID',
+  grpc.web.MethodType.UNARY,
+  proto.auth.UserIdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.UserIdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.getServiceProviderByUserID =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/GetServiceProviderByUserID',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetServiceProviderByUserID,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.getServiceProviderByUserID =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/GetServiceProviderByUserID',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetServiceProviderByUserID);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileService_GetServiceProviderProfileWithUser = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/GetServiceProviderProfileWithUser',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.getServiceProviderProfileWithUser =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/GetServiceProviderProfileWithUser',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetServiceProviderProfileWithUser,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.getServiceProviderProfileWithUser =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/GetServiceProviderProfileWithUser',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetServiceProviderProfileWithUser);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.PhoneRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileService_SearchServiceProviderByPhone = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/SearchServiceProviderByPhone',
+  grpc.web.MethodType.UNARY,
+  proto.auth.PhoneRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.PhoneRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.PhoneRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.searchServiceProviderByPhone =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/SearchServiceProviderByPhone',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_SearchServiceProviderByPhone,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.PhoneRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.searchServiceProviderByPhone =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/SearchServiceProviderByPhone',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_SearchServiceProviderByPhone);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.GetByBureauRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileService_GetServiceProvidersByBureau = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/GetServiceProvidersByBureau',
+  grpc.web.MethodType.UNARY,
+  proto.auth.GetByBureauRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.GetByBureauRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.GetByBureauRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.getServiceProvidersByBureau =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/GetServiceProvidersByBureau',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetServiceProvidersByBureau,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.GetByBureauRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.getServiceProvidersByBureau =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/GetServiceProvidersByBureau',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetServiceProvidersByBureau);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.ListRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileService_ListServiceProviders = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/ListServiceProviders',
+  grpc.web.MethodType.UNARY,
+  proto.auth.ListRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.ListRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.ListRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.listServiceProviders =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/ListServiceProviders',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_ListServiceProviders,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.ListRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.listServiceProviders =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/ListServiceProviders',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_ListServiceProviders);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.SearchRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileService_SearchServiceProviders = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/SearchServiceProviders',
+  grpc.web.MethodType.UNARY,
+  proto.auth.SearchRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.SearchRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.SearchRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.searchServiceProviders =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/SearchServiceProviders',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_SearchServiceProviders,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.SearchRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.searchServiceProviders =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/SearchServiceProviders',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_SearchServiceProviders);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.SearchRequest,
+ *   !proto.auth.CountResponse>}
+ */
+const methodDescriptor_ProfileService_CountServiceProviders = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/CountServiceProviders',
+  grpc.web.MethodType.UNARY,
+  proto.auth.SearchRequest,
+  proto.auth.CountResponse,
+  /**
+   * @param {!proto.auth.SearchRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.CountResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.SearchRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.CountResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.CountResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.countServiceProviders =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/CountServiceProviders',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_CountServiceProviders,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.SearchRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.CountResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.countServiceProviders =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/CountServiceProviders',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_CountServiceProviders);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.google.protobuf.Empty,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileService_GetPopularServiceProviders = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/GetPopularServiceProviders',
+  grpc.web.MethodType.UNARY,
+  google_protobuf_empty_pb.Empty,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.google.protobuf.Empty} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.getPopularServiceProviders =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/GetPopularServiceProviders',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetPopularServiceProviders,
+      callback);
+};
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.getPopularServiceProviders =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/GetPopularServiceProviders',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_GetPopularServiceProviders);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.UpdateServiceProviderFieldsRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ProfileService_UpdateServiceProviderFields = new grpc.web.MethodDescriptor(
+  '/auth.ProfileService/UpdateServiceProviderFields',
+  grpc.web.MethodType.UNARY,
+  proto.auth.UpdateServiceProviderFieldsRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.UpdateServiceProviderFieldsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.UpdateServiceProviderFieldsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ProfileServiceClient.prototype.updateServiceProviderFields =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ProfileService/UpdateServiceProviderFields',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_UpdateServiceProviderFields,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.UpdateServiceProviderFieldsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ProfileServicePromiseClient.prototype.updateServiceProviderFields =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ProfileService/UpdateServiceProviderFields',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_UpdateServiceProviderFields);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.auth.SaveUserLocationRequest,
  *   !proto.auth.JsonResponse>}
  */
@@ -6794,6 +7648,67 @@ proto.auth.EmploymentServicePromiseClient.prototype.listByHousehelp =
       request,
       metadata || {},
       methodDescriptor_EmploymentService_ListByHousehelp);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.PaginatedUserRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_EmploymentService_ListByServiceProvider = new grpc.web.MethodDescriptor(
+  '/auth.EmploymentService/ListByServiceProvider',
+  grpc.web.MethodType.UNARY,
+  proto.auth.PaginatedUserRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.PaginatedUserRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.PaginatedUserRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.EmploymentServiceClient.prototype.listByServiceProvider =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.EmploymentService/ListByServiceProvider',
+      request,
+      metadata || {},
+      methodDescriptor_EmploymentService_ListByServiceProvider,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.PaginatedUserRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.EmploymentServicePromiseClient.prototype.listByServiceProvider =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.EmploymentService/ListByServiceProvider',
+      request,
+      metadata || {},
+      methodDescriptor_EmploymentService_ListByServiceProvider);
 };
 
 
@@ -8917,6 +9832,67 @@ proto.auth.OpenForWorkServicePromiseClient.prototype.getOpenForWorkByHousehelp =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_OpenForWorkService_GetOpenForWorkByServiceProvider = new grpc.web.MethodDescriptor(
+  '/auth.OpenForWorkService/GetOpenForWorkByServiceProvider',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.OpenForWorkServiceClient.prototype.getOpenForWorkByServiceProvider =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.OpenForWorkService/GetOpenForWorkByServiceProvider',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_GetOpenForWorkByServiceProvider,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.OpenForWorkServicePromiseClient.prototype.getOpenForWorkByServiceProvider =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.OpenForWorkService/GetOpenForWorkByServiceProvider',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_GetOpenForWorkByServiceProvider);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.auth.SearchRequest,
  *   !proto.auth.JsonResponse>}
  */
@@ -10180,6 +11156,67 @@ proto.auth.InterestServicePromiseClient.prototype.listByHousehelp =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.UserIdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_InterestService_ListByServiceProvider = new grpc.web.MethodDescriptor(
+  '/auth.InterestService/ListByServiceProvider',
+  grpc.web.MethodType.UNARY,
+  proto.auth.UserIdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.UserIdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.InterestServiceClient.prototype.listByServiceProvider =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.InterestService/ListByServiceProvider',
+      request,
+      metadata || {},
+      methodDescriptor_InterestService_ListByServiceProvider,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.InterestServicePromiseClient.prototype.listByServiceProvider =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.InterestService/ListByServiceProvider',
+      request,
+      metadata || {},
+      methodDescriptor_InterestService_ListByServiceProvider);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.auth.InterestExistsReq,
  *   !proto.auth.BoolResponse>}
  */
@@ -10723,6 +11760,67 @@ proto.auth.ReviewServicePromiseClient.prototype.getHousehelpReviews =
  *   !proto.auth.IdRequest,
  *   !proto.auth.JsonResponse>}
  */
+const methodDescriptor_ReviewService_GetServiceProviderReviews = new grpc.web.MethodDescriptor(
+  '/auth.ReviewService/GetServiceProviderReviews',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ReviewServiceClient.prototype.getServiceProviderReviews =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ReviewService/GetServiceProviderReviews',
+      request,
+      metadata || {},
+      methodDescriptor_ReviewService_GetServiceProviderReviews,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ReviewServicePromiseClient.prototype.getServiceProviderReviews =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ReviewService/GetServiceProviderReviews',
+      request,
+      metadata || {},
+      methodDescriptor_ReviewService_GetServiceProviderReviews);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
 const methodDescriptor_ReviewService_GetHouseholdReviews = new grpc.web.MethodDescriptor(
   '/auth.ReviewService/GetHouseholdReviews',
   grpc.web.MethodType.UNARY,
@@ -11202,6 +12300,67 @@ proto.auth.ReviewServicePromiseClient.prototype.getHousehelpAverageRating =
       request,
       metadata || {},
       methodDescriptor_ReviewService_GetHousehelpAverageRating);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ReviewService_GetServiceProviderAverageRating = new grpc.web.MethodDescriptor(
+  '/auth.ReviewService/GetServiceProviderAverageRating',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ReviewServiceClient.prototype.getServiceProviderAverageRating =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ReviewService/GetServiceProviderAverageRating',
+      request,
+      metadata || {},
+      methodDescriptor_ReviewService_GetServiceProviderAverageRating,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ReviewServicePromiseClient.prototype.getServiceProviderAverageRating =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ReviewService/GetServiceProviderAverageRating',
+      request,
+      metadata || {},
+      methodDescriptor_ReviewService_GetServiceProviderAverageRating);
 };
 
 
@@ -14015,6 +15174,546 @@ proto.auth.HousehelpPreferencesServicePromiseClient.prototype.updateAvailability
       request,
       metadata || {},
       methodDescriptor_HousehelpPreferencesService_UpdateAvailability);
+};
+
+
+/**
+ * @param {string} hostname
+ * @param {?Object} credentials
+ * @param {?grpc.web.ClientOptions} options
+ * @constructor
+ * @struct
+ * @final
+ */
+proto.auth.ServiceProviderPreferencesServiceClient =
+    function(hostname, credentials, options) {
+  if (!options) options = {};
+  options.format = 'text';
+
+  /**
+   * @private @const {!grpc.web.GrpcWebClientBase} The client
+   */
+  this.client_ = new grpc.web.GrpcWebClientBase(options);
+
+  /**
+   * @private @const {string} The hostname
+   */
+  this.hostname_ = hostname.replace(/\/+$/, '');
+
+};
+
+
+/**
+ * @param {string} hostname
+ * @param {?Object} credentials
+ * @param {?grpc.web.ClientOptions} options
+ * @constructor
+ * @struct
+ * @final
+ */
+proto.auth.ServiceProviderPreferencesServicePromiseClient =
+    function(hostname, credentials, options) {
+  if (!options) options = {};
+  options.format = 'text';
+
+  /**
+   * @private @const {!grpc.web.GrpcWebClientBase} The client
+   */
+  this.client_ = new grpc.web.GrpcWebClientBase(options);
+
+  /**
+   * @private @const {string} The hostname
+   */
+  this.hostname_ = hostname.replace(/\/+$/, '');
+
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ServiceProviderPreferencesService_CreateServiceProviderPreference = new grpc.web.MethodDescriptor(
+  '/auth.ServiceProviderPreferencesService/CreateServiceProviderPreference',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ServiceProviderPreferencesServiceClient.prototype.createServiceProviderPreference =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/CreateServiceProviderPreference',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_CreateServiceProviderPreference,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ServiceProviderPreferencesServicePromiseClient.prototype.createServiceProviderPreference =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/CreateServiceProviderPreference',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_CreateServiceProviderPreference);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ServiceProviderPreferencesService_GetServiceProviderPreference = new grpc.web.MethodDescriptor(
+  '/auth.ServiceProviderPreferencesService/GetServiceProviderPreference',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ServiceProviderPreferencesServiceClient.prototype.getServiceProviderPreference =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/GetServiceProviderPreference',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_GetServiceProviderPreference,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ServiceProviderPreferencesServicePromiseClient.prototype.getServiceProviderPreference =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/GetServiceProviderPreference',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_GetServiceProviderPreference);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.UserIdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ServiceProviderPreferencesService_ListServiceProviderPreferences = new grpc.web.MethodDescriptor(
+  '/auth.ServiceProviderPreferencesService/ListServiceProviderPreferences',
+  grpc.web.MethodType.UNARY,
+  proto.auth.UserIdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.UserIdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ServiceProviderPreferencesServiceClient.prototype.listServiceProviderPreferences =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/ListServiceProviderPreferences',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_ListServiceProviderPreferences,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.UserIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ServiceProviderPreferencesServicePromiseClient.prototype.listServiceProviderPreferences =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/ListServiceProviderPreferences',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_ListServiceProviderPreferences);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.UpdateByIdPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ServiceProviderPreferencesService_UpdateServiceProviderPreference = new grpc.web.MethodDescriptor(
+  '/auth.ServiceProviderPreferencesService/UpdateServiceProviderPreference',
+  grpc.web.MethodType.UNARY,
+  proto.auth.UpdateByIdPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.UpdateByIdPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.UpdateByIdPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ServiceProviderPreferencesServiceClient.prototype.updateServiceProviderPreference =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/UpdateServiceProviderPreference',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_UpdateServiceProviderPreference,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.UpdateByIdPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ServiceProviderPreferencesServicePromiseClient.prototype.updateServiceProviderPreference =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/UpdateServiceProviderPreference',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_UpdateServiceProviderPreference);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.google.protobuf.Empty>}
+ */
+const methodDescriptor_ServiceProviderPreferencesService_DeleteServiceProviderPreference = new grpc.web.MethodDescriptor(
+  '/auth.ServiceProviderPreferencesService/DeleteServiceProviderPreference',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  google_protobuf_empty_pb.Empty,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  google_protobuf_empty_pb.Empty.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ServiceProviderPreferencesServiceClient.prototype.deleteServiceProviderPreference =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/DeleteServiceProviderPreference',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_DeleteServiceProviderPreference,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.google.protobuf.Empty>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ServiceProviderPreferencesServicePromiseClient.prototype.deleteServiceProviderPreference =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/DeleteServiceProviderPreference',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_DeleteServiceProviderPreference);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ServiceProviderPreferencesService_AddChores = new grpc.web.MethodDescriptor(
+  '/auth.ServiceProviderPreferencesService/AddChores',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ServiceProviderPreferencesServiceClient.prototype.addChores =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/AddChores',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_AddChores,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ServiceProviderPreferencesServicePromiseClient.prototype.addChores =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/AddChores',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_AddChores);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ServiceProviderPreferencesService_UpdateBudget = new grpc.web.MethodDescriptor(
+  '/auth.ServiceProviderPreferencesService/UpdateBudget',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ServiceProviderPreferencesServiceClient.prototype.updateBudget =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/UpdateBudget',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_UpdateBudget,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ServiceProviderPreferencesServicePromiseClient.prototype.updateBudget =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/UpdateBudget',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_UpdateBudget);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ServiceProviderPreferencesService_UpdateAvailability = new grpc.web.MethodDescriptor(
+  '/auth.ServiceProviderPreferencesService/UpdateAvailability',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ServiceProviderPreferencesServiceClient.prototype.updateAvailability =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/UpdateAvailability',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_UpdateAvailability,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ServiceProviderPreferencesServicePromiseClient.prototype.updateAvailability =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ServiceProviderPreferencesService/UpdateAvailability',
+      request,
+      metadata || {},
+      methodDescriptor_ServiceProviderPreferencesService_UpdateAvailability);
 };
 
 
@@ -19238,6 +20937,128 @@ proto.auth.EmploymentContractServicePromiseClient.prototype.forwardToHousehelp =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.SignContractReq,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_EmploymentContractService_SignByServiceProvider = new grpc.web.MethodDescriptor(
+  '/auth.EmploymentContractService/SignByServiceProvider',
+  grpc.web.MethodType.UNARY,
+  proto.auth.SignContractReq,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.SignContractReq} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.SignContractReq} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.EmploymentContractServiceClient.prototype.signByServiceProvider =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.EmploymentContractService/SignByServiceProvider',
+      request,
+      metadata || {},
+      methodDescriptor_EmploymentContractService_SignByServiceProvider,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.SignContractReq} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.EmploymentContractServicePromiseClient.prototype.signByServiceProvider =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.EmploymentContractService/SignByServiceProvider',
+      request,
+      metadata || {},
+      methodDescriptor_EmploymentContractService_SignByServiceProvider);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_EmploymentContractService_ForwardToServiceProvider = new grpc.web.MethodDescriptor(
+  '/auth.EmploymentContractService/ForwardToServiceProvider',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.EmploymentContractServiceClient.prototype.forwardToServiceProvider =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.EmploymentContractService/ForwardToServiceProvider',
+      request,
+      metadata || {},
+      methodDescriptor_EmploymentContractService_ForwardToServiceProvider,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.EmploymentContractServicePromiseClient.prototype.forwardToServiceProvider =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.EmploymentContractService/ForwardToServiceProvider',
+      request,
+      metadata || {},
+      methodDescriptor_EmploymentContractService_ForwardToServiceProvider);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.google.protobuf.Empty,
  *   !proto.auth.JsonResponse>}
  */
@@ -21575,6 +23396,8 @@ export const {
   HouseholdKidsServicePromiseClient,
   HousehelpPreferencesServiceClient,
   HousehelpPreferencesServicePromiseClient,
+  ServiceProviderPreferencesServiceClient,
+  ServiceProviderPreferencesServicePromiseClient,
   HouseholdPreferencesServiceClient,
   HouseholdPreferencesServicePromiseClient,
   HouseholdMemberServiceClient,

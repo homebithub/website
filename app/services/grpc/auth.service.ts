@@ -12,10 +12,11 @@ import * as grpcWeb from 'grpc-web';
 import { AUTH_GRPC_WEB_BASE_URL, handleGrpcError, retryOnExpiry } from './client';
 import {
   getStoredAccessToken,
-  getStoredProfileType,
+  getStoredCanonicalProfileType,
   getStoredUser,
   getStoredUserId,
 } from '~/utils/authStorage';
+import { normalizeProfileType } from '~/utils/profileType';
 
 // Extract proto.auth from the default export
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
@@ -84,12 +85,19 @@ function isValidUUID(uuid: string): boolean {
 
 const SIGNUP_PROFILE_ID_ENV_KEYS: Record<string, string[]> = {
   household: ['HOUSEHOLD_PROFILE_ID', 'VITE_HOUSEHOLD_PROFILE_ID', 'PUBLIC_HOUSEHOLD_PROFILE_ID'],
-  househelp: ['HOUSEHELP_PROFILE_ID', 'VITE_HOUSEHELP_PROFILE_ID', 'PUBLIC_HOUSEHELP_PROFILE_ID'],
+  service_provider: [
+    'SERVICE_PROVIDER_PROFILE_ID',
+    'VITE_SERVICE_PROVIDER_PROFILE_ID',
+    'PUBLIC_SERVICE_PROVIDER_PROFILE_ID',
+    'SERVICE PROVIDER_PROFILE_ID',
+    'VITE_SERVICE PROVIDER_PROFILE_ID',
+    'PUBLIC_SERVICE PROVIDER_PROFILE_ID',
+  ],
 };
 
 const FALLBACK_SIGNUP_PROFILE_IDS: Record<string, string> = {
   household: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1',
-  househelp: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
+  service_provider: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
 };
 
 function getRuntimeEnvValue(key: string): string {
@@ -104,8 +112,9 @@ function resolveSignupProfileId(profileTypeOrId: string): string {
     return value;
   }
 
-  const envKeys = SIGNUP_PROFILE_ID_ENV_KEYS[value.toLowerCase()];
-  const profileId = envKeys?.map(getRuntimeEnvValue).find(Boolean) || FALLBACK_SIGNUP_PROFILE_IDS[value.toLowerCase()] || '';
+  const profileType = normalizeProfileType(value);
+  const envKeys = SIGNUP_PROFILE_ID_ENV_KEYS[profileType];
+  const profileId = envKeys?.map(getRuntimeEnvValue).find(Boolean) || FALLBACK_SIGNUP_PROFILE_IDS[profileType] || '';
 
   if (isValidUUID(profileId)) {
     return profileId;
@@ -123,7 +132,7 @@ function getMetadata(extra?: { [key: string]: string }): { [key: string]: string
   const md: { [key: string]: string } = {};
   const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = normalizeProfileType(getStoredCanonicalProfileType());
   if (profileType) md['x-profile-type'] = profileType;
   // Says which device is asking, so auth can refuse one that has been revoked
   // or banned. Read rather than generated: generating a fingerprint is async

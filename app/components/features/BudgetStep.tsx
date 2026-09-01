@@ -221,7 +221,7 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
               </label>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              This helps us understand accommodation arrangements for sleep-in househelp
+              This helps us understand accommodation arrangements for sleep-in service provider
             </p>
           </div>
         </div>

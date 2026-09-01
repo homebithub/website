@@ -64,6 +64,41 @@ export class ProfileServiceClient {
                response: profile_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<profile_pb.JsonResponse>;
 
+  getCurrentServiceProviderProfile(
+    request: profile_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: profile_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<profile_pb.JsonResponse>;
+
+  getServiceProviderByID(
+    request: profile_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: profile_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<profile_pb.JsonResponse>;
+
+  getServiceProviderByUserID(
+    request: profile_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: profile_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<profile_pb.JsonResponse>;
+
+  getServiceProviderProfileWithUser(
+    request: profile_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: profile_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<profile_pb.JsonResponse>;
+
+  searchServiceProviders(
+    request: profile_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: profile_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<profile_pb.JsonResponse>;
+
 }
 
 export class ProfileServicePromiseClient {
@@ -107,6 +142,31 @@ export class ProfileServicePromiseClient {
   ): Promise<profile_pb.JsonResponse>;
 
   searchHousehelps(
+    request: profile_pb.SearchRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<profile_pb.JsonResponse>;
+
+  getCurrentServiceProviderProfile(
+    request: profile_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<profile_pb.JsonResponse>;
+
+  getServiceProviderByID(
+    request: profile_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<profile_pb.JsonResponse>;
+
+  getServiceProviderByUserID(
+    request: profile_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<profile_pb.JsonResponse>;
+
+  getServiceProviderProfileWithUser(
+    request: profile_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<profile_pb.JsonResponse>;
+
+  searchServiceProviders(
     request: profile_pb.SearchRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<profile_pb.JsonResponse>;

@@ -5,7 +5,7 @@ export const meta = () => [
   {
     name: "description",
     content:
-      "Join Homebit's night nurse waitlist as a household or househelp and get early access.",
+      "Join Homebit's night nurse waitlist as a household or service provider and get early access.",
   },
 ];
 
@@ -18,7 +18,7 @@ const config = {
     "Baby Sitter",
     "Early Childhood Care",
     "New Mothers Help",
-    "Househelp",
+    "Service provider",
     "Indoor Cleaning",
     "Home Deep Cleaning",
     "Laundry & Ironing",
@@ -37,7 +37,7 @@ const config = {
       servicePrompt: "Would you need additional services?",
       concernPrompt: "Biggest concern",
     },
-    househelp: {
+    service_provider: {
       heading: "You offer night nurse services?",
       paragraph:
         "Join the night nurse waitlist to be among the first night nurse professionals households discover on Homebit. We are creating a trusted marketplace where night nurses can present their skills with confidence and be matched to families who value experienced, reliable overnight newborn care. If you have experience with overnight newborn care, infant feeding support, sleep training assistance, postpartum family support, or specialized newborn care, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the kind of night nurse projects you specialize in. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for night nurses who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent night nurse work with families who appreciate experience and reliability, the waitlist is the first step.",

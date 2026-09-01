@@ -17,7 +17,7 @@ export interface ReviewFormData {
   rating: number;
   title: string;
   content: string;
-  type: 'household' | 'househelp';
+  type: 'household' | 'service_provider';
   service_type: string;
   images: Array<{
     image_url: string;

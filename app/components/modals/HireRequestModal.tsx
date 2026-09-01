@@ -10,8 +10,8 @@ import { getStoredUserProfileId } from '~/utils/authStorage';
 type HireRequestModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  househelpId: string;
-  househelpName: string;
+  serviceProviderId: string;
+  serviceProviderName: string;
   initialListingId?: string | number;
   onSent?: (request: Record<string, any>) => void;
   // Kept optional for callers compiled against the former profile-based form.
@@ -37,8 +37,8 @@ function featureGroups(listing?: Record<string, any>): Array<{ name: string; val
 export default function HireRequestModal({
   isOpen,
   onClose,
-  househelpId,
-  househelpName,
+  serviceProviderId,
+  serviceProviderName,
   initialListingId,
   onSent,
 }: HireRequestModalProps) {
@@ -108,7 +108,8 @@ export default function HireRequestModal({
     setError('');
     try {
       const request = await hireRequestService.createHireRequest('', 'household', {
-        househelp_profile_id: househelpId,
+        service_provider_profile_id: serviceProviderId,
+        househelp_profile_id: serviceProviderId,
         listing_id: Number(selectedListingId),
         message: notes.trim(),
         publish_listing: !createdForRequest,
@@ -149,7 +150,7 @@ export default function HireRequestModal({
           <header className="sticky top-0 z-10 flex items-center justify-between border-b border-purple-200 bg-white px-5 py-4 dark:border-purple-500/20 dark:bg-[#13131a]">
             <div>
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">Send hire request</h2>
-              <p className="mt-0.5 text-xs text-gray-500">Choose the exact job details to send to {househelpName}.</p>
+              <p className="mt-0.5 text-xs text-gray-500">Choose the exact job details to send to {serviceProviderName}.</p>
             </div>
             <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-2 text-gray-500 hover:bg-purple-500/10"><X className="h-5 w-5" /></button>
           </header>
@@ -158,7 +159,7 @@ export default function HireRequestModal({
             <div className="space-y-5 p-5 sm:p-6">
               <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
                 <h3 className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Hire request sent</h3>
-                <p className="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">This listing is currently private and is only being used for the request sent to {househelpName}. Would you also like other househelps to find and apply to it?</p>
+                <p className="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">This listing is currently private and is only being used for the request sent to {serviceProviderName}. Would you also like other service providers to find and apply to it?</p>
               </div>
               <FormError message={error} />
               <div className="grid grid-cols-2 gap-3">

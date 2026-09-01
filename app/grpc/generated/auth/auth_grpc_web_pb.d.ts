@@ -465,6 +465,27 @@ export class BureauServiceClient {
                response: auth_auth_pb.BureauHousehelpLinkResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.BureauHousehelpLinkResponse>;
 
+  initiateServiceProviderLink(
+    request: auth_auth_pb.BureauServiceProviderLinkInitiateRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.BureauServiceProviderLinkResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.BureauServiceProviderLinkResponse>;
+
+  verifyServiceProviderLink(
+    request: auth_auth_pb.BureauServiceProviderLinkVerifyRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.BureauServiceProviderLinkResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.BureauServiceProviderLinkResponse>;
+
+  resendServiceProviderLinkOTP(
+    request: auth_auth_pb.BureauServiceProviderLinkIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.BureauServiceProviderLinkResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.BureauServiceProviderLinkResponse>;
+
 }
 
 export class ProfileServiceClient {
@@ -626,6 +647,83 @@ export class ProfileServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  getCurrentServiceProviderProfile(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getServiceProviderByID(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getServiceProviderByUserID(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getServiceProviderProfileWithUser(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  searchServiceProviderByPhone(
+    request: auth_auth_pb.PhoneRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getServiceProvidersByBureau(
+    request: auth_auth_pb.GetByBureauRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listServiceProviders(
+    request: auth_auth_pb.ListRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  searchServiceProviders(
+    request: auth_auth_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  countServiceProviders(
+    request: auth_auth_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.CountResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.CountResponse>;
+
+  getPopularServiceProviders(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateServiceProviderFields(
+    request: auth_auth_pb.UpdateServiceProviderFieldsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   saveUserLocation(
     request: auth_auth_pb.SaveUserLocationRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -781,6 +879,13 @@ export class EmploymentServiceClient {
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
   listByHousehelp(
+    request: auth_auth_pb.PaginatedUserRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listByServiceProvider(
     request: auth_auth_pb.PaginatedUserRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
@@ -1032,6 +1137,13 @@ export class OpenForWorkServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  getOpenForWorkByServiceProvider(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   searchOpenForWork(
     request: auth_auth_pb.SearchRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -1179,6 +1291,13 @@ export class InterestServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  listByServiceProvider(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   interestExists(
     request: auth_auth_pb.InterestExistsReq,
     metadata: grpcWeb.Metadata | undefined,
@@ -1242,6 +1361,13 @@ export class ReviewServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  getServiceProviderReviews(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   getHouseholdReviews(
     request: auth_auth_pb.IdRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -1292,6 +1418,13 @@ export class ReviewServiceClient {
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
   getHousehelpAverageRating(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getServiceProviderAverageRating(
     request: auth_auth_pb.IdRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
@@ -1600,6 +1733,69 @@ export class HousehelpPreferencesServiceClient {
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
   deleteHousehelpPreference(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  addChores(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateBudget(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateAvailability(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+}
+
+export class ServiceProviderPreferencesServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createServiceProviderPreference(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getServiceProviderPreference(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listServiceProviderPreferences(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateServiceProviderPreference(
+    request: auth_auth_pb.UpdateByIdPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deleteServiceProviderPreference(
     request: auth_auth_pb.IdRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
@@ -2236,6 +2432,20 @@ export class EmploymentContractServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  signByServiceProvider(
+    request: auth_auth_pb.SignContractReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  forwardToServiceProvider(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   getDefaultClauses(
     request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | undefined,
@@ -2838,6 +3048,21 @@ export class BureauServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.BureauHousehelpLinkResponse>;
 
+  initiateServiceProviderLink(
+    request: auth_auth_pb.BureauServiceProviderLinkInitiateRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.BureauServiceProviderLinkResponse>;
+
+  verifyServiceProviderLink(
+    request: auth_auth_pb.BureauServiceProviderLinkVerifyRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.BureauServiceProviderLinkResponse>;
+
+  resendServiceProviderLinkOTP(
+    request: auth_auth_pb.BureauServiceProviderLinkIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.BureauServiceProviderLinkResponse>;
+
 }
 
 export class ProfileServicePromiseClient {
@@ -2952,6 +3177,61 @@ export class ProfileServicePromiseClient {
 
   updateHousehelpFields(
     request: auth_auth_pb.UpdateHousehelpFieldsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getCurrentServiceProviderProfile(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getServiceProviderByID(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getServiceProviderByUserID(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getServiceProviderProfileWithUser(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  searchServiceProviderByPhone(
+    request: auth_auth_pb.PhoneRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getServiceProvidersByBureau(
+    request: auth_auth_pb.GetByBureauRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listServiceProviders(
+    request: auth_auth_pb.ListRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  searchServiceProviders(
+    request: auth_auth_pb.SearchRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  countServiceProviders(
+    request: auth_auth_pb.SearchRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.CountResponse>;
+
+  getPopularServiceProviders(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateServiceProviderFields(
+    request: auth_auth_pb.UpdateServiceProviderFieldsRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
@@ -3074,6 +3354,11 @@ export class EmploymentServicePromiseClient {
   ): Promise<auth_auth_pb.JsonResponse>;
 
   listByHousehelp(
+    request: auth_auth_pb.PaginatedUserRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listByServiceProvider(
     request: auth_auth_pb.PaginatedUserRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
@@ -3257,6 +3542,11 @@ export class OpenForWorkServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
+  getOpenForWorkByServiceProvider(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
   searchOpenForWork(
     request: auth_auth_pb.SearchRequest,
     metadata?: grpcWeb.Metadata
@@ -3366,6 +3656,11 @@ export class InterestServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
+  listByServiceProvider(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
   interestExists(
     request: auth_auth_pb.InterestExistsReq,
     metadata?: grpcWeb.Metadata
@@ -3413,6 +3708,11 @@ export class ReviewServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
+  getServiceProviderReviews(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
   getHouseholdReviews(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
@@ -3449,6 +3749,11 @@ export class ReviewServicePromiseClient {
   ): Promise<auth_auth_pb.JsonResponse>;
 
   getHousehelpAverageRating(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getServiceProviderAverageRating(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
@@ -3681,6 +3986,53 @@ export class HousehelpPreferencesServicePromiseClient {
   ): Promise<auth_auth_pb.JsonResponse>;
 
   deleteHousehelpPreference(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  addChores(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateBudget(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateAvailability(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+}
+
+export class ServiceProviderPreferencesServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createServiceProviderPreference(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getServiceProviderPreference(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listServiceProviderPreferences(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateServiceProviderPreference(
+    request: auth_auth_pb.UpdateByIdPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deleteServiceProviderPreference(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<google_protobuf_empty_pb.Empty>;
@@ -4151,6 +4503,16 @@ export class EmploymentContractServicePromiseClient {
   ): Promise<auth_auth_pb.JsonResponse>;
 
   forwardToHousehelp(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  signByServiceProvider(
+    request: auth_auth_pb.SignContractReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  forwardToServiceProvider(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;

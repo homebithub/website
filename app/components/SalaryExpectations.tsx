@@ -53,7 +53,7 @@ const SalaryExpectations: React.FC = () => {
         const token = getAccessTokenFromCookies();
         if (!token) return;
         
-        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        const data = await grpcProfileService.getCurrentServiceProviderProfile('');
         if (data) {
           if (data.salary_frequency) {
             const freq = data.salary_frequency.toLowerCase() as SalaryFrequency;
@@ -102,7 +102,7 @@ const SalaryExpectations: React.FC = () => {
         updates.salary_expectation = normalizedExpectation;
       }
 
-      await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
+      await grpcProfileService.updateServiceProviderFields('', 'service_provider', updates);
 
       markClean();
       updateProfileDraft('salary', {

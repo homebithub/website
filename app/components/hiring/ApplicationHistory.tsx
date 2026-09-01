@@ -21,7 +21,7 @@ import { listingApplicationService } from "~/services/grpc/authServices";
 function describe(
   toStatus: string,
   fromStatus: string | undefined,
-  viewer: "household" | "househelp",
+  viewer: "household" | "service_provider",
 ): string {
   const applicantActed = ["initiated", "accepted", "declined"].includes(toStatus);
   switch (toStatus) {
@@ -71,7 +71,7 @@ export function ApplicationHistory({
 }: {
   applicationId: string | number;
   actorProfileId: string;
-  viewer: "household" | "househelp";
+  viewer: "household" | "service_provider";
   className?: string;
 }) {
   const [events, setEvents] = useState<any[]>([]);

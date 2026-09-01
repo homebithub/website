@@ -220,8 +220,8 @@ export default function HouseholdProfile() {
 
   useEffect(() => {
     const canonicalProfileType = getStoredCanonicalProfileType();
-    if (canonicalProfileType === 'househelp') {
-      navigate('/househelp/profile', { replace: true });
+    if (canonicalProfileType === 'service_provider') {
+      navigate('/service-provider/profile', { replace: true });
     }
   }, [navigate]);
 
@@ -243,8 +243,8 @@ export default function HouseholdProfile() {
       setHasError(false);
       try {
         const canonicalProfileType = getStoredCanonicalProfileType();
-        if (canonicalProfileType === 'househelp') {
-          navigate('/househelp/profile', { replace: true });
+        if (canonicalProfileType === 'service_provider') {
+          navigate('/service-provider/profile', { replace: true });
           return;
         }
 
@@ -1040,7 +1040,7 @@ export default function HouseholdProfile() {
         ) : (
           <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700">
             <p className="text-gray-500 dark:text-gray-400">No photos uploaded yet</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Add photos of your home to attract qualified househelps!</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Add photos of your home to attract qualified service providers!</p>
           </div>
         )}
       </div>

@@ -3,7 +3,7 @@ import { profileViewService } from '~/services/grpc/profileView.service';
 
 interface UseProfileViewTrackingOptions {
   profileId: string;
-  profileType: 'household' | 'househelp';
+  profileType: 'household' | 'service_provider';
   viewerUserId?: string;
   enabled?: boolean;
 }

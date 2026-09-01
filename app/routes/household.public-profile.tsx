@@ -11,6 +11,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import { MessageCircle, Heart } from "lucide-react";
 import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
+import { isServiceProviderProfileType } from '~/utils/profileType';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { resolveHouseholdOwnerUserId, resolveHouseholdProfile } from '~/utils/householdProfiles';
@@ -169,7 +170,7 @@ export default function HouseholdPublicProfile() {
     enabled: Boolean(profile?.id && !isViewingOwn),
   });
   const viewerType = viewerProfileType?.toLowerCase();
-  const canInteract = viewerType === "househelp" && !isViewingOwn;
+  const canInteract = isServiceProviderProfileType(viewerType) && !isViewingOwn;
   const canShortlist = canInteract && !!queryJobId;
   const canChat = canInteract && !!profileOwnerUserId;
 
@@ -228,7 +229,7 @@ export default function HouseholdPublicProfile() {
       return;
     }
     if (resolvedSource === 'hiring') {
-      navigate('/househelp/hire-requests');
+      navigate('/service-provider/hire-requests');
       return;
     }
     if (isViewingOwn) {
@@ -306,7 +307,7 @@ export default function HouseholdPublicProfile() {
       // In this view, the current user is typically a househelp viewing a household profile.
       const payload: StartConversationPayload = {
         household_user_id: profileOwnerUserId,
-        househelp_user_id: currentUserId,
+        service_provider_user_id: currentUserId,
       };
       if (profile?.id) {
         payload.household_profile_id = profile.id;

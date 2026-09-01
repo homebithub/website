@@ -155,7 +155,7 @@ const Languages = () => {
                 languages: selectedLanguages.join(',')
             };
 
-            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
+            await grpcProfileService.updateServiceProviderFields('', 'service_provider', updates);
             
             setSuccess('Your language preferences have been saved successfully!');
             // navigate('/next-step');

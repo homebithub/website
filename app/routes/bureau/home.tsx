@@ -3,7 +3,7 @@ import React from "react";
 export default function BureauHomeDashboard() {
   // Dummy data for dashboard
   const stats = [
-    { label: "Househelps Registered", value: 42 },
+    { label: "Service Providers Registered", value: 42 },
     { label: "Households Served", value: 17 },
     { label: "Active Contracts", value: 8 },
     { label: "Completed Placements", value: 35 },
@@ -34,18 +34,18 @@ export default function BureauHomeDashboard() {
       <div className="mt-6 sm:mt-8">
         <h3 className="text-base font-semibold mb-2 text-gray-700 ">Recent Activity</h3>
         <ul className="space-y-2">
-          <li className="text-gray-500 ">Placed househelp Mary W. with household #1234</li>
-          <li className="text-gray-500 ">Onboarded new househelp James K.</li>
+          <li className="text-gray-500 ">Placed service provider Mary W. with household #1234</li>
+          <li className="text-gray-500 ">Onboarded new service provider James K.</li>
           <li className="text-gray-500 ">Closed contract with commercial partner CleanCo</li>
           <li className="text-gray-500 ">Received 3 new applications today</li>
         </ul>
       </div>
       {/* Househelps Subsection */}
       <div className="mt-10">
-        <h3 className="text-base font-semibold text-gray-700  mb-4">Househelps</h3>
+        <h3 className="text-base font-semibold text-gray-700  mb-4">Service providers</h3>
         {/* Placeholder for househelp list */}
         <div className="bg-white dark:bg-[#13131a] rounded-xl shadow dark:shadow-glow-sm border border-gray-100 dark:border-purple-500/30 p-4 text-gray-500 dark:text-gray-400 transition-colors duration-300">
-          List of househelps will appear here.
+          List of service providers will appear here.
         </div>
       </div>
     </div>

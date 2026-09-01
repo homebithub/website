@@ -28,7 +28,7 @@ const BackgroundCheckConsent: React.FC = () => {
         const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        const data = await grpcProfileService.getCurrentServiceProviderProfile('');
         if (data?.background_check_consent !== undefined) {
           setConsent(data.background_check_consent);
         }
@@ -47,7 +47,7 @@ const BackgroundCheckConsent: React.FC = () => {
 
     try {
       const token = getAccessTokenFromCookies();
-      await grpcProfileService.updateHousehelpFields('', 'househelp',
+      await grpcProfileService.updateServiceProviderFields('', 'service_provider',
         { background_check_consent: value }
       );
 

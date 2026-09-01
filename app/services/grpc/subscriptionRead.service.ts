@@ -2,7 +2,7 @@ import * as subscriptionGrpcModule from '~/grpc/lite/subscription/subscription_g
 import * as subscriptionPbModule from '~/grpc/lite/subscription/subscription_pb';
 
 import { GRPC_WEB_BASE_URL, callWithAuthRetry } from './client';
-import { getStoredAccessToken, getStoredProfileType, getStoredUserId } from '~/utils/authStorage';
+import { getStoredAccessToken, getStoredCanonicalProfileType, getStoredUserId } from '~/utils/authStorage';
 
 const subscriptionPb = (subscriptionPbModule as any).default ?? subscriptionPbModule;
 const { PaymentsServiceClient } = subscriptionGrpcModule as any;
@@ -12,7 +12,7 @@ function metadata(): Record<string, string> {
   const result: Record<string, string> = {};
   const token = getStoredAccessToken();
   if (token) result.authorization = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = getStoredCanonicalProfileType();
   if (profileType) result['x-profile-type'] = profileType;
   return result;
 }

@@ -29,7 +29,7 @@ export function NannyTypeStep({ data, onUpdate, onNext }: NannyTypeStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">What type of househelp do you need?</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">What type of service provider do you need?</h3>
         <p className="text-gray-600">Choose the arrangement that works best for your family</p>
       </div>
 
@@ -51,7 +51,7 @@ export function NannyTypeStep({ data, onUpdate, onNext }: NannyTypeStepProps) {
                 <span className="text-xs text-gray-500">Most Popular</span>
               </div>
               <p className="text-gray-600 mt-1">
-                Househelp works during the day and goes home in the evening. Perfect for families who need help during working hours.
+                Service provider works during the day and goes home in the evening. Perfect for families who need help during working hours.
               </p>
               <div className="mt-3 space-y-2 text-xs text-gray-600">
                 <div className="flex items-center">
@@ -94,7 +94,7 @@ export function NannyTypeStep({ data, onUpdate, onNext }: NannyTypeStepProps) {
                 <span className="text-xs text-gray-500">Full-time</span>
               </div>
               <p className="text-gray-600 mt-1">
-                Househelp lives with your family and provides 24/7 support. Ideal for families needing constant assistance.
+                Service provider lives with your family and provides 24/7 support. Ideal for families needing constant assistance.
               </p>
               <div className="mt-3 space-y-2 text-xs text-gray-600">
                 <div className="flex items-center">

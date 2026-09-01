@@ -7,6 +7,7 @@ import { FormError } from '~/components/FormError';
 import { PHOTO_ACCEPT_ATTRIBUTE, selectPhotosForUpload, uploadDocuments } from '~/utils/documentUploads';
 import { useSearchParams } from 'react-router';
 import { formatDisplayName } from '~/utils/displayName';
+import { isServiceProviderProfileType } from '~/utils/profileType';
 
 interface Review {
   id: string;
@@ -44,7 +45,7 @@ interface ReviewStats {
 
 interface ProfileReviewsProps {
   profileId: string;
-  profileType: 'household' | 'househelp';
+  profileType: 'household' | 'service_provider';
   isOwnProfile: boolean;
 }
 
@@ -72,7 +73,7 @@ export default function ProfileReviews({
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewTarget, setReviewTarget] = useState<{ id: string; type: 'household' | 'househelp'; name: string } | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<{ id: string; type: 'household' | 'service_provider'; name: string } | null>(null);
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
     title: '',
@@ -146,7 +147,7 @@ export default function ProfileReviews({
         // can read. The person being viewed is the other party in each.
         const [asHousehold, asHousehelp] = await Promise.all([
           employmentService.listByHousehold(viewerId, 100, 0).catch(() => null),
-          employmentService.listByHousehelp(viewerId, 100, 0).catch(() => null),
+          employmentService.listByServiceProvider(viewerId, 100, 0).catch(() => null),
         ]);
 
         const rows = [asHousehold, asHousehelp].flatMap((raw: any) => {
@@ -683,7 +684,9 @@ export default function ProfileReviews({
                 <button
                   type="button"
                   onClick={() => {
-                    const targetType = String(review.reviewer_profile?.type || '').toLowerCase() === 'househelp' ? 'househelp' : 'household';
+                    const targetType = isServiceProviderProfileType(review.reviewer_profile?.type)
+                      ? 'service_provider'
+                      : 'household';
                     setReviewTarget({
                       id: review.reviewer_profile!.id,
                       type: targetType,

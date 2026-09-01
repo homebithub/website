@@ -6,14 +6,14 @@ import HireRequestModal from '~/components/modals/HireRequestModal';
  * a contract with a second set of terms.
  */
 export default function ConversationHire({
-  househelpProfileId,
-  househelpName,
+  serviceProviderProfileId,
+  serviceProviderName,
   listingId,
   onClose,
   onHired,
 }: {
-  househelpProfileId: string;
-  househelpName: string;
+  serviceProviderProfileId: string;
+  serviceProviderName: string;
   listingId?: string | number;
   onClose: () => void;
   onHired: (requestId: string) => void;
@@ -22,8 +22,8 @@ export default function ConversationHire({
     <HireRequestModal
       isOpen
       onClose={onClose}
-      househelpId={househelpProfileId}
-      househelpName={househelpName}
+      serviceProviderId={serviceProviderProfileId}
+      serviceProviderName={serviceProviderName}
       initialListingId={listingId}
       onSent={(request) => onHired(String(request.id || request.hire_request_id || ''))}
     />

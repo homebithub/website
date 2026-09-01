@@ -35,14 +35,16 @@ export const routeConfig: Record<string, RouteConfig> = {
   
   // Public profile pages (view only)
   '/household/public-profile': { path: '/household/public-profile', requiresAuth: false },
+  '/service-provider/public-profile': { path: '/service-provider/public-profile', requiresAuth: false },
+  // Legacy bookmarks stay readable during the route migration.
   '/househelp/public-profile': { path: '/househelp/public-profile', requiresAuth: false },
   
   // ==================== PROTECTED ROUTES ====================
   // ALL OTHER ROUTES REQUIRE AUTHENTICATION INCLUDING:
   // - /household/profile
-  // - /househelp/profile
+  // - /service-provider/profile
   // - /household/*
-  // - /househelp/*
+  // - /service-provider/*
   // - /bureau/*
   // - /inbox
   // - /settings
@@ -56,6 +58,7 @@ export const routeConfig: Record<string, RouteConfig> = {
   '/settings': { path: '/settings', requiresAuth: true },
   '/change-password': { path: '/change-password', requiresAuth: true },
   '/household/profile': { path: '/household/profile', requiresAuth: true },
+  '/service-provider/profile': { path: '/service-provider/profile', requiresAuth: true },
   '/househelp/profile': { path: '/househelp/profile', requiresAuth: true },
   '/inbox': { path: '/inbox', requiresAuth: true },
   '/join-household': { path: '/join-household', requiresAuth: true },
@@ -83,6 +86,7 @@ export function isProtectedRoute(pathname: string): boolean {
   
   // Pattern match for public profile routes
   if (pathname.startsWith('/household/public-profile') || 
+      pathname.startsWith('/service-provider/public-profile') ||
       pathname.startsWith('/househelp/public-profile')) {
     return false;
   }

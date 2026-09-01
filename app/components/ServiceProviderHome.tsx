@@ -82,7 +82,7 @@ const formatBudgetAmount = (value?: string | number) => {
   return `KES ${num.toLocaleString()}`;
 };
 
-export default function HousehelpHome() {
+export default function ServiceProviderHome() {
   type FilterState = HouseholdSearchFields & { town: string; house_size: string; verified: string };
   const [filters, setFilters] = useState<FilterState>({
     town: "",
@@ -239,16 +239,16 @@ export default function HousehelpHome() {
 
       const profileType = (currentProfileType || '').toLowerCase();
       let householdId = householdUserId;
-      let househelpId = currentUserId;
+      let serviceProviderId = currentUserId;
 
       if (profileType === 'household') {
         householdId = currentUserId;
-        househelpId = householdUserId;
+        serviceProviderId = householdUserId;
       }
 
       const payload: StartConversationPayload = {
         household_user_id: householdId,
-        househelp_user_id: househelpId,
+        service_provider_user_id: serviceProviderId,
       };
       
       // Include household_profile_id if current user is household
@@ -279,7 +279,7 @@ export default function HousehelpHome() {
         });
         setActionSuccess('Removed from shortlist.');
       } else {
-        await shortlistService.createShortlist('', 'househelp', { profile_id: profileId, profile_type: 'household' });
+        await shortlistService.createShortlist('', 'service_provider', { profile_id: profileId, profile_type: 'household' });
         setShortlistedProfiles((prev) => new Set(prev).add(profileId));
         setActionSuccess('Added to shortlist.');
       }
@@ -350,7 +350,7 @@ export default function HousehelpHome() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await grpcProfileService.searchHouseholds(currentUserId || '', 'househelp', buildFilters(), 12, 0);
+      const raw = await grpcProfileService.searchHouseholds(currentUserId || '', 'service_provider', buildFilters(), 12, 0);
 
       // Try multiple possible response structures
       let data = raw?.data?.data || raw?.data || raw?.profiles || raw;
@@ -365,7 +365,7 @@ export default function HousehelpHome() {
       const enrichedHouseholds = await enrichHouseholds(households as HouseholdItem[]);
       setResults(enrichedHouseholds);
     } catch (err: any) {
-      console.error('[HousehelpHome] Search error:', err);
+      console.error('[Service providerHome] Search error:', err);
       setError(err.message || "Failed to load households");
       setResults([]);
     } finally {
@@ -408,7 +408,7 @@ export default function HousehelpHome() {
     const payload = buildCountPayload();
     countTimerRef.current = setTimeout(async () => {
       try {
-        const count = await grpcProfileService.countHouseholds(currentUserId || '', 'househelp', payload);
+        const count = await grpcProfileService.countHouseholds(currentUserId || '', 'service_provider', payload);
         setTotalCount(typeof count === 'number' ? count : 0);
       } catch (e) {
         setTotalCount(null);
@@ -432,7 +432,7 @@ export default function HousehelpHome() {
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className={`flex-1 py-8 ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {showTips && <OnboardingTipsBanner role="househelp" onDismiss={handleDismissTips} />}
+            {showTips && <OnboardingTipsBanner role="service_provider" onDismiss={handleDismissTips} />}
             <div className={filterSectionClass}>
               <div className={headerRowClass}>
                 <button

@@ -176,7 +176,7 @@ async function* walk(dir) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       yield* walk(fullPath);
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
+    } else if (entry.isFile() && (entry.name.endsWith('.js') || entry.name.endsWith('.d.ts'))) {
       yield fullPath;
     }
   }
@@ -184,6 +184,17 @@ async function* walk(dir) {
 
 for await (const file of walk(generatedDir)) {
   const source = await readFile(file, 'utf8');
+  if (file.endsWith('.d.ts')) {
+    const converted = source.replace(
+      /export type AsObject = \{\n  \};/g,
+      'export type AsObject = Record<string, never>;',
+    );
+    if (converted !== source) {
+      await writeFile(file, converted);
+      console.log(`Normalized ${path.relative(process.cwd(), file)}`);
+    }
+    continue;
+  }
   const packageName = getPackageName(source);
   const needsDefaultExport = !source.includes(`export default proto.${packageName};`);
   const duplicateProtoObject = (source.match(/^const proto = \{\};$/gm) || []).length > 1;

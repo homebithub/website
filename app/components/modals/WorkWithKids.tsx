@@ -77,7 +77,7 @@ const WorkWithKids = () => {
                     : 0
             };
 
-            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
+            await grpcProfileService.updateServiceProviderFields('', 'service_provider', updates);
             
             setSuccess('Your preferences have been saved successfully!');
             // navigate('/next-step');

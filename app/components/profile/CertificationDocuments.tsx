@@ -150,7 +150,7 @@ export function CertificationDocuments({ profileId }: { profileId?: string }) {
     setError(null);
     try {
       const [optionsPayload, documentsPayload] = await Promise.all([
-        onboardingOptionsService.getAllOptions('househelp'),
+        onboardingOptionsService.getAllOptions('service_provider'),
         documentService.getUserDocuments('', 'certificate'),
       ]);
       const certificationOptions = Array.isArray(optionsPayload?.certifications)

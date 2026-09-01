@@ -15,7 +15,7 @@ function getInitials(firstName?: string, lastName?: string): string {
   return `${(firstName || '').charAt(0)}${(lastName || '').charAt(0)}`.toUpperCase();
 }
 
-export default function HousehelpFindHouseholds() {
+export default function ServiceProviderFindHouseholds() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({
     town: "",
@@ -197,7 +197,7 @@ export default function HousehelpFindHouseholds() {
                     </select>
                   </div>
                   <div className="flex flex-col">
-                    <label className="mb-1 text-xs font-medium text-white/90">Type of Househelp</label>
+                    <label className="mb-1 text-xs font-medium text-white/90">Type of Service provider</label>
                     <select name="type_of_househelp" value={filters.type_of_househelp} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
                       {NANNY_TYPES.map((t) => (
                         <option key={t} value={t}>
@@ -268,8 +268,8 @@ export default function HousehelpFindHouseholds() {
                 </div>
               </div>
               <button
-                onClick={() => navigate(`/household/public-profile?profileId=${r.profile_id}&backTo=${encodeURIComponent('/househelp/find-households')}&backLabel=${encodeURIComponent('Back to results')}`, {
-                  state: { backTo: '/househelp/find-households', backLabel: 'Back to results' }
+                onClick={() => navigate(`/household/public-profile?profileId=${r.profile_id}&backTo=${encodeURIComponent('/service-provider/find-households')}&backLabel=${encodeURIComponent('Back to results')}`, {
+                  state: { backTo: '/service-provider/find-households', backLabel: 'Back to results' }
                 })}
                 className="ml-4 px-4 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all"
               >

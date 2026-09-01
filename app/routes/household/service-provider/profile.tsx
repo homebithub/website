@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router";
 import { ArrowLeftIcon, HeartIcon, TrashIcon } from "@heroicons/react/24/outline";
-import ReadOnlyUserImageCarousel from "~/components/features/household/househelp/ReadOnlyUserImageCarousel";
-import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
+import ReadOnlyUserImageCarousel from "~/components/features/household/service-provider/ReadOnlyUserImageCarousel";
+import ImageLightbox from "~/components/features/household/service-provider/ImageLightbox";
 import { profileService as grpcProfileService, profileViewService, shortlistService, imageService } from '~/services/grpc/authServices';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
@@ -10,7 +10,7 @@ import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { formatOnboardingAmountWithFrequency } from "~/utils/onboardingCompensation";
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 
-export default function HousehelpProfile() {
+export default function ServiceProviderProfile() {
   // Carousel state (ALWAYS at the top)
   const [images, setImages] = useState<any[]>([]);
   const [carouselIdx, setCarouselIdx] = useState(0);
@@ -30,9 +30,9 @@ export default function HousehelpProfile() {
     setError(null);
     setSuccessMessage(null);
     try {
-      await shortlistService.createShortlist('', 'househelp', {
+      await shortlistService.createShortlist('', 'service_provider', {
         profile_id: profileId,
-        profile_type: 'househelp',
+        profile_type: 'service_provider',
       });
       setShortlisted(true);
       setShortlistDisabled(true);
@@ -113,7 +113,7 @@ export default function HousehelpProfile() {
     }
 
     if (!changed) return;
-    navigate(`/household/househelp/profile?${nextParams.toString()}`, {
+    navigate(`/household/service-provider/profile?${nextParams.toString()}`, {
       replace: true,
       state: location.state,
     });
@@ -132,7 +132,7 @@ export default function HousehelpProfile() {
         // so the person waited through two requests that render nothing before
         // the one they came for even started. Recording that a profile was
         // viewed is our bookkeeping, not theirs.
-        const profileData = await grpcProfileService.getHousehelpProfileWithUser(profileId);
+        const profileData = await grpcProfileService.getServiceProviderProfileWithUser(profileId);
         setData(profileData);
         setLoading(false);
 
@@ -152,7 +152,7 @@ export default function HousehelpProfile() {
         } catch { /* ignore */ }
 
         try {
-          await profileViewService.recordView('', profileId, 'househelp');
+          await profileViewService.recordView('', profileId, 'service_provider');
         } catch (err) {
           console.warn('Failed to record profile view:', err);
         }
@@ -221,8 +221,9 @@ export default function HousehelpProfile() {
     );
   }
 
-  const { User, Househelp } = data;
-  const profileName = [User?.first_name, User?.last_name].filter(Boolean).join(' ') || 'Househelp';
+  const User = data.User ?? data.user ?? {};
+  const ServiceProvider = data.ServiceProvider ?? data.service_provider ?? data.Househelp ?? data.househelp ?? {};
+  const profileName = [User?.first_name, User?.last_name].filter(Boolean).join(' ') || 'Service provider';
 
 
   return (
@@ -303,7 +304,7 @@ export default function HousehelpProfile() {
       {/* User Information Section */}
       <div className="flex flex-col items-center mb-8">
         <img
-          src={Househelp.avatar_url || "https://placehold.co/96x96?text=HH"}
+          src={ServiceProvider.avatar_url || "https://placehold.co/96x96?text=SP"}
           alt={User.first_name}
           className="w-24 h-24 rounded-full object-cover bg-gray-200 mb-3"
         />
@@ -339,26 +340,26 @@ export default function HousehelpProfile() {
         {/* Optionally, show Verified badge below carousel if needed */}
 
       </div>
-      {/* Househelp Profile Information Section */}
+      {/* ServiceProvider Profile Information Section */}
       <div className="space-y-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 w-full max-w-2xl mx-auto text-xs text-left">
-          {/* <div><span className="font-semibold">Bureau ID:</span> {Househelp.bureau_id}</div> */}
-          <div><span className="font-semibold">Bio:</span> {Househelp.bio || '-'}</div>
-          <div><span className="font-semibold">Address:</span> {Househelp.address || '-'}</div>
-          <div><span className="font-semibold">Experience:</span> {Househelp.experience} years</div>
-          <div><span className="font-semibold">Skills:</span> {Househelp.skills && Househelp.skills.length ? Househelp.skills.join(', ') : '-'}</div>
-          <div><span className="font-semibold">Specialities:</span> {Househelp.specialities && Househelp.specialities.length ? Househelp.specialities.join(', ') : '-'}</div>
-          <div><span className="font-semibold">Languages:</span> {Househelp.languages && Househelp.languages.length ? Househelp.languages.join(', ') : '-'}</div>
-          <div><span className="font-semibold">Hourly Rate:</span> {Househelp.hourly_rate ? Househelp.hourly_rate : '-'}</div>
+          {/* <div><span className="font-semibold">Bureau ID:</span> {ServiceProvider.bureau_id}</div> */}
+          <div><span className="font-semibold">Bio:</span> {ServiceProvider.bio || '-'}</div>
+          <div><span className="font-semibold">Address:</span> {ServiceProvider.address || '-'}</div>
+          <div><span className="font-semibold">Experience:</span> {ServiceProvider.experience} years</div>
+          <div><span className="font-semibold">Skills:</span> {ServiceProvider.skills && ServiceProvider.skills.length ? ServiceProvider.skills.join(', ') : '-'}</div>
+          <div><span className="font-semibold">Specialities:</span> {ServiceProvider.specialities && ServiceProvider.specialities.length ? ServiceProvider.specialities.join(', ') : '-'}</div>
+          <div><span className="font-semibold">Languages:</span> {ServiceProvider.languages && ServiceProvider.languages.length ? ServiceProvider.languages.join(', ') : '-'}</div>
+          <div><span className="font-semibold">Hourly Rate:</span> {ServiceProvider.hourly_rate ? ServiceProvider.hourly_rate : '-'}</div>
           <div>
             <span className="font-semibold">Salary Expectation:</span>{' '}
-            {formatOnboardingAmountWithFrequency(Househelp.salary_expectation, Househelp.salary_frequency, '-')}
+            {formatOnboardingAmountWithFrequency(ServiceProvider.salary_expectation, ServiceProvider.salary_frequency, '-')}
           </div>
 
-          <div><span className="font-semibold">Rating:</span> {Househelp.rating} ({Househelp.review_count} reviews)</div>
-          <div><span className="font-semibold">References:</span> {Househelp.references ? Househelp.references : '-'}</div>
-          <div><span className="font-semibold">Images:</span> {Househelp.images ? JSON.stringify(Househelp.images) : '-'}</div>
-          <div><span className="font-semibold">Created At:</span> {Househelp.created_at ? formatTimeAgo(Househelp.created_at) : '-'}</div>
+          <div><span className="font-semibold">Rating:</span> {ServiceProvider.rating} ({ServiceProvider.review_count} reviews)</div>
+          <div><span className="font-semibold">References:</span> {ServiceProvider.references ? ServiceProvider.references : '-'}</div>
+          <div><span className="font-semibold">Images:</span> {ServiceProvider.images ? JSON.stringify(ServiceProvider.images) : '-'}</div>
+          <div><span className="font-semibold">Created At:</span> {ServiceProvider.created_at ? formatTimeAgo(ServiceProvider.created_at) : '-'}</div>
 
         </div>
       </div>

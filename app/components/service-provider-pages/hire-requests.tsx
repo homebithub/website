@@ -34,7 +34,7 @@ interface HireRequest {
 
 type TabType = 'all' | 'pending' | 'accepted' | 'declined';
 
-export default function HousehelpHireRequests() {
+export default function ServiceProviderHireRequests() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -84,7 +84,7 @@ export default function HousehelpHireRequests() {
     setError(null);
     try {
       const status = activeTab !== 'all' ? activeTab : undefined;
-      const raw = await hireRequestService.listHireRequests('', 'househelp', status);
+      const raw = await hireRequestService.listHireRequests('', 'service_provider', status);
       const items = raw?.data || raw || [];
       setHireRequests(Array.isArray(items) ? items : []);
       setTotal(typeof raw?.total === 'number' ? raw.total : (Array.isArray(items) ? items.length : 0));

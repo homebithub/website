@@ -5,7 +5,7 @@ export const meta = () => [
   {
     name: "description",
     content:
-      "Join Homebit's baby sitter waitlist as a household or househelp and get early access.",
+      "Join Homebit's baby sitter waitlist as a household or service provider and get early access.",
   },
 ];
 
@@ -15,7 +15,7 @@ const config = {
   serviceOptions: [
     "Baby Sitter",
     "Early Childhood Care",
-    "Househelp",
+    "Service provider",
     "Indoor Cleaning",
     "Home Deep Cleaning",
     "Laundry & Ironing",
@@ -35,7 +35,7 @@ const config = {
       servicePrompt: "Would you need additional services?",
       concernPrompt: "Biggest concern",
     },
-    househelp: {
+    service_provider: {
       heading: "You offer baby sitting services?",
       paragraph:
         "Join the baby sitter waitlist to be among the first childcare professionals households discover on Homebit. We are creating a trusted marketplace where baby sitters can present their skills with confidence and be matched to families who value quality childcare. If you have experience with infant care, toddler supervision, developmental activities, after-school care, or specialized childcare support, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the age groups you specialize in caring for. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for childcare professionals who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent babysitting work with families who appreciate reliability and trust, the waitlist is the first step.",

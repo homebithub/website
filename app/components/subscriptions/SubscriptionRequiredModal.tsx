@@ -51,7 +51,7 @@ export function SubscriptionRequiredModal({
 
         <div className="space-y-3 mb-6">
           {[
-            { title: 'Unlimited messaging', desc: 'Send and receive messages with households and househelps' },
+            { title: 'Unlimited messaging', desc: 'Send and receive messages with households and service providers' },
             { title: 'Hiring actions included', desc: 'Send hire requests and express interest when the time is right' },
             { title: 'Free trial available', desc: 'Start with a free trial before moving onto a paid plan' },
           ].map((item) => (

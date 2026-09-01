@@ -96,7 +96,7 @@ const WorkWithPets = () => {
                 pet_types: petPreference === 'with_pets' ? petTypes.join(',') : '',
             };
 
-            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
+            await grpcProfileService.updateServiceProviderFields('', 'service_provider', updates);
             
             setSuccess('Your pet preferences have been saved successfully!');
             // navigate('/next-step');

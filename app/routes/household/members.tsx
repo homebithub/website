@@ -456,7 +456,7 @@ export default function HouseholdMembersPage() {
                           )}
                           {member.permissions.can_manage_househelps && (
                             <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-xl">
-                              Manage Househelps
+                              Manage Service providers
                             </span>
                           )}
                           {member.permissions.can_invite_members && (

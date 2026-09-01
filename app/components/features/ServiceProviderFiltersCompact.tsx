@@ -1,23 +1,23 @@
 import React from "react";
-import type { HousehelpSearchFields } from "~/components/features/HousehelpFilters";
+import type { ServiceProviderSearchFields } from "~/components/features/ServiceProviderFilters";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 import CustomSelect from "~/components/ui/CustomSelect";
 
 interface Props {
-  fields: HousehelpSearchFields;
+  fields: ServiceProviderSearchFields;
   onChange: (name: string, value: string) => void;
   onSearch: () => void;
   onClear: () => void;
 }
 
-// Option sets aligned with HousehelpFilters
+// Option sets aligned with ServiceProviderFilters
 const SKILLS = ["", "cooking", "cleaning", "babysitting", "laundry", "elderly care"];
 const TRAITS = ["", "honest", "patient", "punctual", "organized", "friendly"];
 const EXPERIENCES = Array.from({ length: 11 }, (_, i) => String(i));
 const GENDERS = ["", "male", "female"];
 const NANNY_TYPES = ["", "dayburg", "sleeper"];
 
-export default function HousehelpFiltersCompact({ fields, onChange, onSearch, onClear }: Props) {
+export default function ServiceProviderFiltersCompact({ fields, onChange, onSearch, onClear }: Props) {
   const selectClass =
     "w-full px-4 py-1.5 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md";
   const inputClass =

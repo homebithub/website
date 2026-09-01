@@ -255,7 +255,7 @@ const CONCERNS = [
   "Professionally Trained",
 ];
 
-type ProfileType = "household" | "househelp";
+type ProfileType = "household" | "service_provider";
 
 interface ServiceWaitlistConfig {
   serviceSlug: string;
@@ -389,7 +389,10 @@ function DialCodePicker({
 
 export function ServiceWaitlistPage({ config }: ServiceWaitlistPageProps) {
   const [searchParams] = useSearchParams();
-  const profile: ProfileType = searchParams.get("profile") === "househelp" ? "househelp" : "household";
+  const requestedProfile = searchParams.get("profile");
+  const profile: ProfileType = requestedProfile === "service_provider" || requestedProfile === "househelp"
+    ? "service_provider"
+    : "household";
   const copy = config.profileCopy[profile];
 
   const emptyForm: FormData = {
@@ -507,7 +510,7 @@ export function ServiceWaitlistPage({ config }: ServiceWaitlistPageProps) {
       message: form.message.trim(),
       concerns: form.concerns,
       help_types: profile === "household" ? form.services : [],
-      roles_sought: profile === "househelp" ? form.services : [],
+      roles_sought: profile === "service_provider" ? form.services : [],
     };
     payload[config.payloadKey] = true;
 

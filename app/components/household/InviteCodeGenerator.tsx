@@ -139,7 +139,7 @@ export function InviteCodeGenerator({
                     <div className="text-left">
                       <div className="font-bold text-gray-900 dark:text-white mb-1">Member</div>
                       <div className="text-xs text-gray-600 dark:text-gray-400">
-                        Can manage househelps
+                        Can manage service providers
                       </div>
                     </div>
                   </button>

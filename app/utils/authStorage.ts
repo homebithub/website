@@ -4,6 +4,9 @@ import {
   getAuthFromCookies,
   setAuthCookies,
 } from "~/utils/cookie";
+import { normalizeProfileType } from "~/utils/profileType";
+
+export { isServiceProviderProfileType, normalizeProfileType, profileTypesMatch } from "~/utils/profileType";
 
 type StoredUser = Record<string, any> | null;
 
@@ -85,18 +88,6 @@ export const getStoredProfileType = (): string => {
   return safeGet("profile_type") || safeGet("userType") || "";
 };
 
-export const normalizeProfileType = (profileType: string | null | undefined): string => {
-  const normalized = String(profileType || "").trim().toUpperCase();
-  if (normalized === "CLT" || normalized === "CLIENT" || normalized === "HOUSEHOLD") {
-    return "household";
-  }
-  if (normalized === "SVC_PVD" || normalized === "SVD_PDD" || normalized === "SERVICE_PROVIDER" || normalized === "HOUSEHELP") {
-    return "househelp";
-  }
-  if (normalized === "BUREAU") return "bureau";
-  return String(profileType || "").trim().toLowerCase();
-};
-
 export const getStoredCanonicalProfileType = (): string => normalizeProfileType(getStoredProfileType());
 
 export const setStoredProfileType = (profileType: string | null | undefined) => {
@@ -144,18 +135,22 @@ export const cacheAuthSession = ({
   user?: Record<string, any> | null;
   provider?: string | null;
 }) => {
-  const cookieUser = user ?? getStoredUser() ?? {};
+  const sourceUser = user ?? getStoredUser() ?? {};
+  const canonicalProfileType = normalizeProfileType(sourceUser.profile_type || sourceUser.profileType || "");
+  const cookieUser = canonicalProfileType
+    ? { ...sourceUser, profile_type: canonicalProfileType }
+    : sourceUser;
 
   setAuthCookies(token, refreshToken ?? null, cookieUser);
   safeSet("token", token);
 
   if (user) {
-    safeSet("user_object", JSON.stringify(user));
-    const userId = user.user_id || user.id;
+    safeSet("user_object", JSON.stringify(cookieUser));
+    const userId = cookieUser.user_id || cookieUser.id;
     if (userId) {
       safeSet("user_id", userId);
     }
-    setStoredProfileType(user.profile_type || null);
+    setStoredProfileType(canonicalProfileType || null);
   }
 
   if (provider) {

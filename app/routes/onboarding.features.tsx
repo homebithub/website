@@ -221,7 +221,7 @@ export default function OnboardingFeaturesPage() {
   const isJobEligible = progress >= JOB_ELIGIBILITY_THRESHOLD;
   const remainingEligibilityPercent = Math.max(0, JOB_ELIGIBILITY_THRESHOLD - progress);
   const nextDestination = locationState.returnTo ||
-    (profileType === 'household' ? '/household/profile' : '/househelp/profile');
+    (profileType === 'household' ? '/household/profile' : '/service-provider/profile');
 
   // Clearing the text when an "Other" option is deselected stops a stale
   // answer being resubmitted if the user selects it again later.

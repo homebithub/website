@@ -14,12 +14,13 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorage';
+import { normalizeProfileType, SERVICE_PROVIDER_PROFILE_TYPE } from '~/utils/profileType';
 import { profileFeatureService } from '~/services/grpc/authServices';
 import { RequiredMark } from '~/components/ui/formStyles';
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
-    { name: "description", content: "Create your free Homebit account. Join as a household looking for help or as a househelp offering your services across Kenya." },
+    { name: "description", content: "Create your free Homebit account. Join as a household looking for help or as a service provider offering your skills across Kenya." },
     { property: "og:title", content: "Sign Up — Homebit" },
     { property: "og:url", content: "https://homebit.co.ke/signup" },
 ];
@@ -161,30 +162,39 @@ const fallbackProfileOptions: ProfileOption[] = [
     },
     {
         id: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
-        value: 'househelp',
-        label: 'Househelp/Nanny',
-        description: 'House Help',
+        value: SERVICE_PROVIDER_PROFILE_TYPE,
+        label: 'Service provider',
+        description: 'Offer a home service',
         type: 'SVC_PVD',
         slug: 'househelp',
     }
 ];
 
-function normalizeProfileRole(profile: any): 'household' | 'househelp' | '' {
+function normalizeProfileRole(profile: any): 'household' | 'service_provider' | '' {
     const type = String(profile?.type || profile?.profile_type || profile?.profileType || '').toUpperCase();
     const slug = String(profile?.slug || '').toLowerCase();
     const name = String(profile?.name || '').toLowerCase();
 
     if (type === 'CLT' || slug.includes('household') || name.includes('household')) return 'household';
-    if (type === 'SVC_PVD' || slug.includes('househelp') || slug.includes('house-help') || name.includes('househelp') || name.includes('house help')) {
-        return 'househelp';
+    if (
+        type === 'SVC_PVD'
+        || slug.includes('service-provider')
+        || slug.includes('service_provider')
+        || slug.includes('househelp')
+        || slug.includes('house-help')
+        || name.includes('service provider')
+        || name.includes('househelp')
+        || name.includes('house help')
+    ) {
+        return SERVICE_PROVIDER_PROFILE_TYPE;
     }
     return '';
 }
 
-function normalizeProfileLabel(profile: any, role: 'household' | 'househelp') {
+function normalizeProfileLabel(profile: any, role: 'household' | 'service_provider') {
     const label = String(profile?.name || '').trim();
-    if (!label) return role === 'household' ? 'Household' : 'Househelp/Nanny';
-    if (role === 'househelp' && /^house\s*help$/i.test(label.replace(/[-_]/g, ' '))) return 'Househelp/Nanny';
+    if (role === SERVICE_PROVIDER_PROFILE_TYPE) return 'Service provider';
+    if (!label) return 'Household';
     return label;
 }
 
@@ -203,14 +213,14 @@ function normalizeSignupProfileOptions(rawProfiles: any[]): ProfileOption[] {
             description: String(profile?.description || '').trim() || (
                 role === 'household'
                     ? 'House Hold'
-                    : 'House Help'
+                    : 'Offer a home service'
             ),
             type: String(profile?.type || ''),
             slug: String(profile?.slug || ''),
         });
     }
 
-    const ordered = ['household', 'househelp']
+    const ordered = ['household', SERVICE_PROVIDER_PROFILE_TYPE]
         .map((role) => byRole.get(role))
         .filter(Boolean) as ProfileOption[];
 
@@ -227,7 +237,7 @@ export default function SignupPage() {
     const searchParams = new URLSearchParams(location.search);
     //const redirectUrl = searchParams.get('redirect');
     const bureauId = searchParams.get('bureauId');
-    const googleProfileType = searchParams.get('profile_type');
+    const googleProfileType = normalizeProfileType(searchParams.get('profile_type'));
     const isGoogleSignup = searchParams.get('google_signup') === '1';
     const googleEmail = searchParams.get('email') || '';
     const googleFirstName = searchParams.get('first_name') || '';
@@ -288,16 +298,16 @@ export default function SignupPage() {
     useEffect(() => {
         // If user is already authenticated, redirect them
         if (user) {
-            const profileType = user.user?.profile_type;
+            const profileType = normalizeProfileType(user.user?.profile_type);
             // Bureau users should not access regular signup flow
             if (profileType === "bureau") {
                 navigate("/");
                 return;
             }
-            if (profileType === "household" || profileType === "household") {
+            if (profileType === "household") {
                 navigate("/household/profile");
-            } else if (profileType === "househelp") {
-                navigate("/househelp");
+            } else if (profileType === SERVICE_PROVIDER_PROFILE_TYPE) {
+                navigate("/service-provider");
             } else {
                 navigate("/");
             }
@@ -452,7 +462,7 @@ export default function SignupPage() {
                         form.last_name,
                         signupPhone,
                         form.profile_id || form.profile_type,
-                        form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
+                        form.profile_type === SERVICE_PROVIDER_PROFILE_TYPE && bureauId ? bureauId : undefined,
                     );
 
                     const userId = signupResponse.getUserId();
@@ -492,7 +502,7 @@ export default function SignupPage() {
                 }
                 
                 const userId = data.user?.user_id;
-                const profileType = data.user?.profile_type || form.profile_type;
+                const profileType = normalizeProfileType(data.user?.profile_type || form.profile_type);
                 
                 if (!userId) {
                     console.error('[SIGNUP] No user_id in Google signup response:', data);
@@ -537,7 +547,7 @@ export default function SignupPage() {
                     form.first_name,
                     form.last_name,
                     form.profile_id || form.profile_type,
-                    form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
+                    form.profile_type === SERVICE_PROVIDER_PROFILE_TYPE && bureauId ? bureauId : undefined,
                 );
 
                 const responseBody = genericResponseBodyToJs(signupResponse);
@@ -579,7 +589,7 @@ export default function SignupPage() {
             }
 
             const userId = data.auth_id || data.user?.user_id || data.user_id;
-            const profileType = data.profile_type || data.user?.profile_type || form.profile_type;
+            const profileType = normalizeProfileType(data.profile_type || data.user?.profile_type || form.profile_type);
             const userProfileId = data.user_profile_id || data.userProfileId || '';
             
             if (!userId) {
@@ -673,7 +683,7 @@ export default function SignupPage() {
         }
     };
 
-    // If auth is loading and it's not a bureau registering a househelp, show loader
+    // If auth is loading and a bureau is not registering a service provider, show the loader.
     if (authLoading && !bureauId) {
         return <Loading text="Redirecting..." />;
     }

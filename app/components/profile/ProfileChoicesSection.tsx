@@ -22,7 +22,7 @@ type SelectedFeatureGroup = {
 type ProfileChoicesSectionProps = {
   profile: UnknownRecord;
   fallbackProfileId: string;
-  profileType: 'household' | 'househelp';
+  profileType: 'household' | 'service_provider';
   title?: string;
   editable?: boolean;
   onEdit?: () => void;

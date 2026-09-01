@@ -61,7 +61,7 @@ function progressCacheKey(userId: string, profileType: string) {
  */
 export function useOnboardingProgress(
   userId: string,
-  profileType: 'househelp' | 'household'
+  profileType: 'service_provider' | 'household'
 ): UseOnboardingProgressResult {
   const key = progressCacheKey(userId, profileType);
   const initialCacheEntry = progressCache.get(key);

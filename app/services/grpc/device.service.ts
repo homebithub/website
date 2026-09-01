@@ -10,7 +10,7 @@ import device_pb_module from '~/grpc/generated/auth/device_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError, retryOnExpiry } from './client';
 import {
   getStoredAccessToken,
-  getStoredProfileType,
+  getStoredCanonicalProfileType,
   getStoredUserId,
 } from '~/utils/authStorage';
 
@@ -27,7 +27,7 @@ function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
   const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = getStoredCanonicalProfileType();
   if (profileType) md['x-profile-type'] = profileType;
   return md;
 }

@@ -39,7 +39,7 @@ interface Props {
   onClear: () => void;
 }
 
-export default function HousehelpMoreFilters({ fields, onChange, onSearch, onClear }: Props) {
+export default function ServiceProviderMoreFilters({ fields, onChange, onSearch, onClear }: Props) {
   const EXPERIENCE_OPTIONS = [
     { value: "", label: "Any" },
     { value: "1", label: "1+ years" },
@@ -128,7 +128,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-1 text-[11px] font-semibold text-gray-800 dark:text-gray-200">Type of Househelp</label>
+                <label className="mb-1 text-[11px] font-semibold text-gray-800 dark:text-gray-200">Type of Service provider</label>
                 <CustomSelect
                   value={typeValue}
                   onChange={(val) => setType(val)}

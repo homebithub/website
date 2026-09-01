@@ -25,7 +25,7 @@ describe('guided route tours', () => {
   });
 
   it('places the filter anchors on both marketplace home variants', () => {
-    expect(source('app/components/HousehelpJobsHome.tsx')).toContain('data-tour="discovery-filters"');
+    expect(source('app/components/ServiceProviderJobsHome.tsx')).toContain('data-tour="discovery-filters"');
     expect(source('app/components/HouseholdJobsHome.tsx')).toContain('data-tour="discovery-filters"');
   });
 

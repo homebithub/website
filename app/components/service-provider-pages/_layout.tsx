@@ -3,7 +3,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 
-export default function HousehelpLayout() {
+export default function ServiceProviderLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />

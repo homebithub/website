@@ -5766,7 +5766,8 @@ proto.events.ShortlistAdded.toObject = function(includeInstance, msg) {
 househelpId: jspb.Message.getFieldWithDefault(msg, 1, ""),
 householdName: jspb.Message.getFieldWithDefault(msg, 2, ""),
 householdProfileUrl: jspb.Message.getFieldWithDefault(msg, 3, ""),
-timestamp: (f = msg.getTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+timestamp: (f = msg.getTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+serviceProviderId: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -5819,6 +5820,10 @@ proto.events.ShortlistAdded.deserializeBinaryFromReader = function(msg, reader) 
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setTimestamp(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setServiceProviderId(value);
       break;
     default:
       reader.skipField();
@@ -5876,6 +5881,13 @@ proto.events.ShortlistAdded.serializeBinaryToWriter = function(message, writer) 
       4,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
+  f = message.getServiceProviderId();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
+      f
     );
   }
 };
@@ -5972,6 +5984,24 @@ proto.events.ShortlistAdded.prototype.hasTimestamp = function() {
 };
 
 
+/**
+ * optional string service_provider_id = 5;
+ * @return {string}
+ */
+proto.events.ShortlistAdded.prototype.getServiceProviderId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.events.ShortlistAdded} returns this
+ */
+proto.events.ShortlistAdded.prototype.setServiceProviderId = function(value) {
+  return jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
 
 
 
@@ -6006,7 +6036,8 @@ proto.events.ShortlistRemoved.toObject = function(includeInstance, msg) {
   var f, obj = {
 househelpId: jspb.Message.getFieldWithDefault(msg, 1, ""),
 householdName: jspb.Message.getFieldWithDefault(msg, 2, ""),
-timestamp: (f = msg.getTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+timestamp: (f = msg.getTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+serviceProviderId: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -6055,6 +6086,10 @@ proto.events.ShortlistRemoved.deserializeBinaryFromReader = function(msg, reader
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setTimestamp(value);
+      break;
+    case 4:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setServiceProviderId(value);
       break;
     default:
       reader.skipField();
@@ -6105,6 +6140,13 @@ proto.events.ShortlistRemoved.serializeBinaryToWriter = function(message, writer
       3,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
+  f = message.getServiceProviderId();
+  if (f.length > 0) {
+    writer.writeString(
+      4,
+      f
     );
   }
 };
@@ -6180,6 +6222,24 @@ proto.events.ShortlistRemoved.prototype.clearTimestamp = function() {
  */
 proto.events.ShortlistRemoved.prototype.hasTimestamp = function() {
   return jspb.Message.getField(this, 3) != null;
+};
+
+
+/**
+ * optional string service_provider_id = 4;
+ * @return {string}
+ */
+proto.events.ShortlistRemoved.prototype.getServiceProviderId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.events.ShortlistRemoved} returns this
+ */
+proto.events.ShortlistRemoved.prototype.setServiceProviderId = function(value) {
+  return jspb.Message.setProto3StringField(this, 4, value);
 };
 
 
@@ -7242,7 +7302,8 @@ proto.events.ProfileFeatured.toObject = function(includeInstance, msg) {
 househelpId: jspb.Message.getFieldWithDefault(msg, 1, ""),
 featureDuration: jspb.Message.getFieldWithDefault(msg, 2, ""),
 profileUrl: jspb.Message.getFieldWithDefault(msg, 3, ""),
-timestamp: (f = msg.getTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+timestamp: (f = msg.getTimestamp()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+serviceProviderId: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -7295,6 +7356,10 @@ proto.events.ProfileFeatured.deserializeBinaryFromReader = function(msg, reader)
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setTimestamp(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setServiceProviderId(value);
       break;
     default:
       reader.skipField();
@@ -7352,6 +7417,13 @@ proto.events.ProfileFeatured.serializeBinaryToWriter = function(message, writer)
       4,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
+  f = message.getServiceProviderId();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
+      f
     );
   }
 };
@@ -7445,6 +7517,24 @@ proto.events.ProfileFeatured.prototype.clearTimestamp = function() {
  */
 proto.events.ProfileFeatured.prototype.hasTimestamp = function() {
   return jspb.Message.getField(this, 4) != null;
+};
+
+
+/**
+ * optional string service_provider_id = 5;
+ * @return {string}
+ */
+proto.events.ProfileFeatured.prototype.getServiceProviderId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.events.ProfileFeatured} returns this
+ */
+proto.events.ProfileFeatured.prototype.setServiceProviderId = function(value) {
+  return jspb.Message.setProto3StringField(this, 5, value);
 };
 
 
@@ -11732,7 +11822,8 @@ householdId: jspb.Message.getFieldWithDefault(msg, 3, ""),
 householdName: jspb.Message.getFieldWithDefault(msg, 4, ""),
 position: jspb.Message.getFieldWithDefault(msg, 5, ""),
 salary: jspb.Message.getFieldWithDefault(msg, 6, ""),
-createdAt: (f = msg.getCreatedAt()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+createdAt: (f = msg.getCreatedAt()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+serviceProviderId: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
   if (includeInstance) {
@@ -11797,6 +11888,10 @@ proto.events.HireRequestReceived.deserializeBinaryFromReader = function(msg, rea
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setCreatedAt(value);
+      break;
+    case 8:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setServiceProviderId(value);
       break;
     default:
       reader.skipField();
@@ -11875,6 +11970,13 @@ proto.events.HireRequestReceived.serializeBinaryToWriter = function(message, wri
       7,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
+  f = message.getServiceProviderId();
+  if (f.length > 0) {
+    writer.writeString(
+      8,
+      f
     );
   }
 };
@@ -12025,6 +12127,24 @@ proto.events.HireRequestReceived.prototype.hasCreatedAt = function() {
 };
 
 
+/**
+ * optional string service_provider_id = 8;
+ * @return {string}
+ */
+proto.events.HireRequestReceived.prototype.getServiceProviderId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.events.HireRequestReceived} returns this
+ */
+proto.events.HireRequestReceived.prototype.setServiceProviderId = function(value) {
+  return jspb.Message.setProto3StringField(this, 8, value);
+};
+
+
 
 
 
@@ -12062,7 +12182,9 @@ householdId: jspb.Message.getFieldWithDefault(msg, 2, ""),
 househelpId: jspb.Message.getFieldWithDefault(msg, 3, ""),
 househelpName: jspb.Message.getFieldWithDefault(msg, 4, ""),
 position: jspb.Message.getFieldWithDefault(msg, 5, ""),
-acceptedAt: (f = msg.getAcceptedAt()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+acceptedAt: (f = msg.getAcceptedAt()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+serviceProviderId: jspb.Message.getFieldWithDefault(msg, 7, ""),
+serviceProviderName: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
   if (includeInstance) {
@@ -12123,6 +12245,14 @@ proto.events.HireRequestAccepted.deserializeBinaryFromReader = function(msg, rea
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setAcceptedAt(value);
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setServiceProviderId(value);
+      break;
+    case 8:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setServiceProviderName(value);
       break;
     default:
       reader.skipField();
@@ -12194,6 +12324,20 @@ proto.events.HireRequestAccepted.serializeBinaryToWriter = function(message, wri
       6,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
+  f = message.getServiceProviderId();
+  if (f.length > 0) {
+    writer.writeString(
+      7,
+      f
+    );
+  }
+  f = message.getServiceProviderName();
+  if (f.length > 0) {
+    writer.writeString(
+      8,
+      f
     );
   }
 };
@@ -12326,6 +12470,42 @@ proto.events.HireRequestAccepted.prototype.hasAcceptedAt = function() {
 };
 
 
+/**
+ * optional string service_provider_id = 7;
+ * @return {string}
+ */
+proto.events.HireRequestAccepted.prototype.getServiceProviderId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.events.HireRequestAccepted} returns this
+ */
+proto.events.HireRequestAccepted.prototype.setServiceProviderId = function(value) {
+  return jspb.Message.setProto3StringField(this, 7, value);
+};
+
+
+/**
+ * optional string service_provider_name = 8;
+ * @return {string}
+ */
+proto.events.HireRequestAccepted.prototype.getServiceProviderName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.events.HireRequestAccepted} returns this
+ */
+proto.events.HireRequestAccepted.prototype.setServiceProviderName = function(value) {
+  return jspb.Message.setProto3StringField(this, 8, value);
+};
+
+
 
 
 
@@ -12364,7 +12544,9 @@ househelpId: jspb.Message.getFieldWithDefault(msg, 3, ""),
 househelpName: jspb.Message.getFieldWithDefault(msg, 4, ""),
 position: jspb.Message.getFieldWithDefault(msg, 5, ""),
 reason: jspb.Message.getFieldWithDefault(msg, 6, ""),
-rejectedAt: (f = msg.getRejectedAt()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+rejectedAt: (f = msg.getRejectedAt()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+serviceProviderId: jspb.Message.getFieldWithDefault(msg, 8, ""),
+serviceProviderName: jspb.Message.getFieldWithDefault(msg, 9, "")
   };
 
   if (includeInstance) {
@@ -12429,6 +12611,14 @@ proto.events.HireRequestRejected.deserializeBinaryFromReader = function(msg, rea
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setRejectedAt(value);
+      break;
+    case 8:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setServiceProviderId(value);
+      break;
+    case 9:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setServiceProviderName(value);
       break;
     default:
       reader.skipField();
@@ -12507,6 +12697,20 @@ proto.events.HireRequestRejected.serializeBinaryToWriter = function(message, wri
       7,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
+  f = message.getServiceProviderId();
+  if (f.length > 0) {
+    writer.writeString(
+      8,
+      f
+    );
+  }
+  f = message.getServiceProviderName();
+  if (f.length > 0) {
+    writer.writeString(
+      9,
+      f
     );
   }
 };
@@ -12654,6 +12858,42 @@ proto.events.HireRequestRejected.prototype.clearRejectedAt = function() {
  */
 proto.events.HireRequestRejected.prototype.hasRejectedAt = function() {
   return jspb.Message.getField(this, 7) != null;
+};
+
+
+/**
+ * optional string service_provider_id = 8;
+ * @return {string}
+ */
+proto.events.HireRequestRejected.prototype.getServiceProviderId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.events.HireRequestRejected} returns this
+ */
+proto.events.HireRequestRejected.prototype.setServiceProviderId = function(value) {
+  return jspb.Message.setProto3StringField(this, 8, value);
+};
+
+
+/**
+ * optional string service_provider_name = 9;
+ * @return {string}
+ */
+proto.events.HireRequestRejected.prototype.getServiceProviderName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.events.HireRequestRejected} returns this
+ */
+proto.events.HireRequestRejected.prototype.setServiceProviderName = function(value) {
+  return jspb.Message.setProto3StringField(this, 9, value);
 };
 
 

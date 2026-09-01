@@ -9,9 +9,10 @@ import payments_pb_module from '~/grpc/generated/payments/payments_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError, retryOnExpiry } from './client';
 import {
   getStoredAccessToken,
-  getStoredProfileType,
+  getStoredCanonicalProfileType,
   getStoredUserId,
 } from '~/utils/authStorage';
+import { normalizeProfileType } from '~/utils/profileType';
 
 const payments_pb = payments_pb_module as any;
 
@@ -26,7 +27,7 @@ function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
   const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = getStoredCanonicalProfileType();
   if (profileType) md['x-profile-type'] = profileType;
   return md;
 }
@@ -187,7 +188,7 @@ export const paymentsService = {
       request.setPlanId(planId);
       request.setPhoneNumber(phoneNumber);
       request.setProfileId(profileId);
-      request.setProfileType(profileType);
+      request.setProfileType(normalizeProfileType(profileType));
       retryOnExpiry((cb) => paymentsClient.createSubscriptionCheckout(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);

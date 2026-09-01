@@ -35,7 +35,7 @@ const config = {
       servicePrompt: "Would you need additional services?",
       concernPrompt: "Biggest concern",
     },
-    househelp: {
+    service_provider: {
       heading: "You offer househelp services?",
       paragraph:
         "Join the househelp waitlist to be among the first household professionals families discover on Homebit. We are creating a trusted marketplace where househelps can present their skills with confidence and be matched to families who value quality household support. If you have experience with housekeeping, cooking, childcare, elder care, or comprehensive household management, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the kind of household environments you work best in. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for househelps who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent househelp work with families who appreciate reliability and professionalism, the waitlist is the first step.",

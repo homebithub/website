@@ -79,8 +79,8 @@ export default function Privacy() {
             <ul>
               <li>To operate and maintain the Platform</li>
               <li>To create and manage your account</li>
-              <li>To verify identity (e.g., for househelps)</li>
-              <li>To match Households with suitable Househelps</li>
+              <li>To verify identity (e.g., for service providers)</li>
+              <li>To match Households with suitable Service providers</li>
               <li>To process payments</li>
               <li>To respond to user inquiries or support requests</li>
               <li>To send service-related notifications</li>

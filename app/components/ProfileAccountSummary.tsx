@@ -16,7 +16,7 @@ type UnknownRecord = Record<string, unknown>;
 type ProfileAccountSummaryProps = {
   profile: UnknownRecord;
   fallbackProfileId: string;
-  fallbackProfileType: 'househelp' | 'household';
+  fallbackProfileType: 'service_provider' | 'household';
   avatarUrl?: string;
 };
 
@@ -291,7 +291,7 @@ export function ProfileAccountSummary({
 
         const redirectTo = fallbackProfileType === 'household'
           ? '/household/profile'
-          : '/househelp/profile';
+          : '/service-provider/profile';
         const params = new URLSearchParams({
           userId: currentUserId,
           afterEmailVerification: '1',

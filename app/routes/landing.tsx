@@ -287,7 +287,7 @@ export default function Home4() {
                 </div>
                 {[
                   { step: "01", title: "Complete Your Profile", desc: "Sign up and set up your household profile — tell us your location, chores, budget, and preferences." },
-                  { step: "02", title: "Browse & Connect", desc: "Search househelp profiles by skill, location, and ratings. Chat directly before hiring." },
+                  { step: "02", title: "Browse & Connect", desc: "Search service provider profiles by skill, location, and ratings. Chat directly before hiring." },
                   { step: "03", title: "Hire with Confidence", desc: "Send a hire request, agree on terms, and enjoy professional help in your home." },
                 ].map((item, idx) => (
                   <SlideUp key={item.step} delay={idx * 150}>
@@ -313,7 +313,7 @@ export default function Home4() {
                   <div className="inline-flex items-center gap-2 rounded-full bg-pink-100 dark:bg-pink-900/30 px-4 py-1.5 mb-6">
                     <UserGroupIcon className="h-4 w-4 text-pink-600 dark:text-pink-400" />
                     <span className="text-xs sm:text-xs font-bold text-pink-700 dark:text-pink-300 uppercase tracking-wide">
-                      For Househelps
+                      For Service providers
                     </span>
                   </div>
                 </div>

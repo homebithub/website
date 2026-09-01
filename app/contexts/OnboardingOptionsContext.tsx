@@ -14,7 +14,7 @@ const OnboardingOptionsContext = createContext<OnboardingOptionsContextValue | u
 
 interface OnboardingOptionsProviderProps {
   children: ReactNode;
-  profileType: 'househelp' | 'household';
+  profileType: 'service_provider' | 'household';
 }
 
 /**

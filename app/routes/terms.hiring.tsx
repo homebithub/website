@@ -39,7 +39,7 @@ export default function HiringTermsAndConditions() {
               </div>
               <div className="space-y-3 text-gray-700 dark:text-gray-300">
                 <p>
-                  By sending or accepting a hire request through Homebit, you agree to be bound by these Hiring Terms and Conditions. These terms constitute a legally binding agreement between the household (employer) and the househelp (employee).
+                  By sending or accepting a hire request through Homebit, you agree to be bound by these Hiring Terms and Conditions. These terms constitute a legally binding agreement between the household (employer) and the service provider (employee).
                 </p>
                 <p>
                   If you do not agree to these terms, you should not send or accept hire requests on our platform.
@@ -57,7 +57,7 @@ export default function HiringTermsAndConditions() {
               </div>
               <div className="space-y-3 text-gray-700 dark:text-gray-300">
                 <p>
-                  <strong>2.1 Sending a Hire Request:</strong> Households can send hire requests to househelps through the platform. A hire request must include:
+                  <strong>2.1 Sending a Hire Request:</strong> Households can send hire requests to service providers through the platform. A hire request must include:
                 </p>
                 <ul className="list-disc list-inside ml-4 space-y-2">
                   <li>Job type (live-in, day-worker, part-time, or full-time)</li>
@@ -66,10 +66,10 @@ export default function HiringTermsAndConditions() {
                   <li>Optional: Preferred start date and special requirements</li>
                 </ul>
                 <p>
-                  <strong>2.2 Accepting a Hire Request:</strong> Househelps may accept or decline hire requests. Acceptance creates a binding agreement between both parties.
+                  <strong>2.2 Accepting a Hire Request:</strong> Service providers may accept or decline hire requests. Acceptance creates a binding agreement between both parties.
                 </p>
                 <p>
-                  <strong>2.3 Declining a Hire Request:</strong> Househelps may decline requests with a reason. Declined requests cannot be re-accepted.
+                  <strong>2.3 Declining a Hire Request:</strong> Service providers may decline requests with a reason. Declined requests cannot be re-accepted.
                 </p>
               </div>
             </section>
@@ -117,10 +117,10 @@ export default function HiringTermsAndConditions() {
                   <li>Honor the agreed-upon salary and payment schedule</li>
                   <li>Provide a safe working environment</li>
                   <li>Comply with all applicable labor laws and regulations</li>
-                  <li>Treat the househelp with respect and dignity</li>
+                  <li>Treat the service provider with respect and dignity</li>
                 </ul>
                 <p className="mt-4">
-                  <strong>4.2 Househelp Responsibilities:</strong>
+                  <strong>4.2 Service provider Responsibilities:</strong>
                 </p>
                 <ul className="list-disc list-inside ml-4 space-y-2">
                   <li>Provide accurate profile information and qualifications</li>
@@ -170,7 +170,7 @@ export default function HiringTermsAndConditions() {
               </div>
               <div className="space-y-3 text-gray-700 dark:text-gray-300">
                 <p>
-                  <strong>6.1 Facilitation Only:</strong> Homebit is a platform that facilitates connections between households and househelps. We are not a party to the employment relationship.
+                  <strong>6.1 Facilitation Only:</strong> Homebit is a platform that facilitates connections between households and service providers. We are not a party to the employment relationship.
                 </p>
                 <p>
                   <strong>6.2 No Guarantees:</strong> Homebit does not guarantee:

@@ -5,9 +5,10 @@ import { lazyLoad } from "~/utils/lazyLoad";
 import { getAuthFromCookies } from "~/utils/cookie";
 import { useAuth } from "~/contexts/useAuth";
 import { getStoredProfileType } from "~/utils/authStorage";
+import { isServiceProviderProfileType } from "~/utils/profileType";
 
 const AuthenticatedHome = lazyLoad(() => import("~/components/HouseholdJobsHome"));
-const HousehelpHome = lazyLoad(() => import("~/components/HousehelpJobsHome"));
+const ServiceProviderHome = lazyLoad(() => import("~/components/ServiceProviderJobsHome"));
 const LandingPage = lazyLoad(() => import("~/routes/landing"));
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -53,8 +54,8 @@ export default function Index() {
 
   // Show authenticated home for logged-in users based on profile type
   if (isAuthenticated) {
-    if (userType === 'househelp') {
-      return <HousehelpHome />;
+    if (isServiceProviderProfileType(userType)) {
+      return <ServiceProviderHome />;
     }
     // Default for authenticated users (household): show househelp search
     return <AuthenticatedHome />;

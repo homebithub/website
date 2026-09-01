@@ -40,7 +40,7 @@ const Certifications: React.FC = () => {
         const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        const data = await grpcProfileService.getCurrentServiceProviderProfile('');
         
         // Parse certifications
         if (data?.certifications) {
@@ -136,7 +136,7 @@ const Certifications: React.FC = () => {
       const allCerts = [...selectedCerts, ...validOtherCerts];
       const allHelp = [...selectedHelp, ...validOtherHelp];
       
-      await grpcProfileService.updateHousehelpFields('', 'househelp', {
+      await grpcProfileService.updateServiceProviderFields('', 'service_provider', {
         certifications: allCerts.join(','),
         can_help_with: allHelp.join(','),
       });

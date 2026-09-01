@@ -10,9 +10,10 @@ import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import { GRPC_WEB_BASE_URL, handleGrpcError, callWithAuthRetry } from './client';
 import {
   getStoredAccessToken,
-  getStoredProfileType,
+  getStoredCanonicalProfileType,
   getStoredUserId,
 } from '~/utils/authStorage';
+import { normalizeProfileType } from '~/utils/profileType';
 
 const notifications_pb = notifications_pb_module as any;
 
@@ -39,7 +40,7 @@ function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
   const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = getStoredCanonicalProfileType();
   if (profileType) md['x-profile-type'] = profileType;
   return md;
 }
@@ -125,6 +126,8 @@ export const notificationsService = {
     househelpUserId: string;
     householdProfileId?: string;
     househelpProfileId?: string;
+    serviceProviderUserId?: string;
+    serviceProviderProfileId?: string;
     /** The job the thread is about. Empty puts it on the legacy pair row. */
     listingId?: string;
   }): Promise<any> {
@@ -133,6 +136,10 @@ export const notificationsService = {
     request.setHousehelpUserId(payload.househelpUserId);
     request.setHouseholdProfileId(payload.householdProfileId || '');
     request.setHousehelpProfileId(payload.househelpProfileId || '');
+    // Expand/migrate compatibility: current servers read the canonical fields,
+    // while older deployments still read the additive legacy aliases.
+    request.setServiceProviderUserId(payload.serviceProviderUserId || payload.househelpUserId);
+    request.setServiceProviderProfileId(payload.serviceProviderProfileId || payload.househelpProfileId || '');
     // Numeric on the wire; the caller holds it as a string because that is what
     // a listing id looks like everywhere else in the browser.
     const listingId = Number(payload.listingId || 0);
@@ -176,7 +183,7 @@ export const notificationsService = {
     request.setReplyToId(replyToId);
     request.setUserId(resolveUserId(userId));
     request.setSenderProfileId(senderProfileId);
-    request.setSenderProfileType(senderProfileType);
+    request.setSenderProfileType(normalizeProfileType(senderProfileType));
     const res = await grpcCall((cb) => notificationsClient.sendMessage(request, getMetadata(), cb));
     return jsonResponseToJs(res);
   },

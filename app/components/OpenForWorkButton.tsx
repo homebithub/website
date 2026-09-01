@@ -79,7 +79,7 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
       return;
     }
     try {
-      const raw = await openForWorkService.getOpenForWorkByHousehelp(profileId, "");
+      const raw = await openForWorkService.getOpenForWorkByServiceProvider(profileId, "");
       const found = raw?.data?.listing ?? raw?.data ?? raw?.listing ?? raw ?? null;
       setListing(found && (found.id || found.listing_id || found.listingId) ? found : null);
     } catch {
@@ -244,7 +244,7 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
         onClose={() => setVerificationGateOpen(false)}
         onConfirm={() => {
           setVerificationGateOpen(false);
-          navigate("/househelp/profile#identity-verification");
+          navigate("/service-provider/profile#identity-verification");
         }}
         title="Complete KYC to go open for work"
         message={

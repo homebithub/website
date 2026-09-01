@@ -27,6 +27,7 @@ import { SubscriptionRequiredModal } from '~/components/subscriptions/Subscripti
 import { InboxPageSkeleton, ShimmerLine, ShimmerSection } from "~/components/ShimmerLoader";
 import { CHAT_MESSAGE_LIMIT } from "~/config/chat";
 import { formatDisplayName } from '~/utils/displayName';
+import { normalizeProfileType } from '~/utils/profileType';
 
 const EmojiPicker = lazy(() => import('~/components/chat/LazyEmojiPicker'));
 
@@ -67,11 +68,11 @@ type Message = {
 const normalizeConversationData = (c: any): Conversation => ({
   id: c?.id || c?.conversation_id || '',
   household_id: c?.household_user_id || c?.household_id || '',
-  househelp_id: c?.househelp_user_id || c?.househelp_id || '',
+  househelp_id: c?.service_provider_user_id || c?.househelp_user_id || c?.househelp_id || '',
   household_profile_id: c?.household_profile_id || null,
-  househelp_profile_id: c?.househelp_profile_id || null,
+  househelp_profile_id: c?.service_provider_profile_id || c?.househelp_profile_id || null,
   household_profile_type: c?.household_profile_type || 'household',
-  househelp_profile_type: c?.househelp_profile_type || 'househelp',
+  househelp_profile_type: normalizeProfileType(c?.service_provider_profile_type || c?.househelp_profile_type || 'service_provider'),
   last_message_at: c?.last_message_at || null,
   last_message_body: c?.last_message_body || null,
   last_message_sender_id: c?.last_message_sender_id || null,
@@ -549,7 +550,7 @@ export default function InboxPage() {
     }, [pushToast])
   );
   
-  const currentUserProfileType = currentUser?.profile_type || getStoredProfileType() || null;
+  const currentUserProfileType = normalizeProfileType(currentUser?.profile_type || getStoredProfileType()) || null;
   const isHouseholdUser = currentUserProfileType?.toLowerCase() === 'household';
   const shouldRestrictMessaging = !subscriptionLoading && !hasActiveSubscription && isHouseholdUser;
 
@@ -709,7 +710,7 @@ export default function InboxPage() {
 
             if (househelpUserId) {
               try {
-                profileResponse = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+                profileResponse = await grpcProfileService.getServiceProviderByUserID(househelpUserId);
               } catch {
                 // fallback below
               }
@@ -718,13 +719,13 @@ export default function InboxPage() {
             if (!profileResponse) {
               const fallbackProfileId = conv.househelp_profile_id;
               if (!fallbackProfileId) {
-                console.error('[Inbox] Missing househelp user/profile id for conversation:', conv.id);
+                console.error('[Inbox] Missing service provider user/profile id for conversation:', conv.id);
                 continue;
               }
               try {
-                profileResponse = await grpcProfileService.getHousehelpByID(fallbackProfileId);
+                profileResponse = await grpcProfileService.getServiceProviderByID(fallbackProfileId);
               } catch {
-                console.error('[Inbox] Failed to fetch househelp profile fallback');
+                console.error('[Inbox] Failed to fetch service provider profile fallback');
                 continue;
               }
             }
@@ -733,7 +734,7 @@ export default function InboxPage() {
             
             // Extract househelp name from the preloaded user object
             const user = profileData?.user || profileData?.househelp?.user;
-            const fullName = getNameFromUser(user) || getNameFromProfile(profileData, "Househelp");
+            const fullName = getNameFromUser(user) || getNameFromProfile(profileData, "Service provider");
             
             const avatar =
               profileData?.avatar_url ||
@@ -741,7 +742,7 @@ export default function InboxPage() {
               (Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined) ||
               (Array.isArray(profileData?.househelp?.photos) && profileData.househelp.photos.length > 0 ? profileData.househelp.photos[0] : undefined);
             updates.push({ id: conv.id, participant_name: fullName, participant_avatar: avatar });
-          } else if (role === "househelp") {
+          } else if (role === "service_provider") {
             // Househelp user: other participant is a household. Older conversation
             // rows may only carry a household profile id, so resolve both shapes.
             const householdIdentifier = conv.household_profile_id || conv.household_id;
@@ -1070,11 +1071,11 @@ export default function InboxPage() {
         if (!househelpUserId) return;
         
         try {
-          const profileResponse: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+          const profileResponse: any = await grpcProfileService.getServiceProviderByUserID(househelpUserId);
           const profileData = extractEnvelopeObject<any>(profileResponse);
           househelpProfileId = profileData?.id || profileData?.profile_id;
         } catch (err) {
-          console.error('Failed to fetch househelp profile:', err);
+          console.error('Failed to fetch service provider profile:', err);
           pushToast('Failed to load profile information', 'error');
           return;
         }
@@ -1084,7 +1085,7 @@ export default function InboxPage() {
         pushToast('Failed to load profile information', 'error');
         return;
       }
-      const url = `/househelp/public-profile?profileId=${encodeURIComponent(househelpProfileId)}&embed=1`;
+      const url = `/service-provider/public-profile?profileId=${encodeURIComponent(househelpProfileId)}&embed=1`;
       setProfileModalLoading(true);
       setProfileModalTimedOut(false);
       if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
@@ -1776,7 +1777,7 @@ export default function InboxPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="truncate text-xs font-medium text-gray-900 dark:text-gray-100">
-                        {c.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
+                        {c.participant_name || (currentUserProfileType === 'service_provider' ? 'Household' : 'Service provider')}
                       </p>
                       <div className="flex items-center gap-2">
                         {subtitle && (
@@ -1886,7 +1887,7 @@ export default function InboxPage() {
                 <div className="text-left">
                   <div className="flex items-center gap-2">
                     <h2 className="font-semibold text-gray-900 dark:text-white">
-                      {selectedConversation.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
+                      {selectedConversation.participant_name || (currentUserProfileType === 'service_provider' ? 'Household' : 'Service provider')}
                     </h2>
                     {isTyping && (
                       <span className="inline-flex items-center gap-1" aria-hidden="true">
@@ -1935,11 +1936,11 @@ export default function InboxPage() {
                           setShowHireWizard(true);
                         } else {
                           try {
-                            const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+                            const profileData: any = await grpcProfileService.getServiceProviderByUserID(househelpUserId);
                             setHousehelpProfileIdForHire(profileData?.id || profileData?.profile_id);
                             setShowHireWizard(true);
                           } catch (err) {
-                            console.error('Failed to fetch househelp profile:', err);
+                            console.error('Failed to fetch service provider profile:', err);
                             pushToast('Failed to load profile information', 'error');
                           }
                         }
@@ -1947,10 +1948,10 @@ export default function InboxPage() {
                         setShowHireWizard(true);
                       }
                     }}
-                    onAccept={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
-                    onDecline={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
+                    onAccept={currentUserProfileType === 'service_provider' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
+                    onDecline={currentUserProfileType === 'service_provider' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
                     actionLoading={hireActionLoading}
-                    userRole={currentUserProfileType?.toLowerCase() as 'household' | 'househelp'}
+                    userRole={currentUserProfileType as 'household' | 'service_provider'}
                     />
                   </div>
                 )}
@@ -2656,7 +2657,7 @@ export default function InboxPage() {
                 <span className="text-base mt-0.5">⚖️</span>
                 <div>
                   <p className="text-xs font-semibold text-gray-900 dark:text-white">Homebit is a platform</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">We connect households and househelps but are not a party to any employment agreement. All arrangements are between you and the other party.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">We connect households and service providers but are not a party to any employment agreement. All arrangements are between you and the other party.</p>
                 </div>
               </div>
             </div>
@@ -2738,12 +2739,12 @@ export default function InboxPage() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <div className="relative z-10 w-full px-4 sm:px-0 flex justify-center">
             <ConversationHire
-              househelpProfileId={
+              serviceProviderProfileId={
                 currentUserProfileType?.toLowerCase() === 'household'
                   ? (househelpProfileIdForHire || selectedConversation!.househelp_profile_id || selectedConversation!.househelp_id)
                   : (selectedConversation!.household_profile_id || selectedConversation!.household_id)
               }
-              househelpName={selectedConversation!.participant_name || 'User'}
+              serviceProviderName={selectedConversation!.participant_name || 'User'}
               /* The job this thread belongs to. Present, the household is
                  confirming rather than choosing; absent, they picked this person
                  first and are asked which of their jobs it is for. */

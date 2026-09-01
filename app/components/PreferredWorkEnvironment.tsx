@@ -76,7 +76,7 @@ const PreferredWorkEnvironment: React.FC = () => {
         const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        const data = await grpcProfileService.getCurrentServiceProviderProfile('');
         if (data?.preferred_household_size) setHouseholdSize(data.preferred_household_size);
         if (data?.preferred_location_type) setLocationType(data.preferred_location_type);
         if (data?.preferred_family_type) setFamilyType(data.preferred_family_type);
@@ -97,7 +97,7 @@ const PreferredWorkEnvironment: React.FC = () => {
 
     try {
       const token = getAccessTokenFromCookies();
-      await grpcProfileService.updateHousehelpFields('', 'househelp', {
+      await grpcProfileService.updateServiceProviderFields('', 'service_provider', {
         preferred_household_size: householdSize,
         preferred_location_type: locationType,
         preferred_family_type: familyType,

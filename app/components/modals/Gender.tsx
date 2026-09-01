@@ -47,7 +47,7 @@ const Gender = () => {
                 throw new Error('Authentication token not found');
             }
 
-            await grpcProfileService.updateHousehelpFields('', 'househelp', {
+            await grpcProfileService.updateServiceProviderFields('', 'service_provider', {
                 gender: gender,
                 date_of_birth: dateOfBirth
             });

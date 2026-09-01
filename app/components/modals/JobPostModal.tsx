@@ -685,7 +685,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
               <div className="mb-3">
                 <h3 className="text-base font-bold text-gray-900 dark:text-white">Where is the job?</h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Househelps search by area, so this is how the right people find your listing.
+                  Service providers search by area, so this is how the right people find your listing.
                 </p>
               </div>
               <LocationPicker

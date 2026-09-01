@@ -5,6 +5,7 @@ import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { employmentService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { getStoredProfileType, getStoredUser } from '~/utils/authStorage';
+import { isServiceProviderProfileType } from '~/utils/profileType';
 
 type Employment = {
   id: string;
@@ -30,7 +31,7 @@ export default function HiringHistoryPage() {
   const isHousehelp = useMemo(() => {
     const storedUser = getStoredUser();
     const profileType = storedUser?.profile_type || getStoredProfileType();
-    return profileType === 'househelp';
+    return isServiceProviderProfileType(profileType);
   }, []);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function HiringHistoryPage() {
         setLoading(true);
         setError(null);
         const raw = isHousehelp
-          ? await employmentService.listByHousehelp('', limit, offset)
+          ? await employmentService.listByServiceProvider('', limit, offset)
           : await employmentService.listByHousehold('', limit, offset);
         if (cancelled) return;
         const data = Array.isArray(raw?.data || raw) ? (raw?.data || raw) : [];

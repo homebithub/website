@@ -4,7 +4,7 @@ import CustomSelect from "~/components/ui/CustomSelect";
 
 type ChangeHandler = (name: string, value: string) => void;
 
-export type HousehelpSearchFields = {
+export type ServiceProviderSearchFields = {
   status: string;
   househelp_type: string;
   gender: string;
@@ -34,14 +34,14 @@ const GENDERS = ["", "male", "female"];
 const NANNY_TYPES = ["", "dayburg", "sleeper"];
 
 interface Props {
-  fields: HousehelpSearchFields;
+  fields: ServiceProviderSearchFields;
   onChange: ChangeHandler;
   onSearch: () => void;
   onClose?: () => void; // used by mobile Sheet/Drawer
   onClear?: () => void; // optional clear handler
 }
 
-export default function HousehelpFilters({ fields, onChange, onSearch, onClose, onClear }: Props) {
+export default function ServiceProviderFilters({ fields, onChange, onSearch, onClose, onClear }: Props) {
   const inputBase =
     "w-full h-10 px-3 py-1.5 rounded-xl border-2 border-purple-200 bg-white text-gray-900 text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all";
 

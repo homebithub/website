@@ -137,10 +137,9 @@ export function markHiringRecordAttended(scope: string, kind: HiringAttentionKin
 export function hiringAttentionScope(profileId?: string | null, role?: string | null) {
   const id = String(profileId || '').trim();
   const rawRole = String(role || '').trim().toLowerCase();
-  // Navigation used service-provider/client while the pages used
-  // househelp/household, creating two independent ledgers for one profile.
+  // Normalize every deployed role alias to one ledger per profile.
   const normalizedRole = ['service-provider', 'svc_pvd', 'househelp'].includes(rawRole)
-    ? 'househelp'
+    ? 'service_provider'
     : ['client', 'clt', 'household'].includes(rawRole)
       ? 'household'
       : rawRole;

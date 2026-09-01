@@ -229,7 +229,7 @@ function normalizeSalaryRanges(
  * Hook to fetch all onboarding options from the backend
  * Uses the optimized GetAllOptions endpoint for a single request
  */
-export function useOnboardingOptions(profileType: 'househelp' | 'household'): UseOnboardingOptionsResult {
+export function useOnboardingOptions(profileType: 'service_provider' | 'household'): UseOnboardingOptionsResult {
   const [options, setOptions] = useState<OnboardingOptions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

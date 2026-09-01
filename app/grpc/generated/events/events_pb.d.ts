@@ -618,6 +618,9 @@ export class ShortlistAdded extends jspb.Message {
   hasTimestamp(): boolean;
   clearTimestamp(): ShortlistAdded;
 
+  getServiceProviderId(): string;
+  setServiceProviderId(value: string): ShortlistAdded;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ShortlistAdded.AsObject;
   static toObject(includeInstance: boolean, msg: ShortlistAdded): ShortlistAdded.AsObject;
@@ -632,6 +635,7 @@ export namespace ShortlistAdded {
     householdName: string;
     householdProfileUrl: string;
     timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    serviceProviderId: string;
   };
 }
 
@@ -647,6 +651,9 @@ export class ShortlistRemoved extends jspb.Message {
   hasTimestamp(): boolean;
   clearTimestamp(): ShortlistRemoved;
 
+  getServiceProviderId(): string;
+  setServiceProviderId(value: string): ShortlistRemoved;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ShortlistRemoved.AsObject;
   static toObject(includeInstance: boolean, msg: ShortlistRemoved): ShortlistRemoved.AsObject;
@@ -660,6 +667,7 @@ export namespace ShortlistRemoved {
     househelpId: string;
     householdName: string;
     timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    serviceProviderId: string;
   };
 }
 
@@ -814,6 +822,9 @@ export class ProfileFeatured extends jspb.Message {
   hasTimestamp(): boolean;
   clearTimestamp(): ProfileFeatured;
 
+  getServiceProviderId(): string;
+  setServiceProviderId(value: string): ProfileFeatured;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ProfileFeatured.AsObject;
   static toObject(includeInstance: boolean, msg: ProfileFeatured): ProfileFeatured.AsObject;
@@ -828,6 +839,7 @@ export namespace ProfileFeatured {
     featureDuration: string;
     profileUrl: string;
     timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    serviceProviderId: string;
   };
 }
 
@@ -1419,6 +1431,9 @@ export class HireRequestReceived extends jspb.Message {
   hasCreatedAt(): boolean;
   clearCreatedAt(): HireRequestReceived;
 
+  getServiceProviderId(): string;
+  setServiceProviderId(value: string): HireRequestReceived;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): HireRequestReceived.AsObject;
   static toObject(includeInstance: boolean, msg: HireRequestReceived): HireRequestReceived.AsObject;
@@ -1436,6 +1451,7 @@ export namespace HireRequestReceived {
     position: string;
     salary: string;
     createdAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    serviceProviderId: string;
   };
 }
 
@@ -1460,6 +1476,12 @@ export class HireRequestAccepted extends jspb.Message {
   hasAcceptedAt(): boolean;
   clearAcceptedAt(): HireRequestAccepted;
 
+  getServiceProviderId(): string;
+  setServiceProviderId(value: string): HireRequestAccepted;
+
+  getServiceProviderName(): string;
+  setServiceProviderName(value: string): HireRequestAccepted;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): HireRequestAccepted.AsObject;
   static toObject(includeInstance: boolean, msg: HireRequestAccepted): HireRequestAccepted.AsObject;
@@ -1476,6 +1498,8 @@ export namespace HireRequestAccepted {
     househelpName: string;
     position: string;
     acceptedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    serviceProviderId: string;
+    serviceProviderName: string;
   };
 }
 
@@ -1503,6 +1527,12 @@ export class HireRequestRejected extends jspb.Message {
   hasRejectedAt(): boolean;
   clearRejectedAt(): HireRequestRejected;
 
+  getServiceProviderId(): string;
+  setServiceProviderId(value: string): HireRequestRejected;
+
+  getServiceProviderName(): string;
+  setServiceProviderName(value: string): HireRequestRejected;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): HireRequestRejected.AsObject;
   static toObject(includeInstance: boolean, msg: HireRequestRejected): HireRequestRejected.AsObject;
@@ -1520,6 +1550,8 @@ export namespace HireRequestRejected {
     position: string;
     reason: string;
     rejectedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    serviceProviderId: string;
+    serviceProviderName: string;
   };
 }
 

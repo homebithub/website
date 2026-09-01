@@ -36,10 +36,10 @@ import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
-import { HousehelpCardDetails } from "~/components/listing/HousehelpCardDetails";
+import { ServiceProviderCardDetails } from "~/components/listing/ServiceProviderCardDetails";
 import { InteractionFilterControls } from "~/components/listing/InteractionFilterControls";
 import { matchesInteractionFilters } from "~/utils/interactionFilters";
-import { resolveHousehelpProfile } from '~/utils/househelpProfiles';
+import { resolveServiceProviderProfile } from '~/utils/serviceProviderProfiles';
 import { jobService as householdJobService } from '~/services/grpc/authServices';
 import JobPostModal from '~/components/modals/JobPostModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
@@ -47,7 +47,7 @@ import { SidePanel } from '~/components/SidePanel';
 import { useMarketplaceReadiness } from "~/hooks/useMarketplaceReadiness";
 import { MarketplaceReadinessBanner, MarketplaceReadinessRequiredModal } from "~/components/marketplace/MarketplaceReadiness";
 
-interface HousehelpSummary {
+interface ServiceProviderSummary {
   id?: string;
   user_id?: string;
   first_name?: string;
@@ -150,7 +150,7 @@ interface OpenForWorkListing {
   salary_frequency?: string;
   fit_score?: number;
   match_reasons?: string[];
-  househelp?: HousehelpSummary;
+  serviceProvider?: ServiceProviderSummary;
   owner_rating?: number;
   owner_review_count?: number;
 }
@@ -283,13 +283,13 @@ const describeActivity = (minutes: number) => {
   return days <= 14 ? `Active ${days}d ago` : `Inactive ${days}d`;
 };
 
-const deriveHousehelpResponsivenessBadge = (househelp?: HousehelpSummary): ResponsivenessBadge | null => {
-  if (!househelp) return null;
-  const responseRate = toNumericMetric((househelp as any)?.response_rate ?? (househelp as any)?.responseRate);
+const deriveServiceProviderResponsivenessBadge = (serviceProvider?: ServiceProviderSummary): ResponsivenessBadge | null => {
+  if (!serviceProvider) return null;
+  const responseRate = toNumericMetric((serviceProvider as any)?.response_rate ?? (serviceProvider as any)?.responseRate);
   const avgMinutes = toNumericMetric(
-    (househelp as any)?.average_response_minutes ?? (househelp as any)?.avg_response_minutes ?? (househelp as any)?.response_minutes_avg,
+    (serviceProvider as any)?.average_response_minutes ?? (serviceProvider as any)?.avg_response_minutes ?? (serviceProvider as any)?.response_minutes_avg,
   );
-  const lastActiveMinutes = minutesSince((househelp as any)?.last_active_at ?? (househelp as any)?.lastActiveAt);
+  const lastActiveMinutes = minutesSince((serviceProvider as any)?.last_active_at ?? (serviceProvider as any)?.lastActiveAt);
 
   if (responseRate != null) {
     if (responseRate >= 0.85) return { tone: "fast", label: "Replies super fast", detail: describeResponseRate(responseRate) };
@@ -309,8 +309,8 @@ const deriveHousehelpResponsivenessBadge = (househelp?: HousehelpSummary): Respo
     return { tone: "slow", label: "Quiet lately", detail: describeActivity(lastActiveMinutes) };
   }
 
-  const rating = toNumericMetric(househelp.rating);
-  const reviewCount = toNumericMetric(househelp.review_count);
+  const rating = toNumericMetric(serviceProvider.rating);
+  const reviewCount = toNumericMetric(serviceProvider.review_count);
   if (rating != null && reviewCount != null && rating >= 4 && reviewCount >= 3) {
     return { tone: "steady", label: "Highly rated", detail: `${rating.toFixed(1)}★ • ${reviewCount} reviews` };
   }
@@ -349,15 +349,15 @@ const compareNumbers = (a: number | null, b: number | null, direction: "asc" | "
 };
 
 const getListingBudgetValue = (listing: OpenForWorkListing): number | null => {
-  const max = toFiniteNumber(listing.salary_max ?? listing.househelp?.salary_expectation);
-  const min = toFiniteNumber(listing.salary_min ?? listing.househelp?.salary_expectation);
+  const max = toFiniteNumber(listing.salary_max ?? listing.serviceProvider?.salary_expectation);
+  const min = toFiniteNumber(listing.salary_min ?? listing.serviceProvider?.salary_expectation);
   if (max != null) return max;
   if (min != null) return min;
   return null;
 };
 
-const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): HousehelpSummary | undefined => {
-  const househelp = toRecord(raw);
+const normalizeServiceProvider = (raw: unknown, listing?: Record<string, any>): ServiceProviderSummary | undefined => {
+  const serviceProvider = toRecord(raw);
   const owner = toRecord(listing);
 
   // A listing carries who posted it even when it has no nested profile object,
@@ -366,17 +366,19 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
   // Message button with no one to message.
   //
   // Two endpoints name these differently. ListJobs resolves the poster into
-  // owner_* fields; ListOpenForWork joins the househelp's own user row and
-  // returns first_name / househelp_user_id. Reading only one shape left the
+  // owner_* fields; ListOpenForWork joins the provider's own user row and
+  // returns first_name plus canonical or legacy provider IDs.
   // other with a placeholder name and a Message button with nobody behind it,
   // so both are accepted.
   const ownerUserId = formatTextValue(owner?.owner_user_id)
+    || formatTextValue(owner?.service_provider_user_id)
     || formatTextValue(owner?.househelp_user_id) || undefined;
   const ownerFirstName = formatTextValue(owner?.owner_first_name)
     || formatTextValue(owner?.first_name) || undefined;
   const ownerLastName = formatTextValue(owner?.owner_last_name)
     || formatTextValue(owner?.last_name) || undefined;
   const ownerProfileId = formatTextValue(owner?.user_profile_id)
+    || formatTextValue(owner?.service_provider_profile_id)
     || formatTextValue(owner?.househelp_profile_id) || undefined;
 
   // The badge travels on the listing row rather than the nested profile: it is
@@ -388,7 +390,7 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
   const ownerPremium = owner?.premium === true;
   const ownerPremiumTrial = owner?.premium_is_trial === true;
 
-  if (!househelp) {
+  if (!serviceProvider) {
     if (!ownerUserId && !ownerFirstName) return undefined;
     return {
       id: ownerProfileId,
@@ -404,36 +406,36 @@ const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): Househ
     };
   }
 
-  const user = toRecord(househelp.user);
+  const user = toRecord(serviceProvider.user);
 
   return {
-    ...househelp,
-    id: formatTextValue(househelp.id) || ownerProfileId || undefined,
+    ...serviceProvider,
+    id: formatTextValue(serviceProvider.id) || ownerProfileId || undefined,
     // The nested profile wins when present; the listing's own owner fields are
     // the fallback rather than the other way round.
-    user_id: formatTextValue(househelp.user_id) || ownerUserId || undefined,
-    first_name: formatTextValue(househelp.first_name) || ownerFirstName || undefined,
-    last_name: formatTextValue(househelp.last_name) || ownerLastName || undefined,
+    user_id: formatTextValue(serviceProvider.user_id) || ownerUserId || undefined,
+    first_name: formatTextValue(serviceProvider.first_name) || ownerFirstName || undefined,
+    last_name: formatTextValue(serviceProvider.last_name) || ownerLastName || undefined,
     // Strictly true or absent. A truthy-but-not-true value (the string "false",
     // say) must not light this up, since it is a claim about someone's identity.
-    identity_verified: househelp.identity_verified === true || ownerVerified,
-    identity_verified_at: formatTextValue(househelp.identity_verified_at) || ownerVerifiedAt,
-    premium: househelp.premium === true || ownerPremium,
-    premium_is_trial: househelp.premium_is_trial === true || ownerPremiumTrial,
-    rating: toFiniteNumber(househelp.rating ?? owner?.rating ?? owner?.owner_rating),
-    review_count: toFiniteNumber(househelp.review_count ?? owner?.review_count ?? owner?.owner_review_count),
-    avatar_url: formatTextValue(househelp.avatar_url) || undefined,
-    photos: toStringArray(househelp.photos),
-    town: formatTextValue(househelp.town) || undefined,
+    identity_verified: serviceProvider.identity_verified === true || ownerVerified,
+    identity_verified_at: formatTextValue(serviceProvider.identity_verified_at) || ownerVerifiedAt,
+    premium: serviceProvider.premium === true || ownerPremium,
+    premium_is_trial: serviceProvider.premium_is_trial === true || ownerPremiumTrial,
+    rating: toFiniteNumber(serviceProvider.rating ?? owner?.rating ?? owner?.owner_rating),
+    review_count: toFiniteNumber(serviceProvider.review_count ?? owner?.review_count ?? owner?.owner_review_count),
+    avatar_url: formatTextValue(serviceProvider.avatar_url) || undefined,
+    photos: toStringArray(serviceProvider.photos),
+    town: formatTextValue(serviceProvider.town) || undefined,
     // Kept structured rather than flattened. formatTextValue would collapse the
     // location object to its `name`, which is just the ward, losing the
     // subcounty that makes a place recognisable.
-    location: (househelp.location && typeof househelp.location === "object")
-      ? househelp.location as Record<string, any>
-      : formatTextValue(househelp.location) || undefined,
-    years_of_experience: toFiniteNumber(househelp.years_of_experience),
-    salary_expectation: toFiniteNumber(househelp.salary_expectation),
-    salary_frequency: formatTextValue(househelp.salary_frequency) || undefined,
+    location: (serviceProvider.location && typeof serviceProvider.location === "object")
+      ? serviceProvider.location as Record<string, any>
+      : formatTextValue(serviceProvider.location) || undefined,
+    years_of_experience: toFiniteNumber(serviceProvider.years_of_experience),
+    salary_expectation: toFiniteNumber(serviceProvider.salary_expectation),
+    salary_frequency: formatTextValue(serviceProvider.salary_frequency) || undefined,
     user: user ? {
       ...user,
       id: formatTextValue(user.id) || undefined,
@@ -484,8 +486,8 @@ const normalizeOpenForWorkListing = (raw: unknown, fallbackId: string): OpenForW
       ? listing.listing_feature_groups
       : [],
     listing_features: Array.isArray(listing.listing_features) ? listing.listing_features : [],
-    househelp: normalizeHousehelp(
-      listing.househelp || listing.user_profile || listing.userProfile,
+    serviceProvider: normalizeServiceProvider(
+      listing.service_provider || listing.ServiceProvider || listing.serviceProvider || (listing as any).househelp || listing.user_profile || listing.userProfile,
       {
         ...listing,
         rating: listing.rating ?? listing.owner_rating,
@@ -564,7 +566,7 @@ export default function HouseholdJobsHome() {
   } = useSubscription(currentUserId);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const profileType = useMemo(() => getStoredCanonicalProfileType(), []);
-  const isServiceProvider = profileType === "househelp";
+  const isServiceProvider = profileType === "service_provider";
   const marketplaceReadiness = useMarketplaceReadiness(currentUserId, "household");
   const [readinessModalOpen, setReadinessModalOpen] = useState(false);
 
@@ -628,26 +630,26 @@ export default function HouseholdJobsHome() {
   const profileCompletionReminder = useProfileCompletionReminder(currentUserId || "", "household");
 
   const buildInviteTemplate = useCallback((listing: OpenForWorkListing, variant: "skills" | "availability" = "skills") => {
-    const househelp = listing.househelp || {};
-    const user = househelp.user || {};
-    const name = firstString(user.first_name, househelp.first_name, "there");
+    const serviceProvider = listing.serviceProvider || {};
+    const user = serviceProvider.user || {};
+    const name = firstString(user.first_name, serviceProvider.first_name, "there");
     const jobTypes = toStringArray(listing.job_types).map((type) => type.replace(/_/g, " ")).join(", ") || "your preferred role";
     const scheduleLabel = summarizeSchedule(listing.work_schedule) || "your ideal schedule";
-    const location = formatPlace(househelp.location, { town: househelp.town }) || "your area";
+    const location = formatPlace(serviceProvider.location, { town: serviceProvider.town }) || "your area";
     if (variant === "availability") {
       return `Hi ${name},\n\nWe have a family in ${location} hoping to hire a ${jobTypes} and they are ready as soon as ${formatDate(listing.available_from)}. Your availability and schedule (${scheduleLabel}) look like a great match. Can we chat this week?`;
     }
     return `Hi ${name},\n\nYour profile stood out—especially your ${jobTypes} experience. We think you'd be a perfect fit for a household in ${location} and would love to invite you to apply. Let me know when you're free to discuss details!`;
   }, []);
 
-  const { options: onboardingOptions } = useOnboardingOptions("househelp");
+  const { options: onboardingOptions } = useOnboardingOptions("service_provider");
 
-  const househelpUserIds = useMemo(
-    () => listings.map((listing) => firstString(listing.househelp?.user_id, listing.househelp?.user?.id)).filter(Boolean),
+  const serviceProviderUserIds = useMemo(
+    () => listings.map((listing) => firstString(listing.serviceProvider?.user_id, listing.serviceProvider?.user?.id)).filter(Boolean),
     [listings]
   );
 
-  const profilePhotos = useProfilePhotos(househelpUserIds);
+  const profilePhotos = useProfilePhotos(serviceProviderUserIds);
   const openListingsCount = useMemo(
     () => listings.filter((listing) => isOpenForWorkListingActive(listing)).length,
     [listings]
@@ -696,7 +698,7 @@ export default function HouseholdJobsHome() {
         contacted: contactedListingIds.has(String(listing.id)),
       })) return false;
       const minimum = Number(filters.minRating || 0);
-      const rating = Number(listing.househelp?.rating ?? 0);
+      const rating = Number(listing.serviceProvider?.rating ?? 0);
       return !minimum || rating >= minimum;
     }),
     [listings, isServiceProvider, filters, shortlistedListingIds, contactedListingIds],
@@ -926,8 +928,8 @@ export default function HouseholdJobsHome() {
         // This asked for listings without saying whose, and households' job
         // posts share a table with househelps' open-for-work posts — so a
         // household browsing "who is available" was shown job posts, its own
-        // among them, with the job's title sitting where a househelp's skills
-        // belong. owner: househelp restricts it to the people actually offering
+        // among them, with the job's title sitting where a provider's skills
+        // belong. The canonical owner filter restricts it to people offering
         // to work.
         //
         // Scored against this household's own job, so whoever suits what they
@@ -936,7 +938,7 @@ export default function HouseholdJobsHome() {
         // Chore, pet type, children age range, capacity and salary range are
         // all feature properties, and the pickers carry the catalogue's own
         // feature_properties ids, so they travel as one list — the same shape
-        // the househelp board sends.
+        // the service-provider board sends.
         const propertyIds = [
           filters.choreId,
           filters.petTypeId,
@@ -953,7 +955,7 @@ export default function HouseholdJobsHome() {
           limit,
           offset,
           status: "active",
-          owner: "househelp",
+          owner: "service_provider",
           match_candidates_for_profile: getStoredUserProfileId() || "",
           ...(filters.jobType ? { job_type_id: Number(filters.jobType) } : {}),
           ...(propertyIds.length > 0 ? { property_ids: propertyIds } : {}),
@@ -997,8 +999,8 @@ export default function HouseholdJobsHome() {
   }, [loading, hasMore]);
 
   const handleMessage = async (listing: OpenForWorkListing) => {
-    const househelpUserId = listing.househelp?.user_id || listing.househelp?.user?.id;
-    const househelpProfileId = listing.househelp?.id;
+    const serviceProviderUserId = listing.serviceProvider?.user_id || listing.serviceProvider?.user?.id;
+    const serviceProviderProfileId = listing.serviceProvider?.id;
 
     // Never return in silence.
     //
@@ -1015,7 +1017,7 @@ export default function HouseholdJobsHome() {
       setError("Please sign in again before starting a conversation.");
       return;
     }
-    if (!househelpUserId) {
+    if (!serviceProviderUserId) {
       setError("We couldn't work out who posted this listing, so we can't open a conversation. Please try again, or use View Profile.");
       return;
     }
@@ -1031,8 +1033,8 @@ export default function HouseholdJobsHome() {
     try {
       const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, {
         household_user_id: currentUserId,
-        househelp_user_id: househelpUserId,
-        househelp_profile_id: househelpProfileId,
+        service_provider_user_id: serviceProviderUserId,
+        service_provider_profile_id: serviceProviderProfileId,
         // The open-for-work post being answered, so this thread belongs to it.
         listing_id: listing.id,
       });
@@ -1045,7 +1047,7 @@ export default function HouseholdJobsHome() {
 
   const handleOpenInviteModal = (listing: OpenForWorkListing, options?: { template?: "skills" | "availability" }) => {
     if (contactedListingIds.has(String(listing.id))) {
-      setActionSuccess("You have already contacted this househelp about this listing. Open Inbox to continue the conversation.");
+      setActionSuccess("You have already contacted this service provider about this listing. Open Inbox to continue the conversation.");
       return;
     }
     if (!marketplaceReadiness.interactionAllowed) {
@@ -1079,7 +1081,7 @@ export default function HouseholdJobsHome() {
     event?.preventDefault();
     if (!selectedInviteListing) return;
     if (contactedListingIds.has(String(selectedInviteListing.id))) {
-      setInviteError("You have already contacted this househelp about this listing. Open Inbox to continue the conversation.");
+      setInviteError("You have already contacted this service provider about this listing. Open Inbox to continue the conversation.");
       return;
     }
     if (!currentUserId) {
@@ -1091,9 +1093,9 @@ export default function HouseholdJobsHome() {
       setInviteError("Please add a short message before sending.");
       return;
     }
-    const househelpUserId = firstString(selectedInviteListing.househelp?.user_id, selectedInviteListing.househelp?.user?.id);
-    if (!househelpUserId) {
-      setInviteError("We couldn’t reach this househelp right now.");
+    const serviceProviderUserId = firstString(selectedInviteListing.serviceProvider?.user_id, selectedInviteListing.serviceProvider?.user?.id);
+    if (!serviceProviderUserId) {
+      setInviteError("We couldn’t reach this service provider right now.");
       return;
     }
 
@@ -1102,12 +1104,12 @@ export default function HouseholdJobsHome() {
     try {
       const payload: StartConversationPayload = {
         household_user_id: currentUserId,
-        househelp_user_id: househelpUserId,
+        service_provider_user_id: serviceProviderUserId,
       };
       if (currentHouseholdProfileId) payload.household_profile_id = currentHouseholdProfileId;
-      if (selectedInviteListing.househelp?.id) payload.househelp_profile_id = selectedInviteListing.househelp.id;
+      if (selectedInviteListing.serviceProvider?.id) payload.service_provider_profile_id = selectedInviteListing.serviceProvider.id;
       // The open-for-work post being answered. A household approaching the same
-      // househelp about a different post gets a separate thread, which is what
+      // provider about a different post gets a separate thread, which is what
       // keeps "which job was this about" answerable later.
       if (selectedInviteListing.id) payload.listing_id = selectedInviteListing.id;
 
@@ -1127,9 +1129,9 @@ export default function HouseholdJobsHome() {
   };
 
   const handleViewProfile = (listing: OpenForWorkListing) => {
-    const profileId = listing.househelp?.id;
+    const profileId = listing.serviceProvider?.id;
     if (!profileId) return;
-    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&openForWorkId=${encodeURIComponent(listing.id)}`);
+    navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(profileId)}&openForWorkId=${encodeURIComponent(listing.id)}`);
   };
 
   const handleShortlist = async (listing: OpenForWorkListing) => {
@@ -1456,7 +1458,7 @@ export default function HouseholdJobsHome() {
                   onSave={saveNamed}
                   onApply={applySaved}
                   onDelete={deleteSaved}
-                  notifySubject="new househelps"
+                  notifySubject="new service providers"
                 />
               </div>
               </SidePanel>
@@ -1496,32 +1498,32 @@ export default function HouseholdJobsHome() {
                   {hasActiveFilters
                     ? isServiceProvider
                       ? "Try adjusting your filters or clear them to see more job listings."
-                      : "Try adjusting your filters or clear them to see more househelps."
+                      : "Try adjusting your filters or clear them to see more service providers."
                     : isServiceProvider
                       ? "When households create active job listings, they will appear here."
-                      : "When househelps mark themselves as open to work, their listings will appear here."}
+                      : "When service providers mark themselves as open to work, their listings will appear here."}
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
                 {sortedListings.map((listing) => {
-                  const househelp = listing.househelp || {};
-                  const user = househelp.user || {};
-                  const name = formatDisplayName(firstString(user.first_name, househelp.first_name), firstString(user.last_name, househelp.last_name), "Househelp");
+                  const serviceProvider = listing.serviceProvider || {};
+                  const user = serviceProvider.user || {};
+                  const name = formatDisplayName(firstString(user.first_name, serviceProvider.first_name), firstString(user.last_name, serviceProvider.last_name), "Service provider");
                   const jobTypes = toStringArray(listing.job_types);
                   const cardTitle = isServiceProvider ? (listing.title || jobTypes[0] || "Job listing") : name;
                   const initials = cardTitle.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || (isServiceProvider ? "JL" : "HW");
-                  const userId = firstString(househelp.user_id, user.id);
-                  const photos = toStringArray(househelp.photos);
-                  const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
+                  const userId = firstString(serviceProvider.user_id, user.id);
+                  const photos = toStringArray(serviceProvider.photos);
+                  const avatar = firstString(serviceProvider.avatar_url, photos[0], profilePhotos[userId]);
                   const scheduleLabel = summarizeSchedule(listing.work_schedule);
-                  const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
-                  const experienceYears = toFiniteNumber(househelp.years_of_experience);
+                  const location = formatPlaceOrFallback(serviceProvider.location, { town: serviceProvider.town });
+                  const experienceYears = toFiniteNumber(serviceProvider.years_of_experience);
                   const shortlisted = shortlistedListingIds.has(listing.id);
                   const contacted = contactedListingIds.has(String(listing.id));
-                  const responseBadge = deriveHousehelpResponsivenessBadge(listing.househelp);
+                  const responseBadge = deriveServiceProviderResponsivenessBadge(listing.serviceProvider);
                   const featureGroups = listingFeatureGroups(listing);
-                  const salaryLabel = formatSalary(listing.salary_min ?? househelp.salary_expectation, listing.salary_max, listing.salary_frequency || househelp.salary_frequency);
+                  const salaryLabel = formatSalary(listing.salary_min ?? serviceProvider.salary_expectation, listing.salary_max, listing.salary_frequency || serviceProvider.salary_frequency);
                   const worksWith = [listing.can_work_with_kids ? "children" : "", listing.can_work_with_pets ? "pets" : ""].filter(Boolean);
 
                   return (
@@ -1561,11 +1563,11 @@ export default function HouseholdJobsHome() {
                                     places it — an employer scanning a list reads
                                     the tick as part of the person, not as one
                                     more chip among the match scores. */}
-                                {househelp.identity_verified && (
-                                  <VerifiedBadge verifiedAt={househelp.identity_verified_at} />
+                                {serviceProvider.identity_verified && (
+                                  <VerifiedBadge verifiedAt={serviceProvider.identity_verified_at} />
                                 )}
-                                {househelp.premium && (
-                                  <PremiumBadge isTrial={househelp.premium_is_trial} />
+                                {serviceProvider.premium && (
+                                  <PremiumBadge isTrial={serviceProvider.premium_is_trial} />
                                 )}
                                 {typeof listing.fit_score === "number" && listing.fit_score >= 0 && (
                                   <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${matchScoreClasses(listing.fit_score)}`}>
@@ -1582,7 +1584,7 @@ export default function HouseholdJobsHome() {
                                 <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
                               )}
                               {!isServiceProvider && (
-                                <ListingRating rating={househelp.rating} reviewCount={househelp.review_count} className="mt-1" />
+                                <ListingRating rating={serviceProvider.rating} reviewCount={serviceProvider.review_count} className="mt-1" />
                               )}
                               {isServiceProvider && listing.description && (
                                 <p className="mt-1 line-clamp-2 text-sm text-gray-500 dark:text-gray-300">{listing.description}</p>
@@ -1598,7 +1600,7 @@ export default function HouseholdJobsHome() {
                                 </div>
                               )}
                             </div>
-                            <HousehelpCardDetails
+                            <ServiceProviderCardDetails
                               description={listing.description}
                               workTypes={jobTypes.map((type) => type.replace(/_/g, " "))}
                               availability={formatDate(listing.available_from)}
@@ -1718,10 +1720,10 @@ export default function HouseholdJobsHome() {
                                 {shortlisted ? "Saved" : "Save"}
                               </button>
                               <Link
-                                to={`/househelp/public-profile?profileId=${encodeURIComponent(String(listing.househelp?.id || ''))}&openForWorkId=${encodeURIComponent(String(listing.id))}`}
+                                to={`/service-provider/public-profile?profileId=${encodeURIComponent(String(listing.serviceProvider?.id || ''))}&openForWorkId=${encodeURIComponent(String(listing.id))}`}
                                 prefetch="intent"
                                 onPointerEnter={() => {
-                                  if (listing.househelp?.id) void resolveHousehelpProfile(String(listing.househelp.id), { identifierType: 'auto' });
+                                  if (listing.serviceProvider?.id) void resolveServiceProviderProfile(String(listing.serviceProvider.id), { identifierType: 'auto' });
                                 }}
                                 onClick={(event) => event.stopPropagation()}
                                 className="px-4 py-1.5 text-center text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
@@ -1777,9 +1779,9 @@ export default function HouseholdJobsHome() {
         </main>
       </PurpleThemeWrapper>
       {selectedListing && (() => {
-        const househelp = selectedListing.househelp || {};
-        const user = househelp.user || {};
-        const name = formatDisplayName(firstString(user.first_name, househelp.first_name), firstString(user.last_name, househelp.last_name), "Househelp");
+        const serviceProvider = selectedListing.serviceProvider || {};
+        const user = serviceProvider.user || {};
+        const name = formatDisplayName(firstString(user.first_name, serviceProvider.first_name), firstString(user.last_name, serviceProvider.last_name), "Service provider");
         const jobTypes = toStringArray(selectedListing.job_types);
         const modalTitle = isServiceProvider ? (selectedListing.title || jobTypes[0] || "Job listing") : name;
         const initials = name
@@ -1789,15 +1791,15 @@ export default function HouseholdJobsHome() {
           .map((part) => part[0])
           .join("")
           .toUpperCase();
-        const userId = firstString(househelp.user_id, user.id);
-        const photos = toStringArray(househelp.photos);
-        const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
+        const userId = firstString(serviceProvider.user_id, user.id);
+        const photos = toStringArray(serviceProvider.photos);
+        const avatar = firstString(serviceProvider.avatar_url, photos[0], profilePhotos[userId]);
         const scheduleLabel = summarizeSchedule(selectedListing.work_schedule);
-        const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
-        const experienceYears = toFiniteNumber(househelp.years_of_experience);
+        const location = formatPlaceOrFallback(serviceProvider.location, { town: serviceProvider.town });
+        const experienceYears = toFiniteNumber(serviceProvider.years_of_experience);
         const shortlisted = shortlistedListingIds.has(selectedListing.id);
         const isOpen = isOpenForWorkListingActive(selectedListing);
-        const responseBadge = deriveHousehelpResponsivenessBadge(selectedListing.househelp);
+        const responseBadge = deriveServiceProviderResponsivenessBadge(selectedListing.serviceProvider);
         const featureGroups = listingFeatureGroups(selectedListing);
 
         return (
@@ -1878,9 +1880,9 @@ export default function HouseholdJobsHome() {
                           <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Salary</p>
                           <p className="mt-1">
                             {formatSalary(
-                              selectedListing.salary_min ?? househelp.salary_expectation,
+                              selectedListing.salary_min ?? serviceProvider.salary_expectation,
                               selectedListing.salary_max,
-                              selectedListing.salary_frequency || househelp.salary_frequency
+                              selectedListing.salary_frequency || serviceProvider.salary_frequency
                             )}
                           </p>
                         </div>
@@ -1941,10 +1943,10 @@ export default function HouseholdJobsHome() {
                 {!isServiceProvider && (
                   <>
                     <Link
-                      to={`/househelp/public-profile?profileId=${encodeURIComponent(String(selectedListing.househelp?.id || ''))}&openForWorkId=${encodeURIComponent(String(selectedListing.id))}`}
+                      to={`/service-provider/public-profile?profileId=${encodeURIComponent(String(selectedListing.serviceProvider?.id || ''))}&openForWorkId=${encodeURIComponent(String(selectedListing.id))}`}
                       prefetch="intent"
                       onPointerEnter={() => {
-                        if (selectedListing.househelp?.id) void resolveHousehelpProfile(String(selectedListing.househelp.id), { identifierType: 'auto' });
+                        if (selectedListing.serviceProvider?.id) void resolveServiceProviderProfile(String(selectedListing.serviceProvider.id), { identifierType: 'auto' });
                       }}
                       className="px-4 py-2 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
                     >
@@ -1979,24 +1981,24 @@ export default function HouseholdJobsHome() {
         );
       })()}
       {selectedInviteListing && (() => {
-        const househelp = selectedInviteListing.househelp || {};
-        const user = househelp.user || {};
-        const name = formatDisplayName(firstString(user.first_name, househelp.first_name), firstString(user.last_name, househelp.last_name), 'Househelp');
-        const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
+        const serviceProvider = selectedInviteListing.serviceProvider || {};
+        const user = serviceProvider.user || {};
+        const name = formatDisplayName(firstString(user.first_name, serviceProvider.first_name), firstString(user.last_name, serviceProvider.last_name), 'Service provider');
+        const location = formatPlaceOrFallback(serviceProvider.location, { town: serviceProvider.town });
         return (
           <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseInviteModal} />
             <div className="relative w-full sm:max-w-lg bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Invite househelp</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Invite service provider</p>
                   <h2 className="flex items-center gap-1.5 text-lg font-bold text-gray-900 dark:text-white">
                     {name}
-                    {househelp.identity_verified && (
-                      <VerifiedBadge verifiedAt={househelp.identity_verified_at} showLabel />
+                    {serviceProvider.identity_verified && (
+                      <VerifiedBadge verifiedAt={serviceProvider.identity_verified_at} showLabel />
                     )}
-                    {househelp.premium && (
-                      <PremiumBadge isTrial={househelp.premium_is_trial} showLabel />
+                    {serviceProvider.premium && (
+                      <PremiumBadge isTrial={serviceProvider.premium_is_trial} showLabel />
                     )}
                   </h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {location}</p>
@@ -2080,7 +2082,7 @@ export default function HouseholdJobsHome() {
                 <h2 id="active-jobs-title" className="mt-1 text-lg font-bold text-gray-900 dark:text-white">
                   {activeHouseholdJobs.length} active {activeHouseholdJobs.length === 1 ? "job" : "jobs"}
                 </h2>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Manage the roles currently visible to househelps.</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Manage the roles currently visible to service providers.</p>
               </div>
               <button type="button" onClick={() => setShowActiveJobs(false)} className="rounded-full border border-purple-200 p-2 text-purple-700 hover:bg-purple-50 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-500/10" aria-label="Close active job listings">
                 <X className="h-5 w-5" />
@@ -2196,7 +2198,7 @@ export default function HouseholdJobsHome() {
         open={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
         status={subscriptionStatus}
-        actionLabel="message househelps"
+        actionLabel="message service providers"
         plansHref="/plans"
       />
       <MarketplaceReadinessRequiredModal

@@ -95,7 +95,7 @@ export default function AccountReviewsPage() {
                 You have not written a review yet
               </h2>
               <p className="mx-auto mt-2 max-w-md text-xs text-gray-500 dark:text-gray-400">
-                Open a former household or househelp profile after an engagement, then choose
+                Open a former household or service provider profile after an engagement, then choose
                 “Leave a review”.
               </p>
             </PurpleCard>

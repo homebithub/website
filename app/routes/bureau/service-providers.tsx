@@ -15,15 +15,15 @@ type LinkFlowState = {
     expires_at?: string;
     next_resend_at?: string;
   } | null;
-  househelp?: {
+  service_provider?: {
     first_name?: string;
     last_name?: string;
     phone?: string;
   } | null;
 } | null;
 
-export default function BureauHousehelps() {
-  const [househelps, setHousehelps] = useState<any[]>([]);
+export default function BureauServiceProviders() {
+  const [serviceProviders, setServiceProviders] = useState<any[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState("");
   const [bureauId, setBureauId] = useState<string | null>(null);
@@ -37,11 +37,11 @@ export default function BureauHousehelps() {
   const [linkError, setLinkError] = useState("");
   const [linkSuccess, setLinkSuccess] = useState("");
 
-  const loadBureauHousehelps = async () => {
+  const loadBureauServiceProviders = async () => {
     const token = getStoredAccessToken();
     if (!token) {
       setListLoading(false);
-      setListError("Please log in to manage bureau househelps.");
+      setListError("Please log in to manage bureau service providers.");
       return;
     }
 
@@ -54,30 +54,30 @@ export default function BureauHousehelps() {
       setBureauId(resolvedBureauId);
 
       if (!resolvedBureauId) {
-        setHousehelps([]);
+        setServiceProviders([]);
         setListError("Could not resolve the authenticated bureau profile.");
         return;
       }
 
-      const result = await grpcProfileService.getHousehelpsByBureau(resolvedBureauId, 20, 0);
-      setHousehelps(Array.isArray(result?.data) ? result.data : []);
+      const result = await grpcProfileService.getServiceProvidersByBureau(resolvedBureauId, 20, 0);
+      setServiceProviders(Array.isArray(result?.data) ? result.data : []);
     } catch (error: any) {
-      setHousehelps([]);
-      setListError(error?.message || "Failed to load bureau househelps.");
+      setServiceProviders([]);
+      setListError(error?.message || "Failed to load bureau service providers.");
     } finally {
       setListLoading(false);
     }
   };
 
   useEffect(() => {
-    loadBureauHousehelps();
+    loadBureauServiceProviders();
   }, []);
 
   const handleInitiateLink = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!linkPhone.trim()) {
-      setLinkError("Enter the househelp phone number first.");
+      setLinkError("Enter the service provider phone number first.");
       return;
     }
 
@@ -86,7 +86,7 @@ export default function BureauHousehelps() {
     setLinkSuccess("");
 
     try {
-      const result = await bureauService.initiateHousehelpLink(linkPhone.trim());
+      const result = await bureauService.initiateServiceProviderLink(linkPhone.trim());
       setLinkState(result);
       setLinkOtp("");
       setLinkSuccess(result?.message || "Verification code sent.");
@@ -107,7 +107,7 @@ export default function BureauHousehelps() {
       return;
     }
     if (!linkOtp.trim()) {
-      setLinkError("Enter the OTP shared by the househelp.");
+      setLinkError("Enter the OTP shared by the service provider.");
       return;
     }
 
@@ -116,12 +116,12 @@ export default function BureauHousehelps() {
     setLinkSuccess("");
 
     try {
-      const result = await bureauService.verifyHousehelpLink(requestId, linkOtp.trim());
-      setLinkSuccess(result?.message || "Househelp linked successfully.");
+      const result = await bureauService.verifyServiceProviderLink(requestId, linkOtp.trim());
+      setLinkSuccess(result?.message || "Service provider linked successfully.");
       setLinkState(null);
       setLinkPhone("");
       setLinkOtp("");
-      await loadBureauHousehelps();
+      await loadBureauServiceProviders();
     } catch (error: any) {
       setLinkError(error?.message || "Failed to verify the OTP.");
     } finally {
@@ -141,7 +141,7 @@ export default function BureauHousehelps() {
     setLinkSuccess("");
 
     try {
-      const result = await bureauService.resendHousehelpLinkOTP(requestId);
+      const result = await bureauService.resendServiceProviderLinkOTP(requestId);
       setLinkState(result);
       setLinkSuccess(result?.message || "OTP resent successfully.");
     } catch (error: any) {
@@ -151,31 +151,31 @@ export default function BureauHousehelps() {
     }
   };
 
-  const linkedHousehelpName = [linkState?.househelp?.first_name, linkState?.househelp?.last_name]
+  const linkedServiceProviderName = [linkState?.service_provider?.first_name, linkState?.service_provider?.last_name]
     .filter(Boolean)
     .join(" ");
 
   return (
     <div className="p-4 sm:p-6">
-      <h2 className="text-lg font-bold text-primary dark:text-primary-300">Househelps</h2>
+      <h2 className="text-lg font-bold text-primary dark:text-primary-300">Service providers</h2>
       <div className="mb-4 mt-6 flex items-center justify-between">
-        <div className="text-gray-500 dark:text-gray-300">Manage househelps registered with your bureau.</div>
+        <div className="text-gray-500 dark:text-gray-300">Manage service providers registered with your bureau.</div>
         <div className="flex gap-2">
           {bureauId && (
             <Link
               to={`/signup?bureauId=${bureauId}`}
               className="btn-primary flex items-center justify-center"
             >
-              Create New (Househelp)
+              Create New (Service provider)
             </Link>
           )}
         </div>
       </div>
 
       <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-950">
-        <div className="font-semibold">Link an existing househelp with OTP verification</div>
+        <div className="font-semibold">Link an existing service provider with OTP verification</div>
         <p className="mt-1 text-amber-900">
-          Homebit sends the verification code to the househelp phone number. Ask the househelp to share the code with your bureau before you confirm the link.
+          Homebit sends the verification code to the service provider phone number. Ask the service provider to share the code with your bureau before you confirm the link.
         </p>
 
         <form className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]" onSubmit={handleInitiateLink}>
@@ -201,10 +201,10 @@ export default function BureauHousehelps() {
         {linkState?.link_request?.id ? (
           <div className="mt-4 rounded-2xl border border-amber-300 bg-white p-4">
             <div className="text-xs font-semibold text-gray-900">
-              {linkedHousehelpName || "Existing househelp found"}
+              {linkedServiceProviderName || "Existing service provider found"}
             </div>
             <div className="mt-1 text-xs text-gray-600">
-              OTP sent to {linkState?.verification?.target || linkState?.househelp?.phone || linkPhone}.
+              OTP sent to {linkState?.verification?.target || linkState?.service_provider?.phone || linkPhone}.
             </div>
             {linkState?.verification?.expires_at ? (
               <div className="mt-1 text-xs text-gray-500">
@@ -217,7 +217,7 @@ export default function BureauHousehelps() {
                 type="text"
                 value={linkOtp}
                 onChange={(event) => setLinkOtp(event.target.value)}
-                placeholder="Enter OTP from househelp"
+                placeholder="Enter OTP from service provider"
                 className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-xs text-gray-900 outline-none transition focus:border-amber-500"
               />
               <button
@@ -257,11 +257,11 @@ export default function BureauHousehelps() {
 
       <div className="rounded-2xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white p-6 text-gray-600 shadow-lg">
         {listLoading ? (
-          <div>Loading bureau househelps...</div>
+          <div>Loading bureau service providers...</div>
         ) : listError ? (
           <div className="text-red-600">{listError}</div>
-        ) : househelps.length === 0 ? (
-          <div>No househelps are currently linked to this bureau.</div>
+        ) : serviceProviders.length === 0 ? (
+          <div>No service providers are currently linked to this bureau.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs">
@@ -274,16 +274,20 @@ export default function BureauHousehelps() {
                 </tr>
               </thead>
               <tbody>
-                {househelps.map((item: any) => (
-                  <tr key={item?.Househelp?.id || item?.User?.id} className="border-b border-purple-100 last:border-b-0">
+                {serviceProviders.map((item: any) => {
+                  const provider = item?.ServiceProvider ?? item?.service_provider ?? item?.Househelp ?? item?.househelp ?? {};
+                  const user = item?.User ?? item?.user ?? {};
+                  return (
+                  <tr key={provider?.id || user?.id} className="border-b border-purple-100 last:border-b-0">
                     <td className="py-2 pr-4 font-medium text-gray-900">
-                      {[item?.User?.first_name, item?.User?.last_name].filter(Boolean).join(" ") || "Unnamed househelp"}
+                      {[user?.first_name, user?.last_name].filter(Boolean).join(" ") || "Unnamed service provider"}
                     </td>
-                    <td className="py-2 pr-4">{item?.User?.phone || "-"}</td>
-                    <td className="py-2 pr-4">{item?.Househelp?.current_location || item?.Househelp?.location || "-"}</td>
-                    <td className="py-2 pr-4">{item?.User?.status || item?.Househelp?.profile_status || "-"}</td>
+                    <td className="py-2 pr-4">{user?.phone || "-"}</td>
+                    <td className="py-2 pr-4">{provider?.current_location || provider?.location || "-"}</td>
+                    <td className="py-2 pr-4">{user?.status || provider?.profile_status || "-"}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

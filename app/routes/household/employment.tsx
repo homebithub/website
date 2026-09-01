@@ -2,12 +2,12 @@ import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router";
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
-import HousehelpFilters, { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
+import ServiceProviderFilters, { type ServiceProviderSearchFields } from "~/components/features/ServiceProviderFilters";
 import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 
-// Option constants now live within HousehelpFilters
+// Option constants now live within ServiceProviderFilters
 
-const initialFields: HousehelpSearchFields = {
+const initialFields: ServiceProviderSearchFields = {
   status: "active",
   househelp_type: "",
   gender: "",
@@ -28,7 +28,7 @@ const initialFields: HousehelpSearchFields = {
 
 export default function HouseholdEmployment() {
   const navigate = useNavigate();
-  const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
+  const [fields, setFields] = useState<ServiceProviderSearchFields>(initialFields);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -128,7 +128,7 @@ export default function HouseholdEmployment() {
           setShortlistProfilesLoading(false);
           return;
         }
-        const raw = await grpcProfileService.searchMultipleWithUser('', 'househelp', { profile_ids });
+        const raw = await grpcProfileService.searchMultipleWithUser('', 'service_provider', { profile_ids });
         const data = raw?.data?.data || raw?.data || raw;
         setShortlistProfiles(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -144,11 +144,11 @@ export default function HouseholdEmployment() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFields((prev: HousehelpSearchFields) => ({ ...prev, [name]: value }));
+    setFields((prev: ServiceProviderSearchFields) => ({ ...prev, [name]: value }));
   };
 
   const handleFieldChange = (name: string, value: string) => {
-    setFields((prev: HousehelpSearchFields) => ({ ...prev, [name]: value }));
+    setFields((prev: ServiceProviderSearchFields) => ({ ...prev, [name]: value }));
   };
 
   const handleSearch = async (e?: React.FormEvent) => {
@@ -164,7 +164,7 @@ export default function HouseholdEmployment() {
       
       // If no token, show a helpful message instead of error
       if (!token) {
-        setError("Please log in to search for househelps");
+        setError("Please log in to search for service providers");
         setLoading(false);
         return;
       }
@@ -183,7 +183,7 @@ export default function HouseholdEmployment() {
           available_from: fields.available_from || undefined,
         }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
       );
-      const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, 0);
+      const data = await grpcProfileService.searchServiceProviders('', 'household', payload, limit, 0);
       const rows = data?.data || data?.data?.data || [];
       setResults(rows);
       setHasMore(rows.length === limit);
@@ -215,7 +215,7 @@ export default function HouseholdEmployment() {
           available_from: fields.available_from || undefined,
         }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
       );
-      const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, nextOffset);
+      const data = await grpcProfileService.searchServiceProviders('', 'household', payload, limit, nextOffset);
       const rows = data?.data || data?.data?.data || [];
       setResults(prev => [...prev, ...rows]);
       setOffset(nextOffset);
@@ -250,7 +250,7 @@ export default function HouseholdEmployment() {
           className={`px-6 py-1 font-semibold text-sm focus:outline-none transition border-b-2 ${activeTab === 'find' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
           onClick={() => handleTabChange('find')}
         >
-          Find a househelp
+          Find a service provider
         </button>
         <button
           className={`ml-2 px-6 py-1 font-semibold text-sm focus:outline-none transition border-b-2 relative flex items-center ${activeTab === 'shortlist' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
@@ -279,7 +279,7 @@ export default function HouseholdEmployment() {
 
             {/* Sidebar (desktop) */}
             <div className="hidden sm:block shrink-0">
-              <HousehelpFilters
+              <ServiceProviderFilters
                 fields={fields}
                 onChange={handleFieldChange}
                 onSearch={() => handleSearch()}
@@ -292,19 +292,19 @@ export default function HouseholdEmployment() {
               {loading && <div className="text-center py-8">Loading...</div>}
               {error && <div className="bg-red-100 text-red-700 px-4 py-1 rounded mb-4 text-center">{error}</div>}
               <div className="space-y-4">
-                {!hasSearched && !loading && <div className="text-center text-gray-500">Customize your search to find househelps.</div>}
-                {hasSearched && results.length === 0 && !loading && <div className="text-center text-gray-500">No househelps found.</div>}
+                {!hasSearched && !loading && <div className="text-center text-gray-500">Customize your search to find service providers.</div>}
+                {hasSearched && results.length === 0 && !loading && <div className="text-center text-gray-500">No service providers found.</div>}
                 {results.map((h) => (
                   <div
                     key={h.id}
                     className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-xl p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
-                    onClick={() => navigate(`/household/househelp/profile?profileId=${encodeURIComponent(h.profile_id)}`, { state: { profileId: h.profile_id } })}
+                    onClick={() => navigate(`/household/service-provider/profile?profileId=${encodeURIComponent(h.profile_id)}`, { state: { profileId: h.profile_id } })}
                     role="button"
                     tabIndex={0}
                     onKeyDown={e => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        navigate(`/household/househelp/profile?profileId=${encodeURIComponent(h.profile_id)}`, { state: { profileId: h.profile_id } });
+                        navigate(`/household/service-provider/profile?profileId=${encodeURIComponent(h.profile_id)}`, { state: { profileId: h.profile_id } });
                       }
                     }}
                     aria-label={`View profile of ${h.first_name} ${h.last_name}`}
@@ -345,7 +345,7 @@ export default function HouseholdEmployment() {
             <div className="fixed inset-0 z-40 sm:hidden">
               <div className="absolute inset-0 bg-black/40" onClick={() => setFiltersOpen(false)} />
               <div className="absolute inset-y-0 left-0 w-[85%] max-w-xs p-4">
-                <HousehelpFilters
+                <ServiceProviderFilters
                   fields={fields}
                   onChange={handleFieldChange}
                   onSearch={() => { setFiltersOpen(false); handleSearch(); }}
@@ -364,21 +364,21 @@ export default function HouseholdEmployment() {
             <div className="text-center py-12">
               <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
               <div className="text-gray-500 text-base mb-2">Your shortlist is empty</div>
-              <div className="text-gray-400 text-xs">Start browsing househelps and add them to your shortlist to see them here.</div>
+              <div className="text-gray-400 text-xs">Start browsing service providers and add them to your shortlist to see them here.</div>
             </div>
           )}
           {!shortlistProfilesLoading && shortlistProfiles.length === 0 && shortlist.length > 0 && (
             <div className="text-center py-12">
               <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
               <div className="text-gray-500 text-base mb-2">No profiles found</div>
-              <div className="text-gray-400 text-xs">The househelps in your shortlist may no longer be available.</div>
+              <div className="text-gray-400 text-xs">The service providers in your shortlist may no longer be available.</div>
             </div>
           )}
           {shortlistProfiles.map((h) => (
             <div
               key={h.id}
               className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-xl p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
-              onClick={() => navigate(`/household/househelp/contact?profileId=${encodeURIComponent(h.profile_id)}&tab=shortlist`, {
+              onClick={() => navigate(`/household/service-provider/contact?profileId=${encodeURIComponent(h.profile_id)}&tab=shortlist`, {
                 state: { profileId: h.profile_id },
               })}
               role="button"
@@ -386,7 +386,7 @@ export default function HouseholdEmployment() {
               onKeyDown={e => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  navigate(`/household/househelp/contact?profileId=${encodeURIComponent(h.profile_id)}&tab=shortlist`, {
+                  navigate(`/household/service-provider/contact?profileId=${encodeURIComponent(h.profile_id)}&tab=shortlist`, {
                     state: { profileId: h.profile_id },
                   });
                 }

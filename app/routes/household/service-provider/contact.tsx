@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from "react";
 import { useLocation, useSearchParams, useNavigate } from "react-router";
 import {ArrowLeftIcon, HeartIcon, TrashIcon} from "@heroicons/react/24/outline";
-import ReadOnlyUserImageCarousel from "~/components/features/household/househelp/ReadOnlyUserImageCarousel";
-import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
+import ReadOnlyUserImageCarousel from "~/components/features/household/service-provider/ReadOnlyUserImageCarousel";
+import ImageLightbox from "~/components/features/household/service-provider/ImageLightbox";
 import { profileService as grpcProfileService, profileViewService, shortlistService, imageService } from '~/services/grpc/authServices';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
@@ -10,7 +10,7 @@ import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { formatOnboardingAmountWithFrequency } from "~/utils/onboardingCompensation";
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 
-export default function HousehelpProfile() {
+export default function ServiceProviderProfile() {
     const [shortlistLoading, setShortlistLoading] = useState(false);
     const [shortlistDisabled, setShortlistDisabled] = useState(false);
     const [shortlistDisabledReason, setShortlistDisabledReason] = useState<string | null>(null);
@@ -24,9 +24,9 @@ export default function HousehelpProfile() {
         setActionError(null);
         setSuccessMessage(null);
         try {
-            await shortlistService.createShortlist('', 'househelp', {
+            await shortlistService.createShortlist('', 'service_provider', {
                 profile_id: profileId,
-                profile_type: 'househelp',
+                profile_type: 'service_provider',
             });
             setShortlisted(true);
             setShortlistDisabled(true);
@@ -88,7 +88,7 @@ export default function HousehelpProfile() {
       }
 
       if (!changed) return;
-      navigate(`/household/househelp/contact?${nextParams.toString()}`, {
+      navigate(`/household/service-provider/contact?${nextParams.toString()}`, {
         replace: true,
         state: location.state,
       });
@@ -105,7 +105,7 @@ export default function HousehelpProfile() {
                 // lands. A shortlist check and a view-tracking call used to run
                 // ahead of it, so the person waited through two requests that
                 // render nothing before the one they came for even started.
-                const profileData = await grpcProfileService.getHousehelpProfileWithUser(profileId);
+                const profileData = await grpcProfileService.getServiceProviderProfileWithUser(profileId);
                 setData(profileData);
                 setLoading(false);
 
@@ -123,7 +123,7 @@ export default function HousehelpProfile() {
                 } catch { /* ignore */ }
 
                 try {
-                    await profileViewService.recordView('', profileId, 'househelp');
+                    await profileViewService.recordView('', profileId, 'service_provider');
                 } catch (err) {
                     console.warn('Failed to record profile view:', err);
                 }
@@ -214,7 +214,8 @@ export default function HousehelpProfile() {
       );
     }
 
-    const {User, Househelp} = data;
+    const User = data.User ?? data.user ?? {};
+    const ServiceProvider = data.ServiceProvider ?? data.service_provider ?? data.Househelp ?? data.househelp ?? {};
     const contactDetails = {
       phone: User?.phone || undefined,
       email: User?.email || undefined,
@@ -299,7 +300,7 @@ export default function HousehelpProfile() {
             </div>
           <div className="flex flex-col items-center w-full mb-6 mt-2 gap-2">
             <img
-              src={Househelp.avatar_url || "https://placehold.co/96x96?text=HH"}
+              src={ServiceProvider.avatar_url || "https://placehold.co/96x96?text=SP"}
               alt={User.first_name}
               className="w-24 h-24 rounded-full object-cover bg-gray-200 mb-3"
             />
@@ -338,7 +339,7 @@ export default function HousehelpProfile() {
 
           {/* Verified + Country */}
           <div className="flex gap-2 mb-4">
-            {Househelp.verified && (
+            {ServiceProvider.verified && (
               <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Verified</span>
             )}
             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{User.country}</span>
@@ -382,54 +383,54 @@ export default function HousehelpProfile() {
               </div>
 
 
-              {/* Househelp fields */}
+              {/* ServiceProvider fields */}
               <div>
                 <div className="text-gray-400 ">Bio</div>
-                <div className="text-xs text-slate-900  font-medium">{Househelp.bio || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{ServiceProvider.bio || '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Address</div>
-                <div className="text-xs text-slate-900  font-medium">{Househelp.address || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{ServiceProvider.address || '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Status</div>
-                <div className="text-xs text-slate-900  font-medium">{Househelp.status || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{ServiceProvider.status || '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Verified</div>
-                <div className="text-xs text-slate-900  font-medium">{Househelp.verified ? 'Yes' : 'No'}</div>
+                <div className="text-xs text-slate-900  font-medium">{ServiceProvider.verified ? 'Yes' : 'No'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Rating</div>
-                <div className="text-xs text-slate-900  font-medium">{Househelp.rating} ({Househelp.review_count} reviews)</div>
+                <div className="text-xs text-slate-900  font-medium">{ServiceProvider.rating} ({ServiceProvider.review_count} reviews)</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Skills</div>
-                <div className="text-xs text-slate-900  font-medium">{Array.isArray(Househelp.skills) && Househelp.skills.length > 0 ? Househelp.skills.join(', ') : '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Array.isArray(ServiceProvider.skills) && ServiceProvider.skills.length > 0 ? ServiceProvider.skills.join(', ') : '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Experience</div>
-                <div className="text-xs text-slate-900  font-medium">{Househelp.experience || 0} years</div>
+                <div className="text-xs text-slate-900  font-medium">{ServiceProvider.experience || 0} years</div>
               </div>
 
               <div>
                 <div className="text-gray-400 ">Languages</div>
-                <div className="text-xs text-slate-900  font-medium">{Array.isArray(Househelp.languages) && Househelp.languages.length > 0 ? Househelp.languages.join(', ') : '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Array.isArray(ServiceProvider.languages) && ServiceProvider.languages.length > 0 ? ServiceProvider.languages.join(', ') : '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Specialities</div>
-                <div className="text-xs text-slate-900  font-medium">{Array.isArray(Househelp.specialities) && Househelp.specialities.length > 0 ? Househelp.specialities.join(', ') : '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Array.isArray(ServiceProvider.specialities) && ServiceProvider.specialities.length > 0 ? ServiceProvider.specialities.join(', ') : '-'}</div>
               </div>
 
 
 
               <div>
                 <div className="text-gray-400 ">Salary Expectation</div>
-                <div className="text-xs text-slate-900  font-medium">{Househelp.salary_expectation ? `KES ${Househelp.salary_expectation}` : '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{ServiceProvider.salary_expectation ? `KES ${ServiceProvider.salary_expectation}` : '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Salary Frequency</div>
-                <div className="text-xs text-slate-900  font-medium">{Househelp.salary_frequency || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{ServiceProvider.salary_frequency || '-'}</div>
               </div>
 
             </div>

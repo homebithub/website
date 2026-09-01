@@ -16,6 +16,11 @@ service ProfileService {
   rpc GetHousehelpByUserID(UserIdRequest) returns (JsonResponse);
   rpc GetHousehelpProfileWithUser(IdRequest) returns (JsonResponse);
   rpc SearchHousehelps(SearchRequest) returns (JsonResponse);
+  rpc GetCurrentServiceProviderProfile(UserIdRequest) returns (JsonResponse);
+  rpc GetServiceProviderByID(IdRequest) returns (JsonResponse);
+  rpc GetServiceProviderByUserID(UserIdRequest) returns (JsonResponse);
+  rpc GetServiceProviderProfileWithUser(IdRequest) returns (JsonResponse);
+  rpc SearchServiceProviders(SearchRequest) returns (JsonResponse);
 }
 
 message IdRequest {

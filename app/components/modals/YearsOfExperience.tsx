@@ -49,7 +49,7 @@ const YearsOfExperience = () => {
 
             const finalYears = years === 6 ? parseInt(customYears, 10) : years;
             
-            await grpcProfileService.updateHousehelpFields('', 'househelp', {
+            await grpcProfileService.updateServiceProviderFields('', 'service_provider', {
                 years_of_experience: finalYears
             });
             

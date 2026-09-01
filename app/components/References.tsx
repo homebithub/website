@@ -45,7 +45,7 @@ const References: React.FC = () => {
         const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        const data = await grpcProfileService.getCurrentServiceProviderProfile('');
         if (data?.reference) {
           try {
             const refs = typeof data.reference === 'string' ? JSON.parse(data.reference) : data.reference;
@@ -128,7 +128,7 @@ const References: React.FC = () => {
 
     try {
       const token = getAccessTokenFromCookies();
-      await grpcProfileService.updateHousehelpFields('', 'househelp', {
+      await grpcProfileService.updateServiceProviderFields('', 'service_provider', {
         references: JSON.stringify(validReferences),
       });
 

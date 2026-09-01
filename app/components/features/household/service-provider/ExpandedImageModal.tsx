@@ -1,5 +1,5 @@
 import React from "react";
-import { resolveHousehelpImageUrl } from "./imageUrl";
+import { resolveServiceProviderImageUrl } from "./imageUrl";
 
 interface ExpandedImageModalProps {
   images: any[];
@@ -29,7 +29,7 @@ export default function ExpandedImageModal({
       </button>
       <div className="relative w-full sm:max-w-2xl h-[70vh] flex items-center justify-center animate-slide-up sm:mx-4">
         <img
-          src={resolveHousehelpImageUrl(images[currentIdx])}
+          src={resolveServiceProviderImageUrl(images[currentIdx])}
           alt={`User image ${currentIdx + 1}`}
           className="object-contain w-full h-full rounded-xl shadow border dark:border-slate-700 bg-white dark:bg-slate-900"
         />
