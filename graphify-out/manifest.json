@@ -186,9 +186,9 @@
     "semantic_hash": ""
   },
   "app/components/Navigation.tsx": {
-    "mtime": 1788324798.61028,
-    "seen": 1788324906.027243,
-    "ast_hash": "1a696b7b13d4c4f0fb4268e0544df45e",
+    "mtime": 1788345666.9761672,
+    "seen": 1788346022.816418,
+    "ast_hash": "9b168ba8f532885989777b614ecd11f7",
     "semantic_hash": ""
   },
   "app/components/OnboardingTipsBanner.tsx": {
@@ -1494,10 +1494,10 @@
     "semantic_hash": "1648ade2914505bf9b9714e75f61961c"
   },
   "app/hooks/useDeviceRevocation.ts": {
-    "mtime": 1786260603.1479309,
-    "seen": 1788110899.414695,
-    "ast_hash": "52e05714c9316f9bd9e52abf31ace317",
-    "semantic_hash": "52e05714c9316f9bd9e52abf31ace317"
+    "mtime": 1788345319.341035,
+    "seen": 1788346022.81659,
+    "ast_hash": "a1a28c886359581d0d9c10edd136cd4b",
+    "semantic_hash": ""
   },
   "app/hooks/useGrpc.ts": {
     "mtime": 1785268150.7722397,
@@ -1512,9 +1512,9 @@
     "semantic_hash": "8e4acef87227cba494249951cf7db203"
   },
   "app/hooks/useHiringSSE.ts": {
-    "mtime": 1788324830.956452,
-    "seen": 1788324906.027408,
-    "ast_hash": "504035bb5ff39a767441668c1a2b4f11",
+    "mtime": 1788345666.9754841,
+    "seen": 1788346022.816592,
+    "ast_hash": "274055888583276b2acdf2c197afa3e6",
     "semantic_hash": ""
   },
   "app/hooks/useIdentityVerification.ts": {
@@ -1620,10 +1620,10 @@
     "semantic_hash": "0aa64f530791755c4cf9cd15c894473d"
   },
   "app/hooks/useSubscriptionSSE.ts": {
-    "mtime": 1785268150.7770004,
-    "seen": 1788110899.414708,
-    "ast_hash": "86f72927c3301510e9bd530a3ab32eca",
-    "semantic_hash": "86f72927c3301510e9bd530a3ab32eca"
+    "mtime": 1788345221.9110036,
+    "seen": 1788346022.8166049,
+    "ast_hash": "87396652faec88b706d68886bd220111",
+    "semantic_hash": ""
   },
   "app/hooks/useWebSocket.ts": {
     "mtime": 1785374511.6070118,
@@ -3594,9 +3594,9 @@
     "semantic_hash": ""
   },
   "app/components/service-provider-pages/hiring-history.tsx": {
-    "mtime": 1788324506.3668807,
-    "seen": 1788324906.027337,
-    "ast_hash": "e70348f7e85aff162cf5f44267873a89",
+    "mtime": 1788345666.9769826,
+    "seen": 1788346022.816517,
+    "ast_hash": "87efe3d7ec4177168e9775b475311c0a",
     "semantic_hash": ""
   },
   "app/routes/bureau.househelps.tsx": {

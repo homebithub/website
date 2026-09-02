@@ -447,13 +447,9 @@ function NavigationContent() {
     useSSESubscriptionSafe('hiring.application.approved', refreshHiring, badgesAreLive);
     useSSESubscriptionSafe('hiring.application.shortlisted', refreshHiring, badgesAreLive);
     useSSESubscriptionSafe('hiring.application.closed', refreshHiring, badgesAreLive);
-    useSSESubscriptionSafe('hiring.request.received', refreshHiring, badgesAreLive);
-    useSSESubscriptionSafe('hiring.request.accepted', refreshHiring, badgesAreLive);
-    useSSESubscriptionSafe('hiring.request.rejected', refreshHiring, badgesAreLive);
     useSSESubscriptionSafe('hiring.contract.signed', refreshHiring, badgesAreLive);
     useSSESubscriptionSafe('hiring.contract.terminated', refreshHiring, badgesAreLive);
-    useSSESubscriptionSafe('hiring.employment_contract.offered', refreshHiring, badgesAreLive);
-    useSSESubscriptionSafe('hiring.employment_contract.sent_to_househelp', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.employment_contract.sent_to_service_provider', refreshHiring, badgesAreLive);
     useSSESubscriptionSafe('hiring.employment_contract.fully_signed', refreshHiring, badgesAreLive);
 
     // The inbox screen has always used the durable SSE stream, but the global

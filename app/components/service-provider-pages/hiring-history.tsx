@@ -639,13 +639,10 @@ export default function ServiceProviderHiringHistory() {
     void Promise.all([fetchHireRequests(), fetchContracts(), fetchEmploymentContracts(), fetchInterests()]);
   };
   const realtimeHiringEvents = [
-    'hiring.request.received', 'hiring.request.accepted', 'hiring.request.rejected',
     'hiring.application.submitted', 'hiring.application.shortlisted', 'hiring.application.accepted',
     'hiring.application.declined', 'hiring.application.approved', 'hiring.application.closed',
     'hiring.contract.signed', 'hiring.contract.terminated',
-    'hiring.employment_contract.offered', 'hiring.employment_contract.sent_to_service_provider',
-    // Compatibility with deployments that still publish the previous subject.
-    'hiring.employment_contract.sent_to_househelp',
+    'hiring.employment_contract.sent_to_service_provider',
     'hiring.employment_contract.fully_signed',
   ];
   useEffect(() => {

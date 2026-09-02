@@ -51,9 +51,9 @@ export function useHiringSSE(
   const subscriptions = useMemo(
     () =>
       [
-        onHireRequestReceived && { eventType: 'hiring.request.received', handler: onHireRequestReceived as (event: any) => void },
-        onHireRequestAccepted && { eventType: 'hiring.request.accepted', handler: onHireRequestAccepted as (event: any) => void },
-        onHireRequestRejected && { eventType: 'hiring.request.rejected', handler: onHireRequestRejected as (event: any) => void },
+        onHireRequestReceived && { eventType: 'hiring.application.submitted', handler: onHireRequestReceived as (event: any) => void },
+        onHireRequestAccepted && { eventType: 'hiring.application.accepted', handler: onHireRequestAccepted as (event: any) => void },
+        onHireRequestRejected && { eventType: 'hiring.application.declined', handler: onHireRequestRejected as (event: any) => void },
         onContractSigned && { eventType: 'hiring.contract.signed', handler: onContractSigned as (event: any) => void },
         onContractExpiring && { eventType: 'hiring.contract.expiring', handler: onContractExpiring as (event: any) => void },
         onContractTerminated && { eventType: 'hiring.contract.terminated', handler: onContractTerminated as (event: any) => void },

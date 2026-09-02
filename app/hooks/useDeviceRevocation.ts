@@ -56,8 +56,8 @@ export function useDeviceRevocation(onRevoked: (reason: string) => void) {
 
   useSSESubscriptions(
     [
-      { eventType: 'device.revoked', handler: handleRevoked },
-      { eventType: 'device.all_revoked', handler: handleAllRevoked },
+      { eventType: 'auth.device.revoked', handler: handleRevoked },
+      { eventType: 'auth.device.all_revoked', handler: handleAllRevoked },
     ],
     true,
   );

@@ -4473,7 +4473,7 @@
       "file_type": "code",
       "norm_label": "subscriptionssehandler",
       "source_file": "app/hooks/useSubscriptionSSE.ts",
-      "source_location": "L26"
+      "source_location": "L28"
     },
     {
       "id": "app_routes_household_hire_request_id_hirerequest",
@@ -25340,7 +25340,7 @@
       "file_type": "code",
       "norm_label": "navigation",
       "source_file": "app/components/Navigation.tsx",
-      "source_location": "L1044"
+      "source_location": "L1040"
     },
     {
       "id": "app_components_service_provider_pages_layout_serviceproviderlayout",
@@ -31928,7 +31928,7 @@
       "file_type": "code",
       "norm_label": "persistentnavigation()",
       "source_file": "app/components/Navigation.tsx",
-      "source_location": "L1048"
+      "source_location": "L1044"
     },
     {
       "id": "app_components_protectedroute_protectedroute",
@@ -51368,7 +51368,7 @@
       "file_type": "code",
       "norm_label": "usesubscriptionsse()",
       "source_file": "app/hooks/useSubscriptionSSE.ts",
-      "source_location": "L28"
+      "source_location": "L30"
     },
     {
       "id": "app_routes_household_hire_request_id_hirerequestdetail",
@@ -207149,7 +207149,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/Navigation.tsx",
-      "source_location": "L471",
+      "source_location": "L467",
       "weight": 1.0
     },
     {
@@ -208625,7 +208625,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L788",
+      "source_location": "L785",
       "weight": 1.0
     },
     {
@@ -208637,7 +208637,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L791",
+      "source_location": "L788",
       "weight": 1.0
     },
     {
@@ -208649,7 +208649,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L831",
+      "source_location": "L828",
       "weight": 1.0
     },
     {
@@ -208661,7 +208661,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L949",
+      "source_location": "L946",
       "weight": 1.0
     },
     {
@@ -208673,7 +208673,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L950",
+      "source_location": "L947",
       "weight": 1.0
     },
     {
@@ -208685,7 +208685,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L960",
+      "source_location": "L957",
       "weight": 1.0
     },
     {
@@ -208697,7 +208697,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L960",
+      "source_location": "L957",
       "weight": 1.0
     },
     {
@@ -208709,7 +208709,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L965",
+      "source_location": "L962",
       "weight": 1.0
     },
     {
@@ -208721,7 +208721,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L967",
+      "source_location": "L964",
       "weight": 1.0
     },
     {
@@ -208733,7 +208733,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L976",
+      "source_location": "L973",
       "weight": 1.0
     },
     {
@@ -208745,7 +208745,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L980",
+      "source_location": "L977",
       "weight": 1.0
     },
     {
@@ -208757,7 +208757,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/components/service-provider-pages/hiring-history.tsx",
-      "source_location": "L996",
+      "source_location": "L993",
       "weight": 1.0
     },
     {
@@ -211097,7 +211097,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/hooks/useSubscriptionSSE.ts",
-      "source_location": "L38",
+      "source_location": "L40",
       "weight": 1.0
     },
     {
@@ -211109,7 +211109,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "app/hooks/useSubscriptionSSE.ts",
-      "source_location": "L57",
+      "source_location": "L74",
       "weight": 1.0
     },
     {
@@ -299973,7 +299973,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/components/Navigation.tsx",
-      "source_location": "L1044",
+      "source_location": "L1040",
       "weight": 1.0
     },
     {
@@ -299984,7 +299984,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/components/Navigation.tsx",
-      "source_location": "L1048",
+      "source_location": "L1044",
       "weight": 1.0
     },
     {
@@ -320169,7 +320169,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/hooks/useSubscriptionSSE.ts",
-      "source_location": "L26",
+      "source_location": "L28",
       "weight": 1.0
     },
     {
@@ -320180,7 +320180,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/hooks/useSubscriptionSSE.ts",
-      "source_location": "L28",
+      "source_location": "L30",
       "weight": 1.0
     },
     {
@@ -476067,5 +476067,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "91edc0b0ae3007c489d7eead46d026901e7ba91a"
+  "built_at_commit": "5f64d2d6ab11be095bd2c460f35384ee7f2dd2cf"
 }
