@@ -11,7 +11,7 @@ import { ListPageSkeleton } from "~/components/ShimmerLoader";
 interface HireRequest {
   id: string;
   household_id: string;
-  househelp_id: string;
+  service_provider_id: string;
   job_type: string;
   start_date?: string;
   salary_offered: number;
@@ -86,7 +86,11 @@ export default function ServiceProviderHireRequests() {
       const status = activeTab !== 'all' ? activeTab : undefined;
       const raw = await hireRequestService.listHireRequests('', 'service_provider', status);
       const items = raw?.data || raw || [];
-      setHireRequests(Array.isArray(items) ? items : []);
+      setHireRequests(Array.isArray(items) ? items.map((item: any) => ({
+        ...item,
+        service_provider_id:
+          item?.service_provider_id || item?.service_provider_profile_id || item?.househelp_id || item?.househelp_profile_id || '',
+      })) : []);
       setTotal(typeof raw?.total === 'number' ? raw.total : (Array.isArray(items) ? items.length : 0));
     } catch (err: any) {
       setError(err.message || 'Failed to load hire requests');

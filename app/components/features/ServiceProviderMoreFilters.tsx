@@ -11,7 +11,7 @@ import {
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 import CustomSelect from "~/components/ui/CustomSelect";
 
-export type HousehelpMoreFilterFields = {
+export type ServiceProviderMoreFilterFields = {
   status?: string;
   gender?: string;
   town?: string;
@@ -33,7 +33,7 @@ export type HousehelpMoreFilterFields = {
 };
 
 interface Props {
-  fields: HousehelpMoreFilterFields & Record<string, string>;
+  fields: ServiceProviderMoreFilterFields & Record<string, string>;
   onChange: (name: string, value: string) => void;
   onSearch: () => void;
   onClear: () => void;
@@ -61,7 +61,7 @@ export default function ServiceProviderMoreFilters({ fields, onChange, onSearch,
     "w-full h-10 px-3 py-1 rounded-xl text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm";
   const selectCls = `${inputCls} appearance-none`;
 
-  // Derive single select for type of househelp from two boolean-like flags
+  // Derive one work-arrangement select from the two stored availability flags.
   const typeValue = useMemo(() => {
     const liveIn = fields.offers_live_in === "true";
     const dayWorker = fields.offers_day_worker === "true";
@@ -123,7 +123,7 @@ export default function ServiceProviderMoreFilters({ fields, onChange, onSearch,
                 <SearchableTownSelect
                   value={fields.town || ""}
                   onChange={(value) => onChange("town", value)}
-                  target="househelps"
+                  target="service_providers"
                   buttonClassName={selectCls}
                 />
               </div>

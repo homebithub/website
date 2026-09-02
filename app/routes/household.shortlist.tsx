@@ -221,19 +221,19 @@ export default function HouseholdShortlistPage() {
   // that are not open-for-work posts render nothing: the list came back
   // non-empty, every row was filtered out, and the page showed a heading over
   // blank space with no indication anything was wrong.
-  const savedHousehelps = useMemo(
+  const savedServiceProviders = useMemo(
     () => (items || []).filter((s) => s.profile_type === 'open_for_work'),
     [items],
   );
-  const visibleSavedHousehelps = useMemo(
-    () => savedHousehelps.filter((item) => {
+  const visibleSavedServiceProviders = useMemo(
+    () => savedServiceProviders.filter((item) => {
       const listing = profilesById[item.profile_id];
       return !listing || isOpenForWorkListingActive(listing);
     }),
-    [profilesById, savedHousehelps],
+    [profilesById, savedServiceProviders],
   );
 
-  // Load open-for-work records for shortlisted househelp listings.
+  // Load open-for-work records for shortlisted service-provider listings.
   useEffect(() => {
     const missingIds = (items || [])
       .filter((s) => s.profile_type === "open_for_work")
@@ -287,12 +287,12 @@ export default function HouseholdShortlistPage() {
     }
   }
 
-  async function handleChatWithHousehelp(profileId?: string, househelpUserId?: string) {
-    if (!profileId || !househelpUserId || !currentUserId) return;
+  async function handleChatWithServiceProvider(profileId?: string, serviceProviderUserId?: string) {
+    if (!profileId || !serviceProviderUserId || !currentUserId) return;
     try {
       const payload: StartConversationPayload = {
         household_user_id: currentUserId,
-        service_provider_user_id: househelpUserId,
+        service_provider_user_id: serviceProviderUserId,
         service_provider_profile_id: profileId,
       };
       
@@ -333,7 +333,7 @@ export default function HouseholdShortlistPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">Saved</h1>
 
-            {visibleSavedHousehelps.length === 0 && !loading && !loadingProfiles && !error && (
+            {visibleSavedServiceProviders.length === 0 && !loading && !loadingProfiles && !error && (
               <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
@@ -356,38 +356,42 @@ export default function HouseholdShortlistPage() {
             {error && <ErrorAlert message={error} className="mb-4" />}
 	
             <div className="flex flex-col gap-4">
-              {visibleSavedHousehelps
+              {visibleSavedServiceProviders
                 .map((s) => {
                   const listing = profilesById[s.profile_id] || {};
-                  const househelp = listing?.househelp || {};
-                  const user = househelp?.user || {};
+                  // Prefer the canonical response shape while an older auth
+                  // deployment may still return the legacy nested alias.
+                  const serviceProvider = listing?.service_provider || listing?.househelp || {};
+                  const user = serviceProvider?.user || {};
                   const targetProfileId = firstString(
-                    househelp?.id,
-                    househelp?.profile_id,
+                    serviceProvider?.id,
+                    serviceProvider?.profile_id,
+                    listing?.service_provider_profile_id,
                     listing?.househelp_profile_id,
                     listing?.user_profile_id,
                   );
                   const targetUserId = firstString(
-                    househelp?.user_id,
+                    serviceProvider?.user_id,
                     user?.id,
+                    listing?.service_provider_user_id,
                     listing?.househelp_user_id,
                     listing?.owner_user_id,
                     s.user_id,
                   );
-                  const name = `${firstString(user.first_name, househelp.first_name, listing?.first_name)} ${firstString(user.last_name, househelp.last_name, listing?.last_name)}`.trim() || 'Service provider';
-                  const initials = name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'HW';
-                  const userId = firstString(househelp.user_id, user.id, listing?.househelp_user_id, s.user_id);
-                  const photos = toStringArray(househelp.photos);
-                  const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
+                  const name = `${firstString(user.first_name, serviceProvider.first_name, listing?.first_name)} ${firstString(user.last_name, serviceProvider.last_name, listing?.last_name)}`.trim() || 'Service provider';
+                  const initials = name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'SP';
+                  const userId = firstString(serviceProvider.user_id, user.id, listing?.service_provider_user_id, listing?.househelp_user_id, s.user_id);
+                  const photos = toStringArray(serviceProvider.photos);
+                  const avatar = firstString(serviceProvider.avatar_url, photos[0], profilePhotos[userId]);
                   const scheduleLabel = summarizeSchedule(listing?.work_schedule);
                   const jobTypes = toStringArray(listing?.job_types);
-                  const location = formatPlaceOrFallback(househelp.location, { town: househelp.town || listing?.town });
-                  const experienceYears = toFiniteNumber(househelp.years_of_experience ?? listing?.years_of_experience);
+                  const location = formatPlaceOrFallback(serviceProvider.location, { town: serviceProvider.town || listing?.town });
+                  const experienceYears = toFiniteNumber(serviceProvider.years_of_experience ?? listing?.years_of_experience);
                   const updatedAt = listing?.created_at || s.created_at;
                   const salaryLabel = formatSalary(
-                    listing?.salary_min ?? househelp.salary_expectation,
+                    listing?.salary_min ?? serviceProvider.salary_expectation,
                     listing?.salary_max,
-                    listing?.salary_frequency || househelp.salary_frequency
+                    listing?.salary_frequency || serviceProvider.salary_frequency
                   );
                   const worksWith = [listing?.can_work_with_kids ? 'children' : '', listing?.can_work_with_pets ? 'pets' : ''].filter(Boolean);
                   return (
@@ -490,7 +494,7 @@ export default function HouseholdShortlistPage() {
                             View Profile
                           </button>
                           <button
-                            onClick={() => handleChatWithHousehelp(targetProfileId, targetUserId)}
+                            onClick={() => handleChatWithServiceProvider(targetProfileId, targetUserId)}
                             className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                             disabled={!targetProfileId || !targetUserId}
                           >

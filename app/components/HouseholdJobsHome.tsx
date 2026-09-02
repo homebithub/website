@@ -926,7 +926,7 @@ export default function HouseholdJobsHome() {
         // People, not job posts.
         //
         // This asked for listings without saying whose, and households' job
-        // posts share a table with househelps' open-for-work posts — so a
+        // posts share a table with service providers' open-for-work posts — so a
         // household browsing "who is available" was shown job posts, its own
         // among them, with the job's title sitting where a provider's skills
         // belong. The canonical owner filter restricts it to people offering

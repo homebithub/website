@@ -23,7 +23,7 @@ export default function ServiceProviderFindHouseholds() {
     verified: "",
     has_kids: "",
     has_pets: "",
-    type_of_househelp: "",
+    work_arrangement: "",
     pet_type: "",
     min_rating: "",
   });
@@ -52,7 +52,7 @@ export default function ServiceProviderFindHouseholds() {
       has_kids: filters.has_kids === "true" ? true : filters.has_kids === "false" ? false : undefined,
       has_pets: filters.has_pets === "true" ? true : filters.has_pets === "false" ? false : undefined,
       pet_type: filters.pet_type || undefined,
-      type_of_househelp: filters.type_of_househelp || undefined,
+      work_arrangement: filters.work_arrangement || undefined,
       min_rating: filters.min_rating ? Number(filters.min_rating) : undefined,
       limit,
       offset: offsetVal,
@@ -198,7 +198,7 @@ export default function ServiceProviderFindHouseholds() {
                   </div>
                   <div className="flex flex-col">
                     <label className="mb-1 text-xs font-medium text-white/90">Type of Service provider</label>
-                    <select name="type_of_househelp" value={filters.type_of_househelp} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
+                    <select name="work_arrangement" value={filters.work_arrangement} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
                       {NANNY_TYPES.map((t) => (
                         <option key={t} value={t}>
                           {t || "Any"}

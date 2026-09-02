@@ -96,7 +96,7 @@ function encodeCreateListingReq(body: Record<string, unknown>) {
     encodeInt32Field(4, Number(body.job_type_id || body.jobTypeId || 0)),
     ...features.map((feature) => encodeMessageField(5, encodeFeaturePick(feature as Record<string, unknown>))),
     // Where the work is. The service rejects a listing without it, since a job
-    // nobody can place is a job the right househelps never find.
+    // nobody can place is a job the right service providers never find.
     encodeInt32Field(6, Number(body.ward_id || body.wardId || 0)),
   ]);
 }
@@ -453,19 +453,19 @@ export async function loader({ request }: { request: Request }) {
     // Which side of the market is being browsed.
     //
     // ListJobs returns every listing regardless of who posted it, because
-    // households' job posts and househelps' open-for-work posts share one
+    // households' job posts and service providers' open-for-work posts share one
     // table. A household browsing with ListJobs was therefore shown job posts —
     // including its own, rendered as though they were people, with the job's
-    // title where the househelp's skills belong. ListOpenForWork is the same
-    // query joined to the owner's profile and restricted to househelps, which
+    // title where the provider's skills belong. ListOpenForWork is the same
+    // query joined to the owner's profile and restricted to service providers, which
     // is what "who is available" actually means.
-    // owner=househelp has its own endpoint, which carries the poster's name and
+    // owner=service_provider has its own endpoint, which carries the poster's name and
     // contact alongside the listing — what a household browsing people needs.
     // owner=household is the same ListJobs query narrowed to the other side,
     // because a jobs board wants the job, not the person.
     //
     // Absent, ListJobs returns both sides, and that is what put "Available for
-    // work" on the househelp jobs board with an Apply button under it.
+    // work" on the service-provider jobs board with an Apply button under it.
     const owner = String(url.searchParams.get('owner') || '');
     const ownerIsServiceProvider = owner === 'service_provider' || owner === 'househelp';
 
@@ -473,7 +473,7 @@ export async function loader({ request }: { request: Request }) {
     // JsonResponse, whose data sits at field 1; ListJobs answers with
     // GenericResponse, whose header is at 1 and body at 2. Decoding the former
     // with the latter's reader finds no body and returns nothing — which is
-    // why browsing househelps came back empty rather than erroring.
+    // why browsing service providers came back empty rather than erroring.
     const { body: responseBody } = ownerIsServiceProvider
       ? await callUnaryGrpcJson(
         baseUrl,
@@ -502,9 +502,9 @@ export async function loader({ request }: { request: Request }) {
 
     // Who among these people is a paying member.
     //
-    // Only when browsing househelps: the other side of the board returns a
+    // Only when browsing service providers: the other side of the board returns a
     // household's job posts, where the poster is the person hiring and a
-    // premium badge on their advert says nothing a househelp needs.
+    // premium badge on their advert says nothing a service provider needs.
     //
     // One call for the whole page, not one per person — payments answers a list
     // of ids, and a badge is not worth twenty round trips to the service that

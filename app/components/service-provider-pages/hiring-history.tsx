@@ -73,7 +73,7 @@ interface HireContract {
 interface Interest {
   id: string;
   listing_id?: string;
-  househelp_id: string;
+  service_provider_id: string;
   household_id: string;
   /** The job this application is against, as the household posted it. */
   listing?: Record<string, any> | null;
@@ -95,19 +95,28 @@ interface EmploymentContract {
   listing_id?: string;
   household_id: string;
   household_profile_id?: string;
-  househelp_id: string;
+  service_provider_id: string;
   status?: string;
   job_title?: string;
   salary: number;
   salary_frequency: string;
   start_date?: string;
   household_signed_at?: string;
-  househelp_signed_at?: string;
+  service_provider_signed_at?: string;
   household_signer_name: string;
-  househelp_signer_name: string;
+  service_provider_signer_name: string;
   created_at: string;
   household?: HouseholdSummary;
 }
+
+const normalizeEmploymentContract = (raw: any): EmploymentContract => ({
+  ...(raw || {}),
+  service_provider_id:
+    raw?.service_provider_id || raw?.service_provider_profile_id || raw?.househelp_id || raw?.househelp_profile_id || '',
+  service_provider_signed_at: raw?.service_provider_signed_at || raw?.househelp_signed_at,
+  service_provider_signer_name: raw?.service_provider_signer_name || raw?.househelp_signer_name || '',
+  status: raw?.status === 'pending_househelp' ? 'pending_service_provider' : raw?.status,
+});
 
 type TabType = 'requests' | 'work-history' | 'employment-contracts' | 'interests';
 type HiringProfileRole = 'service-provider' | 'client';
@@ -491,7 +500,9 @@ export default function ServiceProviderHiringHistory() {
       // Load the same bounded set used by the navbar so tab and global counts
       // cannot disagree because an unattended contract fell onto page two.
       const raw = await employmentContractService.listEmploymentContracts('', undefined, 200, 0);
-      const items = await decorateHouseholdRows(extractEnvelopeArray<EmploymentContract>(raw));
+      const items = await decorateHouseholdRows(
+        extractEnvelopeArray<EmploymentContract>(raw).map(normalizeEmploymentContract),
+      );
       const uniqueItems = collapseApplicationContracts(items);
       setEmploymentContracts(uniqueItems);
       setEmploymentContractsTotal(uniqueItems.length);
@@ -507,7 +518,7 @@ export default function ServiceProviderHiringHistory() {
     const fetchECMap = async () => {
       try {
         const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
-        const items = extractEnvelopeArray<EmploymentContract>(raw);
+        const items = extractEnvelopeArray<EmploymentContract>(raw).map(normalizeEmploymentContract);
         const next = buildIdentifierMap(items, getHouseholdCandidateIds);
         Object.assign(next, buildApplicationContractMap(items));
         setEmploymentContractMap(next);
@@ -596,7 +607,7 @@ export default function ServiceProviderHiringHistory() {
         return {
           id: String(application.id ?? ''),
           listing_id: listingId,
-          househelp_id: applicantProfileId,
+          service_provider_id: applicantProfileId,
           household_id: householdProfileId,
           salary_expectation: 0,
           salary_frequency: '',
@@ -632,7 +643,9 @@ export default function ServiceProviderHiringHistory() {
     'hiring.application.submitted', 'hiring.application.shortlisted', 'hiring.application.accepted',
     'hiring.application.declined', 'hiring.application.approved', 'hiring.application.closed',
     'hiring.contract.signed', 'hiring.contract.terminated',
-    'hiring.employment_contract.offered', 'hiring.employment_contract.sent_to_househelp',
+    'hiring.employment_contract.offered', 'hiring.employment_contract.sent_to_service_provider',
+    // Compatibility with deployments that still publish the previous subject.
+    'hiring.employment_contract.sent_to_househelp',
     'hiring.employment_contract.fully_signed',
   ];
   useEffect(() => {
@@ -1058,7 +1071,7 @@ export default function ServiceProviderHiringHistory() {
                 {employmentContracts.map((ec) => {
                   const getECStatusBadge = () => {
                     if (ec.status === 'signed_by_both') return { label: 'Fully Signed', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300', icon: <CheckCircle className="w-4 h-4" /> };
-                    if (ec.status === 'pending_househelp') return { label: 'Awaiting Your Signature', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300', icon: <Clock className="w-4 h-4" /> };
+                    if (ec.status === 'pending_service_provider') return { label: 'Awaiting Your Signature', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300', icon: <Clock className="w-4 h-4" /> };
                     if (ec.status === 'draft') return { label: 'Draft', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', icon: <FileText className="w-4 h-4" /> };
                     return { label: ec.status, color: 'bg-gray-100 text-gray-800', icon: <FileText className="w-4 h-4" /> };
                   };
@@ -1106,13 +1119,13 @@ export default function ServiceProviderHiringHistory() {
                               navigate(`/household/employment-contract?${params.toString()}`);
                             }}
                             className={`inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium rounded-xl transition-all sm:w-auto sm:py-1 ${
-                              ec.status === 'pending_househelp'
+                              ec.status === 'pending_service_provider'
                                 ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
                                 : 'text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
                             }`}
                           >
                             <FileText className="w-4 h-4" />
-                            {ec.status === 'pending_househelp' ? 'Review & Sign' : 'View Contract'}
+                            {ec.status === 'pending_service_provider' ? 'Review & Sign' : 'View Contract'}
                           </button>
                         </div>
                       </div>
@@ -1270,7 +1283,7 @@ export default function ServiceProviderHiringHistory() {
                           <Briefcase className="h-4 w-4" /> View job listing
                         </button>
                         {/* Only a household-initiated offer waits for the
-                            househelp's acceptance. A direct application is
+                            service provider's acceptance. A direct application is
                             already consented to and is answered by the
                             household instead. */}
                         {interest.status === 'initiated' && !interest.initiated_by_applicant && (
@@ -1368,7 +1381,7 @@ export default function ServiceProviderHiringHistory() {
               { label: 'Start', value: record.start_date ? formatDate(record.start_date) : 'Flexible' },
               { label: 'Created', value: record.created_at ? formatDate(record.created_at) : undefined },
               { label: 'End', value: record.end_date ? formatDate(record.end_date) : undefined },
-              { label: 'Signature', value: isEmploymentContract ? (record.househelp_signed_at ? 'Signed' : 'Awaiting your signature') : undefined },
+              { label: 'Signature', value: isEmploymentContract ? (record.service_provider_signed_at ? 'Signed' : 'Awaiting your signature') : undefined },
               { label: 'Closure reason', value: record.closure_reason || record.decline_reason || record.cancel_reason || undefined },
             ]}
             actions={<>
@@ -1379,7 +1392,7 @@ export default function ServiceProviderHiringHistory() {
                 <button type="button" onClick={() => { setSelectedHiringCard(null); setSelectedRequest(record.id); setShowDeclineModal(true); }} className="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-600">Decline</button>
                 <button type="button" onClick={() => { setSelectedHiringCard(null); openAcceptConfirm(record.id); }} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white">Accept</button>
               </>}
-              {isEmploymentContract && <button type="button" onClick={() => { const params = new URLSearchParams({ id: record.id, backTo: backToPath, backLabel: 'Back to Hiring' }); navigate(`/household/employment-contract?${params.toString()}`); }} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white">{record.status === 'pending_househelp' ? 'Review & sign' : 'View contract'}</button>}
+              {isEmploymentContract && <button type="button" onClick={() => { const params = new URLSearchParams({ id: record.id, backTo: backToPath, backLabel: 'Back to Hiring' }); navigate(`/household/employment-contract?${params.toString()}`); }} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white">{record.status === 'pending_service_provider' ? 'Review & sign' : 'View contract'}</button>}
             </>}
           />
         );

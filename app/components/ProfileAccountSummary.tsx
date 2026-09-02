@@ -21,9 +21,10 @@ type ProfileAccountSummaryProps = {
 };
 
 const PROFILE_TYPES: Record<string, string> = {
-  '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff': 'HouseHelp',
+  '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff': 'Service Provider',
   '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1': 'Household',
-  househelp: 'HouseHelp',
+  househelp: 'Service Provider',
+  service_provider: 'Service Provider',
   household: 'Household',
 };
 
@@ -57,7 +58,7 @@ function resolveProfileId(profile: UnknownRecord, fallbackProfileId: string) {
 }
 
 // Uploads are scoped to the user's active `user_profile` row, not the catalog
-// profile type (the stable Household/HouseHelp IDs used for feature metadata).
+// profile type (the stable household/service-provider IDs used for feature metadata).
 // The two IDs are both present on some profile responses, so keep this lookup
 // separate from resolveProfileId instead of accidentally sending the catalog ID
 // to the document endpoint.

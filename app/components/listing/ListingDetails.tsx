@@ -5,7 +5,7 @@ import { readFeatureGroups, listingHighlights } from "~/utils/listingFeatures";
  *
  * The same job was being described twice: the household's own page rendered the
  * full set of picks — chores, salary range, start timing, how often, how long,
- * day worker or live-in, which days, which part of the day — and the househelp's
+ * day worker or live-in, which days, which part of the day — and the service provider's
  * side of the very same application showed the message they had sent and
  * "Salary Expected: Not specified".
  *

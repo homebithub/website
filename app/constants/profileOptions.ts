@@ -30,7 +30,7 @@ export const TOWNS = [
 ] as const;
 
 // ============================================================================
-// SERVICE TYPE / HOUSEHELP TYPE OPTIONS
+// SERVICE-PROVIDER TYPE OPTIONS
 // ============================================================================
 
 export const SERVICE_TYPES = {

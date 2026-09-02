@@ -145,12 +145,12 @@ export default function ProfileReviews({
       try {
         // Whichever side the viewer is, their own engagements are the ones they
         // can read. The person being viewed is the other party in each.
-        const [asHousehold, asHousehelp] = await Promise.all([
+        const [asHousehold, asServiceProvider] = await Promise.all([
           employmentService.listByHousehold(viewerId, 100, 0).catch(() => null),
           employmentService.listByServiceProvider(viewerId, 100, 0).catch(() => null),
         ]);
 
-        const rows = [asHousehold, asHousehelp].flatMap((raw: any) => {
+        const rows = [asHousehold, asServiceProvider].flatMap((raw: any) => {
           const data = raw?.data?.data ?? raw?.data ?? raw ?? [];
           return Array.isArray(data) ? data : [];
         });
@@ -161,6 +161,7 @@ export default function ProfileReviews({
           const status = String(row?.status ?? '').toLowerCase();
           if (!['active', 'completed', 'terminated'].includes(status)) return false;
           return [
+            row?.service_provider_user_id,
             row?.househelp_user_id,
             row?.household_owner_user_id,
             row?.household_user_id,

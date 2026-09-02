@@ -46,7 +46,7 @@ interface ServiceProviderProfile {
   location?: string;
   county_of_residence?: string;
   bio?: string;
-  househelp_type?: string;
+  work_arrangement?: string;
   skills?: string[];
   languages?: string[];
   can_work_with_kids?: boolean;
@@ -62,6 +62,12 @@ interface ServiceProviderProfile {
   fit_score?: number;
   match_reasons?: string[];
 }
+
+const normalizeServiceProviderProfile = (raw: any): ServiceProviderProfile => ({
+  ...(raw || {}),
+  work_arrangement:
+    raw?.work_arrangement || raw?.service_provider_type || raw?.househelp_type || '',
+});
 
 type HouseholdHomeVariant = 'default' | 'home1' | 'home2' | 'home3';
 
@@ -92,7 +98,7 @@ const formatAge = (dob?: string) => {
 export default function AuthenticatedHome({ variant = 'default' }: AuthenticatedHomeProps) {
   const initialFields: ServiceProviderSearchFields = {
     status: "",
-    househelp_type: "",
+    work_arrangement: "",
     gender: "",
     experience: "",
     town: "",
@@ -422,7 +428,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     const dayWorker = f.offers_day_worker === "true";
     if (liveIn && !dayWorker) return "live_in";
     if (dayWorker && !liveIn) return "day_worker";
-    return f.househelp_type || undefined;
+    return f.work_arrangement || undefined;
   };
 
   const buildCountPayload = (f: ServiceProviderSearchFields) => {
@@ -435,7 +441,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         salary_max: f.salary_max ? Number(f.salary_max) : undefined,
         salary_expectation_min: f.salary_min ? Number(f.salary_min) : undefined,
         salary_expectation_max: f.salary_max ? Number(f.salary_max) : undefined,
-        househelp_type: deriveServiceProviderType(f),
+        work_arrangement: deriveServiceProviderType(f),
         can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
         can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
         offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
@@ -496,20 +502,21 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   }, [serviceProviders]);
 
   const enrichServiceProviderProfiles = async (rows: ServiceProviderProfile[]) => {
-    const profileIds = Array.from(new Set((rows || []).map((row) => row.profile_id).filter(Boolean)));
-    if (profileIds.length === 0) return rows;
+    const normalizedRows = (rows || []).map(normalizeServiceProviderProfile);
+    const profileIds = Array.from(new Set(normalizedRows.map((row) => row.profile_id).filter(Boolean)));
+    if (profileIds.length === 0) return normalizedRows;
     try {
       const response = await grpcProfileService.searchMultipleWithUser('', 'service_provider', { profile_ids: profileIds });
       const data = response?.data?.data || response?.data || response;
       const profiles = Array.isArray(data) ? data : [];
-      if (profiles.length === 0) return rows;
+      if (profiles.length === 0) return normalizedRows;
       const byProfileId = new Map<string, any>(profiles
         .filter((profile) => profile?.profile_id)
         .map((profile) => [profile.profile_id, profile]));
-      return rows.map((row) => {
+      return normalizedRows.map((row) => {
         const details = byProfileId.get(row.profile_id);
         if (!details) return row;
-        const merged = { ...row, ...details };
+        const merged = normalizeServiceProviderProfile({ ...row, ...details });
         return {
           ...merged,
           fit_score: row.fit_score,
@@ -520,7 +527,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       });
     } catch (err) {
       console.error('Failed to load service provider profile details:', err);
-      return rows;
+      return normalizedRows;
     }
   };
 
@@ -555,7 +562,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           salary_max: f.salary_max ? Number(f.salary_max) : undefined,
           salary_expectation_min: f.salary_min ? Number(f.salary_min) : undefined,
           salary_expectation_max: f.salary_max ? Number(f.salary_max) : undefined,
-          househelp_type: deriveServiceProviderType(f),
+          work_arrangement: deriveServiceProviderType(f),
           can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
           can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
           offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
@@ -602,7 +609,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           salary_max: f.salary_max ? Number(f.salary_max) : undefined,
           salary_expectation_min: f.salary_min ? Number(f.salary_min) : undefined,
           salary_expectation_max: f.salary_max ? Number(f.salary_max) : undefined,
-          househelp_type: deriveServiceProviderType(f),
+          work_arrangement: deriveServiceProviderType(f),
           can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
           can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
           offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
@@ -647,7 +654,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   // Helper: map URLSearchParams to fields
   function paramsToFields(sp: URLSearchParams, base: ServiceProviderSearchFields): ServiceProviderSearchFields {
     const keys = [
-      'status','househelp_type','gender','experience','town','salary_frequency','skill','traits','min_rating','salary_min','salary_max','can_work_with_kids','can_work_with_pets','offers_live_in','offers_day_worker','available_from','language','min_age','max_age'
+      'status','work_arrangement','gender','experience','town','salary_frequency','skill','traits','min_rating','salary_min','salary_max','can_work_with_kids','can_work_with_pets','offers_live_in','offers_day_worker','available_from','language','min_age','max_age'
     ];
     const obj: Record<string, string> = {};
     keys.forEach(k => {
@@ -749,7 +756,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                       <SearchableTownSelect
                         value={fields.town || ""}
                         onChange={(value) => handleFieldChange("town", value)}
-                        target="househelps"
+                        target="service_providers"
                         buttonClassName={quickInputClass}
                       />
                     </div>
@@ -1019,9 +1026,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                             {serviceProvider.verified && (
                               <span className="inline-block text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">Verified</span>
                             )}
-                            {serviceProvider.househelp_type && (
+                            {serviceProvider.work_arrangement && (
                               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                                {serviceProvider.househelp_type}
+                                {serviceProvider.work_arrangement}
                               </span>
                             )}
                             {serviceProvider.offers_day_worker && (

@@ -8,10 +8,13 @@ export type HiringSSEEvent = {
     request_id?: string;
     contract_id?: string;
     household_id?: string;
+    service_provider_id?: string;
     househelp_id?: string;
     household_user_id?: string;
+    service_provider_user_id?: string;
     househelp_user_id?: string;
     household_name?: string;
+    service_provider_name?: string;
     househelp_name?: string;
     position?: string;
     salary?: string;

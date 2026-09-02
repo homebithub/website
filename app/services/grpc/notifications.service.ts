@@ -123,23 +123,21 @@ export const notificationsService = {
 
   async startConversation(payload: {
     householdUserId: string;
-    househelpUserId: string;
+    serviceProviderUserId: string;
     householdProfileId?: string;
-    househelpProfileId?: string;
-    serviceProviderUserId?: string;
     serviceProviderProfileId?: string;
     /** The job the thread is about. Empty puts it on the legacy pair row. */
     listingId?: string;
   }): Promise<any> {
     const request = new notifications_pb.StartConversationRequest();
     request.setHouseholdUserId(payload.householdUserId);
-    request.setHousehelpUserId(payload.househelpUserId);
     request.setHouseholdProfileId(payload.householdProfileId || '');
-    request.setHousehelpProfileId(payload.househelpProfileId || '');
     // Expand/migrate compatibility: current servers read the canonical fields,
     // while older deployments still read the additive legacy aliases.
-    request.setServiceProviderUserId(payload.serviceProviderUserId || payload.househelpUserId);
-    request.setServiceProviderProfileId(payload.serviceProviderProfileId || payload.househelpProfileId || '');
+    request.setServiceProviderUserId(payload.serviceProviderUserId);
+    request.setServiceProviderProfileId(payload.serviceProviderProfileId || '');
+    request.setHousehelpUserId(payload.serviceProviderUserId);
+    request.setHousehelpProfileId(payload.serviceProviderProfileId || '');
     // Numeric on the wire; the caller holds it as a string because that is what
     // a listing id looks like everywhere else in the browser.
     const listingId = Number(payload.listingId || 0);

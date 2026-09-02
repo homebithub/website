@@ -13,7 +13,7 @@ import {
  *
  * It is one call for the whole page. GetSubscriptionStatuses was added to
  * payments for exactly this: the alternative was CheckSubscriptionAccess per
- * person, which turns a page of twenty househelps into twenty round trips to
+ * person, which turns a page of twenty service providers into twenty round trips to
  * the service that takes payments, to decorate twenty cards.
  *
  * The response carries only whether each person has access and whether a trial

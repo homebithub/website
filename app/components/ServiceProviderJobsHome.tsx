@@ -57,7 +57,7 @@ interface JobListing {
   description?: string;
   location?: string | JobLocation;
   // Resolved from the listing's ward by the auth service. This is where the
-  // work is, which is the only location a househelp ever sees — households are
+  // work is, which is the only location a service provider sees — households are
   // not discoverable, so their own address never appears.
   ward?: string;
   subcounty?: string;
@@ -79,7 +79,7 @@ interface JobListing {
   owner_review_count?: number;
 }
 
-interface HousehelpSummary {
+interface ServiceProviderSummary {
   id?: string;
   user_id?: string;
   first_name?: string;
@@ -174,7 +174,7 @@ const formatDate = (value?: string) => {
 const isJobOpen = (job: { status?: string }) => {
   // A listing's status is "active" — the value the service writes and the one
   // the API returns. This compared against "open" alone, so every open job read
-  // as closed: the househelp home page showed "0 roles available" beside a
+  // as closed: the service-provider home page showed "0 roles available" beside a
   // filter chip saying "2 total roles". It went unnoticed because the page had
   // an All jobs toggle that skipped the check, and removing that toggle turned
   // a wrong count into an empty page.
@@ -402,7 +402,7 @@ export default function ServiceProviderJobsHome() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [househelpProfileId, setHousehelpProfileId] = useState<string>("");
+  const [serviceProviderProfileId, setServiceProviderProfileId] = useState<string>("");
   const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
   const [selectedJobDetail, setSelectedJobDetail] = useState<JobListing | null>(null);
   const [pitch, setPitch] = useState("");
@@ -443,7 +443,7 @@ export default function ServiceProviderJobsHome() {
     applySaved,
     deleteSaved,
     restored: filtersRestored,
-  } = useSavedFilters(househelpProfileId || viewerProfileId, DEFAULT_JOB_FILTERS);
+  } = useSavedFilters(serviceProviderProfileId || viewerProfileId, DEFAULT_JOB_FILTERS);
   const [locationPickerKey, setLocationPickerKey] = useState(0);
   const [sortBy, setSortBy] = useState("best_match");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -454,7 +454,7 @@ export default function ServiceProviderJobsHome() {
   // This said "/service-provider/jobs", which is routed nowhere: flat-routes renders
   // this component from _index, so the board is "/". Every Back to jobs link
   // built from it therefore led to a dead route — including the one on the
-  // household profile a househelp reaches from these very cards.
+  // household profile a service provider reaches from these very cards.
   const backToPath = "/";
   const profileCompletionReminder = useProfileCompletionReminder(currentUserId || "", "service_provider");
   const identityVerification = useIdentityVerification(currentUserId);
@@ -597,10 +597,10 @@ export default function ServiceProviderJobsHome() {
 
     const dismiss = (event: MouseEvent) => {
       const target = event.target as Node;
-      const panel = document.getElementById("househelp-job-filters");
+      const panel = document.getElementById("service-provider-job-filters");
       // The toggle is excluded so its own click is not counted twice: it would
       // close the panel here and immediately reopen it in the button's handler.
-      const toggle = document.getElementById("househelp-job-filters-toggle");
+      const toggle = document.getElementById("service-provider-job-filters-toggle");
       // CustomSelect renders its menu into document.body so it cannot be
       // clipped by this scrolling panel. Treat that portalled menu as part of
       // the filter panel; selecting one option must not dismiss all filters.
@@ -643,13 +643,13 @@ export default function ServiceProviderJobsHome() {
   // source of truth, so load them once for this profile and compare normalized
   // listing ids before discovery cards are rendered.
   useEffect(() => {
-    if (!househelpProfileId) return;
+    if (!serviceProviderProfileId) return;
     let cancelled = false;
 
     const fetchAppliedListings = async () => {
       try {
         const raw = await listingApplicationService.listApplications({
-          applicantProfileId: househelpProfileId,
+          applicantProfileId: serviceProviderProfileId,
           limit: 200,
           offset: 0,
         });
@@ -668,7 +668,7 @@ export default function ServiceProviderJobsHome() {
 
     void fetchAppliedListings();
     return () => { cancelled = true; };
-  }, [househelpProfileId]);
+  }, [serviceProviderProfileId]);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -706,7 +706,7 @@ export default function ServiceProviderJobsHome() {
       try {
         const profile = await grpcProfileService.getCurrentServiceProviderProfile("");
         const resolvedId = profile?.id || profile?.profile_id || "";
-        if (!cancelled) setHousehelpProfileId(resolvedId);
+        if (!cancelled) setServiceProviderProfileId(resolvedId);
       } catch (err) {
         // Non-blocking: allow browsing even if we can't resolve profile ID yet
       }
@@ -734,11 +734,11 @@ export default function ServiceProviderJobsHome() {
           offset,
         };
         payload.status = "open";
-        // Jobs, not other househelps.
+        // Jobs, not other service providers.
         //
-        // Households' job posts and househelps' open-for-work posts share one
+        // Households' job posts and service providers' open-for-work posts share one
         // table, and this asked for listings without saying whose — so the board
-        // showed "Available for work", posted by another househelp, with an
+        // showed "Available for work", posted by another service provider, with an
         // Apply button under it.
         payload.owner = "household";
         if (filters.jobType) payload.job_type_id = Number(filters.jobType);
@@ -766,7 +766,7 @@ export default function ServiceProviderJobsHome() {
         // asked for during onboarding, and the score arrives as fit_score. Sent
         // regardless of the sort, so switching to Best match does not need a
         // second trip, and harmless without it — an unread field.
-        if (househelpProfileId) payload.match_for = househelpProfileId;
+        if (serviceProviderProfileId) payload.match_for = serviceProviderProfileId;
 
         const raw = await jobService.searchJobs(payload, currentUserId);
         const data = raw?.data || raw || {};
@@ -803,7 +803,7 @@ export default function ServiceProviderJobsHome() {
     return () => {
       cancelled = true;
     };
-  // househelpProfileId is a dependency because the score depends on it.
+  // serviceProviderProfileId is a dependency because the score depends on it.
   //
   // It is resolved by a separate effect, so on a fresh load it is still "" when
   // this first runs: match_for is omitted, the service returns the list
@@ -811,7 +811,7 @@ export default function ServiceProviderJobsHome() {
   // arrived a moment later. The board therefore showed no match scores at all
   // until something else happened to change, such as touching a filter, which
   // is why the percentages looked like they came and went at random.
-  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored, househelpProfileId, refreshKey]);
+  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored, serviceProviderProfileId, refreshKey]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -925,7 +925,7 @@ export default function ServiceProviderJobsHome() {
       return;
     }
 
-    if (!househelpProfileId) {
+    if (!serviceProviderProfileId) {
       setApplyError("Please complete your service provider profile before applying.");
       return;
     }
@@ -944,7 +944,7 @@ export default function ServiceProviderJobsHome() {
       // to a second job from the same household was rejected as a duplicate and
       // the old catch block swallowed it, leaving the applicant believing they
       // had applied.
-      await jobService.applyForJob(selectedJob.id, househelpProfileId, pitch.trim());
+      await jobService.applyForJob(selectedJob.id, serviceProviderProfileId, pitch.trim());
 
       setSuccess("Application submitted successfully.");
       setAppliedJobIds((prev) => new Set(prev).add(jobKey(selectedJob)));
@@ -988,7 +988,7 @@ export default function ServiceProviderJobsHome() {
 
       const householdProfileId = getHouseholdProfileId(job);
       if (householdProfileId) payload.household_profile_id = householdProfileId;
-      if (househelpProfileId) payload.service_provider_profile_id = househelpProfileId;
+      if (serviceProviderProfileId) payload.service_provider_profile_id = serviceProviderProfileId;
       // The job this chat is about, so it gets its own thread rather than
       // joining whatever these two last talked about.
       if (job.id) payload.listing_id = job.id;
@@ -1016,14 +1016,14 @@ export default function ServiceProviderJobsHome() {
         });
         setSuccess("Job removed from saved.");
       } else {
-        if (!househelpProfileId) {
+        if (!serviceProviderProfileId) {
           throw new Error("User profile information is missing. Please sign in again.");
         }
 
         // A bookmark, through the same service the household side already uses.
         // This used to call shortlistListing, which files a formal application
         // against the household's listing — so saving a job for later put the
-        // househelp into that household's hiring funnel, listed among the
+        // service provider into that household's hiring funnel, listed among the
         // candidates it had shortlisted. Removing it already went through
         // shortlistService, so the pair was mismatched either way.
         // String, not the raw id.
@@ -1086,7 +1086,7 @@ export default function ServiceProviderJobsHome() {
               </div>
 
 
-              {/* Always on screen while browsing. A househelp reading job
+              {/* Always on screen while browsing. A service provider reading job
                   adverts is exactly the person who should be told they can be
                   found instead. */}
               <OpenForWorkButton ref={openForWorkButtonRef} className="hidden shrink-0 sm:flex" verification={identityVerification} />
@@ -1113,10 +1113,10 @@ export default function ServiceProviderJobsHome() {
                 data-tour="discovery-filters"
                 type="button"
                 onClick={() => setFiltersOpen((prev) => !prev)}
-                id="househelp-job-filters-toggle"
+                id="service-provider-job-filters-toggle"
                 aria-label={filtersOpen ? "Hide job filters" : "Show job filters"}
                 aria-expanded={filtersOpen}
-                aria-controls="househelp-job-filters"
+                aria-controls="service-provider-job-filters"
                 className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-purple-200/70 bg-white/80 px-3 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
               >
                 <SlidersHorizontal className="h-4 w-4" />
@@ -1141,7 +1141,7 @@ export default function ServiceProviderJobsHome() {
                 title="Filters"
                 maxWidth="max-w-[560px]"
               >
-              <div id="househelp-job-filters" className="hb-filter-panel w-full pb-4">
+              <div id="service-provider-job-filters" className="hb-filter-panel w-full pb-4">
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Job type

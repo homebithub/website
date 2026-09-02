@@ -21,10 +21,10 @@ interface LocationProps {
 }
 
 /**
- * Captures where a househelp is based, by walking county → subcounty → ward.
+ * Captures where a service provider is based, by walking county → subcounty → ward.
  *
- * Households search for househelps by area, so a househelp who has not said
- * where they are cannot be found. This is a househelp field only: nothing
+ * Households search for service providers by area, so a provider who has not said
+ * where they are cannot be found. This is a service-provider field only: nothing
  * searches for households, and a job listing carries its own location.
  *
  * This replaced a free-text search box, which was wrong in three ways. It asked
@@ -159,7 +159,7 @@ const Location: React.FC<LocationProps> = ({ onSelect, onSaved }) => {
                 console.warn('[Location] Failed to update profile location:', profileErr);
             }
 
-            // Location counts toward a househelp's completion, so invalidate the
+            // Location counts toward a service provider's completion, so invalidate the
             // cached progress or the checklist keeps listing it as outstanding.
             notifyProfileProgressChanged();
 

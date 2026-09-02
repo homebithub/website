@@ -513,7 +513,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
       return;
     }
 
-    // A job with no location cannot be found by the househelps near it, so this
+    // A job with no location cannot be found by nearby service providers, so this
     // is a hard requirement rather than something to fill in later.
     //
     // Editing splits two cases that look identical here. A listing that already

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildApplicationContractMap, buildListingHousehelpContractMap, collapseApplicationContracts, getHousehelpCandidateIds } from './hiringIdentifiers';
+import { buildApplicationContractMap, buildListingServiceProviderContractMap, collapseApplicationContracts, getServiceProviderCandidateIds } from './hiringIdentifiers';
 
 describe('application contract relationships', () => {
   it('prefers the signed legacy row linked to the application draft', () => {
@@ -24,12 +24,12 @@ describe('application contract relationships', () => {
   });
 });
 
-it('links a legacy contract by listing and househelp when application_id is absent', () => {
+it('links a legacy contract by listing and service provider when application_id is absent', () => {
   const rows = [{ id: 'contract', listing_id: 'listing', househelp_user_id: 'person', storage_status: 'active' }];
-  expect(buildListingHousehelpContractMap(rows)['listing-househelp:listing:person']?.id).toBe('contract');
+  expect(buildListingServiceProviderContractMap(rows)['listing-service-provider:listing:person']?.id).toBe('contract');
 });
 
-describe('househelp identifiers', () => {
+describe('service-provider identifiers', () => {
   it.each([
     [{ applicant_profile_id: 'profile-snake' }, 'profile-snake'],
     [{ applicantProfileId: 'profile-camel' }, 'profile-camel'],
@@ -38,10 +38,10 @@ describe('househelp identifiers', () => {
     [{ applicant: { profile_id: 'nested-profile' } }, 'nested-profile'],
     [{ househelp: { user: { id: 'nested-user' } } }, 'nested-user'],
   ])('recognises every application/profile response shape', (record, expected) => {
-    expect(getHousehelpCandidateIds(record)[0]).toBe(expected);
+    expect(getServiceProviderCandidateIds(record)[0]).toBe(expected);
   });
 
   it('normalises numeric identifiers returned by Struct-backed APIs', () => {
-    expect(getHousehelpCandidateIds({ service_provider_id: 42 })).toEqual(['42']);
+    expect(getServiceProviderCandidateIds({ service_provider_id: 42 })).toEqual(['42']);
   });
 });

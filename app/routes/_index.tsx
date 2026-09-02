@@ -57,7 +57,7 @@ export default function Index() {
     if (isServiceProviderProfileType(userType)) {
       return <ServiceProviderHome />;
     }
-    // Default for authenticated users (household): show househelp search
+    // Default for authenticated household users: show service-provider search.
     return <AuthenticatedHome />;
   }
 

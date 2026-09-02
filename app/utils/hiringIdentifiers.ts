@@ -22,7 +22,7 @@ export function getHouseholdCandidateIds(record: any): string[] {
   );
 }
 
-export function getHousehelpCandidateIds(record: any): string[] {
+export function getServiceProviderCandidateIds(record: any): string[] {
   return collectIds(
     // Listing applications use service_provider_id on creation, while older
     // responses and clients called the same value applicant_profile_id.
@@ -92,11 +92,11 @@ export function buildApplicationContractMap<T extends Record<string, any>>(items
 
 /**
  * Contracts created by the older form do not always retain application_id.
- * They still carry the listing and househelp, which together identify the
+ * They still carry the listing and service provider, which together identify the
  * exact relationship without preventing the household from hiring a different
  * person for the same advert.
  */
-export function buildListingHousehelpContractMap<T extends Record<string, any>>(items: T[]): Record<string, T> {
+export function buildListingServiceProviderContractMap<T extends Record<string, any>>(items: T[]): Record<string, T> {
   const result: Record<string, T> = {};
   const rank = (item: T) => {
     const status = String(item.storage_status || item.status || '').toLowerCase();
@@ -108,8 +108,8 @@ export function buildListingHousehelpContractMap<T extends Record<string, any>>(
   for (const item of items) {
     const listingId = normalizeId(item.listing_id);
     if (!listingId) continue;
-    for (const househelpId of getHousehelpCandidateIds(item)) {
-      const key = `listing-househelp:${listingId}:${househelpId}`;
+    for (const serviceProviderId of getServiceProviderCandidateIds(item)) {
+      const key = `listing-service-provider:${listingId}:${serviceProviderId}`;
       if (!result[key] || rank(item) > rank(result[key])) result[key] = item;
     }
   }

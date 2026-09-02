@@ -10,7 +10,7 @@ import { isServiceProviderProfileType } from '~/utils/profileType';
 type Employment = {
   id: string;
   household_id: string;
-  househelp_id: string;
+  service_provider_id: string;
   start_date: string | null;
   end_date: string | null;
   salary: number;
@@ -28,7 +28,7 @@ export default function HiringHistoryPage() {
   const limit = 20;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const isHousehelp = useMemo(() => {
+  const isServiceProvider = useMemo(() => {
     const storedUser = getStoredUser();
     const profileType = storedUser?.profile_type || getStoredProfileType();
     return isServiceProviderProfileType(profileType);
@@ -40,12 +40,17 @@ export default function HiringHistoryPage() {
       try {
         setLoading(true);
         setError(null);
-        const raw = isHousehelp
+        const raw = isServiceProvider
           ? await employmentService.listByServiceProvider('', limit, offset)
           : await employmentService.listByHousehold('', limit, offset);
         if (cancelled) return;
         const data = Array.isArray(raw?.data || raw) ? (raw?.data || raw) : [];
-        setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
+        const normalized = data.map((item: any) => ({
+          ...item,
+          service_provider_id:
+            item?.service_provider_id || item?.service_provider_user_id || item?.househelp_id || item?.househelp_user_id || '',
+        }));
+        setItems((prev) => (offset === 0 ? normalized : [...prev, ...normalized]));
         setHasMore(data.length === limit);
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "Failed to load hiring history");
@@ -55,7 +60,7 @@ export default function HiringHistoryPage() {
     }
     load();
     return () => { cancelled = true; };
-  }, [isHousehelp, offset]);
+  }, [isServiceProvider, offset]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;

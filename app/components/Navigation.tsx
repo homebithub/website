@@ -112,7 +112,7 @@ function NavigationContent() {
 
     // The root route is the real dashboard for both profiles: it resolves the
     // signed-in role and renders HouseholdJobsHome or ServiceProviderJobsHome. The
-    // /household and /househelp paths are layout namespaces, not home pages;
+    // /household and the legacy /househelp paths are layout namespaces, not home pages;
     // linking the mobile Home tab to them produced a 404 on direct navigation.
     const dashboardPath = React.useMemo(() => {
         const role = normalizeProfileRole(profileType);
@@ -123,10 +123,10 @@ function NavigationContent() {
     }, [profileType]);
 
     // The admin button is for someone who is both an admin and a person on the
-    // website — a household or a househelp. Being an admin alone is not enough:
+    // website — a household or a service provider. Being an admin alone is not enough:
     // an account with no profile yet, or a bureau account, has no business on
     // the site's own navigation, and dashboardPath is already exactly the
-    // "household or househelp" test.
+    // "household or service provider" test.
     const canSeeAdminDashboard = Boolean(user && isAdmin && dashboardPath);
     const handleAdminDashboard = React.useCallback((event?: React.MouseEvent<HTMLAnchorElement>) => {
         event?.preventDefault();

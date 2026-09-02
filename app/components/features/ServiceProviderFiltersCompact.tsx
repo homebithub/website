@@ -15,7 +15,11 @@ const SKILLS = ["", "cooking", "cleaning", "babysitting", "laundry", "elderly ca
 const TRAITS = ["", "honest", "patient", "punctual", "organized", "friendly"];
 const EXPERIENCES = Array.from({ length: 11 }, (_, i) => String(i));
 const GENDERS = ["", "male", "female"];
-const NANNY_TYPES = ["", "dayburg", "sleeper"];
+const WORK_ARRANGEMENTS = [
+  { value: "", label: "Any" },
+  { value: "live_in", label: "Live-in" },
+  { value: "day_worker", label: "Day worker" },
+];
 
 export default function ServiceProviderFiltersCompact({ fields, onChange, onSearch, onClear }: Props) {
   const selectClass =
@@ -40,11 +44,11 @@ export default function ServiceProviderFiltersCompact({ fields, onChange, onSear
           />
         </div>
         <div className="flex flex-col">
-          <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Nanny type</label>
+          <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Work arrangement</label>
           <CustomSelect
-            value={fields.househelp_type}
-            onChange={(val) => onChange("househelp_type", val)}
-            options={NANNY_TYPES.map((t) => ({ value: t, label: t || "Any" }))}
+            value={fields.work_arrangement}
+            onChange={(val) => onChange("work_arrangement", val)}
+            options={WORK_ARRANGEMENTS}
             placeholder="Any"
           />
         </div>
@@ -77,7 +81,7 @@ export default function ServiceProviderFiltersCompact({ fields, onChange, onSear
           <SearchableTownSelect
             value={fields.town}
             onChange={(value) => onChange("town", value)}
-            target="househelps"
+            target="service_providers"
             buttonClassName={selectClass}
           />
         </div>

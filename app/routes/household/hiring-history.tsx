@@ -10,7 +10,7 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import JobPostModal from '~/components/modals/JobPostModal';
 import { useSSEContextSafe } from '~/contexts/SSEContext';
-import { buildApplicationContractMap, buildIdentifierMap, buildListingHousehelpContractMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
+import { buildApplicationContractMap, buildIdentifierMap, buildListingServiceProviderContractMap, findByAnyIdentifier, getServiceProviderCandidateIds } from '~/utils/hiringIdentifiers';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
@@ -25,7 +25,7 @@ import { formatDisplayName } from '~/utils/displayName';
 
 interface HireRequest {
   id: string;
-  househelp_id: string;
+  service_provider_id: string;
   job_type: string;
   start_date?: string;
   salary_offered: number;
@@ -38,7 +38,7 @@ interface HireRequest {
   decline_reason?: string;
   cancel_reason?: string;
   cancellation_message?: string;
-  househelp?: {
+  service_provider?: {
     id: string;
     first_name?: string;
     last_name?: string;
@@ -102,16 +102,16 @@ type TabType = 'jobs' | 'applicants' | 'shortlisted' | 'awaiting' | 'hired' | 'c
  * Presents an application in the shape this page already renders.
  *
  * The list markup and the profile resolver were both written against the older
- * interest record, and they key off `househelp_id`. Adapting here rather than
+ * interest record, and they key off a provider profile id. Adapting here rather than
  * rewriting several hundred lines of JSX keeps the change reviewable, and means
  * the switch to applications is one function rather than a rewrite.
  */
 function toApplicantRow(application: Record<string, any>): Interest {
-  const [applicantProfileId = ''] = getHousehelpCandidateIds(application);
+  const [applicantProfileId = ''] = getServiceProviderCandidateIds(application);
   return {
     id: String(application.id ?? ''),
     // The applicant's user_profile id, which is what the profile lookup needs.
-    househelp_id: applicantProfileId,
+    service_provider_id: applicantProfileId,
     household_id: '',
     salary_expectation: Number(application.salary_expectation ?? 0),
     salary_frequency: String(application.salary_frequency ?? 'monthly'),
@@ -122,12 +122,12 @@ function toApplicantRow(application: Record<string, any>): Interest {
     initiated_by_applicant: Boolean(application.initiated_by_applicant ?? application.initiatedByApplicant),
     created_at: String(application.created_at ?? application.createdAt ?? ''),
     listing_id: application.listing_id ?? application.listingId,
-    househelp: application.househelp ?? application.applicant,
+    service_provider: application.service_provider ?? application.applicant ?? application.househelp,
   } as Interest;
 }
 
 // One empty state per tab. A single message would be wrong on five of six tabs —
-// "no interested househelps" tells someone looking at Hired nothing at all — and
+// "no interested service providers" tells someone looking at Hired nothing at all — and
 // an empty tab is the moment a person most needs to know what would fill it.
 /** Whole days until a moment, floored, never negative. */
 function daysUntil(value: string): number {
@@ -191,7 +191,7 @@ const TAB_STATUSES: Record<Exclude<TabType, 'jobs'>, string[]> = {
 
 interface Interest {
   id: string;
-  househelp_id: string;
+  service_provider_id: string;
   household_id: string;
   salary_expectation: number;
   salary_frequency: string;
@@ -202,7 +202,7 @@ interface Interest {
   initiated_by_applicant?: boolean;
   viewed_at?: string;
   created_at: string;
-  househelp?: {
+  service_provider?: {
     id: string;
     first_name?: string;
     last_name?: string;
@@ -237,6 +237,13 @@ const extractTotal = (raw: any, fallbackLength: number): number => {
   return typeof total === 'number' ? total : fallbackLength;
 };
 
+const normalizeHireRequest = (raw: any): HireRequest => ({
+  ...(raw || {}),
+  service_provider_id:
+    raw?.service_provider_id || raw?.service_provider_profile_id || raw?.househelp_id || raw?.househelp_profile_id || '',
+  service_provider: raw?.service_provider || raw?.househelp,
+});
+
 const CANCEL_REASONS = [
   { value: 'schedule_change', label: 'My schedule changed' },
   { value: 'found_alternative', label: 'Found another service provider' },
@@ -246,9 +253,9 @@ const CANCEL_REASONS = [
   { value: 'other', label: 'Other (please specify)' },
 ] as const;
 
-const getHousehelpInitials = (househelp?: HireRequest['househelp']) => {
-  const first = (househelp?.first_name || househelp?.user?.first_name)?.trim();
-  const last = (househelp?.last_name || househelp?.user?.last_name)?.trim();
+const getServiceProviderInitials = (serviceProvider?: HireRequest['service_provider']) => {
+  const first = (serviceProvider?.first_name || serviceProvider?.user?.first_name)?.trim();
+  const last = (serviceProvider?.last_name || serviceProvider?.user?.last_name)?.trim();
   if (first && last) return `${first[0]}${last[0]}`.toUpperCase();
   if (first) {
     const parts = first.split(/\s+/);
@@ -256,12 +263,12 @@ const getHousehelpInitials = (househelp?: HireRequest['househelp']) => {
     return first.slice(0, 2).toUpperCase();
   }
   if (last) return last.slice(0, 2).toUpperCase();
-  return 'HH';
+  return 'SP';
 };
 
-const getHousehelpName = (househelp?: HireRequest['househelp']) => {
-  const first = househelp?.user?.first_name || househelp?.first_name || '';
-  const last = househelp?.user?.last_name || househelp?.last_name || '';
+const getServiceProviderName = (serviceProvider?: HireRequest['service_provider']) => {
+  const first = serviceProvider?.user?.first_name || serviceProvider?.first_name || '';
+  const last = serviceProvider?.user?.last_name || serviceProvider?.last_name || '';
   return formatDisplayName(first, last, 'Service provider');
 };
 
@@ -314,11 +321,11 @@ export default function HiringHistory() {
   // Which applicant's history is open. One at a time: the card is already dense,
   // and the history is something you go looking for rather than scan.
   const [historyFor, setHistoryFor] = useState<string | null>(null);
-  // Househelp user ids whose engagement with this household has ended.
+  // Service provider user ids whose engagement with this household has ended.
   const [endedEngagements, setEndedEngagements] = useState<Set<string>>(() => new Set());
   const [terminateReason, setTerminateReason] = useState('');
   const [rejectReason, setRejectReason] = useState('');
-  // Map all known househelp identifiers to the matching employment contract.
+  // Map all known service-provider identifiers to the matching employment contract.
   const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, any>>({});
   const [attentionRevision, setAttentionRevision] = useState(0);
   const limit = 20;
@@ -371,28 +378,28 @@ export default function HiringHistory() {
   //
   // toApplicantRow builds rows out of what ListApplications returns, and that
   // carries applicant_profile_id — a profile id, not a user id — and no nested
-  // househelp at all. Three things written against interest.househelp?.user_id
+  // service provider at all. Several older response shapes only carried a nested user id,
   // were therefore reading undefined every time: ending an engagement, opening a
   // review, and deciding whether a hire had finished. Each failed quietly or did
   // nothing. The profiles this page already resolves are where the user id
   // actually lives.
-  const househelpUserIdFor = useCallback(
+  const serviceProviderUserIdFor = useCallback(
     (interest: Interest): string => {
-      const profileId = interest.househelp_id || interest.househelp?.id;
+      const profileId = interest.service_provider_id || interest.service_provider?.id;
       const profile = profileId ? profilesById[profileId] : undefined;
       return String(
         profile?.user_id ??
           profile?.userId ??
           (profile?.user && typeof profile.user === 'object' ? (profile.user as any).id : '') ??
-          interest.househelp?.user_id ??
+          interest.service_provider?.user_id ??
           '',
       );
     },
     [profilesById],
   );
   const applicantUserIds = useMemo(
-    () => Array.from(new Set(applicants.map(househelpUserIdFor).filter(Boolean))),
-    [applicants, househelpUserIdFor],
+    () => Array.from(new Set(applicants.map(serviceProviderUserIdFor).filter(Boolean))),
+    [applicants, serviceProviderUserIdFor],
   );
   const applicantProfilePhotos = useProfilePhotos(applicantUserIds);
 
@@ -405,9 +412,9 @@ export default function HiringHistory() {
       const ended = new Set<string>();
       for (const row of Array.isArray(rows) ? rows : []) {
         const status = String(row?.status ?? '').toLowerCase();
-        const househelp = row?.househelp_user_id;
-        if (househelp && ['terminated', 'completed', 'ended'].includes(status)) {
-          ended.add(String(househelp));
+        const serviceProvider = row?.service_provider_user_id || row?.househelp_user_id;
+        if (serviceProvider && ['terminated', 'completed', 'ended'].includes(status)) {
+          ended.add(String(serviceProvider));
         }
       }
       setEndedEngagements(ended);
@@ -428,7 +435,7 @@ export default function HiringHistory() {
     [shortlistedProfileIds],
   );
 
-  const removeHousehelpFromShortlist = async (profileId?: string | null) => {
+  const removeServiceProviderFromShortlist = async (profileId?: string | null) => {
     if (!profileId) return;
     try {
       await shortlistService.deleteShortlist(profileId);
@@ -512,9 +519,9 @@ export default function HiringHistory() {
       try {
         const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
         const items = extractEnvelopeArray<any>(raw);
-        const next = buildIdentifierMap(items, getHousehelpCandidateIds);
+        const next = buildIdentifierMap(items, getServiceProviderCandidateIds);
         Object.assign(next, buildApplicationContractMap(items));
-        Object.assign(next, buildListingHousehelpContractMap(items));
+        Object.assign(next, buildListingServiceProviderContractMap(items));
         setEmploymentContractMap(next);
       } catch (err) {
         // Non-critical
@@ -601,7 +608,7 @@ export default function HiringHistory() {
 
   useEffect(() => {
     const missingIds = applicants.reduce<string[]>((acc, interest) => {
-      const potentialId = interest.househelp_id || interest.househelp?.id;
+      const potentialId = interest.service_provider_id || interest.service_provider?.id;
       if (typeof potentialId === 'string' && !(potentialId in profilesById)) {
         acc.push(potentialId);
       }
@@ -758,7 +765,7 @@ export default function HiringHistory() {
       // requests are a separate legacy concept that does not share them.
       const raw = await hireRequestService.listHireRequests('', 'household');
       const items = extractEnvelopeArray<HireRequest>(raw);
-      setHireRequests(items);
+      setHireRequests(items.map(normalizeHireRequest));
       setTotal(extractTotal(raw, items.length));
     } catch (err: any) {
       setError(err.message || 'Failed to load hiring history');
@@ -783,15 +790,15 @@ export default function HiringHistory() {
 
       // The contract form opens knowing who it is for and what the job is.
       //
-      // It was opened with the contract id alone, so the form had no househelp
-      // and refused to save with "job title, salary, and househelp are
+      // It was opened with the contract id alone, so the form had no service provider
+      // and refused to save with "job title, salary, and service provider are
       // required" — on a form the household had just filled in by hand. The
       // legacy path passed these; the application path was written without
       // them.
       //
       // The rest comes off the advert, which the household already wrote. Asking
       // for it again is not only retyping: a second description of the same job
-      // can disagree with the one the househelp answered, and it is the contract
+      // can disagree with the one the service provider answered, and it is the contract
       // that binds.
       const listing = jobs.find(
         (job) => String(job.id) === String((interest as any).listing_id ?? ''),
@@ -801,7 +808,8 @@ export default function HiringHistory() {
         backLabel: 'Back to Hiring',
       });
       if (contractId) params.set('hire_contract_id', String(contractId));
-      if (interest.househelp_id) params.set('househelp_id', String(interest.househelp_id));
+      const serviceProviderId = getServiceProviderCandidateIds(interest)[0];
+      if (serviceProviderId) params.set('service_provider_id', serviceProviderId);
       params.set('application_id', interest.id);
       if ((interest as any).listing_id) params.set('listing_id', String((interest as any).listing_id));
 
@@ -837,7 +845,7 @@ export default function HiringHistory() {
       const contract = await hireContractService.createFromHireRequest('', { hire_request_id: request.id });
       // Navigate to employment contract page pre-filled with hire request data
       const params = new URLSearchParams({
-        househelp_id: request.househelp_id,
+        service_provider_id: getServiceProviderCandidateIds(request)[0] || '',
         hire_contract_id: contract.id || contract.data?.id || '',
         job_type: request.job_type || '',
         salary: String(request.salary_offered || ''),
@@ -857,7 +865,7 @@ export default function HiringHistory() {
   const navigateToEmploymentContract = (request: HireRequest) => {
     const existingEmploymentContract = findByAnyIdentifier(
       employmentContractMap,
-      getHousehelpCandidateIds(request),
+      getServiceProviderCandidateIds(request),
     );
     const existingECId = existingEmploymentContract?.id;
     if (existingECId) {
@@ -869,7 +877,7 @@ export default function HiringHistory() {
       navigate(`/household/employment-contract?${params.toString()}`);
     } else {
       const params = new URLSearchParams({
-        househelp_id: request.househelp_id,
+        service_provider_id: getServiceProviderCandidateIds(request)[0] || '',
         job_type: request.job_type || '',
         salary: String(request.salary_offered || ''),
         salary_frequency: request.salary_frequency || '',
@@ -931,7 +939,7 @@ export default function HiringHistory() {
       });
       await hireRequestService.cancelHireRequest(cancelRequest.id);
 
-      await removeHousehelpFromShortlist(cancelRequest.househelp?.id || cancelRequest.househelp_id);
+      await removeServiceProviderFromShortlist(cancelRequest.service_provider?.id || cancelRequest.service_provider_id);
       setCancelRequest(null);
       fetchHireRequests();
     } catch (err: any) {
@@ -1001,9 +1009,9 @@ export default function HiringHistory() {
     };
     for (const row of applicants) {
       const listingId = String((row as any).listing_id || '');
-      const househelpUserId = househelpUserIdFor(row);
+      const serviceProviderUserId = serviceProviderUserIdFor(row);
       const linkedContract = employmentContractMap[`application:${row.id}`] ||
-        employmentContractMap[`listing-househelp:${listingId}:${househelpUserId}`];
+        employmentContractMap[`listing-service-provider:${listingId}:${serviceProviderUserId}`];
       const linkedStatus = String(linkedContract?.storage_status || linkedContract?.status || '').toLowerCase();
       if (['active', 'signed_by_both', 'fully_signed'].includes(linkedStatus)) {
         groups.hired.push(row);
@@ -1019,11 +1027,11 @@ export default function HiringHistory() {
       // "approved" records that the hire happened, not that it is still
       // happening — that lives on the engagement. Read from the application
       // alone, a finished job sits under Hired for good.
-      const househelpUserID = househelpUserIdFor(row);
+      const serviceProviderUserID = serviceProviderUserIdFor(row);
       if (
         row.status === 'approved' &&
-        househelpUserID &&
-        endedEngagements.has(String(househelpUserID))
+        serviceProviderUserID &&
+        endedEngagements.has(String(serviceProviderUserID))
       ) {
         groups.closed.push(row);
         continue;
@@ -1037,7 +1045,7 @@ export default function HiringHistory() {
       }
     }
     return groups;
-  }, [applicants, employmentContractMap, endedEngagements, househelpUserIdFor]);
+  }, [applicants, employmentContractMap, endedEngagements, serviceProviderUserIdFor]);
 
   // Any status change is a fresh item until a card-level action acknowledges it.
   useEffect(() => {
@@ -1074,8 +1082,8 @@ export default function HiringHistory() {
     // No "mark as viewed": applications have no such flag, and the tabs already
     // say what needs attention by status. Nothing is lost — a read receipt was
     // never shown to the applicant.
-    // Navigate to househelp profile using profileId
-    const profileId = getHousehelpCandidateIds(interest)[0];
+    // Navigate to the service-provider profile using its profile id.
+    const profileId = getServiceProviderCandidateIds(interest)[0];
     if (!profileId) {
       setError("We couldn't identify this service provider's profile. Refresh the page and try again.");
       return;
@@ -1113,10 +1121,10 @@ export default function HiringHistory() {
   };
 
   const handleChatWithApplicant = async (interest: Interest) => {
-    const profileId = interest.househelp_id || interest.househelp?.id;
+    const profileId = interest.service_provider_id || interest.service_provider?.id;
     const profile = profileId ? profilesById[profileId] : undefined;
-    const househelpUserId = profile?.user_id || profile?.user?.id || (profile?.user && 'id' in profile.user ? profile.user.id : undefined) || profile?.userId || (typeof interest.househelp?.user === 'object' ? (interest.househelp.user as any)?.id : undefined);
-    if (!currentUserId || !profileId || !househelpUserId) {
+    const serviceProviderUserId = profile?.user_id || profile?.user?.id || (profile?.user && 'id' in profile.user ? profile.user.id : undefined) || profile?.userId || (typeof interest.service_provider?.user === 'object' ? (interest.service_provider.user as any)?.id : undefined);
+    if (!currentUserId || !profileId || !serviceProviderUserId) {
       setChatError('Missing information to start a chat.');
       return;
     }
@@ -1126,7 +1134,7 @@ export default function HiringHistory() {
     try {
       const payload: StartConversationPayload = {
         household_user_id: currentUserId,
-        service_provider_user_id: househelpUserId,
+        service_provider_user_id: serviceProviderUserId,
         service_provider_profile_id: profileId,
       };
 
@@ -1148,7 +1156,7 @@ export default function HiringHistory() {
   // application, and both go through the same call.
   //
   // Shortlist used to write a personal bookmark into the saved list — the same
-  // store the househelp's saved jobs live in. It reported "Added to shortlist"
+  // store the service provider's saved jobs live in. It reported "Added to shortlist"
   // truthfully and filed the applicant under the navbar's Saved page, which is
   // not where the household went looking, while the application itself stayed
   // at "initiated" and the Shortlisted tab beside it stayed empty.
@@ -1206,8 +1214,8 @@ export default function HiringHistory() {
     const reason = terminateReason.trim();
     if (!reason) return;
 
-    const househelpUserId = househelpUserIdFor(interest);
-    if (!househelpUserId) {
+    const serviceProviderUserId = serviceProviderUserIdFor(interest);
+    if (!serviceProviderUserId) {
       setError('We could not tell whose engagement this is. Please reload and try again.');
       return;
     }
@@ -1217,7 +1225,7 @@ export default function HiringHistory() {
     setShortlistLoadingInterestId(interest.id);
     setError(null);
     try {
-      await employmentService.terminate(househelpUserId, reason);
+      await employmentService.terminate(serviceProviderUserId, reason);
       await Promise.all([fetchApplicants(), refreshEngagements()]);
       window.dispatchEvent(new Event('hiring-updated'));
       setShortlistSuccess('The engagement has ended, and we have told them why. You can now leave a review.');
@@ -1233,7 +1241,7 @@ export default function HiringHistory() {
   // the eligibility rule is enforced. Sending them there beats a second copy of
   // the form that could disagree with it.
   const openReview = (interest: Interest) => {
-    const profileId = interest.househelp_id || interest.househelp?.id;
+    const profileId = interest.service_provider_id || interest.service_provider?.id;
     if (!profileId) {
       setError('We could not open a review for this person.');
       return;
@@ -1499,17 +1507,17 @@ export default function HiringHistory() {
               const listing = jobs.find(
                 (job) => String(job.id) === String((interest as any).listing_id ?? ''),
               );
-              const profileId = interest.househelp_id || interest.househelp?.id;
+              const profileId = interest.service_provider_id || interest.service_provider?.id;
               const profile = profileId ? profilesById[profileId] : undefined;
-              const firstName = profile?.first_name || interest.househelp?.first_name || interest.househelp?.user?.first_name;
-              const lastName = profile?.last_name || interest.househelp?.last_name || interest.househelp?.user?.last_name;
-              const displayName = formatDisplayName(firstName, lastName, getHousehelpName(interest.househelp as any));
-              const applicantUserId = househelpUserIdFor(interest);
-              const avatarUrl = profile?.avatar_url || profile?.profile_picture || (Array.isArray(profile?.photos) ? profile?.photos?.[0] : undefined) || interest.househelp?.avatar_url || interest.househelp?.photos?.[0] || applicantProfilePhotos[applicantUserId];
+              const firstName = profile?.first_name || interest.service_provider?.first_name || interest.service_provider?.user?.first_name;
+              const lastName = profile?.last_name || interest.service_provider?.last_name || interest.service_provider?.user?.last_name;
+              const displayName = formatDisplayName(firstName, lastName, getServiceProviderName(interest.service_provider as any));
+              const applicantUserId = serviceProviderUserIdFor(interest);
+              const avatarUrl = profile?.avatar_url || profile?.profile_picture || (Array.isArray(profile?.photos) ? profile?.photos?.[0] : undefined) || interest.service_provider?.avatar_url || interest.service_provider?.photos?.[0] || applicantProfilePhotos[applicantUserId];
               const locationCandidate = [profile?.county_of_residence, profile?.location, (profile as any)?.neighborhood, (profile as any)?.region, (profile as any)?.city].find((value) => typeof value === 'string' && value.length > 0);
               const experienceValue = profile?.years_of_experience ?? profile?.experience;
               const experienceYears = typeof experienceValue === 'number' && experienceValue > 0 ? experienceValue : undefined;
-              const primaryRole = interest.job_type || profile?.househelp_type || (profile as any)?.primary_role;
+              const primaryRole = interest.job_type || profile?.service_provider_type || profile?.househelp_type || (profile as any)?.primary_role;
               const rawSkills = Array.isArray(profile?.skills)
                 ? profile.skills
                 : Array.isArray((profile as any)?.top_skills)
@@ -1534,19 +1542,19 @@ export default function HiringHistory() {
               // question has been settled and offering it again is offering to
               // go backwards — which the state machine will not do anyway.
               const canShortlist = interest.status === 'initiated';
-              // A direct application is the househelp's consent. The household
+              // A direct application is the service provider's consent. The household
               // can accept it here and move straight to a hire. An initiated
-              // offer, on the other hand, still belongs to the househelp to
+              // offer, on the other hand, still belongs to the service provider to
               // accept or decline.
               const canAcceptApplicant = interest.status === 'initiated' && Boolean(interest.initiated_by_applicant);
-              // Applications are per listing. Matching on the househelp alone
+              // Applications are per listing. Matching on the service provider alone
               // incorrectly lets a contract for another advert control this
               // card, and also fails to enforce the one-contract-per-application
               // rule. The API exposes this relationship directly.
               const listingId = String((interest as any).listing_id || '');
-              const househelpUserId = househelpUserIdFor(interest);
+              const serviceProviderUserId = serviceProviderUserIdFor(interest);
               const existingContract = employmentContractMap[`application:${interest.id}`] ||
-                employmentContractMap[`listing-househelp:${listingId}:${househelpUserId}`];
+                employmentContractMap[`listing-service-provider:${listingId}:${serviceProviderUserId}`];
               const contractStatus = String(
                 existingContract?.storage_status || existingContract?.status || '',
               ).toLowerCase();
@@ -1557,7 +1565,7 @@ export default function HiringHistory() {
               const hasExistingContract = Boolean(existingContract);
               const isHired =
                 (interest.status === 'approved' || ['active', 'signed_by_both', 'fully_signed'].includes(contractStatus)) &&
-                !endedEngagements.has(househelpUserId);
+                !endedEngagements.has(serviceProviderUserId);
               const chatLoading = chatLoadingInterestId === interest.id;
               const shortlistLoading = shortlistLoadingInterestId === interest.id;
               // Where the household has a next step of its own.
@@ -1605,7 +1613,7 @@ export default function HiringHistory() {
                           <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-lg font-bold">
-                            {displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || getHousehelpInitials(interest.househelp as any)}
+                            {displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || getServiceProviderInitials(interest.service_provider as any)}
                           </div>
                         )}
                       </div>
@@ -1657,7 +1665,7 @@ export default function HiringHistory() {
                                 interest's asking rate, is always zero on an
                                 application, and so always said "Not specified"
                                 — beside a listing that states a figure. The
-                                same fault the househelp's side had. */}
+                                same fault the service provider's side had. */}
                             <span className="text-gray-500 dark:text-purple-300">Salary</span>
                             <p className="font-medium text-gray-900 dark:text-white">
                               {listingHighlights(
@@ -1881,19 +1889,19 @@ export default function HiringHistory() {
       {selectedHiringCard && (() => {
         const { kind, record } = selectedHiringCard;
         const isJob = kind === 'job';
-        const profileId = !isJob ? record.househelp_id || record.househelp?.id : '';
+        const profileId = !isJob ? record.service_provider_id || record.service_provider?.id : '';
         const profile = profileId ? profilesById[profileId] : undefined;
         const personName = formatDisplayName(
-          profile?.first_name || record.househelp?.first_name || record.househelp?.user?.first_name,
-          profile?.last_name || record.househelp?.last_name || record.househelp?.user?.last_name,
+          profile?.first_name || record.service_provider?.first_name || record.service_provider?.user?.first_name,
+          profile?.last_name || record.service_provider?.last_name || record.service_provider?.user?.last_name,
           'Service provider',
         );
-        const applicantUserId = !isJob ? househelpUserIdFor(record) : '';
-        const imageUrl = !isJob ? profile?.avatar_url || profile?.profile_picture || profile?.photos?.[0] || record.househelp?.avatar_url || record.househelp?.photos?.[0] || applicantProfilePhotos[applicantUserId] : undefined;
+        const applicantUserId = !isJob ? serviceProviderUserIdFor(record) : '';
+        const imageUrl = !isJob ? profile?.avatar_url || profile?.profile_picture || profile?.photos?.[0] || record.service_provider?.avatar_url || record.service_provider?.photos?.[0] || applicantProfilePhotos[applicantUserId] : undefined;
         const listing = !isJob ? jobs.find((job) => String(job.id) === String(record.listing_id || '')) : record;
         const employmentContract = !isJob
           ? employmentContractMap[`application:${record.id}`] ||
-            employmentContractMap[`listing-househelp:${String(record.listing_id || '')}:${applicantUserId}`]
+            employmentContractMap[`listing-service-provider:${String(record.listing_id || '')}:${applicantUserId}`]
           : undefined;
         return (
           <HiringCardModal
@@ -1968,7 +1976,7 @@ export default function HiringHistory() {
             Hire Request
           </p>
           <h3 className="text-base sm:text-lg font-extrabold text-gray-900 dark:text-white leading-tight">
-            {getHousehelpName(selectedRequest.househelp)}
+            {getServiceProviderName(selectedRequest.service_provider)}
           </h3>
           <div className="text-xs sm:text-xs text-gray-500 dark:text-gray-400 flex flex-col sm:flex-row sm:items-center sm:gap-2">
             <span className="capitalize">
@@ -2095,7 +2103,7 @@ export default function HiringHistory() {
             "
           >
             <FileText className="w-4 h-4" />
-            {findByAnyIdentifier(employmentContractMap, getHousehelpCandidateIds(selectedRequest)) ? 'View Employment Contract' : 'Create Employment Contract'}
+            {findByAnyIdentifier(employmentContractMap, getServiceProviderCandidateIds(selectedRequest)) ? 'View Employment Contract' : 'Create Employment Contract'}
           </button>
         )}
 
@@ -2145,7 +2153,7 @@ export default function HiringHistory() {
             focus-visible:ring-offset-2 focus-visible:ring-purple-500
             disabled:opacity-60 disabled:cursor-not-allowed
           "
-          disabled={!selectedRequest.househelp?.id && !selectedRequest.househelp_id}
+          disabled={!selectedRequest.service_provider?.id && !selectedRequest.service_provider_id}
         >
           View Service provider Profile
         </button>
@@ -2199,7 +2207,7 @@ export default function HiringHistory() {
             Cancel Hire Request
           </p>
           <h3 className="text-base sm:text-xl font-extrabold text-gray-900 dark:text-white leading-tight">
-            {getHousehelpName(cancelRequest.househelp)}
+            {getServiceProviderName(cancelRequest.service_provider)}
           </h3>
           <p className="text-xs sm:text-xs text-gray-500 dark:text-gray-400">
             Select a reason and optionally leave private feedback to help Homebit improve hiring.
@@ -2369,7 +2377,7 @@ export default function HiringHistory() {
   <div className="hb-mobile-modal-viewport fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
     <div className="w-full max-w-md rounded-t-3xl border border-red-200 bg-white p-6 shadow-2xl dark:border-red-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
       <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-        End the engagement with {terminating.househelp?.first_name || 'this person'}?
+        End the engagement with {terminating.service_provider?.first_name || 'this person'}?
       </h3>
       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
         The contract ends today. They will be told, with the reason you give here.
@@ -2415,7 +2423,7 @@ export default function HiringHistory() {
   <div className="hb-mobile-modal-viewport fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
     <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
       <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-        Not going ahead with {rejecting.househelp?.first_name || 'this applicant'}?
+        Not going ahead with {rejecting.service_provider?.first_name || 'this applicant'}?
       </h3>
       <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
         They will be told, and the application moves to Closed.

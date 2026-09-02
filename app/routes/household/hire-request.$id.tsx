@@ -9,13 +9,13 @@ import { getStoredUserId } from '~/utils/authStorage';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
-import { getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
+import { getServiceProviderCandidateIds } from '~/utils/hiringIdentifiers';
 import { DetailPageSkeleton } from "~/components/ShimmerLoader";
 
 interface HireRequest {
   id: string;
   household_id: string;
-  househelp_id: string;
+  service_provider_id: string;
   job_type?: string;
   start_date?: string;
   salary_offered?: number;
@@ -26,7 +26,7 @@ interface HireRequest {
   created_at?: string;
   updated_at: string;
   decline_reason?: string;
-  househelp?: {
+  service_provider?: {
     id: string;
     first_name: string;
     last_name: string;
@@ -36,6 +36,15 @@ interface HireRequest {
     photos?: string[];
     salary_expectation?: number;
   };
+}
+
+function normalizeHireRequest(raw: any): HireRequest {
+  return {
+    ...(raw || {}),
+    service_provider_id:
+      raw?.service_provider_id || raw?.service_provider_profile_id || raw?.househelp_id || raw?.househelp_profile_id || '',
+    service_provider: raw?.service_provider || raw?.househelp,
+  } as HireRequest;
 }
 
 export default function HireRequestDetail() {
@@ -57,8 +66,8 @@ export default function HireRequestDetail() {
   const backLabel = searchParams.get('backLabel') || 'Back to Hiring History';
   const detailPath = `${location.pathname}${location.search || ''}`;
 
-  const viewHousehelpProfile = () => {
-    const profileId = getHousehelpCandidateIds(hireRequest)[0];
+  const viewServiceProviderProfile = () => {
+    const profileId = getServiceProviderCandidateIds(hireRequest)[0];
     if (!profileId) {
       setError("We couldn't identify this service provider's profile. Refresh the page and try again.");
       return;
@@ -72,7 +81,7 @@ export default function HireRequestDetail() {
     fetchHireRequest();
   }, [id]);
 
-  // Check if an employment contract already exists for this hire request's househelp
+  // Check whether an employment contract already exists for this service provider.
   useEffect(() => {
     if (hireRequest && (hireRequest.status === 'finalized' || hireRequest.status === 'accepted')) {
       checkExistingEmploymentContract();
@@ -83,9 +92,9 @@ export default function HireRequestDetail() {
     try {
       const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
       const contracts = raw?.data || raw || [];
-      const hireRequestIdentifiers = getHousehelpCandidateIds(hireRequest);
+      const hireRequestIdentifiers = getServiceProviderCandidateIds(hireRequest);
       const match = (Array.isArray(contracts) ? contracts : []).find((c: any) => {
-        const contractIdentifiers = getHousehelpCandidateIds(c);
+        const contractIdentifiers = getServiceProviderCandidateIds(c);
         return hireRequestIdentifiers.some((identifier) => contractIdentifiers.includes(identifier));
       });
       if (match) setExistingEmploymentContract(match.id);
@@ -108,7 +117,7 @@ export default function HireRequestDetail() {
 
     try {
       const data = await hireRequestService.getHireRequest(id);
-      setHireRequest(data);
+      setHireRequest(normalizeHireRequest(data?.data || data));
     } catch (err: any) {
       setError(err.message || 'Failed to load hire request');
     } finally {
@@ -175,7 +184,7 @@ export default function HireRequestDetail() {
 
       // Navigate to employment contract page pre-filled with hire request data
       const params = new URLSearchParams({
-        househelp_id: hireRequest!.househelp_id,
+        service_provider_id: getServiceProviderCandidateIds(hireRequest)[0] || '',
         hire_contract_id: contract.id || contract.data?.id || '',
         job_type: hireRequest!.job_type || '',
         salary: String(hireRequest!.salary_offered || ''),
@@ -204,7 +213,7 @@ export default function HireRequestDetail() {
       navigate(`/household/employment-contract?${params.toString()}`);
     } else {
       const params = new URLSearchParams({
-        househelp_id: hireRequest!.househelp_id,
+        service_provider_id: getServiceProviderCandidateIds(hireRequest)[0] || '',
         job_type: hireRequest!.job_type || '',
         salary: String(hireRequest!.salary_offered || ''),
         salary_frequency: hireRequest!.salary_frequency || '',
@@ -361,31 +370,31 @@ export default function HireRequestDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Request Details */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Househelp Info */}
+            {/* Service-provider info */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Service provider Information
               </h2>
               <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                 <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400">
-                  {hireRequest.househelp?.avatar_url || hireRequest.househelp?.photos?.[0] ? (
+                  {hireRequest.service_provider?.avatar_url || hireRequest.service_provider?.photos?.[0] ? (
                     <img
-                      src={hireRequest.househelp.avatar_url || hireRequest.househelp.photos?.[0]}
-                      alt={`${hireRequest.househelp.first_name} ${hireRequest.househelp.last_name}`}
+                      src={hireRequest.service_provider.avatar_url || hireRequest.service_provider.photos?.[0]}
+                      alt={`${hireRequest.service_provider.first_name} ${hireRequest.service_provider.last_name}`}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
-                      {hireRequest.househelp?.first_name?.[0]}{hireRequest.househelp?.last_name?.[0]}
+                      {hireRequest.service_provider?.first_name?.[0]}{hireRequest.service_provider?.last_name?.[0]}
                     </div>
                   )}
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                    {hireRequest.househelp?.first_name} {hireRequest.househelp?.last_name}
+                    {hireRequest.service_provider?.first_name} {hireRequest.service_provider?.last_name}
                   </h3>
                   <button
-                    onClick={viewHousehelpProfile}
+                    onClick={viewServiceProviderProfile}
                     className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
                   >
                     View Full Profile →
@@ -417,9 +426,9 @@ export default function HireRequestDetail() {
                     <p className="font-medium text-gray-900 dark:text-white">
                       {formatSalary(hireRequest.salary_offered, hireRequest.salary_frequency)}
                     </p>
-                    {hireRequest.househelp?.salary_expectation && (
+                    {hireRequest.service_provider?.salary_expectation && (
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Expected: KES {hireRequest.househelp.salary_expectation.toLocaleString()}
+                        Expected: KES {hireRequest.service_provider.salary_expectation.toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -531,7 +540,7 @@ export default function HireRequestDetail() {
               )}
 
               <button
-                onClick={viewHousehelpProfile}
+                onClick={viewServiceProviderProfile}
                 className="w-full px-4 py-1.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-medium transition-colors"
               >
                 View Service provider Profile

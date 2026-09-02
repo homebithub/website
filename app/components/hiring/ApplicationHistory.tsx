@@ -13,7 +13,7 @@ import { listingApplicationService } from "~/services/grpc/authServices";
  * start and were readable by nobody.
  *
  * Shown to both sides, deliberately. A household should see what it did, and a
- * househelp should be able to tell that they were shortlisted for a fortnight
+ * service provider should be able to tell that they were shortlisted for a fortnight
  * before it went the other way.
  */
 

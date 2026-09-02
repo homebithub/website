@@ -12,7 +12,7 @@ export interface HouseholdMember {
   status: 'pending' | 'active' | 'removed';
   permissions: {
     can_edit_profile: boolean;
-    can_manage_househelps: boolean;
+    can_manage_service_providers: boolean;
     can_view_financials: boolean;
     can_invite_members: boolean;
     can_remove_members: boolean;
@@ -163,7 +163,15 @@ export const listMembers = async (
   householdId: string
 ): Promise<HouseholdMember[]> => {
   const result = await householdMemberService.listMembers(householdId);
-  return result?.members || result?.data || result || [];
+  const members = result?.members || result?.data || result || [];
+  return (Array.isArray(members) ? members : []).map((member: any) => ({
+    ...member,
+    permissions: {
+      ...(member?.permissions || {}),
+      can_manage_service_providers:
+        member?.permissions?.can_manage_service_providers ?? member?.permissions?.can_manage_househelps ?? false,
+    },
+  }));
 };
 
 export const updateMemberRole = async (

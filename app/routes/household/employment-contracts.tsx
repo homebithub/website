@@ -10,18 +10,18 @@ import { ListPageSkeleton } from "~/components/ShimmerLoader";
 interface EmploymentContract {
   id: string;
   household_id: string;
-  househelp_id: string;
+  service_provider_id: string;
   status: string;
   job_title: string;
   salary: number;
   salary_frequency: string;
   start_date?: string;
   household_signed_at?: string;
-  househelp_signed_at?: string;
+  service_provider_signed_at?: string;
   household_signer_name: string;
-  househelp_signer_name: string;
+  service_provider_signer_name: string;
   created_at: string;
-  househelp?: {
+  service_provider?: {
     id: string;
     first_name?: string;
     last_name?: string;
@@ -29,7 +29,17 @@ interface EmploymentContract {
   };
 }
 
-type TabType = 'all' | 'draft' | 'pending_househelp' | 'signed_by_both';
+type TabType = 'all' | 'draft' | 'pending_service_provider' | 'signed_by_both';
+
+const normalizeEmploymentContract = (raw: any): EmploymentContract => ({
+  ...(raw || {}),
+  service_provider_id:
+    raw?.service_provider_id || raw?.service_provider_profile_id || raw?.househelp_id || raw?.househelp_profile_id || '',
+  service_provider_signed_at: raw?.service_provider_signed_at || raw?.househelp_signed_at,
+  service_provider_signer_name: raw?.service_provider_signer_name || raw?.househelp_signer_name || '',
+  service_provider: raw?.service_provider || raw?.househelp,
+  status: raw?.status === 'pending_househelp' ? 'pending_service_provider' : raw?.status,
+});
 
 export default function EmploymentContractsList() {
   const navigate = useNavigate();
@@ -37,7 +47,7 @@ export default function EmploymentContractsList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['all', 'draft', 'pending_househelp', 'signed_by_both'];
+    const validTabs: TabType[] = ['all', 'draft', 'pending_service_provider', 'signed_by_both'];
     return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'all';
   });
   const [contracts, setContracts] = useState<EmploymentContract[]>([]);
@@ -63,7 +73,7 @@ export default function EmploymentContractsList() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['all', 'draft', 'pending_househelp', 'signed_by_both'];
+    const validTabs: TabType[] = ['all', 'draft', 'pending_service_provider', 'signed_by_both'];
     if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
       setActiveTab(tabParam as TabType);
       setOffset(0);
@@ -77,7 +87,7 @@ export default function EmploymentContractsList() {
       const status = activeTab !== 'all' ? activeTab : undefined;
       const raw = await employmentContractService.listEmploymentContracts('', status, limit, offset);
       const items = raw?.data || raw || [];
-      setContracts(Array.isArray(items) ? items : []);
+      setContracts(Array.isArray(items) ? items.map(normalizeEmploymentContract) : []);
       setTotal(typeof raw?.total === 'number' ? raw.total : (Array.isArray(items) ? items.length : 0));
     } catch (err: any) {
       setError(err.message || 'Failed to load contracts');
@@ -95,7 +105,7 @@ export default function EmploymentContractsList() {
   const getStatusBadge = (contract: EmploymentContract) => {
     const s = contract.status;
     if (s === 'signed_by_both') return { label: 'Fully Signed', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200', icon: CheckCircle };
-    if (s === 'pending_househelp') return { label: 'Awaiting Service provider', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200', icon: Send };
+    if (s === 'pending_service_provider') return { label: 'Awaiting service provider', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200', icon: Send };
     if (s === 'draft' && contract.household_signed_at) return { label: 'Signed - Ready to Forward', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200', icon: AlertCircle };
     if (s === 'draft') return { label: 'Draft', color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200', icon: FileText };
     return { label: s, color: 'bg-gray-100 text-gray-800', icon: FileText };
@@ -104,7 +114,7 @@ export default function EmploymentContractsList() {
   const tabs: { key: TabType; label: string }[] = [
     { key: 'all', label: 'All' },
     { key: 'draft', label: 'Drafts' },
-    { key: 'pending_househelp', label: 'Pending' },
+    { key: 'pending_service_provider', label: 'Pending' },
     { key: 'signed_by_both', label: 'Signed' },
   ];
 
@@ -203,7 +213,7 @@ export default function EmploymentContractsList() {
                   className="w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow text-left flex items-center gap-4"
                 >
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold flex-shrink-0">
-                    {contract.househelp?.first_name?.[0] || '?'}{contract.househelp?.last_name?.[0] || ''}
+                    {contract.service_provider?.first_name?.[0] || '?'}{contract.service_provider?.last_name?.[0] || ''}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -216,7 +226,7 @@ export default function EmploymentContractsList() {
                       </span>
                     </div>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                      {contract.househelp?.first_name} {contract.househelp?.last_name} &bull; KES {contract.salary?.toLocaleString()} / {contract.salary_frequency}
+                      {contract.service_provider?.first_name} {contract.service_provider?.last_name} &bull; KES {contract.salary?.toLocaleString()} / {contract.salary_frequency}
                       {contract.start_date && ` &bull; From ${formatDate(contract.start_date)}`}
                     </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">

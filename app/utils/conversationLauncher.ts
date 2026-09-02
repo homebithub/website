@@ -111,9 +111,7 @@ export async function startOrGetConversation(
     const serviceProviderProfileId = getServiceProviderProfileId(payload);
     const data = await notificationsService.startConversation({
       householdUserId: payload.household_user_id,
-      househelpUserId: serviceProviderUserId,
       householdProfileId: payload.household_profile_id || '',
-      househelpProfileId: serviceProviderProfileId || '',
       serviceProviderUserId,
       serviceProviderProfileId,
       listingId: payload.listing_id ? String(payload.listing_id) : '',

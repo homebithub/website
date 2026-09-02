@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { ServiceProviderCardDetails } from '~/components/listing/ServiceProviderCardDetails';
 
-describe('household househelp cards', () => {
+describe('household service-provider cards', () => {
   it('uses the available description and labels desktop details', () => {
     const markup = renderToStaticMarkup(React.createElement(ServiceProviderCardDetails, {
       description: 'Experienced nanny and cook',
@@ -44,7 +44,7 @@ describe('household househelp cards', () => {
 
     expect(home).toContain('<ServiceProviderCardDetails');
     expect(saved).toContain('<ServiceProviderCardDetails');
-    expect(saved).toContain('visibleSavedHousehelps');
+    expect(saved).toContain('visibleSavedServiceProviders');
     expect(saved).toContain('isOpenForWorkListingActive(listing)');
     expect(home).not.toContain('{formatListingStatus(listing.status)}');
   });

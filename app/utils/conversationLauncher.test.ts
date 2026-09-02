@@ -22,7 +22,7 @@ describe('service-provider conversation compatibility', () => {
     startConversation.mockReset();
   });
 
-  it('dual-writes canonical and legacy identifiers for an older caller', async () => {
+  it('normalizes an older caller to canonical service identifiers', async () => {
     listConversations.mockResolvedValue({ conversations: [] });
     startConversation.mockResolvedValue({ id: CONVERSATION_ID });
 
@@ -37,8 +37,6 @@ describe('service-provider conversation compatibility', () => {
     expect(startConversation).toHaveBeenCalledWith({
       householdUserId: 'household-user',
       householdProfileId: 'household-profile',
-      househelpUserId: 'provider-user',
-      househelpProfileId: 'provider-profile',
       serviceProviderUserId: 'provider-user',
       serviceProviderProfileId: 'provider-profile',
       listingId: '17',

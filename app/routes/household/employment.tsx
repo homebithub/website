@@ -9,7 +9,7 @@ import { profileService as grpcProfileService, shortlistService } from '~/servic
 
 const initialFields: ServiceProviderSearchFields = {
   status: "active",
-  househelp_type: "",
+  work_arrangement: "",
   gender: "",
   experience: "",
   town: "",

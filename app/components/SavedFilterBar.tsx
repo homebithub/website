@@ -9,7 +9,7 @@ type Props<T> = {
   onSave: (name: string, notify: boolean) => Promise<void>;
   onApply: (name: string) => void;
   onDelete: (name: string) => Promise<void>;
-  /** What a subscription would tell them about, e.g. "new jobs" or "new househelps". */
+  /** What a subscription would tell them about, e.g. "new jobs" or "new service providers". */
   notifySubject: string;
 };
 

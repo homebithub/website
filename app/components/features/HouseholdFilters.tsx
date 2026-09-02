@@ -8,7 +8,7 @@ export type HouseholdSearchFields = {
   verified?: string;
   has_kids?: string;
   has_pets?: string;
-  type_of_househelp?: string;
+  work_arrangement?: string;
   available_from?: string;
   needs_live_in?: string;
   needs_day_worker?: string;
@@ -134,8 +134,8 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
               <div className="flex flex-col">
                 <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Type of Service provider</label>
                 <CustomSelect
-                  value={fields.type_of_househelp || ""}
-                  onChange={(val) => onChange("type_of_househelp", val)}
+                  value={fields.work_arrangement || ""}
+                  onChange={(val) => onChange("work_arrangement", val)}
                   options={[
                     { value: "", label: "Any" },
                     { value: "live_in", label: "Live-in" },

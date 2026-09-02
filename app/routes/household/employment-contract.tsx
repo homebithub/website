@@ -26,9 +26,9 @@ interface EmploymentContract {
   id: string;
   hire_contract_id?: string;
   household_id: string;
-  househelp_id: string;
+  service_provider_id: string;
   household_user_id: string;
-  househelp_user_id: string;
+  service_provider_user_id: string;
   status: string;
   job_title: string;
   job_description: string;
@@ -42,14 +42,28 @@ interface EmploymentContract {
   household_signature: string;
   household_signed_at?: string;
   household_signer_name: string;
-  househelp_signature: string;
-  househelp_signed_at?: string;
-  househelp_signer_name: string;
+  service_provider_signature: string;
+  service_provider_signed_at?: string;
+  service_provider_signer_name: string;
   notes: string;
   created_at: string;
   updated_at: string;
   household?: any;
-  househelp?: any;
+  service_provider?: any;
+}
+
+function normalizeEmploymentContract(raw: any): EmploymentContract {
+  return {
+    ...(raw || {}),
+    service_provider_id:
+      raw?.service_provider_id || raw?.service_provider_profile_id || raw?.househelp_id || raw?.househelp_profile_id || '',
+    service_provider_user_id: raw?.service_provider_user_id || raw?.househelp_user_id || '',
+    service_provider_signature: raw?.service_provider_signature || raw?.househelp_signature || '',
+    service_provider_signed_at: raw?.service_provider_signed_at || raw?.househelp_signed_at,
+    service_provider_signer_name: raw?.service_provider_signer_name || raw?.househelp_signer_name || '',
+    service_provider: raw?.service_provider || raw?.househelp,
+    status: raw?.status === 'pending_househelp' ? 'pending_service_provider' : raw?.status,
+  } as EmploymentContract;
 }
 
 type ViewMode = 'configure' | 'preview' | 'view';
@@ -59,7 +73,7 @@ export default function EmploymentContractPage() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const contractId = searchParams.get('id');
-  const househelpId = searchParams.get('househelp_id');
+  const serviceProviderId = searchParams.get('service_provider_id') || searchParams.get('househelp_id');
   const hireContractId = searchParams.get('hire_contract_id');
   const applicationId = searchParams.get('application_id');
   const listingId = searchParams.get('listing_id');
@@ -69,7 +83,7 @@ export default function EmploymentContractPage() {
   const [emailSending, setEmailSending] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
-  const [resolvedHousehelpProfileId, setResolvedHousehelpProfileId] = useState<string>(househelpId || '');
+  const [resolvedServiceProviderProfileId, setResolvedServiceProviderProfileId] = useState<string>(serviceProviderId || '');
   // What the advert said about pay, when it named a band rather than a figure.
   // Shown beside the salary field instead of being guessed at: picking an end of
   // somebody's posted range and calling it their wage is not a default to make
@@ -114,7 +128,7 @@ export default function EmploymentContractPage() {
       // title, where the work is, when it starts, what it involves — and the
       // form asked for every word of it again. Retyping is not just tedious: a
       // second description of the same job can disagree with the one the
-      // househelp answered, and it is the contract that binds.
+      // service provider answered, and it is the contract that binds.
       const paramJobType = searchParams.get('job_type');
       const paramSalary = searchParams.get('salary');
       const paramSalaryFreq = searchParams.get('salary_frequency');
@@ -144,10 +158,10 @@ export default function EmploymentContractPage() {
   useEffect(() => {
     let cancelled = false;
 
-    const resolveTargetHousehelp = async () => {
-      const targetId = contract?.househelp_id || househelpId;
+    const resolveTargetServiceProvider = async () => {
+      const targetId = contract?.service_provider_id || serviceProviderId;
       if (!targetId) {
-        if (!cancelled) setResolvedHousehelpProfileId('');
+        if (!cancelled) setResolvedServiceProviderProfileId('');
         return;
       }
 
@@ -160,25 +174,25 @@ export default function EmploymentContractPage() {
         // This preferred resolveServiceProviderProfileId, which returns `profile_id`
         // first: the profile record, which matches neither. So a perfectly good
         // id was swapped for one that resolves to nothing, and the contract
-        // stopped with "we could not find the househelp this contract is for"
+        // stopped with "we could not find the service provider this contract is for"
         // about the applicant whose card had just been used to open it.
         const resolved = resolveServiceProviderUserId(profile) || targetId;
         if (!cancelled) {
-          setResolvedHousehelpProfileId(resolved);
+          setResolvedServiceProviderProfileId(resolved);
         }
       } catch {
         if (!cancelled) {
-          setResolvedHousehelpProfileId(targetId);
+          setResolvedServiceProviderProfileId(targetId);
         }
       }
     };
 
-    resolveTargetHousehelp();
+    resolveTargetServiceProvider();
 
     return () => {
       cancelled = true;
     };
-  }, [contract?.househelp_id, househelpId]);
+  }, [contract?.service_provider_id, serviceProviderId]);
 
   // Prefill the current user's name into the correct field based on their profile type
   useEffect(() => {
@@ -192,27 +206,27 @@ export default function EmploymentContractPage() {
     }
   }, [user]);
 
-  // Prefill employee name from househelp profile when creating a new contract
+  // Prefill employee name from the service-provider profile when creating a contract.
   useEffect(() => {
-    const fetchHousehelpName = async () => {
-      const hhId = resolvedHousehelpProfileId || contract?.househelp_id || househelpId;
+    const fetchServiceProviderName = async () => {
+      const hhId = resolvedServiceProviderProfileId || contract?.service_provider_id || serviceProviderId;
       if (!hhId) return;
       // If contract already has signer names, use those
-      if (contract?.househelp_signer_name) {
-        if (!employeeName) setEmployeeName(contract.househelp_signer_name);
+      if (contract?.service_provider_signer_name) {
+        if (!employeeName) setEmployeeName(contract.service_provider_signer_name);
         return;
       }
       if (contract?.household_signer_name) {
         if (!employerName) setEmployerName(contract.household_signer_name);
       }
-      // Try to get name from contract's nested househelp object
-      if (contract?.househelp) {
-        const hh = contract.househelp;
+      // Try to get the name from the contract's nested provider object.
+      if (contract?.service_provider) {
+        const hh = contract.service_provider;
         const name = `${hh.first_name || hh.user?.first_name || ''} ${hh.last_name || hh.user?.last_name || ''}`.trim();
         if (name && !employeeName) setEmployeeName(name);
         return;
       }
-      // Fetch househelp profile to get their name
+      // Fetch the service-provider profile to get their name.
       try {
         const hh = await resolveServiceProviderProfile(hhId, { identifierType: 'auto' });
         const profile = hh || {};
@@ -222,8 +236,8 @@ export default function EmploymentContractPage() {
         // Non-critical
       }
     };
-    fetchHousehelpName();
-  }, [contract, househelpId, resolvedHousehelpProfileId]);
+    fetchServiceProviderName();
+  }, [contract, serviceProviderId, resolvedServiceProviderProfileId]);
 
   const fetchDefaultClauses = async () => {
     try {
@@ -264,7 +278,8 @@ export default function EmploymentContractPage() {
     try {
       const data = await employmentContractService.getEmploymentContract(id);
       const c = data?.data || data;
-      setContract(c);
+      const normalizedContract = normalizeEmploymentContract(c);
+      setContract(normalizedContract);
       // Populate form fields from existing contract
       setJobTitle(c.job_title || '');
       setJobDescription(c.job_description || '');
@@ -277,7 +292,7 @@ export default function EmploymentContractPage() {
       setClauses(c.clauses || []);
       setCustomClauses(c.custom_clauses || []);
       // Lock to preview/view once any party has signed
-      if (c.household_signed_at || c.househelp_signed_at) {
+      if (normalizedContract.household_signed_at || normalizedContract.service_provider_signed_at) {
         setViewMode('preview');
       }
     } catch (err: any) {
@@ -297,7 +312,7 @@ export default function EmploymentContractPage() {
       setError(null);
       return;
     }
-    if (!resolvedHousehelpProfileId) {
+    if (!resolvedServiceProviderProfileId) {
       setError('We could not identify the applicant. Return to Hiring and open the contract from the applicant’s card.');
       return;
     }
@@ -314,7 +329,7 @@ export default function EmploymentContractPage() {
     setError(null);
     try {
       const body: any = {
-        househelp_id: resolvedHousehelpProfileId,
+        service_provider_id: resolvedServiceProviderProfileId,
         job_title: jobTitle,
         job_description: jobDescription,
         salary: parseFloat(salary),
@@ -337,7 +352,7 @@ export default function EmploymentContractPage() {
         ? await employmentContractService.updateEmploymentContract(hireContractId, '', body)
         : await employmentContractService.createEmploymentContract('', body);
       const newContract = data?.data || data;
-      setContract(newContract);
+      setContract(normalizeEmploymentContract(newContract));
       setViewMode('preview');
       setSuccess('Contract created successfully! Review the preview below.');
     } catch (err: any) {
@@ -384,7 +399,7 @@ export default function EmploymentContractPage() {
       if (endDate) body.end_date = new Date(endDate).toISOString();
 
       const data = await employmentContractService.updateEmploymentContract(contract.id, '', body);
-      setContract(data?.data || data);
+      setContract(normalizeEmploymentContract(data?.data || data));
       setViewMode('preview');
       setSuccess('Contract updated successfully!');
     } catch (err: any) {
@@ -408,7 +423,7 @@ export default function EmploymentContractPage() {
     try {
       // 1. Save the signer name on the contract (only possible while in draft status)
       if (contract.status === 'draft') {
-        const nameField = role === 'household' ? 'household_signer_name' : 'househelp_signer_name';
+        const nameField = role === 'household' ? 'household_signer_name' : 'service_provider_signer_name';
         try {
           await employmentContractService.updateEmploymentContract(contract.id, '', { [nameField]: name });
         } catch {
@@ -423,7 +438,7 @@ export default function EmploymentContractPage() {
         await employmentContractService.signByServiceProvider(contract.id, '', name, name);
       }
 
-      // 3. If household just signed, also forward the contract to the househelp
+      // 3. If the household just signed, forward the contract to the service provider.
       if (role === 'household') {
         try {
           await employmentContractService.forwardToServiceProvider(contract.id);
@@ -449,7 +464,7 @@ export default function EmploymentContractPage() {
 
   // Whether there is anything here to sign.
   //
-  // A draft created by "send contract" starts empty, and the househelp could
+  // A draft created by "send contract" starts empty, and the service provider could
   // sign it in that state — a document with no position, no pay and no dates.
   const contractHasTerms = Boolean(
     contract && (contract.job_title || contract.salary || contract.start_date),
@@ -527,7 +542,7 @@ export default function EmploymentContractPage() {
           firstName,
           jobTitle: contract.job_title || 'Employment Position',
           employerName: contract.household_signer_name || '',
-          employeeName: contract.househelp_signer_name || '',
+          employeeName: contract.service_provider_signer_name || '',
           startDate: contract.start_date ? new Date(contract.start_date).toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }) : '',
           contractUrl,
         },
@@ -581,14 +596,14 @@ export default function EmploymentContractPage() {
   const userObj = (user as any)?.user || user;
   const profileType = normalizeProfileType(userObj?.profile_type || localStorage.getItem('profile_type') || '');
   const isHousehold = profileType === 'household';
-  const isHousehelp = isServiceProviderProfileType(profileType);
-  const isSignedByBoth = contract?.household_signed_at && contract?.househelp_signed_at;
+  const isServiceProvider = isServiceProviderProfileType(profileType);
+  const isSignedByBoth = contract?.household_signed_at && contract?.service_provider_signed_at;
   // Anyone party to it can take a copy, signed or not.
   //
   // This used to wait for both signatures, because the old download was a
   // screenshot of the page with nothing on it to say whether it had been agreed,
   // so an unsigned copy could be mistaken for a real one. The rendered document
-  // states its status across the top — "AWAITING THE HOUSEHELP'S SIGNATURE" — and
+  // states its status across the top — "AWAITING THE SERVICE PROVIDER'S SIGNATURE" — and
   // leaves an unsigned party's line blank, so it cannot be mistaken for anything.
   //
   // Reading an offer away from the site is exactly when somebody wants it:
@@ -614,7 +629,7 @@ export default function EmploymentContractPage() {
           </button>
           <div className="flex-1">
             <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1 dark:text-purple-300">
-              {isHousehelp ? 'Service provider' : 'Household'} • Contract
+              {isServiceProvider ? 'Service provider' : 'Household'} • Contract
             </p>
             <h1 className="text-lg font-extrabold text-gray-900 dark:text-white">
               {contractId ? 'Employment Contract' : 'Create Employment Contract'}
@@ -626,7 +641,7 @@ export default function EmploymentContractPage() {
             </p>
           </div>
           {/* View mode toggle */}
-          {contract && contract.status === 'draft' && isHousehold && !contract.household_signed_at && !contract.househelp_signed_at && (
+          {contract && contract.status === 'draft' && isHousehold && !contract.household_signed_at && !contract.service_provider_signed_at && (
             <div className="flex gap-2">
               <button
                 onClick={() => setViewMode('configure')}
@@ -648,30 +663,30 @@ export default function EmploymentContractPage() {
         {contract && (
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
             contract.status === 'signed_by_both' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200' :
-            contract.status === 'pending_househelp' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200' :
+            contract.status === 'pending_service_provider' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200' :
             contract.status === 'draft' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200' :
             'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
           }`}>
             {contract.status === 'signed_by_both' && <CheckCircle className="w-5 h-5" />}
-            {contract.status === 'pending_househelp' && <AlertCircle className="w-5 h-5" />}
+            {contract.status === 'pending_service_provider' && <AlertCircle className="w-5 h-5" />}
             {contract.status === 'draft' && <FileText className="w-5 h-5" />}
             {/* Said from the side of whoever is reading it.
-                Every line here was written for the household, so a househelp
-                who had just signed was told the page was "awaiting househelp
+                Every line here was written for the household, so a service provider
+                who had just signed was told the page was "awaiting service provider
                 signature" — waiting, apparently, for themselves. Both sides
                 open this same page. */}
             <span className="font-medium">
-              {contract.status === 'signed_by_both' || (contract.household_signed_at && contract.househelp_signed_at)
+              {contract.status === 'signed_by_both' || (contract.household_signed_at && contract.service_provider_signed_at)
                 ? 'Signed by both of you'
-                : contract.household_signed_at && !contract.househelp_signed_at
-                  ? (isHousehelp ? 'Waiting for your signature' : 'Waiting for the service provider to sign')
-                  : contract.househelp_signed_at && !contract.household_signed_at
-                    ? (isHousehelp ? 'Signed — waiting for the household' : 'Waiting for your signature')
+                : contract.household_signed_at && !contract.service_provider_signed_at
+                  ? (isServiceProvider ? 'Waiting for your signature' : 'Waiting for the service provider to sign')
+                  : contract.service_provider_signed_at && !contract.household_signed_at
+                    ? (isServiceProvider ? 'Signed — waiting for the household' : 'Waiting for your signature')
                     : contract.status === 'terminated'
                       ? 'Terminated'
                       : contract.status === 'active'
                         ? 'Active contract'
-                        : (isHousehelp ? 'Not signed yet' : 'Draft — sign and send it to them')}
+                        : (isServiceProvider ? 'Not signed yet' : 'Draft — sign and send it to them')}
             </span>
           </div>
         )}
@@ -693,7 +708,7 @@ export default function EmploymentContractPage() {
         )}
 
         {/* ═══ CONFIGURE MODE ═══ (blocked once any party has signed) */}
-        {viewMode === 'configure' && !contract?.household_signed_at && !contract?.househelp_signed_at && (
+        {viewMode === 'configure' && !contract?.household_signed_at && !contract?.service_provider_signed_at && (
           // Tightened: every card was p-6 with 2.5-high fields and three-row
           // text areas, so a form of nine inputs ran past a laptop screen and
           // the clause list — the part that needs reading — sat below the fold.
@@ -876,7 +891,7 @@ export default function EmploymentContractPage() {
                     <strong>Employer (Household):</strong> {contract.household_signer_name || 'Pending signature'}
                   </p>
                   <p className="text-gray-700">
-                    <strong>Employee (Service provider):</strong> {contract.househelp_signer_name || 'Pending signature'}
+                    <strong>Employee (Service provider):</strong> {contract.service_provider_signer_name || 'Pending signature'}
                   </p>
                 </div>
 
@@ -954,10 +969,10 @@ export default function EmploymentContractPage() {
                   </div>
                   <div className="text-center">
                     <div className="border-t border-gray-400 pt-3">
-                      {contract.househelp_signed_at ? (
+                      {contract.service_provider_signed_at ? (
                         <>
-                          <p className="font-semibold text-gray-900">{contract.househelp_signer_name}</p>
-                          <p className="text-xs text-gray-500">Signed: {formatDate(contract.househelp_signed_at)}</p>
+                          <p className="font-semibold text-gray-900">{contract.service_provider_signer_name}</p>
+                          <p className="text-xs text-gray-500">Signed: {formatDate(contract.service_provider_signed_at)}</p>
                         </>
                       ) : (
                         <p className="font-medium text-gray-700">{employeeName || 'Awaiting signature'}</p>
@@ -970,7 +985,7 @@ export default function EmploymentContractPage() {
             </div>
 
             {/* Editable Signer Names */}
-            {contract && (!contract.household_signed_at || !contract.househelp_signed_at) && (
+            {contract && (!contract.household_signed_at || !contract.service_provider_signed_at) && (
               <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-4 dark:bg-purple-900/20 dark:border-purple-700/50">
                 <h3 className="text-xs font-semibold text-gray-900 dark:text-white mb-1">Signer Names</h3>
                 <p className="text-xs text-gray-500 dark:text-purple-300 mb-3">
@@ -1010,7 +1025,7 @@ export default function EmploymentContractPage() {
                     )}
                   </div>
 
-                  {/* Employee (Househelp) side */}
+                  {/* Employee (service-provider) side */}
                   <div className="space-y-3">
                     <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400">
                       Employee (Service provider)
@@ -1019,26 +1034,26 @@ export default function EmploymentContractPage() {
                       type="text"
                       value={employeeName}
                       onChange={e => setEmployeeName(e.target.value)}
-                      disabled={!!contract.househelp_signed_at || !isHousehelp}
+                      disabled={!!contract.service_provider_signed_at || !isServiceProvider}
                       className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                       placeholder="Full legal name"
                     />
-                    {contract.househelp_signed_at ? (
+                    {contract.service_provider_signed_at ? (
                       <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" /> Signed on {formatDate(contract.househelp_signed_at)}
+                        <CheckCircle className="w-3 h-3" /> Signed on {formatDate(contract.service_provider_signed_at)}
                       </p>
                     ) : (
                       <button
                         onClick={() => handleAcceptAndSign('service_provider')}
-                        disabled={savingNames || !employeeName.trim() || !isHousehelp || !contractHasTerms}
+                        disabled={savingNames || !employeeName.trim() || !isServiceProvider || !contractHasTerms}
                         className={`w-full px-4 py-2.5 text-white rounded-xl transition-all font-semibold flex items-center justify-center gap-2 ${
-                          isHousehelp
+                          isServiceProvider
                             ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/30 disabled:opacity-50'
                             : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-50'
                         }`}
                       >
-                        {savingNames && isHousehelp ? <span className="hb-shimmer-piece h-4 w-4 rounded-full" /> : <Check className="w-4 h-4" />}
-                        {isHousehelp ? 'Accept & Sign' : 'Awaiting Employee'}
+                        {savingNames && isServiceProvider ? <span className="hb-shimmer-piece h-4 w-4 rounded-full" /> : <Check className="w-4 h-4" />}
+                        {isServiceProvider ? 'Accept & Sign' : 'Awaiting Employee'}
                       </button>
                     )}
                   </div>

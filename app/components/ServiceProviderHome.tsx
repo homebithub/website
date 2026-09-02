@@ -29,13 +29,15 @@ import { formatDisplayName } from '~/utils/displayName';
 
 interface HouseholdItem {
   id?: string; // household user id
+  user_id?: string;
+  owner_user_id?: string;
   profile_id: string;
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
   town?: string;
   house_size?: string;
-  type_of_househelp?: string;
+  work_arrangement?: string;
   service_type?: string;
   chores?: string[];
   chore?: string;
@@ -57,6 +59,12 @@ interface HouseholdItem {
   fit_score?: number;
   match_reasons?: string[];
 };
+
+const normalizeHouseholdItem = (raw: any): HouseholdItem => ({
+  ...(raw || {}),
+  work_arrangement:
+    raw?.work_arrangement || raw?.service_type || raw?.type_of_househelp || '',
+});
 
 const getFriendlyErrorMessage = (error?: string | null) => {
   if (!error) return "";
@@ -90,7 +98,7 @@ export default function ServiceProviderHome() {
     verified: "",
     has_kids: "",
     has_pets: "",
-    type_of_househelp: "",
+    work_arrangement: "",
     available_from: "",
     needs_live_in: "",
     needs_day_worker: "",
@@ -306,7 +314,7 @@ export default function ServiceProviderHome() {
       verified: toBool(filters.verified),
       has_kids: toBool(filters.has_kids),
       has_pets: toBool(filters.has_pets),
-      type_of_househelp: filters.type_of_househelp || undefined,
+      work_arrangement: filters.work_arrangement || undefined,
       available_from: filters.available_from || undefined,
       needs_live_in: toBool(filters.needs_live_in),
       needs_day_worker: toBool(filters.needs_day_worker),
@@ -325,14 +333,15 @@ export default function ServiceProviderHome() {
   const buildCountPayload = () => buildFilters();
 
   const enrichHouseholds = async (items: HouseholdItem[]) => {
-    if (!Array.isArray(items) || items.length === 0) return items;
+    const normalizedItems = (Array.isArray(items) ? items : []).map(normalizeHouseholdItem);
+    if (normalizedItems.length === 0) return normalizedItems;
     const enriched = await Promise.all(
-      items.map(async (item) => {
+      normalizedItems.map(async (item) => {
         if (!item?.id) return item;
         try {
           const fullProfile = await grpcProfileService.getHouseholdByUserID(item.id);
           if (!fullProfile) return item;
-          const merged = { ...fullProfile, ...item };
+          const merged = normalizeHouseholdItem({ ...fullProfile, ...item });
           return {
             ...merged,
             id: item.id || merged.user_id || merged.owner_user_id,
@@ -516,7 +525,7 @@ export default function ServiceProviderHome() {
                 onChange={handleFieldChange}
                 onSearch={() => { setShowMoreFilters(false); search(); }}
                 onClear={() => setFilters((prev) => ({
-                  ...prev, verified: "", has_kids: "", has_pets: "", type_of_househelp: "",
+                  ...prev, verified: "", has_kids: "", has_pets: "", work_arrangement: "",
                   available_from: "", needs_live_in: "", needs_day_worker: "", budget_min: "",
                   budget_max: "", salary_frequency: "", religion: "", chore: "", min_rating: "",
                 }))}
@@ -545,7 +554,7 @@ export default function ServiceProviderHome() {
                       const serviceTypes = [
                         household.needs_live_in ? "Live-in" : "",
                         household.needs_day_worker ? "Day worker" : "",
-                        household.service_type || household.type_of_househelp || "",
+                        household.service_type || household.work_arrangement || "",
                       ].filter(Boolean);
                       const serviceLabel = Array.from(new Set(serviceTypes)).join(", ");
                       const budgetMin = formatBudgetAmount(household.budget_min);
@@ -684,7 +693,7 @@ export default function ServiceProviderHome() {
                     const serviceTypes = [
                       r.needs_live_in ? 'Live-in' : '',
                       r.needs_day_worker ? 'Day worker' : '',
-                      r.service_type || r.type_of_househelp || '',
+                      r.service_type || r.work_arrangement || '',
                     ].filter(Boolean);
                     const serviceLabel = Array.from(new Set(serviceTypes)).join(', ');
 

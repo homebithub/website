@@ -24,7 +24,7 @@ const resolveListingId = (listing?: Record<string, any> | null): string => {
 /**
  * Telling households you are available.
  *
- * An open-for-work listing is how a househelp is found rather than having to
+ * An open-for-work listing is how a service provider is found rather than having to
  * find. The modal that writes one already existed and was reachable from
  * nowhere, so nobody could publish one at all.
  *

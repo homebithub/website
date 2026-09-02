@@ -65,7 +65,7 @@ export function formatPlaceOrFallback(location: unknown, extra?: PlaceParts): st
  * Names where a listing is.
  *
  * Listings carry the resolved names at the top level, alongside ward_id. A card
- * must never show the id: it is a catalogue key, meaningless to a househelp
+ * must never show the id: it is a catalogue key, meaningless to a service provider
  * judging a commute.
  */
 export function formatListingPlace(listing: PlaceParts & { location?: unknown }): string {

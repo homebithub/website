@@ -4,13 +4,13 @@ import { hireContractService } from '~/services/grpc/authServices';
 import { FileText, CheckCircle, XCircle, Calendar, DollarSign, Briefcase } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
-import { getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
+import { getServiceProviderCandidateIds } from '~/utils/hiringIdentifiers';
 
 interface HireContract {
   id: string;
   hire_request_id: string;
   household_id: string;
-  househelp_id: string;
+  service_provider_id: string;
   contract_start_date?: string;
   contract_end_date?: string;
   actual_salary: number;
@@ -21,13 +21,22 @@ interface HireContract {
   termination_reason?: string;
   created_at: string;
   updated_at: string;
-  househelp?: {
+  service_provider?: {
     id: string;
     first_name: string;
     last_name: string;
     avatar_url?: string;
     photos?: string[];
   };
+}
+
+function normalizeHireContract(raw: any): HireContract {
+  return {
+    ...(raw || {}),
+    service_provider_id:
+      raw?.service_provider_id || raw?.service_provider_profile_id || raw?.househelp_id || raw?.househelp_profile_id || '',
+    service_provider: raw?.service_provider || raw?.househelp,
+  } as HireContract;
 }
 
 type TabType = 'all' | 'active' | 'completed' | 'terminated';
@@ -49,8 +58,8 @@ export default function HouseholdContracts() {
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
 
-  const viewHousehelpProfile = (contract: HireContract) => {
-    const profileId = getHousehelpCandidateIds(contract)[0];
+  const viewServiceProviderProfile = (contract: HireContract) => {
+    const profileId = getServiceProviderCandidateIds(contract)[0];
     if (!profileId) {
       setError("We couldn't identify this service provider's profile. Refresh the page and try again.");
       return;
@@ -90,7 +99,7 @@ export default function HouseholdContracts() {
       const status = activeTab !== 'all' ? activeTab : undefined;
       const raw = await hireContractService.listHireContracts('', 'household', status);
       const items = raw?.data || raw || [];
-      setContracts(Array.isArray(items) ? items : []);
+      setContracts(Array.isArray(items) ? items.map(normalizeHireContract) : []);
       setTotal(typeof raw?.total === 'number' ? raw.total : (Array.isArray(items) ? items.length : 0));
     } catch (err: any) {
       setError(err.message || 'Failed to load contracts');
@@ -230,19 +239,19 @@ export default function HouseholdContracts() {
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between">
-                  {/* Left: Househelp Info */}
+                  {/* Left: service-provider info */}
                   <div className="flex items-start gap-4 flex-1">
                     {/* Avatar */}
                     <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                      {contract.househelp?.avatar_url || contract.househelp?.photos?.[0] ? (
+                      {contract.service_provider?.avatar_url || contract.service_provider?.photos?.[0] ? (
                         <img
-                          src={contract.househelp.avatar_url || contract.househelp.photos?.[0]}
-                          alt={`${contract.househelp.first_name} ${contract.househelp.last_name}`}
+                          src={contract.service_provider.avatar_url || contract.service_provider.photos?.[0]}
+                          alt={`${contract.service_provider.first_name} ${contract.service_provider.last_name}`}
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">
-                          {contract.househelp?.first_name?.[0]}{contract.househelp?.last_name?.[0]}
+                          {contract.service_provider?.first_name?.[0]}{contract.service_provider?.last_name?.[0]}
                         </div>
                       )}
                     </div>
@@ -251,7 +260,7 @@ export default function HouseholdContracts() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                          {contract.househelp?.first_name} {contract.househelp?.last_name}
+                          {contract.service_provider?.first_name} {contract.service_provider?.last_name}
                         </h3>
                         <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(contract.status)}`}>
                           {contract.status === 'active' && <CheckCircle className="w-4 h-4" />}
@@ -329,7 +338,7 @@ export default function HouseholdContracts() {
                     </button>
 
                     <button
-                      onClick={() => viewHousehelpProfile(contract)}
+                      onClick={() => viewServiceProviderProfile(contract)}
                       className="px-4 py-1 text-xs border border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors whitespace-nowrap"
                     >
                       View Profile

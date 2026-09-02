@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { locationService } from "~/services/grpc/authServices";
 
-type SearchTarget = "househelps" | "households";
+type SearchTarget = "service_providers" | "households";
 
 interface SearchableTownSelectProps {
   value: string;

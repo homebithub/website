@@ -9,7 +9,7 @@ type ServiceProviderCardDetailsProps = {
 };
 
 /**
- * Desktop-only detail panel for househelp discovery cards. Mobile keeps the
+ * Desktop-only detail panel for service-provider discovery cards. Mobile keeps the
  * compact chips and summary already used by the marketplace.
  */
 export function ServiceProviderCardDetails({

@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 
 /**
- * The verified tick, for a househelp whose identity has actually been checked.
+ * The verified tick, for a service provider whose identity has actually been checked.
  *
  * It means one specific thing: identity documents and a live selfie were
  * submitted and matched, and the result was approved. It is not a rating, not a
@@ -73,7 +73,7 @@ export function VerifiedBadge({
         aria-expanded={open}
         onClick={(event) => {
           // Cards are usually clickable. Without this, asking what the badge
-          // means opens the househelp's profile instead of answering.
+          // means opens the service provider's profile instead of answering.
           event.preventDefault();
           event.stopPropagation();
           setOpen((value) => !value);

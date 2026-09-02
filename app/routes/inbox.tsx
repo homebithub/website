@@ -34,11 +34,11 @@ const EmojiPicker = lazy(() => import('~/components/chat/LazyEmojiPicker'));
 type Conversation = {
   id: string;
   household_id: string;
-  househelp_id: string;
+  service_provider_id: string;
   household_profile_id?: string | null;
-  househelp_profile_id?: string | null;
+  service_provider_profile_id?: string | null;
   household_profile_type?: string | null;
-  househelp_profile_type?: string | null;
+  service_provider_profile_type?: string | null;
   last_message_at: string | null;
   last_message_body?: string | null;
   last_message_sender_id?: string | null;
@@ -68,11 +68,11 @@ type Message = {
 const normalizeConversationData = (c: any): Conversation => ({
   id: c?.id || c?.conversation_id || '',
   household_id: c?.household_user_id || c?.household_id || '',
-  househelp_id: c?.service_provider_user_id || c?.househelp_user_id || c?.househelp_id || '',
+  service_provider_id: c?.service_provider_user_id || c?.househelp_user_id || c?.househelp_id || '',
   household_profile_id: c?.household_profile_id || null,
-  househelp_profile_id: c?.service_provider_profile_id || c?.househelp_profile_id || null,
+  service_provider_profile_id: c?.service_provider_profile_id || c?.househelp_profile_id || null,
   household_profile_type: c?.household_profile_type || 'household',
-  househelp_profile_type: normalizeProfileType(c?.service_provider_profile_type || c?.househelp_profile_type || 'service_provider'),
+  service_provider_profile_type: normalizeProfileType(c?.service_provider_profile_type || c?.househelp_profile_type || 'service_provider'),
   last_message_at: c?.last_message_at || null,
   last_message_body: c?.last_message_body || null,
   last_message_sender_id: c?.last_message_sender_id || null,
@@ -105,10 +105,13 @@ type ToastItem = {
 type HireRequestSummary = ChatHireRequest & {
   id: string;
   household_id?: string;
+  service_provider_id?: string;
   househelp_id?: string;
   household_user_id?: string;
+  service_provider_user_id?: string;
   househelp_user_id?: string;
   household?: { user_id?: string; id?: string };
+  service_provider?: { user_id?: string; id?: string };
   househelp?: { user_id?: string; id?: string };
   status: string;
 };
@@ -400,7 +403,7 @@ export default function InboxPage() {
   
   // Hire wizard state
   const [showHireWizard, setShowHireWizard] = useState(false);
-  const [househelpProfileIdForHire, setHousehelpProfileIdForHire] = useState<string | null>(null);
+  const [serviceProviderProfileIdForHire, setServiceProviderProfileIdForHire] = useState<string | null>(null);
   const [hireRequestStatus, setHireRequestStatus] = useState<string | undefined>();
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
   const [hireRequestDetails, setHireRequestDetails] = useState<HireRequestSummary | null>(null);
@@ -562,8 +565,8 @@ export default function InboxPage() {
       // Prefer stable profile ids when available so older/newer conversation
       // records for the same pair do not render as duplicates.
       const householdRef = conv.household_profile_id || conv.household_id;
-      const househelpRef = conv.househelp_profile_id || conv.househelp_id;
-      const key = `household-${householdRef}-househelp-${househelpRef}`;
+      const serviceProviderRef = conv.service_provider_profile_id || conv.service_provider_id;
+      const key = `household-${householdRef}-service-provider-${serviceProviderRef}`;
       
       const existing = seen.get(key);
       if (!existing) {
@@ -644,7 +647,7 @@ export default function InboxPage() {
   const otherUserId = useMemo(() => {
     if (!selectedConversation) return null;
     const role = currentUserProfileType?.toLowerCase();
-    return role === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id;
+    return role === 'household' ? selectedConversation.service_provider_id : selectedConversation.household_id;
   }, [selectedConversation, currentUserProfileType]);
 
   const lastSeenAt = useMemo(() => {
@@ -679,7 +682,7 @@ export default function InboxPage() {
   // Fetch profile photos for conversation participants
   const participantUserIds = useMemo(() => {
     const role = currentUserProfileType?.toLowerCase();
-    return items.map(c => role === 'household' ? c.househelp_id : c.household_id).filter(Boolean);
+    return items.map(c => role === 'household' ? c.service_provider_id : c.household_id).filter(Boolean);
   }, [items, currentUserProfileType]);
   const participantPhotos = useProfilePhotos(participantUserIds);
 
@@ -703,21 +706,20 @@ export default function InboxPage() {
       for (const conv of missing) {
         try {
           if (role === "household") {
-            // Household user: other participant is a househelp
-            // Use househelp_id (which is the user_id) to fetch the profile
-            const househelpUserId = conv.househelp_id;
+            // Household user: the other participant is a service provider.
+            const serviceProviderUserId = conv.service_provider_id;
             let profileResponse: any;
 
-            if (househelpUserId) {
+            if (serviceProviderUserId) {
               try {
-                profileResponse = await grpcProfileService.getServiceProviderByUserID(househelpUserId);
+                profileResponse = await grpcProfileService.getServiceProviderByUserID(serviceProviderUserId);
               } catch {
                 // fallback below
               }
             }
 
             if (!profileResponse) {
-              const fallbackProfileId = conv.househelp_profile_id;
+              const fallbackProfileId = conv.service_provider_profile_id;
               if (!fallbackProfileId) {
                 console.error('[Inbox] Missing service provider user/profile id for conversation:', conv.id);
                 continue;
@@ -732,7 +734,8 @@ export default function InboxPage() {
 
             const profileData = extractEnvelopeObject<any>(profileResponse);
             
-            // Extract househelp name from the preloaded user object
+            // Older auth deployments may still nest the provider under the
+            // legacy response key, so keep that fallback at this boundary.
             const user = profileData?.user || profileData?.househelp?.user;
             const fullName = getNameFromUser(user) || getNameFromProfile(profileData, "Service provider");
             
@@ -743,7 +746,7 @@ export default function InboxPage() {
               (Array.isArray(profileData?.househelp?.photos) && profileData.househelp.photos.length > 0 ? profileData.househelp.photos[0] : undefined);
             updates.push({ id: conv.id, participant_name: fullName, participant_avatar: avatar });
           } else if (role === "service_provider") {
-            // Househelp user: other participant is a household. Older conversation
+            // Service-provider user: the other participant is a household. Older conversation
             // rows may only carry a household profile id, so resolve both shapes.
             const householdIdentifier = conv.household_profile_id || conv.household_id;
             if (!householdIdentifier) continue;
@@ -808,9 +811,9 @@ export default function InboxPage() {
         normalizeId(conversation.household_id),
       ].filter((v): v is string => Boolean(v));
 
-      const conversationHousehelpCandidates = [
-        normalizeId(conversation.househelp_profile_id),
-        normalizeId(conversation.househelp_id),
+      const conversationServiceProviderCandidates = [
+        normalizeId(conversation.service_provider_profile_id),
+        normalizeId(conversation.service_provider_id),
       ].filter((v): v is string => Boolean(v));
 
       const match = requests.find((req) => {
@@ -821,7 +824,11 @@ export default function InboxPage() {
           normalizeId(req.household?.user_id),
         ].filter((v): v is string => Boolean(v));
 
-        const requestHousehelpCandidates = [
+        const requestServiceProviderCandidates = [
+          normalizeId(req.service_provider_id),
+          normalizeId(req.service_provider_user_id),
+          normalizeId(req.service_provider?.id),
+          normalizeId(req.service_provider?.user_id),
           normalizeId(req.househelp_id),
           normalizeId(req.househelp_user_id),
           normalizeId(req.househelp?.id),
@@ -830,7 +837,7 @@ export default function InboxPage() {
 
         return (
           intersects(conversationHouseholdCandidates, requestHouseholdCandidates) &&
-          intersects(conversationHousehelpCandidates, requestHousehelpCandidates)
+          intersects(conversationServiceProviderCandidates, requestServiceProviderCandidates)
         );
       });
       if (match) {
@@ -1062,18 +1069,18 @@ export default function InboxPage() {
     if (!selectedConversation) return;
     const role = currentUserProfileType?.toLowerCase();
     if (role === 'household') {
-      // Household viewing househelp profile: use profile ID
-      let househelpProfileId = selectedConversation.househelp_profile_id;
+      // Household viewing a service-provider profile: use the profile ID.
+      let serviceProviderProfileId = selectedConversation.service_provider_profile_id;
       
       // If profile ID is not available, fetch it from the API using user ID
-      if (!househelpProfileId) {
-        const househelpUserId = selectedConversation.househelp_id;
-        if (!househelpUserId) return;
+      if (!serviceProviderProfileId) {
+        const serviceProviderUserId = selectedConversation.service_provider_id;
+        if (!serviceProviderUserId) return;
         
         try {
-          const profileResponse: any = await grpcProfileService.getServiceProviderByUserID(househelpUserId);
+          const profileResponse: any = await grpcProfileService.getServiceProviderByUserID(serviceProviderUserId);
           const profileData = extractEnvelopeObject<any>(profileResponse);
-          househelpProfileId = profileData?.id || profileData?.profile_id;
+          serviceProviderProfileId = profileData?.id || profileData?.profile_id;
         } catch (err) {
           console.error('Failed to fetch service provider profile:', err);
           pushToast('Failed to load profile information', 'error');
@@ -1081,11 +1088,11 @@ export default function InboxPage() {
         }
       }
       
-      if (!househelpProfileId) {
+      if (!serviceProviderProfileId) {
         pushToast('Failed to load profile information', 'error');
         return;
       }
-      const url = `/service-provider/public-profile?profileId=${encodeURIComponent(househelpProfileId)}&embed=1`;
+      const url = `/service-provider/public-profile?profileId=${encodeURIComponent(serviceProviderProfileId)}&embed=1`;
       setProfileModalLoading(true);
       setProfileModalTimedOut(false);
       if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
@@ -1094,7 +1101,7 @@ export default function InboxPage() {
       setProfileModalUrl(url);
       setShowProfileModal(true);
     } else {
-      // Househelp viewing household public profile: prefer profile id when available,
+      // Service provider viewing a household profile: prefer profile id when available,
       // because some older conversation records do not reliably distinguish the ids.
       const householdProfileRef = selectedConversation.household_profile_id || selectedConversation.household_id;
       if (!householdProfileRef) {
@@ -1766,7 +1773,7 @@ export default function InboxPage() {
                 >
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
                     {(() => {
-                      const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? c.househelp_id : c.household_id;
+                      const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? c.service_provider_id : c.household_id;
                       const photoUrl = c.participant_avatar || (otherUserId && participantPhotos[otherUserId]);
                       if (photoUrl) {
                         return <img src={photoUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />;
@@ -1851,7 +1858,7 @@ export default function InboxPage() {
               >
                 <div className="w-10 h-10 rounded-full relative overflow-hidden border-2 border-purple-300 dark:border-purple-500 flex-shrink-0">
                   {(() => {
-                    const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id;
+                    const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? selectedConversation.service_provider_id : selectedConversation.household_id;
                     const headerPhoto = selectedConversation.participant_avatar || (otherUserId && participantPhotos[otherUserId]);
                     if (headerPhoto) {
                       return (
@@ -1930,14 +1937,14 @@ export default function InboxPage() {
                         return;
                       }
                       if (currentUserProfileType?.toLowerCase() === 'household' && selectedConversation) {
-                        const househelpUserId = selectedConversation.househelp_id;
-                        if (selectedConversation.househelp_profile_id) {
-                          setHousehelpProfileIdForHire(selectedConversation.househelp_profile_id);
+                        const serviceProviderUserId = selectedConversation.service_provider_id;
+                        if (selectedConversation.service_provider_profile_id) {
+                          setServiceProviderProfileIdForHire(selectedConversation.service_provider_profile_id);
                           setShowHireWizard(true);
                         } else {
                           try {
-                            const profileData: any = await grpcProfileService.getServiceProviderByUserID(househelpUserId);
-                            setHousehelpProfileIdForHire(profileData?.id || profileData?.profile_id);
+                            const profileData: any = await grpcProfileService.getServiceProviderByUserID(serviceProviderUserId);
+                            setServiceProviderProfileIdForHire(profileData?.id || profileData?.profile_id);
                             setShowHireWizard(true);
                           } catch (err) {
                             console.error('Failed to fetch service provider profile:', err);
@@ -2741,7 +2748,7 @@ export default function InboxPage() {
             <ConversationHire
               serviceProviderProfileId={
                 currentUserProfileType?.toLowerCase() === 'household'
-                  ? (househelpProfileIdForHire || selectedConversation!.househelp_profile_id || selectedConversation!.househelp_id)
+                  ? (serviceProviderProfileIdForHire || selectedConversation!.service_provider_profile_id || selectedConversation!.service_provider_id)
                   : (selectedConversation!.household_profile_id || selectedConversation!.household_id)
               }
               serviceProviderName={selectedConversation!.participant_name || 'User'}
@@ -2751,11 +2758,11 @@ export default function InboxPage() {
               listingId={(selectedConversation as any)?.listing_id || undefined}
               onClose={() => {
                 setShowHireWizard(false);
-                setHousehelpProfileIdForHire(null);
+                setServiceProviderProfileIdForHire(null);
               }}
               onHired={(requestId) => {
                 setShowHireWizard(false);
-                setHousehelpProfileIdForHire(null);
+                setServiceProviderProfileIdForHire(null);
                 setHireRequestStatus('pending');
                 setHireRequestId(requestId);
                 const body = `I've sent you a hire request with the job details. Have a look and let me know if you'd like to proceed.`;

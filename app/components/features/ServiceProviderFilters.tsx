@@ -6,7 +6,7 @@ type ChangeHandler = (name: string, value: string) => void;
 
 export type ServiceProviderSearchFields = {
   status: string;
-  househelp_type: string;
+  work_arrangement: string;
   gender: string;
   experience: string;
   town: string;
@@ -31,7 +31,11 @@ const SKILLS = ["", "cooking", "cleaning", "babysitting", "laundry", "elderly ca
 const TRAITS = ["", "honest", "patient", "punctual", "organized", "friendly"];
 const EXPERIENCES = Array.from({ length: 11 }, (_, i) => String(i)); // "0".."10"
 const GENDERS = ["", "male", "female"];
-const NANNY_TYPES = ["", "dayburg", "sleeper"];
+const WORK_ARRANGEMENTS = [
+  { value: "", label: "Any" },
+  { value: "live_in", label: "Live-in" },
+  { value: "day_worker", label: "Day worker" },
+];
 
 interface Props {
   fields: ServiceProviderSearchFields;
@@ -78,13 +82,13 @@ export default function ServiceProviderFilters({ fields, onChange, onSearch, onC
         />
       </div>
 
-      {/* Nanny type */}
+      {/* Work arrangement */}
       <div className="flex flex-col">
-        <label className="mb-1 text-[11px] font-medium text-gray-700 dark:text-gray-200">Nanny type</label>
+        <label className="mb-1 text-[11px] font-medium text-gray-700 dark:text-gray-200">Work arrangement</label>
         <CustomSelect
-          value={fields.househelp_type}
-          onChange={(val) => onChange("househelp_type", val)}
-          options={NANNY_TYPES.map((t) => ({ value: t, label: t || "Any" }))}
+          value={fields.work_arrangement}
+          onChange={(val) => onChange("work_arrangement", val)}
+          options={WORK_ARRANGEMENTS}
           placeholder="Any"
         />
       </div>
@@ -117,7 +121,7 @@ export default function ServiceProviderFilters({ fields, onChange, onSearch, onC
         <SearchableTownSelect
           value={fields.town}
           onChange={(value) => onChange("town", value)}
-          target="househelps"
+          target="service_providers"
           buttonClassName="w-full h-12 px-4 py-2 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
         />
       </div>
@@ -279,4 +283,3 @@ export default function ServiceProviderFilters({ fields, onChange, onSearch, onC
     </aside>
   );
 }
-

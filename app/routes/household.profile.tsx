@@ -378,7 +378,7 @@ export default function HouseholdProfile() {
 
   // Each outstanding requirement opens the editor that satisfies it.
   //
-  // There is no location case. Nothing searches for households — househelps
+  // There is no location case. Nothing searches for households — service providers
   // browse job listings, and each listing carries its own ward — so a household
   // is never asked where it is, and the backend no longer reports location as
   // outstanding for them.

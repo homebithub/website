@@ -206,7 +206,7 @@ export default function HouseholdPublicProfile() {
     };
   }, [canShortlist, queryJobId]);
 
-  // Check if househelp has already expressed interest
+  // Check whether the service provider has already expressed interest.
   
   const handleBackNavigation = () => {
     const resolvedBackTo = navigationState.backTo || queryBackTo;
@@ -304,7 +304,7 @@ export default function HouseholdPublicProfile() {
     }
     setActionLoading('chat');
     try {
-      // In this view, the current user is typically a househelp viewing a household profile.
+      // In this view, the current user is typically a service provider viewing a household profile.
       const payload: StartConversationPayload = {
         household_user_id: profileOwnerUserId,
         service_provider_user_id: currentUserId,

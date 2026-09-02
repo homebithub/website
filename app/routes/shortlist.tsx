@@ -43,7 +43,7 @@ const formatDate = (value?: string) => {
 const isJobOpen = (job: { status?: string }) => {
   // A listing's status is "active" — the value the service writes and the one
   // the API returns. This compared against "open" alone, so every open job read
-  // as closed: the househelp home page showed "0 roles available" beside a
+  // as closed: the service-provider home page showed "0 roles available" beside a
   // filter chip saying "2 total roles". It went unnoticed because the page had
   // an All jobs toggle that skipped the check, and removing that toggle turned
   // a wrong count into an empty page.
