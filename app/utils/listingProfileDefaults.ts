@@ -81,7 +81,7 @@ function salaryChoice(value: string) {
  * work instead of scattering one-off aliases through two large modals.
  */
 export const PROFILE_TO_LISTING_FIELD_CATALOGUE = {
-  househelp: {
+  serviceProvider: {
     jobTypes: ["live_in", "offers_live_in", "day_worker", "offers_day_worker", "job_types"],
     availableFrom: ["available_from"],
     description: ["bio", "work_environment_notes"],
@@ -100,7 +100,7 @@ export const PROFILE_TO_LISTING_FIELD_CATALOGUE = {
   },
 } as const;
 
-export function buildHousehelpListingDefaults(
+export function buildServiceProviderListingDefaults(
   profileInput: unknown,
   featuresInput: unknown = [],
   picksInput: unknown = [],

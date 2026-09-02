@@ -76,7 +76,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'service_provider' }) =
               }
             }
           } else {
-            // For househelp
+            // For service providers
             if (data.offers_live_in !== undefined) setNeedsLiveIn(data.offers_live_in);
             if (data.offers_day_worker !== undefined) setNeedsDayWorker(data.offers_day_worker);
             if (data.off_days) setOffDays(data.off_days);
@@ -130,7 +130,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'service_provider' }) =
     try {
       const token = getAccessTokenFromCookies();
       
-      // Different payloads for household vs househelp
+      // Different payloads for household vs service provider
       if (userType === 'household') {
         await grpcProfileService.updateHouseholdProfile('', 'household', {
           needs_live_in: needsLiveIn,

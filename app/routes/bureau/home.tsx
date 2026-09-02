@@ -40,10 +40,10 @@ export default function BureauHomeDashboard() {
           <li className="text-gray-500 ">Received 3 new applications today</li>
         </ul>
       </div>
-      {/* Househelps Subsection */}
+      {/* Service providers subsection */}
       <div className="mt-10">
         <h3 className="text-base font-semibold text-gray-700  mb-4">Service providers</h3>
-        {/* Placeholder for househelp list */}
+        {/* Placeholder for service provider list */}
         <div className="bg-white dark:bg-[#13131a] rounded-xl shadow dark:shadow-glow-sm border border-gray-100 dark:border-purple-500/30 p-4 text-gray-500 dark:text-gray-400 transition-colors duration-300">
           List of service providers will appear here.
         </div>

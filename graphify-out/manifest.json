@@ -180,9 +180,9 @@
     "semantic_hash": "879e410b5dc4a103c02998c7bf7a78f9"
   },
   "app/components/NanyType.tsx": {
-    "mtime": 1788233429.777927,
-    "seen": 1788234279.386018,
-    "ast_hash": "231231abd971e72b82e33253342fbd2f",
+    "mtime": 1788366385.8558674,
+    "seen": 1788366646.2340019,
+    "ast_hash": "54e2b255e15226e160662407d112de5e",
     "semantic_hash": ""
   },
   "app/components/Navigation.tsx": {
@@ -750,9 +750,9 @@
     "semantic_hash": "a91dda5d491a4925c4a1c1cc44a5e509"
   },
   "app/components/modals/OpenForWorkModal.tsx": {
-    "mtime": 1788233429.7836308,
-    "seen": 1788234279.386101,
-    "ast_hash": "22e9b33c6df8dc987b97b21444115443",
+    "mtime": 1788366385.84462,
+    "seen": 1788366646.2340841,
+    "ast_hash": "70220655093167e3654d56e955817539",
     "semantic_hash": ""
   },
   "app/components/modals/Pets.tsx": {
@@ -1704,9 +1704,9 @@
     "semantic_hash": "0f238d4315888e70cb4f8bbf76898e6b"
   },
   "app/root.tsx": {
-    "mtime": 1788210573.7330868,
-    "seen": 1788234279.38621,
-    "ast_hash": "7dfa00bf94e27043cd12fa930cde1acd",
+    "mtime": 1788366598.5252998,
+    "seen": 1788366646.234192,
+    "ast_hash": "bb905eae9217d71e29079f9f585d736b",
     "semantic_hash": ""
   },
   "app/routes.ts": {
@@ -1860,9 +1860,9 @@
     "semantic_hash": ""
   },
   "app/routes/bureau/home.tsx": {
-    "mtime": 1788211043.3913925,
-    "seen": 1788234279.386231,
-    "ast_hash": "853a7386156b9299a5bce06600c49a5f",
+    "mtime": 1788366385.8538787,
+    "seen": 1788366646.234211,
+    "ast_hash": "35058015caa917458163cd870110db5b",
     "semantic_hash": ""
   },
   "app/routes/bureau/profile.tsx": {
@@ -2088,9 +2088,9 @@
     "semantic_hash": "c708ff8799881362f3aa208296f17240"
   },
   "app/routes/landing.tsx": {
-    "mtime": 1788210573.8788917,
-    "seen": 1788234279.386265,
-    "ast_hash": "cd92bbd267c3f59842c21c8b2275d03b",
+    "mtime": 1788366385.8552961,
+    "seen": 1788366646.234244,
+    "ast_hash": "4438ab3c7e1ba289c99a79600a4c9044",
     "semantic_hash": ""
   },
   "app/routes/loading-demo.tsx": {
@@ -2358,15 +2358,15 @@
     "semantic_hash": "e5b342cd5135c577163298b32e3231d0"
   },
   "app/services/grpc/auth.service.ts": {
-    "mtime": 1788210573.6732137,
-    "seen": 1788234279.386296,
-    "ast_hash": "fbac728ae1386fcbcf4460b50973c72c",
+    "mtime": 1788366598.526134,
+    "seen": 1788366646.234279,
+    "ast_hash": "cb839e7b430abe8b76dc8f6cd6dee8f0",
     "semantic_hash": ""
   },
   "app/services/grpc/authServices.ts": {
-    "mtime": 1788233386.9567254,
-    "seen": 1788234279.386296,
-    "ast_hash": "d2b4bd147aa41c31c12cde7881ec2528",
+    "mtime": 1788366598.5269604,
+    "seen": 1788366646.2342799,
+    "ast_hash": "d6e9e65dc7cea9a5aed13261c38afe67",
     "semantic_hash": ""
   },
   "app/services/grpc/blog.service.ts": {
@@ -2406,9 +2406,9 @@
     "semantic_hash": ""
   },
   "app/services/grpc/profileRead.service.ts": {
-    "mtime": 1788233523.5622456,
-    "seen": 1788234279.386301,
-    "ast_hash": "84b58c34c6ccced990e5e9414c88507a",
+    "mtime": 1788366400.608473,
+    "seen": 1788366646.234285,
+    "ast_hash": "9eb09fc11e1adb7a5d45fe96a3f78601",
     "semantic_hash": ""
   },
   "app/services/grpc/profileSetup.service.ts": {
@@ -2669,12 +2669,6 @@
     "ast_hash": "3d126caa3a2a9ce95cb6c1bfc225c1d7",
     "semantic_hash": ""
   },
-  "app/utils/househelpProfiles.ts": {
-    "mtime": 1788233579.512729,
-    "seen": 1788234279.3863301,
-    "ast_hash": "a6a51bce0c03fefa841ad63b76a04d94",
-    "semantic_hash": ""
-  },
   "app/utils/householdApi.ts": {
     "mtime": 1788324830.9571085,
     "seen": 1788324906.027547,
@@ -2730,9 +2724,9 @@
     "semantic_hash": "65b6b1f5cd2c98e7e6bc7c609f764635"
   },
   "app/utils/mobileLayout.test.ts": {
-    "mtime": 1788324763.0921686,
-    "seen": 1788324906.027555,
-    "ast_hash": "d422b50ce475adcbc42fe0aa0fcf7e7d",
+    "mtime": 1788366385.8467984,
+    "seen": 1788366646.234325,
+    "ast_hash": "b4ece778468eae6b5668f396744cc0dc",
     "semantic_hash": ""
   },
   "app/utils/onboardingCompensation.test.ts": {
@@ -3426,15 +3420,15 @@
     "semantic_hash": ""
   },
   "app/utils/listingProfileDefaults.test.ts": {
-    "mtime": 1788210616.959339,
-    "seen": 1788234279.386335,
-    "ast_hash": "4369d55b9b68af64431e4914954d4717",
+    "mtime": 1788366502.7881691,
+    "seen": 1788366646.2343218,
+    "ast_hash": "4903bd9987bdbf6256b7d2895f15af58",
     "semantic_hash": ""
   },
   "app/utils/listingProfileDefaults.ts": {
-    "mtime": 1788183935.6940413,
-    "seen": 1788184122.1882272,
-    "ast_hash": "d94b5589f5384b38ce76fd6e764b2e07",
+    "mtime": 1788366385.8401375,
+    "seen": 1788366646.2343218,
+    "ast_hash": "c27a62c94c70c8ac054579d923a30767",
     "semantic_hash": ""
   },
   "app/components/LegacyRouteRedirect.tsx": {

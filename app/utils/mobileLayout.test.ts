@@ -225,7 +225,7 @@ describe('mobile layout guardrails', () => {
   it('prefills both listing forms from canonical profile data', () => {
     const openForWork = source('app/components/modals/OpenForWorkModal.tsx');
     const jobModal = source('app/components/modals/JobPostModal.tsx');
-    expect(openForWork).toContain('buildHousehelpListingDefaults(profile, features, picks)');
+    expect(openForWork).toContain('buildServiceProviderListingDefaults(profile, features, picks)');
     expect(openForWork).toContain('defaults.description');
     expect(jobModal).toContain('buildHouseholdJobDefaults(profile, petsPayload, picksPayload)');
     expect(jobModal).toContain('userProfilePicksService.listPicks(userProfileId)');

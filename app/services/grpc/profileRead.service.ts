@@ -76,20 +76,4 @@ export const profileReadService = {
   searchServiceProviders(userId: string, profileType: string, filters?: Record<string, any>, limit?: number, offset?: number) {
     return call(callback => client.searchServiceProviders(searchRequest(userId, profileType, filters, limit, offset), metadata(), callback));
   },
-  /** @deprecated Use getCurrentServiceProviderProfile. */
-  getCurrentHousehelpProfile(userId = '') {
-    return call(callback => client.getCurrentHousehelpProfile(userRequest(userId), metadata(), callback));
-  },
-  getHousehelpByID(id: string, userId = '') {
-    return call(callback => client.getHousehelpByID(idRequest(id, userId), metadata(), callback));
-  },
-  getHousehelpByUserID(userId: string) {
-    return call(callback => client.getHousehelpByUserID(userRequest(userId), metadata(), callback));
-  },
-  getHousehelpProfileWithUser(id: string, userId = '') {
-    return call(callback => client.getHousehelpProfileWithUser(idRequest(id, userId), metadata(), callback));
-  },
-  searchHousehelps(userId: string, profileType: string, filters?: Record<string, any>, limit?: number, offset?: number) {
-    return call(callback => client.searchHousehelps(searchRequest(userId, profileType, filters, limit, offset), metadata(), callback));
-  },
 };

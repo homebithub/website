@@ -307,7 +307,7 @@ export default function Home4() {
               {/* Divider */}
               <div className="border-t border-purple-200/50 dark:border-purple-500/15 mb-14" />
 
-              {/* Househelp steps */}
+              {/* Service provider steps */}
               <SlideUp delay={100}>
                 <div className="mb-8">
                   <div className="inline-flex items-center gap-2 rounded-full bg-pink-100 dark:bg-pink-900/30 px-4 py-1.5 mb-6">

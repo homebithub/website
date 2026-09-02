@@ -10,7 +10,7 @@ import {
 } from "~/utils/onboardingCompensation";
 import { FormError } from '~/components/FormError';
 import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
-import { buildHousehelpListingDefaults } from '~/utils/listingProfileDefaults';
+import { buildServiceProviderListingDefaults } from '~/utils/listingProfileDefaults';
 import { getStoredUser, getStoredUserProfileId } from '~/utils/authStorage';
 
 const JOB_TYPES = [
@@ -120,7 +120,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved, re
         if (cancelled) return;
         const features = featuresResult.status === 'fulfilled' ? featuresResult.value : [];
         const picks = picksResult.status === 'fulfilled' ? picksResult.value : [];
-        const defaults = buildHousehelpListingDefaults(profile, features, picks);
+        const defaults = buildServiceProviderListingDefaults(profile, features, picks);
         if (defaults.jobTypes.length > 0) setJobTypes(defaults.jobTypes);
         setAvailableFrom(toDateInputValue(defaults.availableFrom));
         setCanWorkWithKids(defaults.canWorkWithKids);

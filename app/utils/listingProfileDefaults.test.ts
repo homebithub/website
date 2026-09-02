@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildHousehelpListingDefaults,
+  buildServiceProviderListingDefaults,
   buildHouseholdJobDefaults,
   PROFILE_TO_LISTING_FIELD_CATALOGUE,
 } from "./listingProfileDefaults";
 
 describe("profile-to-listing defaults", () => {
   it("catalogues the profile fields reused by both listing types", () => {
-    expect(PROFILE_TO_LISTING_FIELD_CATALOGUE.househelp.description).toContain("bio");
+    expect(PROFILE_TO_LISTING_FIELD_CATALOGUE.serviceProvider.description).toContain("bio");
     expect(PROFILE_TO_LISTING_FIELD_CATALOGUE.household.location).toContain("location");
     expect(PROFILE_TO_LISTING_FIELD_CATALOGUE.household.catalogueChoices).toContain("user_profile_picks.feature_property_id");
   });
 
   it("prefills every compatible open-for-work field", () => {
-    expect(buildHousehelpListingDefaults({
+    expect(buildServiceProviderListingDefaults({
       live_in: true,
       day_worker: true,
       available_from: "2026-09-12T00:00:00Z",
@@ -52,7 +52,7 @@ describe("profile-to-listing defaults", () => {
     ];
     const picks = [1, 2, 3, 4, 5, 6].map((featurePropertyId) => ({ feature_property_id: featurePropertyId }));
 
-    expect(buildHousehelpListingDefaults({}, features, picks)).toMatchObject({
+    expect(buildServiceProviderListingDefaults({}, features, picks)).toMatchObject({
       jobTypes: ["live_in", "day_worker"],
       salaryMin: 15000,
       salaryMax: 25000,

@@ -43,7 +43,6 @@ const {
   DocumentServiceClient,
   PetsServiceClient,
   HouseholdKidsServiceClient,
-  HousehelpPreferencesServiceClient,
   ServiceProviderPreferencesServiceClient,
   HouseholdPreferencesServiceClient,
   HouseholdMemberServiceClient,
@@ -313,7 +312,6 @@ const imageClient = new ImageServiceClient(GRPC_WEB_BASE_URL, null, null);
 const documentClient = new DocumentServiceClient(GRPC_WEB_BASE_URL, null, null);
 const petsClient = new PetsServiceClient(GRPC_WEB_BASE_URL, null, null);
 const householdKidsClient = new HouseholdKidsServiceClient(GRPC_WEB_BASE_URL, null, null);
-const househelpPrefsClient = new HousehelpPreferencesServiceClient(GRPC_WEB_BASE_URL, null, null);
 const serviceProviderPrefsClient = new ServiceProviderPreferencesServiceClient(GRPC_WEB_BASE_URL, null, null);
 const householdPrefsClient = new HouseholdPreferencesServiceClient(GRPC_WEB_BASE_URL, null, null);
 const householdMemberClient = new HouseholdMemberServiceClient(GRPC_WEB_BASE_URL, null, null);
@@ -525,58 +523,8 @@ export const profileService = {
     const res = await grpcCall((cb) => profileClient.getPopularServiceProviders(new empty_pb.Empty(), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
-  async getCurrentHousehelpProfile(userId: string): Promise<any> {
-    const res = await grpcCall((cb) => profileClient.getCurrentHousehelpProfile(buildUserIdRequest(userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async getHousehelpByID(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => profileClient.getHousehelpByID(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async getHousehelpByUserID(userId: string): Promise<any> {
-    const res = await grpcCall((cb) => profileClient.getHousehelpByUserID(buildUserIdRequest(userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async getHousehelpProfileWithUser(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => profileClient.getHousehelpProfileWithUser(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async searchHousehelpByPhone(phone: string): Promise<any> {
-    const req = new auth_pb.PhoneRequest();
-    req.setPhone(phone);
-    const res = await grpcCall((cb) => profileClient.searchHousehelpByPhone(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async getHousehelpsByBureau(bureauId: string, limit: number = 20, offset: number = 0): Promise<any> {
-    const req = new auth_pb.GetByBureauRequest();
-    req.setBureauId(bureauId);
-    req.setLimit(limit);
-    req.setOffset(offset);
-    const res = await grpcCall((cb) => profileClient.getHousehelpsByBureau(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async searchHousehelps(userId: string, profileType: string, filters?: Record<string, any>, limit?: number, offset?: number): Promise<any> {
-    const res = await grpcCall((cb) => profileClient.searchHousehelps(buildSearchRequest(userId, profileType, filters, limit, offset), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async countHousehelps(userId: string, profileType: string, filters?: Record<string, any>): Promise<number> {
-    const res: any = await grpcCall((cb) => profileClient.countHousehelps(buildSearchRequest(userId, profileType, filters), getMetadata(), cb));
-    return res?.getCount?.() ?? 0;
-  },
   async searchMultipleWithUser(userId: string, profileType: string, filters?: Record<string, any>, limit?: number, offset?: number): Promise<any> {
     const res = await grpcCall((cb) => profileClient.searchMultipleWithUser(buildSearchRequest(userId, profileType, filters, limit, offset), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async getPopularHousehelps(): Promise<any> {
-    // google.protobuf.Empty - just pass an empty request object
-    let req: any;
-    // The module is imported at the top of this file; require() does not exist
-    // in the browser bundle, so this threw, the catch handed the client a bare
-    // {} where a proto message was expected, and the call failed. Callers that
-    // swallow errors — the clause list does — then showed an empty panel and no
-    // sign that anything had gone wrong.
-    req = new empty_pb.Empty();
-    const res = await grpcCall((cb) => profileClient.getPopularHousehelps(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
   async updateProfileOverview(id: string, userId: string, data: Record<string, any>): Promise<any> {
@@ -597,20 +545,6 @@ export const profileService = {
   },
   async updateEmploymentSalary(id: string, userId: string, data: Record<string, any>): Promise<any> {
     const res = await grpcCall((cb) => profileClient.updateEmploymentSalary(buildUpdateProfileFieldRequest(id, userId, data), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async updateHousehelpFields(userId: string, profileType: string, updates: Record<string, any>, stepMetadata?: Record<string, any>): Promise<any> {
-    const req = new auth_pb.UpdateHousehelpFieldsRequest();
-    req.setUserId(resolveUserId(userId || ''));
-    req.setProfileType(normalizeProfileType(profileType));
-    const updatesStruct = toStruct(updates);
-    if (updatesStruct) req.setUpdates(updatesStruct);
-    if (stepMetadata) {
-      const metaStruct = toStruct(stepMetadata);
-      if (metaStruct) req.setStepMetadata(metaStruct);
-    }
-    const res = await grpcCall((cb) => profileClient.updateHousehelpFields(req, getMetadata(), cb));
-    notifyProfileProgressChanged();
     return jsonResponseToJs(res);
   },
   async updateServiceProviderFields(userId: string, profileType: string, updates: Record<string, any>, stepMetadata?: Record<string, any>): Promise<any> {
@@ -716,13 +650,12 @@ export const shortlistService = {
 
 // ══════════════════════════════════════════════════════════════════════════
 // Interest Service (proto: createInterest, getInterest, deleteInterest,
-//   listByHousehold, listByHousehelp, interestExists, getInterestCount,
+//   listByHousehold, listByServiceProvider, interestExists, getInterestCount,
 //   markViewed, acceptInterest, declineInterest)
 // ══════════════════════════════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════════════════════════════
-// Review Service (proto: createReview, getHousehelpReviews, getHouseholdReviews,
-//   verifyReview, rejectReview, getHousehelpAverageRating)
+// Review Service
 // ══════════════════════════════════════════════════════════════════════════
 export const reviewService = {
   async createReview(userId: string, data: Record<string, any>): Promise<any> {
@@ -733,20 +666,12 @@ export const reviewService = {
     const res = await grpcCall((cb) => reviewClient.createReview(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
-  async getHousehelpReviews(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => reviewClient.getHousehelpReviews(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
   async getServiceProviderReviews(id: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => reviewClient.getServiceProviderReviews(buildIdRequest(id, userId), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
   async getHouseholdReviews(id: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => reviewClient.getHouseholdReviews(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async getHousehelpAverageRating(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => reviewClient.getHousehelpAverageRating(buildIdRequest(id, userId), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
   async getServiceProviderAverageRating(id: string, userId?: string): Promise<any> {
@@ -928,8 +853,7 @@ export const householdKidsService = {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// Service Provider Preferences Service. The legacy client below remains during
-// the compatibility window for already-deployed bundles.
+// Service Provider Preferences Service
 // ══════════════════════════════════════════════════════════════════════════
 export const serviceProviderPreferencesService = {
   async createServiceProviderPreference(userId: string, data: Record<string, any>, profileType?: string): Promise<any> {
@@ -961,41 +885,6 @@ export const serviceProviderPreferencesService = {
   },
   async updateAvailability(userId: string, data: Record<string, any>, profileType?: string): Promise<any> {
     const res = await grpcCall((cb) => serviceProviderPrefsClient.updateAvailability(buildJsonPayload(userId, data, profileType), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-};
-
-/** @deprecated Use serviceProviderPreferencesService. */
-export const househelpPreferencesService = {
-  async createHousehelpPreference(userId: string, data: Record<string, any>, profileType?: string): Promise<any> {
-    const res = await grpcCall((cb) => househelpPrefsClient.createHousehelpPreference(buildJsonPayload(userId, data, profileType), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async getHousehelpPreference(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => househelpPrefsClient.getHousehelpPreference(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async listHousehelpPreferences(userId: string, profileType?: string): Promise<any> {
-    const res = await grpcCall((cb) => househelpPrefsClient.listHousehelpPreferences(buildUserIdRequest(userId, profileType), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async updateHousehelpPreference(id: string, userId: string, data: Record<string, any>): Promise<any> {
-    const res = await grpcCall((cb) => househelpPrefsClient.updateHousehelpPreference(buildUpdateByIdPayload(id, userId, data), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async deleteHousehelpPreference(id: string, userId?: string): Promise<void> {
-    await grpcCall((cb) => househelpPrefsClient.deleteHousehelpPreference(buildIdRequest(id, userId), getMetadata(), cb));
-  },
-  async addChores(userId: string, data: Record<string, any>, profileType?: string): Promise<any> {
-    const res = await grpcCall((cb) => househelpPrefsClient.addChores(buildJsonPayload(userId, data, profileType), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async updateBudget(userId: string, data: Record<string, any>, profileType?: string): Promise<any> {
-    const res = await grpcCall((cb) => househelpPrefsClient.updateBudget(buildJsonPayload(userId, data, profileType), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async updateAvailability(userId: string, data: Record<string, any>, profileType?: string): Promise<any> {
-    const res = await grpcCall((cb) => househelpPrefsClient.updateAvailability(buildJsonPayload(userId, data, profileType), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
 };
@@ -1383,7 +1272,7 @@ export const hireContractService = {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// Employment Service (proto: listByHousehold, listByHousehelp, hire, terminate, etc.)
+// Employment Service
 // ══════════════════════════════════════════════════════════════════════════
 export const employmentService = {
   async listByHousehold(userId: string, limit = 20, offset = 0): Promise<any> {
@@ -1392,14 +1281,6 @@ export const employmentService = {
     req.setLimit(limit);
     req.setOffset(offset);
     const res = await grpcCall((cb) => employmentClient.listByHousehold(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async listByHousehelp(userId: string, limit = 20, offset = 0): Promise<any> {
-    const req = new auth_pb.PaginatedUserRequest();
-    req.setUserId(resolveUserId(userId));
-    req.setLimit(limit);
-    req.setOffset(offset);
-    const res = await grpcCall((cb) => employmentClient.listByHousehelp(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
   async listByServiceProvider(userId: string, limit = 20, offset = 0): Promise<any> {
@@ -1594,7 +1475,7 @@ export const listingApplicationService = {
   /**
    * Open an application on a listing.
    *
-   * Called by the househelp applying, and by a household inviting somebody to
+   * Called by the service provider applying, and by a household inviting somebody to
    * its own job — the service allows either and refuses a third party. A second
    * call for the same pair is refused as a duplicate, which callers use as the
    * signal that an application already exists.
@@ -1790,7 +1671,7 @@ export const jobService = {
     });
     if (userProfileId) params.set('user_profile_id', userProfileId);
     if (status) params.set('status', status);
-    // A household browsing househelps scores them against its own job.
+    // A household browsing service providers scores them against its own job.
     if (matchCandidatesForProfile) params.set('match_candidates_for_profile', matchCandidatesForProfile);
     // Households browse people, not job posts. Without this the list comes back
     // as every listing in the table, their own job posts among them.
@@ -1916,10 +1797,6 @@ export const openForWorkService = {
     const res = await grpcCall((cb) => openForWorkClient.getOpenForWork(buildIdRequest(id, userId), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
-  async getOpenForWorkByHousehelp(househelpId: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => openForWorkClient.getOpenForWorkByHousehelp(buildIdRequest(househelpId, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
   async getOpenForWorkByServiceProvider(serviceProviderId: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => openForWorkClient.getOpenForWorkByServiceProvider(buildIdRequest(serviceProviderId, userId), getMetadata(), cb));
     return jsonResponseToJs(res);
@@ -1948,7 +1825,7 @@ export const openForWorkService = {
 // ══════════════════════════════════════════════════════════════════════════
 // Employment Contract Service (proto: createEmploymentContract, getEmploymentContract,
 //   updateEmploymentContract, deleteEmploymentContract, listEmploymentContracts,
-//   signByHousehold, signByHousehelp, forwardToHousehelp, getDefaultClauses)
+//   signByHousehold, signByServiceProvider, forwardToServiceProvider, getDefaultClauses)
 // ══════════════════════════════════════════════════════════════════════════
 export const employmentContractService = {
   async createEmploymentContract(userId: string, data: Record<string, any>): Promise<any> {
@@ -1984,15 +1861,6 @@ export const employmentContractService = {
     const res = await grpcCall((cb) => employmentContractClient.signByHousehold(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
-  async signByHousehelp(id: string, userId: string, signature: string, signerName: string): Promise<any> {
-    const req = new auth_pb.SignContractReq();
-    req.setId(id);
-    req.setUserId(resolveUserId(userId));
-    req.setSignature(signature);
-    req.setSignerName(signerName);
-    const res = await grpcCall((cb) => employmentContractClient.signByHousehelp(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
   async signByServiceProvider(id: string, userId: string, signature: string, signerName: string): Promise<any> {
     const req = new auth_pb.SignContractReq();
     req.setId(id);
@@ -2000,10 +1868,6 @@ export const employmentContractService = {
     req.setSignature(signature);
     req.setSignerName(signerName);
     const res = await grpcCall((cb) => employmentContractClient.signByServiceProvider(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async forwardToHousehelp(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => employmentContractClient.forwardToHousehelp(buildIdRequest(id, userId), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
   async forwardToServiceProvider(id: string, userId?: string): Promise<any> {
@@ -2089,25 +1953,6 @@ export const bureauService = {
     const req = new auth_pb.BureauServiceProviderLinkIdRequest();
     req.setRequestId(requestId);
     const res = await grpcCall((cb) => bureauClient.resendServiceProviderLinkOTP(req, getMetadata(), cb));
-    return bureauServiceProviderLinkResponseToJs(res);
-  },
-  async initiateHousehelpLink(phone: string): Promise<any> {
-    const req = new auth_pb.BureauHousehelpLinkInitiateRequest();
-    req.setPhone(phone);
-    const res = await grpcCall((cb) => bureauClient.initiateHousehelpLink(req, getMetadata(), cb));
-    return bureauServiceProviderLinkResponseToJs(res);
-  },
-  async verifyHousehelpLink(requestId: string, otp: string): Promise<any> {
-    const req = new auth_pb.BureauHousehelpLinkVerifyRequest();
-    req.setRequestId(requestId);
-    req.setOtp(otp);
-    const res = await grpcCall((cb) => bureauClient.verifyHousehelpLink(req, getMetadata(), cb));
-    return bureauServiceProviderLinkResponseToJs(res);
-  },
-  async resendHousehelpLinkOTP(requestId: string): Promise<any> {
-    const req = new auth_pb.BureauHousehelpLinkIdRequest();
-    req.setRequestId(requestId);
-    const res = await grpcCall((cb) => bureauClient.resendHousehelpLinkOTP(req, getMetadata(), cb));
     return bureauServiceProviderLinkResponseToJs(res);
   },
 };

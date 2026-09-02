@@ -95,7 +95,8 @@ export function loader({ request }: Route.LoaderArgs) {
 			NOTIFICATIONS_WS_BASE_URL: notificationsWsBaseUrl,
 			PAYMENTS_API_BASE_URL: gatewayBaseUrl,
 			HOUSEHOLD_PROFILE_ID: process.env.HOUSEHOLD_PROFILE_ID || "",
-			HOUSEHELP_PROFILE_ID: process.env.HOUSEHELP_PROFILE_ID || "",
+			SERVICE_PROVIDER_PROFILE_ID:
+				process.env.SERVICE_PROVIDER_PROFILE_ID || process.env.HOUSEHELP_PROFILE_ID || "",
 		},
 	};
 }
