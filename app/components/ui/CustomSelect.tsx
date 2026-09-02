@@ -42,6 +42,10 @@ interface CustomSelectProps {
 // and gives reposition() a figure to decide flipping against.
 const MAX_PANEL_HEIGHT = 288;
 
+// Keep the pre-paint positioning in browsers without invoking a layout effect
+// during server rendering, where React cannot apply it and emits an SSR warning.
+const useIsomorphicLayoutEffect = typeof document === 'undefined' ? useEffect : useLayoutEffect;
+
 export default function CustomSelect({
   value,
   onChange,
@@ -153,7 +157,7 @@ export default function CustomSelect({
   }, []);
 
   // Laid out before paint, so the panel never appears at the wrong place first.
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!isOpen) {
       setPosition(null);
       return;
