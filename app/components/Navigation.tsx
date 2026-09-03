@@ -20,6 +20,7 @@ import { PWAInstallMenuButton } from '~/components/PWAInstallPrompt';
 import { MobileBottomNavigation } from '~/components/MobileBottomNavigation';
 import { PROFILE_AVATAR_UPDATED_EVENT, firstProfileAvatar, getStoredProfileAvatar } from '~/utils/profileAvatar';
 import { openAdminDashboard } from '~/utils/adminDashboard';
+import { conversationBadgeId, extractConversationRows, isConversationUnread } from '~/utils/conversationBadges';
 
 const NAV_COUNT_STALE_MS = 2 * 60_000;
 const NAV_ADMIN_STALE_MS = 10 * 60_000;
@@ -74,6 +75,7 @@ function NavigationContent() {
     const [userName, setUserName] = useState<string | null>(null);
     const [profileAvatar, setProfileAvatar] = useState<string>('');
     const [inboxCount, setInboxCount] = useState<number>(0);
+    const unreadConversationIdsRef = useRef<Set<string>>(new Set());
     const [hireRequestCount, setHireRequestCount] = useState<number>(0);
     const [savedCount, setSavedCount] = useState<number>(0);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -184,6 +186,10 @@ function NavigationContent() {
             const userId = getStoredUserId() || '';
             const profileId = getStoredUserProfileId() || '';
             if (!role || !userId || !profileId) return;
+            const attentionScope = hiringAttentionScope(profileId, role);
+            // The server ledger is authoritative across devices. Waiting for it
+            // prevents a flash of phantom badges from the empty local ledger.
+            await hydrateHiringAttention(attentionScope);
             const total = await cachedRequest(`nav:hiring:${userId}:${role}`, async () => {
                 const {
                     marketplaceHireRequestService: hireRequestService,
@@ -195,7 +201,7 @@ function NavigationContent() {
                         limit: 200,
                     });
                     const rows = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
-                    return countUnattendedHiringRecords(hiringAttentionScope(profileId, 'household'), [
+                    return countUnattendedHiringRecords(attentionScope, [
                         { kind: 'application', records: rows },
                     ]);
                 }
@@ -217,7 +223,7 @@ function NavigationContent() {
                     return Array.isArray(value) ? value : [];
                 };
                 const visibleEmploymentContracts = collapseApplicationContracts(rows(employmentContractsRaw));
-                return countUnattendedHiringRecords(hiringAttentionScope(profileId, 'service_provider'), [
+                return countUnattendedHiringRecords(attentionScope, [
                     { kind: 'request', records: rows(requestsRaw) },
                     { kind: 'application', records: rows(applicationsRaw) },
                     { kind: 'employment-contract', records: visibleEmploymentContracts },
@@ -244,8 +250,11 @@ function NavigationContent() {
             if (!userId) return;
             const unread = await cachedRequest(`nav:inbox:${userId}`, async () => {
                 const raw = await notificationsService.listConversations(userId, 0, 100);
-                const rows = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
-                return rows.filter((conversation: any) => Number(conversation?.unread_count || 0) > 0).length;
+                const unreadRows = extractConversationRows(raw).filter(isConversationUnread);
+                unreadConversationIdsRef.current = new Set(
+                    unreadRows.map(conversationBadgeId).filter(Boolean),
+                );
+                return unreadRows.length;
             }, { maxAgeMs: NAV_COUNT_STALE_MS, force });
             setInboxCount(unread);
         } catch (error) {
@@ -292,6 +301,28 @@ function NavigationContent() {
     const refreshHiring = useCoalescedRefresh(() => void fetchHireRequestCount(undefined, true));
     const refreshInbox = useCoalescedRefresh(() => void fetchInboxCount(true));
     const refreshSaved = useCoalescedRefresh(() => void fetchSavedCount(true));
+
+    // Make an incoming message visible immediately while the authoritative
+    // conversation read catches up. One badge represents one unread thread, so
+    // repeated messages in the same conversation never inflate the number.
+    const handleIncomingInboxMessage = React.useCallback((event: any) => {
+        const envelope = event?.data && typeof event.data === 'object' ? event.data : event;
+        const message = envelope?.message && typeof envelope.message === 'object' ? envelope.message : envelope;
+        const currentUserId = getStoredUserId() || '';
+        const recipientId = String(envelope?.recipient_id ?? envelope?.recipientId ?? '').trim();
+        const senderId = String(message?.sender_id ?? message?.senderId ?? envelope?.sender_id ?? '').trim();
+        const conversationId = String(
+            envelope?.conversation_id ?? envelope?.conversationId ?? message?.conversation_id ?? message?.conversationId ?? '',
+        ).trim();
+
+        if (recipientId && currentUserId && recipientId !== currentUserId) return;
+        if (senderId && currentUserId && senderId === currentUserId) return;
+        if (location.pathname !== '/inbox' && conversationId && !unreadConversationIdsRef.current.has(conversationId)) {
+            unreadConversationIdsRef.current.add(conversationId);
+            setInboxCount((count) => count + 1);
+        }
+        refreshInbox();
+    }, [location.pathname, refreshInbox]);
 
     // Parse user profile type and name from localStorage
     useEffect(() => {
@@ -456,7 +487,7 @@ function NavigationContent() {
     // navigation only listened to the best-effort WebSocket. Subscribe here as
     // well so the badge refreshes even while somebody is reading a different
     // conversation (or is elsewhere in the app).
-    useSSESubscriptionSafe('messaging.message.received', refreshInbox, badgesAreLive);
+    useSSESubscriptionSafe('messaging.message.received', handleIncomingInboxMessage, badgesAreLive);
     useSSESubscriptionSafe('messaging.message.read', refreshInbox, badgesAreLive);
     useSSESubscriptionSafe('messaging.message.deleted', refreshInbox, badgesAreLive);
     useSSESubscriptionSafe('messaging.conversation.started', refreshInbox, badgesAreLive);
@@ -468,11 +499,14 @@ function NavigationContent() {
     useEffect(() => {
         if (!badgesAreLive || !webSocket) return;
 
-        const unsubscribers = ['new_message', 'message_read', 'conversation_started', 'conversation_archived'].map((type) =>
-            webSocket.addEventListener(type, refreshInbox),
-        );
+        const unsubscribers = [
+            webSocket.addEventListener('new_message', handleIncomingInboxMessage),
+            ...['message_read', 'conversation_started', 'conversation_archived'].map((type) =>
+                webSocket.addEventListener(type, refreshInbox),
+            ),
+        ];
         return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
-    }, [badgesAreLive, webSocket, refreshInbox]);
+    }, [badgesAreLive, webSocket, handleIncomingInboxMessage, refreshInbox]);
 
     // Coming back to the tab, and moving between pages.
     //

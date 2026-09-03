@@ -38,6 +38,7 @@ import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
 import { ServiceProviderCardDetails } from "~/components/listing/ServiceProviderCardDetails";
 import { InteractionFilterControls } from "~/components/listing/InteractionFilterControls";
+import { ListingViewToggle, useListingViewPreference } from "~/components/listing/ListingViewToggle";
 import { matchesInteractionFilters } from "~/utils/interactionFilters";
 import { resolveServiceProviderProfile } from '~/utils/serviceProviderProfiles';
 import { jobService as householdJobService } from '~/services/grpc/authServices';
@@ -611,6 +612,8 @@ export default function HouseholdJobsHome() {
     restored: filtersRestored,
   } = useSavedFilters(savedFilterProfileId, DEFAULT_OPEN_FOR_WORK_FILTERS);
   const [sortBy, setSortBy] = useState("best_match");
+  const [viewMode, setViewMode] = useListingViewPreference("homebit:marketplace-view");
+  const isGridView = viewMode === "grid";
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [inviteDraft, setInviteDraft] = useState(loadSavedInviteMessage());
 
@@ -1209,12 +1212,12 @@ export default function HouseholdJobsHome() {
               </div>
 
               {!isServiceProvider && (
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
                   <button
                     type="button"
                     onClick={() => setShowActiveJobs(true)}
                     disabled={activeJobsLoading}
-                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-500/15 disabled:cursor-wait disabled:opacity-70 dark:text-emerald-200"
+                    className="hidden h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-500/15 disabled:cursor-wait disabled:opacity-70 dark:text-emerald-200 sm:inline-flex"
                     aria-label="View your active job listings"
                   >
                     <Briefcase className="h-4 w-4" />
@@ -1228,17 +1231,18 @@ export default function HouseholdJobsHome() {
                   <button
                     type="button"
                     onClick={() => setCreatingHouseholdJob(true)}
-                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-3 text-xs font-semibold text-white shadow-lg shadow-purple-500/20 transition hover:from-purple-700 hover:to-pink-700"
+                    className="inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 text-xs font-semibold text-white shadow-lg shadow-purple-500/20 transition hover:from-purple-700 hover:to-pink-700 sm:flex-none"
                     aria-label="Create a job listing"
                   >
                     <Plus className="h-4 w-4" />
-                    <span className="hidden lg:inline">Create job listing</span>
+                    <span>Create job listing</span>
                   </button>
                 </div>
               )}
 
+              <ListingViewToggle value={viewMode} onChange={setViewMode} />
 
-              <label className="min-w-0 flex-1 sm:flex-none">
+              <label className="hidden min-w-0 flex-1 sm:block sm:flex-none">
                 <span className="sr-only">Sort listings</span>
                 <CustomSelect
                   value={sortBy}
@@ -1505,7 +1509,7 @@ export default function HouseholdJobsHome() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className={isGridView ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
                 {sortedListings.map((listing) => {
                   const serviceProvider = listing.serviceProvider || {};
                   const user = serviceProvider.user || {};
@@ -1539,10 +1543,10 @@ export default function HouseholdJobsHome() {
                           handleOpenListingModal(listing);
                         }
                       }}
-                      className="cursor-pointer rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400 dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6"
+                      className={`cursor-pointer rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400 dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6 ${isGridView ? "flex h-full flex-col" : ""}`}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-lg font-bold overflow-hidden">
+                      <div className={`flex items-start ${isGridView ? "gap-3" : "gap-4"}`}>
+                        <div className={`${isGridView ? "h-12 w-12 text-sm" : "h-16 w-16 text-lg"} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500 to-pink-500 font-bold text-white`}>
                           {!isServiceProvider && avatar ? (
                             <OptimizedImage
                               path={avatar}
@@ -1554,8 +1558,8 @@ export default function HouseholdJobsHome() {
                             initials
                           )}
                         </div>
-                        <div className="flex-1">
-                          <div className="grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(260px,0.85fr)_minmax(360px,1.4fr)] lg:gap-10">
+                        <div className={`min-w-0 flex-1 ${isGridView ? "flex flex-col" : ""}`}>
+                          <div className={isGridView ? "min-w-0" : "grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(260px,0.85fr)_minmax(360px,1.4fr)] lg:gap-10"}>
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="min-w-0 text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{cardTitle}</h3>
@@ -1600,20 +1604,26 @@ export default function HouseholdJobsHome() {
                                 </div>
                               )}
                             </div>
-                            <ServiceProviderCardDetails
-                              description={listing.description}
-                              workTypes={jobTypes.map((type) => type.replace(/_/g, " "))}
-                              availability={formatDate(listing.available_from)}
-                              schedule={scheduleLabel}
-                              experience={experienceYears ? `${experienceYears} yrs` : "Not specified"}
-                              salary={salaryLabel}
-                              worksWith={worksWith}
-                            />
+                            {!isGridView && (
+                              <ServiceProviderCardDetails
+                                description={listing.description}
+                                workTypes={jobTypes.map((type) => type.replace(/_/g, " "))}
+                                availability={formatDate(listing.available_from)}
+                                schedule={scheduleLabel}
+                                experience={experienceYears ? `${experienceYears} yrs` : "Not specified"}
+                                salary={salaryLabel}
+                                worksWith={worksWith}
+                              />
+                            )}
                           </div>
+
+                          {isGridView && listing.description && (
+                            <p className="mt-3 line-clamp-2 text-sm leading-5 text-gray-600 dark:text-gray-300">{listing.description}</p>
+                          )}
 
                           <div className="mt-3 flex flex-wrap gap-2">
                             {jobTypes.length > 0 ? (
-                              jobTypes.map((type) => (
+                              jobTypes.slice(0, isGridView ? 2 : jobTypes.length).map((type) => (
                                 <span
                                   key={type}
                                   className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
@@ -1640,7 +1650,7 @@ export default function HouseholdJobsHome() {
                             )}
                           </div>
 
-                          {listing.match_reasons && listing.match_reasons.length > 0 && (
+                          {!isGridView && listing.match_reasons && listing.match_reasons.length > 0 && (
                             <div className="mt-3 flex flex-wrap gap-2">
                               {listing.match_reasons.slice(0, 3).map((reason) => (
                                 <span
@@ -1653,7 +1663,7 @@ export default function HouseholdJobsHome() {
                             </div>
                           )}
 
-                          {isServiceProvider && featureGroups.length > 0 ? (
+                          {!isGridView && isServiceProvider && featureGroups.length > 0 ? (
                             <div className="mt-4 grid gap-2 sm:grid-cols-2">
                               {featureGroups.slice(0, 4).map((group) => (
                                 <div key={group.name} className="rounded-xl border border-purple-500/20 bg-purple-950/20 p-2">
@@ -1687,7 +1697,7 @@ export default function HouseholdJobsHome() {
                         </div>
                       </div>
 
-                      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className={`mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${isGridView ? "mt-auto pt-4" : ""}`}>
                         <span className="text-xs text-gray-400">Updated {formatTimeAgo(listing.created_at)}</span>
                         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-end">
                           {isServiceProvider ? (

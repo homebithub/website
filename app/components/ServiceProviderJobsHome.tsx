@@ -45,6 +45,7 @@ import { matchScoreClasses } from "~/utils/matchScore";
 import { ListingRating } from "~/components/ui/ListingRating";
 import { ListingCardFacts } from "~/components/listing/ListingCardFacts";
 import { InteractionFilterControls } from "~/components/listing/InteractionFilterControls";
+import { ListingViewToggle, useListingViewPreference } from "~/components/listing/ListingViewToggle";
 import { SidePanel } from "~/components/SidePanel";
 import { notificationsService } from "~/services/grpc/notifications.service";
 import { matchesInteractionFilters } from "~/utils/interactionFilters";
@@ -70,6 +71,7 @@ interface JobListing {
   children_age_range_id?: number | string;
   children_capacity_id?: number | string;
   max_applicants?: number;
+  applicant_count?: number;
   status?: string;
   created_at?: string;
   has_applied?: boolean;
@@ -446,6 +448,8 @@ export default function ServiceProviderJobsHome() {
   } = useSavedFilters(serviceProviderProfileId || viewerProfileId, DEFAULT_JOB_FILTERS);
   const [locationPickerKey, setLocationPickerKey] = useState(0);
   const [sortBy, setSortBy] = useState("best_match");
+  const [viewMode, setViewMode] = useListingViewPreference("homebit:marketplace-view");
+  const isGridView = viewMode === "grid";
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const limit = 12;
@@ -1091,6 +1095,8 @@ export default function ServiceProviderJobsHome() {
                   found instead. */}
               <OpenForWorkButton ref={openForWorkButtonRef} className="hidden shrink-0 sm:flex" verification={identityVerification} />
 
+              <ListingViewToggle value={viewMode} onChange={setViewMode} />
+
               <label className="min-w-0 flex-1 sm:flex-none">
                 <span className="sr-only">Sort job openings</span>
                 <CustomSelect
@@ -1333,7 +1339,7 @@ export default function ServiceProviderJobsHome() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className={isGridView ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
                 {sortedJobs.map((job) => {
                   const householdName = renderHouseholdName(job);
                   const shortlisted = shortlistedJobIds.has(jobKey(job));
@@ -1356,9 +1362,9 @@ export default function ServiceProviderJobsHome() {
                           handleOpenJobDetail(job);
                         }
                       }}
-                      className="cursor-pointer rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400 dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6"
+                      className={`cursor-pointer rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400 dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6 ${isGridView ? "flex h-full flex-col" : ""}`}
                     >
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8">
+                      <div className={isGridView ? "flex flex-col gap-3" : "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8"}>
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="min-w-0 text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{job.title || "Household Job"}</h3>
@@ -1389,7 +1395,7 @@ export default function ServiceProviderJobsHome() {
                               detail. */}
                           {typeof job.fit_score === "number" && job.fit_score > 0 && (job.match_reasons?.length ?? 0) > 0 && (
                             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                              {job.match_reasons!.slice(0, 3).map((reason) => (
+                              {job.match_reasons!.slice(0, isGridView ? 2 : 3).map((reason) => (
                                 <span
                                   key={reason}
                                   className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium capitalize text-gray-800 dark:bg-white/10 dark:text-gray-100"
@@ -1398,9 +1404,9 @@ export default function ServiceProviderJobsHome() {
                                   {reason.replace(/_/g, " ")}
                                 </span>
                               ))}
-                              {(job.match_reasons?.length ?? 0) > 3 && (
+                              {(job.match_reasons?.length ?? 0) > (isGridView ? 2 : 3) && (
                                 <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                                  +{job.match_reasons!.length - 3} more
+                                  +{job.match_reasons!.length - (isGridView ? 2 : 3)} more
                                 </span>
                               )}
                             </div>
@@ -1418,14 +1424,14 @@ export default function ServiceProviderJobsHome() {
                               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
                                 {responseBadge.label}
                               </span>
-                              {responseBadge.detail && (
+                              {!isGridView && responseBadge.detail && (
                                 <p className="text-[11px] text-gray-500 dark:text-gray-400">{responseBadge.detail}</p>
                               )}
                             </div>
                           )}
                         </div>
-                        <ListingCardFacts listing={job} />
-                        <div className="flex shrink-0 items-start gap-1.5 sm:gap-2">
+                        {!isGridView && <ListingCardFacts listing={job} />}
+                        <div className={`flex shrink-0 items-start gap-1.5 sm:gap-2 ${isGridView ? "justify-between" : ""}`}>
                           <span className={`px-2.5 py-1 text-[11px] font-semibold rounded-full sm:px-3 sm:text-xs ${isJobOpen(job)
                             ? "bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-white"
                             : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300"}`}
@@ -1467,7 +1473,7 @@ export default function ServiceProviderJobsHome() {
                       </div>
 
                       {job.description && (
-                        <p className="mt-3 text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
+                        <p className={`mt-3 text-sm text-gray-600 dark:text-gray-300 ${isGridView ? "line-clamp-2" : "line-clamp-3"}`}>
                           {job.description}
                         </p>
                       )}
@@ -1477,7 +1483,7 @@ export default function ServiceProviderJobsHome() {
                           listing carries, every card claimed "Not specified". */}
                       <div className="mt-4 flex flex-wrap gap-2">
                         {(job.job_types || []).length > 0
-                          ? job.job_types?.map((type) => (
+                          ? job.job_types?.slice(0, isGridView ? 2 : job.job_types.length).map((type) => (
                             <span
                               key={type}
                               className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
@@ -1498,12 +1504,12 @@ export default function ServiceProviderJobsHome() {
                         ) : null}
                         {job.max_applicants ? (
                           <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
-                            Max {job.max_applicants} applicants
+                            {Math.max(0, Number(job.applicant_count || 0))} / {job.max_applicants} applicants
                           </span>
                         ) : null}
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between">
+                      <div className={`mt-4 flex items-center justify-between ${isGridView ? "mt-auto pt-4" : ""}`}>
                         <span className="text-xs text-gray-400">Posted {formatTimeAgo(job.created_at)}</span>
                         <div className="flex gap-2 flex-wrap justify-end">
                           <button

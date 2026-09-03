@@ -98,6 +98,7 @@ function encodeCreateListingReq(body: Record<string, unknown>) {
     // Where the work is. The service rejects a listing without it, since a job
     // nobody can place is a job the right service providers never find.
     encodeInt32Field(6, Number(body.ward_id || body.wardId || 0)),
+    encodeInt32Field(7, Number(body.max_applicants || body.maxApplicants || 15)),
   ]);
 }
 
@@ -819,6 +820,7 @@ export async function action({ request }: { request: Request }) {
         job_type_id: body.job_type_id || body.jobTypeId,
         features: Array.isArray(body.features) ? body.features : [],
         ward_id: wardId,
+        max_applicants: Number(body.max_applicants || body.maxApplicants || 15),
       }),
       // The caller's token, without which nothing could be posted at all.
       //

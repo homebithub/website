@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FaceSmileIcon, PaperAirplaneIcon, PaperClipIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { MessageCircle, Minus, Reply } from 'lucide-react';
 import EmojiPicker, { Theme, type EmojiClickData } from 'emoji-picker-react';
@@ -8,7 +8,6 @@ import { CHAT_ALLOWED_FILE_TYPES, CHAT_ATTACHMENT_LIMIT_BYTES, CHAT_MESSAGE_LIMI
 import { SupportRequestError, supportService, type SupportChat as Chat, type SupportMessage } from '~/services/support.service';
 
 const STORAGE_KEY = 'homebit_support_chat';
-const LAUNCHER_POSITION_KEY = 'homebit_support_launcher_position';
 const QUICK_REACTIONS = ['👍', '❤️', '😊', '🙏'];
 const ticketRef = (n:number) => `HB-${new Date().getFullYear()}-${String(n).padStart(6,'0')}`;
 const messageTime = (value:string) => new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit'}).format(new Date(value));
@@ -24,11 +23,7 @@ export default function SupportChat() {
   const [replyTo, setReplyTo] = useState<SupportMessage | null>(null); const [emojiOpen, setEmojiOpen] = useState(false);
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [unread, setUnread] = useState(0);
   const [rating,setRating]=useState(0); const [ratingComment,setRatingComment]=useState('');
-  const [launcherPosition,setLauncherPosition]=useState<{x:number;y:number}|null>(null);
-  const [launcherDragging,setLauncherDragging]=useState(false);
   const fileRef = useRef<HTMLInputElement>(null); const bottomRef = useRef<HTMLDivElement>(null);
-  const launcherRef = useRef<HTMLButtonElement>(null);
-  const launcherDrag = useRef<{pointerId:number;startX:number;startY:number;originX:number;originY:number;moved:boolean}|null>(null);
   const typingTimer = useRef<number | undefined>(undefined);
   const refreshInFlight = useRef(false);
 
@@ -49,7 +44,6 @@ export default function SupportChat() {
     }
   }, [account]);
   useEffect(() => { const show = () => setOpen(true); window.addEventListener('open-support-chat', show); return () => window.removeEventListener('open-support-chat', show); }, []);
-  useEffect(()=>{if(!launcherPosition)return;try{localStorage.setItem(LAUNCHER_POSITION_KEY,JSON.stringify(launcherPosition))}catch{}},[launcherPosition]);
 
   const refresh = useCallback(async () => {
     if (!chat || refreshInFlight.current) return;
@@ -84,67 +78,6 @@ export default function SupportChat() {
   }, [chat?.id, open, refresh]);
   useEffect(() => { if (open) { setUnread(0); setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50); } }, [open, messages.length]);
   useEffect(()=>{if(!chat||!open)return; const seen=()=>supportService.presence(chat.id,chat.access_token,false).then(p=>setChat(old=>old?{...old,...p,access_token:old.access_token}:old)).catch(()=>{});seen();const id=window.setInterval(seen,15000);return()=>window.clearInterval(id)},[chat?.id,chat?.access_token,open]);
-  const clampLauncherPosition = useCallback((x:number,y:number) => {
-    const width = launcherRef.current?.offsetWidth || 104;
-    const height = launcherRef.current?.offsetHeight || 56;
-    const margin = 12;
-    return {
-      x: Math.min(Math.max(margin,x),Math.max(margin,window.innerWidth-width-margin)),
-      y: Math.min(Math.max(margin,y),Math.max(margin,window.innerHeight-height-margin)),
-    };
-  },[]);
-
-  useEffect(() => {
-    // Resolve a single viewport-relative position once after mount. Keeping the
-    // launcher in coordinates (instead of deriving bottom spacing from each
-    // page's footer) prevents it from jumping as routes and content heights vary.
-    const frame = window.requestAnimationFrame(() => {
-      try {
-        const saved = JSON.parse(localStorage.getItem(LAUNCHER_POSITION_KEY) || 'null');
-        if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
-          setLauncherPosition(clampLauncherPosition(saved.x, saved.y));
-          return;
-        }
-      } catch {}
-
-      const width = launcherRef.current?.offsetWidth || 104;
-      const height = launcherRef.current?.offsetHeight || 56;
-      setLauncherPosition(clampLauncherPosition(
-        window.innerWidth - width - 24,
-        window.innerHeight - height - 24,
-      ));
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [clampLauncherPosition]);
-
-  useEffect(()=>{
-    if(!launcherPosition)return;
-    const clamp=()=>setLauncherPosition(current=>current?clampLauncherPosition(current.x,current.y):current);
-    window.addEventListener('resize',clamp);
-    return()=>window.removeEventListener('resize',clamp);
-  },[launcherPosition!==null,clampLauncherPosition]);
-
-  function startLauncherDrag(event:ReactPointerEvent<HTMLButtonElement>){
-    if(event.button!==0)return;
-    const rect=event.currentTarget.getBoundingClientRect();
-    launcherDrag.current={pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,originX:rect.left,originY:rect.top,moved:false};
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setLauncherDragging(true);
-  }
-  function moveLauncher(event:ReactPointerEvent<HTMLButtonElement>){
-    const drag=launcherDrag.current;if(!drag||drag.pointerId!==event.pointerId)return;
-    const dx=event.clientX-drag.startX,dy=event.clientY-drag.startY;
-    if(Math.hypot(dx,dy)>5)drag.moved=true;
-    if(drag.moved)setLauncherPosition(clampLauncherPosition(drag.originX+dx,drag.originY+dy));
-  }
-  function finishLauncherDrag(event:ReactPointerEvent<HTMLButtonElement>){
-    const drag=launcherDrag.current;if(!drag||drag.pointerId!==event.pointerId)return;
-    if(event.currentTarget.hasPointerCapture(event.pointerId))event.currentTarget.releasePointerCapture(event.pointerId);
-    setLauncherDragging(false);
-    // Keep the movement flag through the synthetic click fired after pointerup.
-    window.setTimeout(()=>{launcherDrag.current=null},0);
-  }
-
   function noteTyping(value:string){setDraft(value);if(!chat)return;supportService.presence(chat.id,chat.access_token,true).catch(()=>{});window.clearTimeout(typingTimer.current);typingTimer.current=window.setTimeout(()=>supportService.presence(chat.id,chat.access_token,false).catch(()=>{}),1800)}
 
   async function send(payload?: Record<string, unknown>) {
@@ -176,7 +109,7 @@ export default function SupportChat() {
 
   const remaining = CHAT_MESSAGE_LIMIT - draft.length;
   return <>
-    <button ref={launcherRef} style={launcherPosition?{left:launcherPosition.x,top:launcherPosition.y}:undefined} onPointerDown={startLauncherDrag} onPointerMove={moveLauncher} onPointerUp={finishLauncherDrag} onPointerCancel={finishLauncherDrag} onClick={() => {if(!launcherDrag.current?.moved)setOpen(true)}} aria-label="Chat with Homebit Support. Drag to reposition." title="Drag to move · Click to open" className={`fixed z-50 hidden h-14 touch-none select-none items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-5 text-sm font-semibold text-white shadow-2xl shadow-purple-500/40 lg:flex ${launcherPosition?'':'right-6 bottom-6'} ${launcherDragging?'cursor-grabbing scale-105':'cursor-grab hover:scale-105'}`}>
+    <button onClick={() => setOpen(true)} aria-label="Chat with Homebit Support" title="Open Help chat" className="fixed bottom-6 right-6 z-50 hidden h-14 items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-5 text-sm font-semibold text-white shadow-2xl shadow-purple-500/40 transition-transform hover:scale-105 lg:flex">
       <MessageCircle className="h-5 w-5" /> Help {unread > 0 && <span className="rounded-full bg-white px-2 py-0.5 text-xs text-purple-700">{unread}</span>}
     </button>
     {open && <section aria-label="Homebit Support chat" className="fixed inset-3 z-[70] flex flex-col overflow-hidden rounded-2xl border border-purple-200 bg-white shadow-2xl dark:border-purple-500/30 dark:bg-[#13131a] sm:inset-auto sm:bottom-6 sm:right-6 sm:h-[620px] sm:w-[390px]">

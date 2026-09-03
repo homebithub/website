@@ -4,6 +4,7 @@ import { profileSetupService } from "~/services/grpc/profileSetup.service";
 import { getStoredProfileType, getStoredUserId } from "~/utils/authStorage";
 import { PROFILE_PROGRESS_UPDATED_EVENT } from "~/utils/profileProgress";
 import { SUBSCRIPTION_CHANGED_EVENT } from "~/utils/subscriptionEvents";
+import { marketplaceReadinessErrorMessage } from "~/utils/marketplaceReadinessError";
 
 export const MARKETPLACE_READINESS_CHANGED_EVENT = "homebit:marketplace-readiness-changed";
 
@@ -59,7 +60,7 @@ export function useMarketplaceReadiness(userIdInput?: string, profileTypeInput?:
         ...current,
         loading: false,
         interactionAllowed: false,
-        error: error?.message || "We could not check your setup right now.",
+        error: marketplaceReadinessErrorMessage(error, profileType),
       }));
     }
   }, [profileType, userId]);

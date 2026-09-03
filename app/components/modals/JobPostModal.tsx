@@ -160,6 +160,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
   const [mounted, setMounted] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [maxApplicants, setMaxApplicants] = useState("15");
   const [jobTypes, setJobTypes] = useState<JobType[]>([]);
   const [selectedJobTypeId, setSelectedJobTypeId] = useState("");
   const [featureBundles, setFeatureBundles] = useState<FeatureBundle[]>([]);
@@ -196,6 +197,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
 
     setTitle(String(job?.title || ""));
     setDescription(String(job?.description || ""));
+    setMaxApplicants(String(job?.max_applicants || job?.maxApplicants || 15));
     setSelectedJobTypeId(String(job?.job_type_id || job?.jobTypeId || ""));
     setSelectedProperties({});
     setFreeFormValues({});
@@ -495,6 +497,12 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
       return;
     }
 
+    const applicantLimit = Number(maxApplicants);
+    if (!editing && (!Number.isInteger(applicantLimit) || applicantLimit < 1 || applicantLimit > 100)) {
+      setError("Maximum applicants must be a whole number between 1 and 100.");
+      return;
+    }
+
     const missingRequired = featureBundles.find((bundle) => {
       const required = Boolean(
         (bundle as { is_required?: boolean; isRequired?: boolean }).is_required ??
@@ -569,6 +577,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
           job_type_id: Number(selectedJobTypeId),
           features: buildFeaturePayload(),
           ward_id: location?.wardId,
+          max_applicants: applicantLimit,
         });
       }
 
@@ -678,6 +687,30 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
                     };
                   })}
                 />
+              </label>
+            )}
+
+            {!editing && (
+              <label className="block">
+                <span className={FIELD_LABEL_CLASS}>
+                  Maximum applicants
+                  <RequiredMark />
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  step={1}
+                  inputMode="numeric"
+                  value={maxApplicants}
+                  onChange={(event) => setMaxApplicants(event.target.value)}
+                  required
+                  aria-required="true"
+                  className={INPUT_CLASS}
+                />
+                <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">
+                  We will stop showing the job to new applicants once this many people have applied. The default is 15.
+                </span>
               </label>
             )}
 

@@ -2668,6 +2668,9 @@ export class CreateJobReq extends jspb.Message {
   getWardId(): number;
   setWardId(value: number): CreateJobReq;
 
+  getMaxApplicants(): number;
+  setMaxApplicants(value: number): CreateJobReq;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateJobReq.AsObject;
   static toObject(includeInstance: boolean, msg: CreateJobReq): CreateJobReq.AsObject;
@@ -2684,6 +2687,7 @@ export namespace CreateJobReq {
     jobTypeId: number;
     featuresList: Array<client_profile_client_profile_pb.FeaturePickInput.AsObject>;
     wardId: number;
+    maxApplicants: number;
   };
 }
 

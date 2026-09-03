@@ -663,16 +663,12 @@ export default function HiringHistory() {
     return diffDays;
   };
 
+  // Applications drive the badges on every tab, including while Jobs is the
+  // active default. Previously they were not loaded on Jobs, so the page showed
+  // no tab badges while the global Hiring badge correctly reported attention.
   useEffect(() => {
-    if (activeTab === 'applicants') {
-      fetchApplicants();
-    } else if (activeTab === 'jobs') {
-      fetchJobs();
-    } else {
-      // Every remaining tab is an application status served from the same fetch.
-      fetchApplicants();
-    }
-  }, [activeTab, offset]);
+    void fetchApplicants();
+  }, []);
 
   // The jobs are needed on every tab, not only the Jobs one.
   //
@@ -683,7 +679,7 @@ export default function HiringHistory() {
   // beside a listing that had every one of those answers in it.
   useEffect(() => {
     void fetchJobs();
-  }, []);
+  }, [offset]);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');

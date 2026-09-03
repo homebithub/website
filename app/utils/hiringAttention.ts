@@ -32,10 +32,27 @@ function recordKey(kind: HiringAttentionKind, record: HiringAttentionRecord) {
 }
 
 export function hiringRecordVersion(record: HiringAttentionRecord) {
+  // Attention follows a workflow transition, not a transport representation.
+  // Detail pages intentionally project records down to id/status/created_at,
+  // while navbar queries receive updated_at as well. Preferring updated_at made
+  // the same attended record look new in the navbar forever. Status detects the
+  // meaningful change; created_at gives the initial version a stable anchor.
   return [
     String(record?.status ?? '').trim().toLowerCase(),
-    String(record?.updated_at ?? record?.updatedAt ?? record?.created_at ?? record?.createdAt ?? '').trim(),
+    String(record?.created_at ?? record?.createdAt ?? '').trim(),
   ].join('|');
+}
+
+function storedVersionMatchesRecord(storedVersion: string | undefined, record: HiringAttentionRecord) {
+  const currentVersion = hiringRecordVersion(record);
+  if (storedVersion === currentVersion) return true;
+
+  // Older clients anchored the version to updated_at. Preserve those marks
+  // when the workflow status is unchanged so this correction does not make
+  // every previously attended card look new once.
+  const currentStatus = String(record?.status ?? '').trim().toLowerCase();
+  const storedStatus = String(storedVersion ?? '').split('|', 1)[0].trim().toLowerCase();
+  return Boolean(currentStatus) && storedStatus === currentStatus;
 }
 
 function readLedger(scope: string): Record<string, string> {
@@ -86,10 +103,9 @@ export async function hydrateHiringAttention(scope: string) {
 export function isHiringRecordUnattended(scope: string, kind: HiringAttentionKind, record: HiringAttentionRecord) {
   const key = recordKey(kind, record);
   if (!scope || !key) return false;
-  const version = hiringRecordVersion(record);
   const ledger = serverLedgers.get(scope);
-  if (ledger) return ledger[key] !== version;
-  return readLedger(scope)[key] !== version;
+  if (ledger) return !storedVersionMatchesRecord(ledger[key], record);
+  return !storedVersionMatchesRecord(readLedger(scope)[key], record);
 }
 
 export function countUnattendedHiringRecords(

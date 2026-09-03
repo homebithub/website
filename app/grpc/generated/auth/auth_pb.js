@@ -24730,7 +24730,8 @@ description: jspb.Message.getFieldWithDefault(msg, 3, ""),
 jobTypeId: jspb.Message.getFieldWithDefault(msg, 4, 0),
 featuresList: jspb.Message.toObjectList(msg.getFeaturesList(),
     client_profile_client_profile_pb.FeaturePickInput.toObject, includeInstance),
-wardId: jspb.Message.getFieldWithDefault(msg, 6, 0)
+wardId: jspb.Message.getFieldWithDefault(msg, 6, 0),
+maxApplicants: jspb.Message.getFieldWithDefault(msg, 7, 0)
   };
 
   if (includeInstance) {
@@ -24791,6 +24792,10 @@ proto.auth.CreateJobReq.deserializeBinaryFromReader = function(msg, reader) {
     case 6:
       var value = /** @type {number} */ (reader.readInt32());
       msg.setWardId(value);
+      break;
+    case 7:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setMaxApplicants(value);
       break;
     default:
       reader.skipField();
@@ -24861,6 +24866,13 @@ proto.auth.CreateJobReq.serializeBinaryToWriter = function(message, writer) {
   if (f !== 0) {
     writer.writeInt32(
       6,
+      f
+    );
+  }
+  f = message.getMaxApplicants();
+  if (f !== 0) {
+    writer.writeInt32(
+      7,
       f
     );
   }
@@ -24992,6 +25004,24 @@ proto.auth.CreateJobReq.prototype.getWardId = function() {
  */
 proto.auth.CreateJobReq.prototype.setWardId = function(value) {
   return jspb.Message.setProto3IntField(this, 6, value);
+};
+
+
+/**
+ * optional int32 max_applicants = 7;
+ * @return {number}
+ */
+proto.auth.CreateJobReq.prototype.getMaxApplicants = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 7, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.auth.CreateJobReq} returns this
+ */
+proto.auth.CreateJobReq.prototype.setMaxApplicants = function(value) {
+  return jspb.Message.setProto3IntField(this, 7, value);
 };
 
 

@@ -17,6 +17,7 @@ import { formatTimeAgo } from '~/utils/timeAgo';
 import { normalizeOnboardingAmountFromStorage } from '~/utils/onboardingCompensation';
 import { formatPlaceOrFallback } from '~/utils/place';
 import { ServiceProviderCardDetails } from '~/components/listing/ServiceProviderCardDetails';
+import { ListingViewToggle, useListingViewPreference } from '~/components/listing/ListingViewToggle';
 
 const formatDate = (value?: string) => {
   if (!value) return 'Flexible';
@@ -131,6 +132,8 @@ export default function HouseholdShortlistPage() {
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useListingViewPreference('homebit:saved-view');
+  const isGridView = viewMode === 'grid';
 
   // Load UI preferences (compact view, accessibility)
   useEffect(() => {
@@ -331,7 +334,10 @@ export default function HouseholdShortlistPage() {
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className={`flex-1 py-8 ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">Saved</h1>
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <h1 className="text-lg font-extrabold text-gray-900 dark:text-white">Saved</h1>
+              <ListingViewToggle value={viewMode} onChange={setViewMode} />
+            </div>
 
             {visibleSavedServiceProviders.length === 0 && !loading && !loadingProfiles && !error && (
               <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
@@ -355,7 +361,7 @@ export default function HouseholdShortlistPage() {
             {chatError && <ErrorAlert message={chatError} className="mb-4" />}
             {error && <ErrorAlert message={error} className="mb-4" />}
 	
-            <div className="flex flex-col gap-4">
+            <div className={isGridView ? 'grid gap-4 md:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}>
               {visibleSavedServiceProviders
                 .map((s) => {
                   const listing = profilesById[s.profile_id] || {};
@@ -397,10 +403,10 @@ export default function HouseholdShortlistPage() {
                   return (
                     <div
                       key={s.id}
-                      className="bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all"
+                      className={`bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all ${isGridView ? 'flex h-full flex-col' : ''}`}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-lg font-bold overflow-hidden">
+                      <div className={`flex items-start ${isGridView ? 'gap-3' : 'gap-4'}`}>
+                        <div className={`${isGridView ? 'h-12 w-12 text-sm' : 'h-16 w-16 text-lg'} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500 to-pink-500 font-bold text-white`}>
                           {avatar ? (
                             <OptimizedImage
                               path={avatar}
@@ -412,26 +418,32 @@ export default function HouseholdShortlistPage() {
                             initials
                           )}
                         </div>
-                        <div className="flex-1">
-                          <div className="grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(260px,0.85fr)_minmax(360px,1.4fr)] lg:gap-10">
+                        <div className="min-w-0 flex-1">
+                          <div className={isGridView ? 'min-w-0' : 'grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(260px,0.85fr)_minmax(360px,1.4fr)] lg:gap-10'}>
                             <div className="min-w-0">
                               <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{name}</h3>
                               <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
                             </div>
-                            <ServiceProviderCardDetails
-                              description={firstString(listing?.description)}
-                              workTypes={jobTypes.map((type) => type.replace(/_/g, ' '))}
-                              availability={formatDate(listing?.available_from)}
-                              schedule={scheduleLabel}
-                              experience={experienceYears ? `${experienceYears} yrs` : 'Not specified'}
-                              salary={salaryLabel}
-                              worksWith={worksWith}
-                            />
+                            {!isGridView && (
+                              <ServiceProviderCardDetails
+                                description={firstString(listing?.description)}
+                                workTypes={jobTypes.map((type) => type.replace(/_/g, ' '))}
+                                availability={formatDate(listing?.available_from)}
+                                schedule={scheduleLabel}
+                                experience={experienceYears ? `${experienceYears} yrs` : 'Not specified'}
+                                salary={salaryLabel}
+                                worksWith={worksWith}
+                              />
+                            )}
                           </div>
+
+                          {isGridView && firstString(listing?.description) && (
+                            <p className="mt-3 line-clamp-2 text-sm leading-5 text-gray-600 dark:text-gray-300">{firstString(listing?.description)}</p>
+                          )}
 
                           <div className="mt-3 flex flex-wrap gap-2">
                             {jobTypes.length > 0 ? (
-                              jobTypes.map((type) => (
+                              jobTypes.slice(0, isGridView ? 2 : jobTypes.length).map((type) => (
                                 <span
                                   key={type}
                                   className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
@@ -471,7 +483,7 @@ export default function HouseholdShortlistPage() {
                         </div>
                       </div>
 
-                      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className={`mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${isGridView ? 'mt-auto pt-4' : ''}`}>
                         <span className="text-xs text-gray-400">Updated {formatTimeAgo(updatedAt)}</span>
                         <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:justify-end">
                           <button
