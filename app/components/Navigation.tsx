@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router";
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/20/solid";
+import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon, ChatBubbleLeftRightIcon, ArrowsRightLeftIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { API_BASE_URL } from "~/config/api";
@@ -21,6 +21,7 @@ import { MobileBottomNavigation } from '~/components/MobileBottomNavigation';
 import { PROFILE_AVATAR_UPDATED_EVENT, firstProfileAvatar, getStoredProfileAvatar } from '~/utils/profileAvatar';
 import { openAdminDashboard } from '~/utils/adminDashboard';
 import { conversationBadgeId, extractConversationRows, isConversationUnread } from '~/utils/conversationBadges';
+import AccountProfileSwitcher from '~/components/AccountProfileSwitcher';
 
 const NAV_COUNT_STALE_MS = 2 * 60_000;
 const NAV_ADMIN_STALE_MS = 10 * 60_000;
@@ -80,6 +81,7 @@ function NavigationContent() {
     const [savedCount, setSavedCount] = useState<number>(0);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [isProfileSwitcherOpen, setIsProfileSwitcherOpen] = useState(false);
     const { unreadCount } = useNotifications({ pollingMs: 5 * 60_000, pageSize: 20, enabled: allowAuxiliaryAccountCalls });
     const navigate = useNavigate();
 
@@ -748,6 +750,18 @@ function NavigationContent() {
                                         </Menu.Item>
                                         <Menu.Item>
                                             {({ active }) => (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsProfileSwitcherOpen(true)}
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex w-[calc(100%-16px)] items-center px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
+                                                >
+                                                    <ArrowsRightLeftIcon className="mr-3 h-5 w-5" />
+                                                    Switch profile
+                                                </button>
+                                            )}
+                                        </Menu.Item>
+                                        <Menu.Item>
+                                            {({ active }) => (
                                                 <Link
                                                     to="/settings"
                                                     className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
@@ -971,6 +985,18 @@ function NavigationContent() {
                                             </Menu.Item>
                                             <Menu.Item>
                                                 {({ active }) => (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsProfileSwitcherOpen(true)}
+                                                        className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'} flex w-full items-center px-4 py-1 text-xs`}
+                                                    >
+                                                        <ArrowsRightLeftIcon className="mr-3 h-5 w-5" />
+                                                        Switch profile
+                                                    </button>
+                                                )}
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                {({ active }) => (
                                                     <Link
                                                         to="/settings"
                                                         className={`${
@@ -1042,6 +1068,7 @@ function NavigationContent() {
                     <NotificationsModal isOpen onClose={() => setIsNotificationsOpen(false)} />
                 </Suspense>
             )}
+            <AccountProfileSwitcher open={isProfileSwitcherOpen} onClose={() => setIsProfileSwitcherOpen(false)} />
 
         </nav>
         <MobileBottomNavigation
@@ -1054,6 +1081,7 @@ function NavigationContent() {
             canSeeAdmin={canSeeAdminDashboard}
             onOpenAdminDashboard={() => openAdminDashboard(adminDashboardUrl)}
             onOpenNotifications={() => setIsNotificationsOpen(true)}
+            onSwitchProfile={() => setIsProfileSwitcherOpen(true)}
             onLogout={() => void handleLogout()}
         />
         {/* A fixed header leaves normal document flow. Keep every route's first

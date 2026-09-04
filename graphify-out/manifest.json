@@ -168,10 +168,10 @@
     "semantic_hash": ""
   },
   "app/components/MobileBottomNavigation.tsx": {
-    "mtime": 1787167204.0336497,
-    "seen": 1788110899.41454,
-    "ast_hash": "2c0df3a87f999e93b6b57c6813d531f2",
-    "semantic_hash": "2c0df3a87f999e93b6b57c6813d531f2"
+    "mtime": 1788521390.3493097,
+    "seen": 1788522779.0372128,
+    "ast_hash": "0ab52c30d4e30dc66bc8aeade5499768",
+    "semantic_hash": ""
   },
   "app/components/Modal.tsx": {
     "mtime": 1787085434.5845096,
@@ -186,9 +186,9 @@
     "semantic_hash": ""
   },
   "app/components/Navigation.tsx": {
-    "mtime": 1788441938.526667,
-    "seen": 1788449937.903166,
-    "ast_hash": "b2cd3531f3de8ad7db0dbbbb6766eefb",
+    "mtime": 1788521492.3503263,
+    "seen": 1788522779.037216,
+    "ast_hash": "12a6a0eb32d39365ae0d194668d60427",
     "semantic_hash": ""
   },
   "app/components/OnboardingTipsBanner.tsx": {
@@ -3759,6 +3759,18 @@
     "mtime": 1788449911.8760812,
     "seen": 1788449937.903469,
     "ast_hash": "d66b252a756f229235a80559d428bafc",
+    "semantic_hash": ""
+  },
+  "app/components/AccountProfileSwitcher.tsx": {
+    "mtime": 1788521357.0637667,
+    "seen": 1788522779.037187,
+    "ast_hash": "532a776de1ad817a83d0f398afb1bc4b",
+    "semantic_hash": ""
+  },
+  "app/routes/api.account-profiles.ts": {
+    "mtime": 1788521357.0632067,
+    "seen": 1788522779.037498,
+    "ast_hash": "b8205f72f051a876c26a0764e82ce4fc",
     "semantic_hash": ""
   }
 }

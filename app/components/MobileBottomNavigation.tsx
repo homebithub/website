@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import {
   ArrowRightOnRectangleIcon,
+  ArrowsRightLeftIcon,
   BellIcon,
   BookmarkIcon,
   BriefcaseIcon,
@@ -34,6 +35,7 @@ interface MobileBottomNavigationProps {
   canSeeAdmin: boolean;
   onOpenAdminDashboard: () => void | Promise<void>;
   onOpenNotifications: () => void;
+  onSwitchProfile: () => void;
   onLogout: () => void;
 }
 
@@ -61,6 +63,7 @@ export function MobileBottomNavigation({
   canSeeAdmin,
   onOpenAdminDashboard,
   onOpenNotifications,
+  onSwitchProfile,
   onLogout,
 }: MobileBottomNavigationProps) {
   const location = useLocation();
@@ -135,6 +138,9 @@ export function MobileBottomNavigation({
               {user ? (
                 <>
                   <SheetLink to={profileHref} icon={UserCircleIcon} label={profileLabel} />
+                  <button type="button" onClick={() => { setMoreOpen(false); onSwitchProfile(); }} className="hb-mobile-sheet-link w-full">
+                    <ArrowsRightLeftIcon className="h-5 w-5" /> Switch profile
+                  </button>
                   <SheetLink to="/settings" icon={Cog6ToothIcon} label="Settings" />
                   <SheetLink to="/subscriptions" icon={CreditCardIcon} label="Subscriptions" />
                   <SheetLink to="/blog" icon={NewspaperIcon} label="Blog" />
