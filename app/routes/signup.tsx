@@ -17,6 +17,11 @@ import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorag
 import { normalizeProfileType, SERVICE_PROVIDER_PROFILE_TYPE } from '~/utils/profileType';
 import { profileFeatureService } from '~/services/grpc/authServices';
 import { RequiredMark } from '~/components/ui/formStyles';
+import {
+    fallbackSignupProfileOptions,
+    normalizeSignupProfileOptions,
+    type SignupProfileOption,
+} from '~/utils/signupProfiles';
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
@@ -64,15 +69,6 @@ export type SignupResponse = {
     };
 };
 
-
-type ProfileOption = {
-    id: string;
-    value: string;
-    label: string;
-    description: string;
-    type?: string;
-    slug?: string;
-};
 
 /**
  * Putting a server error beside the input it is about.
@@ -151,82 +147,6 @@ function genericResponseBodyToJs(response: any) {
     return body || {};
 }
 
-const fallbackProfileOptions: ProfileOption[] = [
-    {
-        id: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1',
-        value: 'household',
-        label: 'Household',
-        description: 'House Hold',
-        type: 'CLT',
-        slug: 'household',
-    },
-    {
-        id: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
-        value: SERVICE_PROVIDER_PROFILE_TYPE,
-        label: 'Service provider',
-        description: 'Offer a home service',
-        type: 'SVC_PVD',
-        slug: 'househelp',
-    }
-];
-
-function normalizeProfileRole(profile: any): 'household' | 'service_provider' | '' {
-    const type = String(profile?.type || profile?.profile_type || profile?.profileType || '').toUpperCase();
-    const slug = String(profile?.slug || '').toLowerCase();
-    const name = String(profile?.name || '').toLowerCase();
-
-    if (type === 'CLT' || slug.includes('household') || name.includes('household')) return 'household';
-    if (
-        type === 'SVC_PVD'
-        || slug.includes('service-provider')
-        || slug.includes('service_provider')
-        || slug.includes('househelp')
-        || slug.includes('house-help')
-        || name.includes('service provider')
-        || name.includes('househelp')
-        || name.includes('house help')
-    ) {
-        return SERVICE_PROVIDER_PROFILE_TYPE;
-    }
-    return '';
-}
-
-function normalizeProfileLabel(profile: any, role: 'household' | 'service_provider') {
-    const label = String(profile?.name || '').trim();
-    if (role === SERVICE_PROVIDER_PROFILE_TYPE) return 'Service provider';
-    if (!label) return 'Household';
-    return label;
-}
-
-function normalizeSignupProfileOptions(rawProfiles: any[]): ProfileOption[] {
-    const byRole = new Map<string, ProfileOption>();
-
-    for (const profile of rawProfiles) {
-        const role = normalizeProfileRole(profile);
-        const id = String(profile?.id || profile?.profile_id || profile?.profileId || '').trim();
-        if (!role || !id || byRole.has(role)) continue;
-
-        byRole.set(role, {
-            id,
-            value: role,
-            label: normalizeProfileLabel(profile, role),
-            description: String(profile?.description || '').trim() || (
-                role === 'household'
-                    ? 'House Hold'
-                    : 'Offer a home service'
-            ),
-            type: String(profile?.type || ''),
-            slug: String(profile?.slug || ''),
-        });
-    }
-
-    const ordered = ['household', SERVICE_PROVIDER_PROFILE_TYPE]
-        .map((role) => byRole.get(role))
-        .filter(Boolean) as ProfileOption[];
-
-    return ordered.length ? ordered : fallbackProfileOptions;
-}
-
 export default function SignupPage() {
     const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
@@ -253,7 +173,7 @@ export default function SignupPage() {
     
     const [form, setForm] = useState<SignupRequest>({
         profile_type: googleProfileType || '',
-        profile_id: fallbackProfileOptions.find((option) => option.value === googleProfileType)?.id || '',
+        profile_id: fallbackSignupProfileOptions.find((option) => option.value === googleProfileType)?.id || '',
         // For Google signups we don't actually use the password field,
         // but the shared validation schema expects a non-empty value.
         // Use a dummy value so validation and UI enablement pass while
@@ -279,7 +199,7 @@ export default function SignupPage() {
     const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
     const [showPassword, setShowPassword] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
-    const [profileOptions, setProfileOptions] = useState<ProfileOption[]>(fallbackProfileOptions);
+    const [profileOptions, setProfileOptions] = useState<SignupProfileOption[]>(fallbackSignupProfileOptions);
     const [profilesLoading, setProfilesLoading] = useState(false);
     
     // Modal state - check if profile_type is in URL params from Google callback
@@ -334,7 +254,7 @@ export default function SignupPage() {
                 });
             } catch (err) {
                 console.error('[SIGNUP] Failed to load profiles:', err);
-                if (!cancelled) setProfileOptions(fallbackProfileOptions);
+                if (!cancelled) setProfileOptions(fallbackSignupProfileOptions);
             } finally {
                 if (!cancelled) setProfilesLoading(false);
             }
@@ -400,7 +320,7 @@ export default function SignupPage() {
         }
     };
 
-    const handleProfileSelect = (option: ProfileOption) => {
+    const handleProfileSelect = (option: SignupProfileOption) => {
         setForm({...form, profile_type: option.value, profile_id: option.id});
         // Don't auto-close modal - user must click Continue button after accepting terms
         

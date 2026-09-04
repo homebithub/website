@@ -2166,9 +2166,9 @@
     "semantic_hash": ""
   },
   "app/routes/signup.tsx": {
-    "mtime": 1788210309.2453296,
-    "seen": 1788234279.386276,
-    "ast_hash": "9b0139140c1f00d9d25694f06c2c5572",
+    "mtime": 1788541077.938393,
+    "seen": 1788541146.5439548,
+    "ast_hash": "34ea09bcdecf4fd054fec250c7a03e67",
     "semantic_hash": ""
   },
   "app/routes/sitemap[.]xml.tsx": {
@@ -3156,9 +3156,9 @@
     "semantic_hash": ""
   },
   "k8s/preprod-deployment.yaml": {
-    "mtime": 1788384706.814596,
-    "seen": 1788440919.8006248,
-    "ast_hash": "56f9e6baaaacc404b9bd8d96f1f554a4",
+    "mtime": 1788539412.3775132,
+    "seen": 1788541146.5440772,
+    "ast_hash": "b8d1e4768e44b1e89ce13526502fd56b",
     "semantic_hash": ""
   },
   "public/offline.html": {
@@ -3762,15 +3762,27 @@
     "semantic_hash": ""
   },
   "app/components/AccountProfileSwitcher.tsx": {
-    "mtime": 1788521357.0637667,
-    "seen": 1788522779.037187,
-    "ast_hash": "532a776de1ad817a83d0f398afb1bc4b",
+    "mtime": 1788541043.8901048,
+    "seen": 1788541146.543678,
+    "ast_hash": "2c0ba6630f5315dd014f8d54d90babf5",
     "semantic_hash": ""
   },
   "app/routes/api.account-profiles.ts": {
     "mtime": 1788521357.0632067,
     "seen": 1788522779.037498,
     "ast_hash": "b8205f72f051a876c26a0764e82ce4fc",
+    "semantic_hash": ""
+  },
+  "app/utils/signupProfiles.test.ts": {
+    "mtime": 1788541043.8881996,
+    "seen": 1788541146.544037,
+    "ast_hash": "d03b31e9a6f3d065763e29a7b0ea5da3",
+    "semantic_hash": ""
+  },
+  "app/utils/signupProfiles.ts": {
+    "mtime": 1788541043.8876128,
+    "seen": 1788541146.5440378,
+    "ast_hash": "cf0faf8aa11d5795fb7c51e54783e067",
     "semantic_hash": ""
   }
 }

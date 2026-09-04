@@ -130,14 +130,19 @@ export default function AccountProfileSwitcher({ open, onClose }: { open: boolea
         </div>
 
         {!loading && missingType && (
-          <button
-            type="button"
-            disabled={Boolean(working)}
-            onClick={() => void addAndSwitch(missingType)}
-            className="mt-4 w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 text-sm font-bold text-white shadow-lg disabled:opacity-60"
-          >
-            {working === missingType ? 'Creating profile…' : `Add ${labelFor(missingType).toLowerCase()} profile`}
-          </button>
+          <div className="mt-4 rounded-xl border border-purple-300/60 bg-purple-50/70 p-3 dark:border-purple-500/30 dark:bg-purple-950/20">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              Need a {labelFor(missingType).toLowerCase()} profile? It will use this account’s phone number and login, while keeping its own setup and activity.
+            </p>
+            <button
+              type="button"
+              disabled={Boolean(working)}
+              onClick={() => void addAndSwitch(missingType)}
+              className="mt-3 w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 text-sm font-bold text-white shadow-lg disabled:opacity-60"
+            >
+              {working === missingType ? 'Creating profile…' : `Create ${labelFor(missingType).toLowerCase()} profile`}
+            </button>
+          </div>
         )}
       </div>
     </div>
