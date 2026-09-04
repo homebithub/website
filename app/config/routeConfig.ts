@@ -54,7 +54,6 @@ export const routeConfig: Record<string, RouteConfig> = {
   // - etc.
   
   // Explicitly defined protected routes (for reference)
-  '/profile': { path: '/profile', requiresAuth: true },
   '/settings': { path: '/settings', requiresAuth: true },
   '/change-password': { path: '/change-password', requiresAuth: true },
   '/household/profile': { path: '/household/profile', requiresAuth: true },

@@ -46,7 +46,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   // Public routes that don't need backend preferences
   const isPublicRoute = () => {
     const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email'];
-    return location.pathname === '/profile' || publicPaths.some(path => location.pathname.startsWith(path));
+    return publicPaths.some(path => location.pathname.startsWith(path));
   };
 
   const applyTheme = (newTheme: Theme) => {

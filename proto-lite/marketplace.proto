@@ -17,6 +17,9 @@ service HireRequestService {
   rpc ListHireRequests(ListHireRequestsReq) returns (JsonResponse);
   rpc AcceptHireRequest(IdRequest) returns (JsonResponse);
   rpc DeclineHireRequest(IdRequest) returns (JsonResponse);
+  // The household's final confirmation. This creates the work engagement;
+  // drawing up a formal contract remains optional.
+  rpc FinalizeHireRequest(IdRequest) returns (JsonResponse);
 }
 
 message IdRequest { string id = 1; string user_id = 2; }

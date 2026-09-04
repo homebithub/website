@@ -710,7 +710,7 @@ export default function ServiceProviderHiringHistory() {
       window.dispatchEvent(new Event('hiring-updated'));
       setSuccessMessage(
         response === 'accepted'
-          ? 'Accepted. The household will send you a contract to sign.'
+          ? 'Interest confirmed. The household will make the final hire confirmation; a formal contract is optional.'
           : 'Declined. The household has been told.',
       );
     } catch (err: any) {
@@ -998,7 +998,7 @@ export default function ServiceProviderHiringHistory() {
                         {request.status === 'pending' && (
                           <>
                             <button onClick={() => openAcceptConfirm(request.id)} disabled={actionLoading === request.id} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 sm:w-auto sm:py-1">
-                              <CheckCircle className="w-4 h-4" /> Accept
+                              <CheckCircle className="w-4 h-4" /> Confirm interest
                             </button>
                             <button onClick={() => { setSelectedRequest(request.id); setShowDeclineModal(true); }} disabled={actionLoading === request.id} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 sm:w-auto sm:py-1">
                               <XCircle className="w-4 h-4" /> Decline
@@ -1292,7 +1292,7 @@ export default function ServiceProviderHiringHistory() {
                               disabled={actionLoading === interest.id}
                               className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 sm:w-auto sm:py-1"
                             >
-                              <CheckCircle className="w-4 h-4" /> Accept
+                              <CheckCircle className="w-4 h-4" /> Confirm interest
                             </button>
                             <button
                               onClick={() => setAnsweringInterest(interest)}
@@ -1390,7 +1390,7 @@ export default function ServiceProviderHiringHistory() {
               <button type="button" onClick={() => navigate(profileLink, { state: { profileId: record.household?.id || record.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View household</button>
               {isRequest && normalizeStatus(record.status) === 'pending' && <>
                 <button type="button" onClick={() => { setSelectedHiringCard(null); setSelectedRequest(record.id); setShowDeclineModal(true); }} className="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-600">Decline</button>
-                <button type="button" onClick={() => { setSelectedHiringCard(null); openAcceptConfirm(record.id); }} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white">Accept</button>
+                <button type="button" onClick={() => { setSelectedHiringCard(null); openAcceptConfirm(record.id); }} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white">Confirm interest</button>
               </>}
               {isEmploymentContract && <button type="button" onClick={() => { const params = new URLSearchParams({ id: record.id, backTo: backToPath, backLabel: 'Back to Hiring' }); navigate(`/household/employment-contract?${params.toString()}`); }} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white">{record.status === 'pending_service_provider' ? 'Review & sign' : 'View contract'}</button>}
             </>}
@@ -1576,9 +1576,9 @@ export default function ServiceProviderHiringHistory() {
         isOpen={showAcceptConfirm}
         onClose={() => { setShowAcceptConfirm(false); setPendingActionId(null); }}
         onConfirm={handleAcceptRequest}
-        title="Accept Hire Request"
-        message="Are you sure you want to accept this hire request? This will create a work contract with the household."
-        confirmText="Accept"
+        title="Confirm your interest"
+        message="Confirm that you want this job. The household will make the final hire confirmation, and a formal contract will remain optional."
+        confirmText="Confirm interest"
         cancelText="Cancel"
         variant="info"
         isLoading={actionLoading !== null}

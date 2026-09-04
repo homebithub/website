@@ -39,6 +39,7 @@ type Conversation = {
   service_provider_profile_id?: string | null;
   household_profile_type?: string | null;
   service_provider_profile_type?: string | null;
+  listing_id?: string | number | null;
   last_message_at: string | null;
   last_message_body?: string | null;
   last_message_sender_id?: string | null;
@@ -73,6 +74,7 @@ const normalizeConversationData = (c: any): Conversation => ({
   service_provider_profile_id: c?.service_provider_profile_id || c?.househelp_profile_id || null,
   household_profile_type: c?.household_profile_type || 'household',
   service_provider_profile_type: normalizeProfileType(c?.service_provider_profile_type || c?.househelp_profile_type || 'service_provider'),
+  listing_id: c?.listing_id ?? c?.listingId ?? null,
   last_message_at: c?.last_message_at || null,
   last_message_body: c?.last_message_body || null,
   last_message_sender_id: c?.last_message_sender_id || null,
@@ -114,6 +116,8 @@ type HireRequestSummary = ChatHireRequest & {
   service_provider?: { user_id?: string; id?: string };
   househelp?: { user_id?: string; id?: string };
   status: string;
+  application_status?: string;
+  initiated_by_applicant?: boolean;
 };
 
 function normalizeId(value: unknown): string | undefined {
@@ -410,7 +414,7 @@ export default function InboxPage() {
   const [showHireRequestDetails, setShowHireRequestDetails] = useState(false);
   const [hireRequestJob, setHireRequestJob] = useState<Record<string, any> | null>(null);
   const [hireRequestJobLoading, setHireRequestJobLoading] = useState(false);
-  const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
+  const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | 'confirm' | null>(null);
   const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
 
   const [lastActiveByUserId, setLastActiveByUserId] = useState<Record<string, number>>({});
@@ -816,7 +820,13 @@ export default function InboxPage() {
         normalizeId(conversation.service_provider_id),
       ].filter((v): v is string => Boolean(v));
 
+      const conversationListingId = String(conversation.listing_id || '').trim();
+
       const match = requests.find((req) => {
+        const requestListingId = String(req.listing_id || '').trim();
+        if (conversationListingId && requestListingId !== conversationListingId) {
+          return false;
+        }
         const requestHouseholdCandidates = [
           normalizeId(req.household_id),
           normalizeId(req.household_user_id),
@@ -1543,6 +1553,27 @@ export default function InboxPage() {
     }
   }, [hireRequestId, pushToast]);
 
+  const handleConfirmHire = useCallback(async () => {
+    if (!hireRequestId) return;
+    try {
+      setHireActionLoading('confirm');
+      await hireRequestService.finalizeHireRequest(hireRequestId);
+      setHireRequestStatus('finalized');
+      setHireRequestDetails((current) => current ? {
+        ...current,
+        status: 'finalized',
+        application_status: 'approved',
+      } : current);
+      window.dispatchEvent(new Event('hiring-updated'));
+      pushToast('Hire confirmed. A formal contract is optional.', 'success');
+    } catch (err) {
+      console.error(err);
+      pushToast('We could not confirm this hire. Please try again.', 'error');
+    } finally {
+      setHireActionLoading(null);
+    }
+  }, [hireRequestId, pushToast]);
+
   // Basic WebSocket wiring for new incoming messages
   useEffect(() => {
     // Listen for new_message events directly
@@ -1957,6 +1988,8 @@ export default function InboxPage() {
                     }}
                     onAccept={currentUserProfileType === 'service_provider' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
                     onDecline={currentUserProfileType === 'service_provider' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
+                    onConfirmHire={currentUserProfileType === 'household' ? handleConfirmHire : undefined}
+                    initiatedByApplicant={Boolean(hireRequestDetails?.initiated_by_applicant)}
                     actionLoading={hireActionLoading}
                     userRole={currentUserProfileType as 'household' | 'service_provider'}
                     />
@@ -2755,7 +2788,7 @@ export default function InboxPage() {
               /* The job this thread belongs to. Present, the household is
                  confirming rather than choosing; absent, they picked this person
                  first and are asked which of their jobs it is for. */
-              listingId={(selectedConversation as any)?.listing_id || undefined}
+              listingId={selectedConversation.listing_id || undefined}
               onClose={() => {
                 setShowHireWizard(false);
                 setServiceProviderProfileIdForHire(null);

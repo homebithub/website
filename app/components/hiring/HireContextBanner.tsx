@@ -8,7 +8,9 @@ interface HireContextBannerProps {
   onSendHireRequest?: () => void;
   onAccept?: () => void;
   onDecline?: () => void;
-  actionLoading?: 'accept' | 'decline' | null;
+  onConfirmHire?: () => void;
+  initiatedByApplicant?: boolean;
+  actionLoading?: 'accept' | 'decline' | 'confirm' | null;
   userRole: 'household' | 'service_provider';
 }
 
@@ -19,6 +21,8 @@ export default function HireContextBanner({
   onSendHireRequest,
   onAccept,
   onDecline,
+  onConfirmHire,
+  initiatedByApplicant = false,
   actionLoading,
   userRole,
 }: HireContextBannerProps) {
@@ -33,7 +37,7 @@ export default function HireContextBanner({
               Ready to hire?
             </h4>
             <p className="text-xs text-purple-700 dark:text-purple-300 mb-3">
-              Send a formal hire request with job details, salary, and schedule
+              Ask them to confirm that you both want to go ahead. A contract is optional.
             </p>
             <button
               onClick={onSendHireRequest}
@@ -60,10 +64,16 @@ export default function HireContextBanner({
           borderColor: 'border-yellow-200 dark:border-yellow-800',
           textColor: 'text-yellow-900 dark:text-yellow-100',
           subTextColor: 'text-yellow-700 dark:text-yellow-300',
-          title: userRole === 'household' ? 'Hire Request Pending' : 'Hire Request Received',
-          message: userRole === 'household' 
-            ? 'Waiting for response to your hire request'
-            : 'You have a pending hire request. Review and respond.',
+          title: userRole === 'household'
+            ? initiatedByApplicant ? 'Application received' : 'Waiting for their confirmation'
+            : initiatedByApplicant ? 'Application sent' : 'Confirm this opportunity',
+          message: userRole === 'household'
+            ? initiatedByApplicant
+              ? 'They have already applied. Confirm the hire if you have agreed to work together.'
+              : 'They still need to confirm that they want this job.'
+            : initiatedByApplicant
+              ? 'You have confirmed your interest. The household still needs to confirm the hire.'
+              : 'Confirm that you want this job. The household will make the final confirmation.',
         };
       case 'accepted':
         return {
@@ -72,10 +82,10 @@ export default function HireContextBanner({
           borderColor: 'border-green-200 dark:border-green-800',
           textColor: 'text-green-900 dark:text-green-100',
           subTextColor: 'text-green-700 dark:text-green-300',
-          title: userRole === 'household' ? 'Hire Request Accepted!' : 'You Accepted This Request',
+          title: userRole === 'household' ? 'They confirmed their interest' : 'Waiting for the household',
           message: userRole === 'household'
-            ? 'Great! You can now create an employment contract.'
-            : 'The household can now finalize the contract.',
+            ? 'Confirm the hire to record that you agreed to work together. A contract is optional.'
+            : 'You have confirmed your interest. The household still needs to confirm the hire.',
         };
       case 'declined':
         return {
@@ -96,8 +106,8 @@ export default function HireContextBanner({
           borderColor: 'border-blue-200 dark:border-blue-800',
           textColor: 'text-blue-900 dark:text-blue-100',
           subTextColor: 'text-blue-700 dark:text-blue-300',
-          title: 'Contract Created',
-          message: 'An employment contract has been created for this hire request.',
+          title: 'Hire confirmed',
+          message: 'HomeBit has recorded that you agreed to work together. You may still create a contract if you want one.',
         };
       default:
         return null;
@@ -127,7 +137,19 @@ export default function HireContextBanner({
             </button>
           )}
 
-          {userRole === 'service_provider' && hireRequestStatus === 'pending' && (onAccept || onDecline) && (
+          {userRole === 'household' &&
+            onConfirmHire &&
+            (hireRequestStatus === 'accepted' || (hireRequestStatus === 'pending' && initiatedByApplicant)) && (
+              <button
+                onClick={onConfirmHire}
+                disabled={actionLoading === 'confirm'}
+                className="ml-0 mt-3 inline-flex rounded-xl bg-green-600 px-4 py-1 text-xs font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 sm:ml-3 sm:mt-0"
+              >
+                {actionLoading === 'confirm' ? 'Confirming…' : 'Confirm hire'}
+              </button>
+            )}
+
+          {userRole === 'service_provider' && hireRequestStatus === 'pending' && !initiatedByApplicant && (onAccept || onDecline) && (
             <div className="mt-3 flex flex-wrap gap-3">
               {onAccept && (
                 <button
@@ -135,7 +157,7 @@ export default function HireContextBanner({
                   disabled={actionLoading === 'accept'}
                   className="px-4 py-1 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
                 >
-                  {actionLoading === 'accept' ? 'Accepting...' : 'Accept Request'}
+                  {actionLoading === 'accept' ? 'Confirming…' : 'Confirm interest'}
                 </button>
               )}
               {onDecline && (

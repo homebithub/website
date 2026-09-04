@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useMemo, useCallback, useState, useEffect } from 'react';
-import { useLocation } from 'react-router';
 import { useWebSocket } from '~/hooks/useWebSocket';
 import { NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
 import { useAuth } from '~/contexts/useAuth';
@@ -21,8 +20,6 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const location = useLocation();
-  const disabledOnProfileAccount = location.pathname === '/profile';
   const [unreadCount, setUnreadCount] = useState(0);
   const currentUserId = useMemo(() => {
     const authUser = (user as any)?.user ?? user;
@@ -43,7 +40,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { connectionState, sendMessage, addEventListener } = useWebSocket({
     url: wsUrl,
     token,
-    enabled: !!currentUserId && !disabledOnProfileAccount,
+    enabled: !!currentUserId,
     reconnectInterval: 3000,
     maxReconnectAttempts: 10,
   });

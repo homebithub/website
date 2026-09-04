@@ -557,5 +557,66 @@ proto.auth.HireRequestServicePromiseClient.prototype.declineHireRequest =
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_HireRequestService_FinalizeHireRequest = new grpc.web.MethodDescriptor(
+  '/auth.HireRequestService/FinalizeHireRequest',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.HireRequestServiceClient.prototype.finalizeHireRequest =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.HireRequestService/FinalizeHireRequest',
+      request,
+      metadata || {},
+      methodDescriptor_HireRequestService_FinalizeHireRequest,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.HireRequestServicePromiseClient.prototype.finalizeHireRequest =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.HireRequestService/FinalizeHireRequest',
+      request,
+      metadata || {},
+      methodDescriptor_HireRequestService_FinalizeHireRequest);
+};
+
+
 module.exports = proto.auth;
 

@@ -5,7 +5,7 @@ const step = (completed: boolean) => ({
   id: "profile",
   label: "Profile",
   description: "",
-  action_path: "/profile",
+  action_path: "/household/profile",
   status: completed ? "complete" : "incomplete",
   completed,
 });

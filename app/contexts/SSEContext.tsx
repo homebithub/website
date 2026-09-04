@@ -46,9 +46,6 @@ interface SSEProviderProps {
 
 export function SSEProvider({ children }: SSEProviderProps) {
   const { user } = useAuth();
-  // Realtime account chrome must remain live on every authenticated route.
-  // Disabling the shared stream on /profile made badges silently stale there.
-  const disabledOnProfileAccount = false;
   const [isConnected, setIsConnected] = useState(false);
   const [connectionUptime, setConnectionUptime] = useState(0);
   const [historyGapCount, setHistoryGapCount] = useState(0);
@@ -139,10 +136,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
 
   const connect = useCallback(() => {
     if (typeof window === 'undefined') return;
-    if (disabledOnProfileAccount) {
-      disconnect();
-      return;
-    }
 
     const authUser = (user as any)?.user ?? user;
     const currentUserId = authUser?.user_id || authUser?.id || getStoredUserId();
@@ -237,7 +230,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
 
       scheduleReconnect(suppressLocalRetry);
     };
-  }, [disconnect, disabledOnProfileAccount, scheduleReconnect, user]);
+  }, [disconnect, scheduleReconnect, user]);
 
   const reconnect = useCallback(() => {
     reconnectAttemptsRef.current = 0;
@@ -281,7 +274,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
     if (typeof window === 'undefined') return;
 
     const resume = () => {
-      if (disabledOnProfileAccount) return;
       if (eventSourceRef.current?.readyState === EventSource.OPEN) return;
 
       const authUser = (user as any)?.user ?? user;
@@ -305,7 +297,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
       window.removeEventListener('online', handleOnline);
       document.removeEventListener('visibilitychange', handleVisibility);
     };
-  }, [disabledOnProfileAccount, user]);
+  }, [user]);
 
   // Reconnect whenever auth state changes so login/logout updates the shared stream.
   useEffect(() => {
@@ -314,7 +306,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
     reconnectAttemptsRef.current = 0;
     exhaustedLoggedRef.current = false;
 
-    if (currentUserId && !disabledOnProfileAccount) {
+    if (currentUserId) {
       hasConnectedRef.current = false;
       connect();
     } else {
@@ -325,7 +317,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
     return () => {
       disconnect();
     };
-  }, [connect, disconnect, disabledOnProfileAccount, user]);
+  }, [connect, disconnect, user]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

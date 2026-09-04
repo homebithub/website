@@ -65,6 +65,13 @@ export class HireRequestServiceClient {
                response: marketplace_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<marketplace_pb.JsonResponse>;
 
+  finalizeHireRequest(
+    request: marketplace_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: marketplace_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<marketplace_pb.JsonResponse>;
+
 }
 
 export class ShortlistServicePromiseClient {
@@ -110,6 +117,11 @@ export class HireRequestServicePromiseClient {
   ): Promise<marketplace_pb.JsonResponse>;
 
   declineHireRequest(
+    request: marketplace_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<marketplace_pb.JsonResponse>;
+
+  finalizeHireRequest(
     request: marketplace_pb.IdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<marketplace_pb.JsonResponse>;

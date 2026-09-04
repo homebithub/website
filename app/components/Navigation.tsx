@@ -67,8 +67,6 @@ function NavigationContent() {
     const { user, logout, loading } = useAuth();
     const { isInSetupMode } = useAccountChoiceStatus();
     const location = useLocation();
-    const isAccountProfileRoute = location.pathname === '/profile';
-    const allowAuxiliaryAccountCalls = !isAccountProfileRoute;
     const authUser = (user as any)?.user ?? null;
     const storedUser = getStoredUser();
     const currentUser = authUser ?? storedUser ?? null;
@@ -82,7 +80,7 @@ function NavigationContent() {
     const [isAdmin, setIsAdmin] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [isProfileSwitcherOpen, setIsProfileSwitcherOpen] = useState(false);
-    const { unreadCount } = useNotifications({ pollingMs: 5 * 60_000, pageSize: 20, enabled: allowAuxiliaryAccountCalls });
+    const { unreadCount } = useNotifications({ pollingMs: 5 * 60_000, pageSize: 20, enabled: true });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -170,7 +168,9 @@ function NavigationContent() {
         ? '/household/profile'
         : profileRole === 'service-provider'
             ? '/service-provider/profile'
-            : '/profile';
+            : profileRole === 'bureau'
+                ? '/bureau/profile'
+                : '/';
     const accountProfileLabel = profileRole === 'client'
         ? 'My Household'
         : profileRole === 'service-provider'
@@ -346,11 +346,9 @@ function NavigationContent() {
                 // out and someone else signing in without a full page load left
                 // the button on screen for them.
                 //
-                // The check no longer sits behind allowAuxiliaryAccountCalls.
-                // That flag quiets the authenticated count fetches on /profile;
-                // this is a public call that already swallows its own errors,
-                // and skipping it there only meant the button disappeared for
-                // an admin who opened their own profile.
+                // This is a public call that already swallows its own errors,
+                // so it is safe to keep the admin indicator in sync on every
+                // authenticated route.
                 const email = currentUser.email || '';
                 if (email) {
                     cachedRequest(`nav:admin:${email.toLowerCase()}`, async () => {
@@ -410,7 +408,7 @@ function NavigationContent() {
                 })();
 
                 // Fetch counts only for authenticated users who finished onboarding
-                if (!isInSetupMode && allowAuxiliaryAccountCalls) {
+                if (!isInSetupMode) {
                     fetchHireRequestCount(resolvedProfileType);
                     fetchInboxCount();
                     fetchSavedCount();
@@ -428,11 +426,11 @@ function NavigationContent() {
             setSavedCount(0);
             setIsAdmin(false);
         }
-    }, [user, currentUser, isInSetupMode, allowAuxiliaryAccountCalls]);
+    }, [user, currentUser, isInSetupMode]);
 
     // Listen for hiring updates (only when not in setup mode)
     useEffect(() => {
-        if (isInSetupMode || !allowAuxiliaryAccountCalls) return;
+        if (isInSetupMode) return;
 
         const storedProfileId = getStoredUserProfileId();
         const attentionRole = getStoredCanonicalProfileType();
@@ -467,9 +465,9 @@ function NavigationContent() {
             window.removeEventListener('inbox-updated', handleInboxUpdate);
             window.removeEventListener('shortlist-updated', handleShortlistUpdate);
         };
-    }, [isInSetupMode, allowAuxiliaryAccountCalls, profileType, refreshHiring, refreshInbox, refreshSaved]);
+    }, [isInSetupMode, profileType, refreshHiring, refreshInbox, refreshSaved]);
 
-    const badgesAreLive = Boolean(user) && !isInSetupMode && allowAuxiliaryAccountCalls;
+    const badgesAreLive = Boolean(user) && !isInSetupMode;
 
     // Realtime updates invalidate only the count they can change. A hiring
     // event previously reloaded hiring, inbox and saved data, then the related
@@ -544,7 +542,7 @@ function NavigationContent() {
 
     // A slow backstop, for a session that loses its stream without noticing.
     useEffect(() => {
-        if (!user || !profileType || isInSetupMode || !allowAuxiliaryAccountCalls) return;
+        if (!user || !profileType || isInSetupMode) return;
 
         const pollCounts = () => {
             fetchHireRequestCount();
@@ -554,7 +552,7 @@ function NavigationContent() {
 
         const intervalId = setInterval(pollCounts, 5 * 60_000);
         return () => clearInterval(intervalId);
-    }, [user, profileType, isInSetupMode, allowAuxiliaryAccountCalls, fetchHireRequestCount, fetchInboxCount, fetchSavedCount]);
+    }, [user, profileType, isInSetupMode, fetchHireRequestCount, fetchInboxCount, fetchSavedCount]);
 
     // Badge helper: 0 = null (hidden), 1-9 = number, >9 = "9+"
     const renderBadge = (count: number, gradient = 'from-purple-600 to-pink-600', shadow = 'shadow-purple-500/50') => {

@@ -117,6 +117,12 @@ export const marketplaceHireRequestService = {
     request.setUserId(resolveUserId(userId));
     return responseData(await call(callback => hireRequestClient.declineHireRequest(request, metadata(), callback)));
   },
+  async finalizeHireRequest(id: string, userId = ''): Promise<any> {
+    const request = new pb.IdRequest();
+    request.setId(id);
+    request.setUserId(resolveUserId(userId));
+    return responseData(await call(callback => hireRequestClient.finalizeHireRequest(request, metadata(), callback)));
+  },
 };
 
 export const marketplaceJobService = {

@@ -1106,6 +1106,9 @@ export default function HiringHistory() {
       setError('We could not identify your household profile. Please sign in again.');
       return;
     }
+    setShortlistLoadingInterestId(interest.id);
+    setError(null);
+    setShortlistSuccess(null);
     try {
       if (interest.status === 'shortlisted') {
         await listingApplicationService.promoteApplication(interest.id, actorProfileId);
@@ -1114,9 +1117,16 @@ export default function HiringHistory() {
       }
       await fetchApplicants();
       window.dispatchEvent(new Event('hiring-updated'));
+      setShortlistSuccess(
+        interest.status === 'shortlisted'
+          ? 'Offer sent. They can confirm or decline it from Hiring or Inbox.'
+          : 'Hire confirmed. HomeBit has recorded this work relationship; a formal contract is optional.',
+      );
     } catch (err: any) {
       console.error('Failed to advance application:', err);
       setError(err?.message || 'We could not update this application. Please try again.');
+    } finally {
+      setShortlistLoadingInterestId(null);
     }
   };
 
@@ -1577,13 +1587,14 @@ export default function HiringHistory() {
               // never once appeared.
               const canActOnInterest =
                 (canAcceptApplicant || interest.status === 'shortlisted' || interest.status === 'accepted' || interest.status === 'approved') && !hasExistingContract;
-              // What the next step actually is, named as the household would
-              // name it: an offer to somebody set aside, a contract to somebody
-              // who has already said yes.
-              const advanceLabel = interest.status === 'accepted' || interest.status === 'approved'
-                ? 'Send contract'
-                : canAcceptApplicant
-                  ? 'Accept'
+              // Confirming the hire is deliberately separate from drawing up a
+              // contract. An application is one side's intent; the matching
+              // confirmation records the work relationship and makes a formal
+              // contract optional rather than a gate to reviews.
+              const advanceLabel = interest.status === 'approved'
+                ? 'Create optional contract'
+                : interest.status === 'accepted' || canAcceptApplicant
+                  ? 'Confirm hire'
                   : 'Send offer';
               const statusLabel = interest.status
                 ? interest.status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
@@ -1830,15 +1841,15 @@ export default function HiringHistory() {
                         <>
                           <button
                             onClick={() =>
-                              interest.status === 'accepted' || interest.status === 'approved'
+                              interest.status === 'approved'
                                 ? createContractFromApplication(interest)
                                 : handleAcceptInterest(interest)
                             }
-                            disabled={contractCreating === interest.id}
+                            disabled={contractCreating === interest.id || shortlistLoading}
                           className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-green-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-green-600 sm:w-auto sm:py-1.5"
                           >
                             <UserCheck className="h-4 w-4" />
-                            {advanceLabel}
+                            {contractCreating === interest.id || shortlistLoading ? 'Working…' : advanceLabel}
                           </button>
                         </>
                       ) : null}
@@ -1935,9 +1946,14 @@ export default function HiringHistory() {
                   View contract
                 </button>
               )}
-              {!isJob && !employmentContract?.id && ['accepted', 'approved'].includes(String(record.status).toLowerCase()) && (
+              {!isJob && ['accepted', 'initiated'].includes(String(record.status).toLowerCase()) && (record.status !== 'initiated' || record.initiated_by_applicant) && (
+                <button type="button" onClick={() => void handleAcceptInterest(record)} disabled={shortlistLoadingInterestId === record.id} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-50">
+                  {shortlistLoadingInterestId === record.id ? 'Confirming…' : 'Confirm hire'}
+                </button>
+              )}
+              {!isJob && !employmentContract?.id && String(record.status).toLowerCase() === 'approved' && (
                 <button type="button" onClick={() => void createContractFromApplication(record)} disabled={contractCreating === record.id} className="rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-50">
-                  {contractCreating === record.id ? 'Creating…' : 'Create contract'}
+                  {contractCreating === record.id ? 'Creating…' : 'Create optional contract'}
                 </button>
               )}
               <button type="button" onClick={() => { setSelectedHiringCard(null); setHistoryFor(record.id); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">History</button>

@@ -1231,6 +1231,10 @@ export const hireRequestService = {
     const res = await grpcCall((cb) => hireRequestClient.declineHireRequest(buildIdRequest(id, userId), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
+  async finalizeHireRequest(id: string, userId?: string): Promise<any> {
+    const res = await grpcCall((cb) => hireRequestClient.finalizeHireRequest(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
   async cancelHireRequest(id: string, userId?: string): Promise<void> {
     await grpcCall((cb) => hireRequestClient.cancelHireRequest(buildIdRequest(id, userId), getMetadata(), cb));
   },

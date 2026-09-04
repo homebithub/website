@@ -135,15 +135,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const token = getStoredAccessToken() || null;
       const cachedUser = getStoredUser();
-      const shouldUseCachedUserOnly = location.pathname === '/profile';
-
       if (cachedUser && token) {
         setUser({ token, user: cachedUser } as unknown as LoginResponse);
         setLoading(false);
         return;
       }
 
-      if (isPublicRoute() || shouldUseCachedUserOnly) {
+      if (isPublicRoute()) {
         setLoading(false);
         return;
       }
