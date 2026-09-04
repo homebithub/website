@@ -294,10 +294,10 @@
     "semantic_hash": ""
   },
   "app/components/RouteProgress.tsx": {
-    "mtime": 1786550342.778621,
-    "seen": 1788110899.414554,
-    "ast_hash": "a7ff2c8c93cf448c66375f9358abffd8",
-    "semantic_hash": "a7ff2c8c93cf448c66375f9358abffd8"
+    "mtime": 1788542222.6259632,
+    "seen": 1788542460.789877,
+    "ast_hash": "5ab605de401f2d60d3248c533395339a",
+    "semantic_hash": ""
   },
   "app/components/SSEStatusIndicator.tsx": {
     "mtime": 1785268150.688628,
@@ -1704,9 +1704,9 @@
     "semantic_hash": "0f238d4315888e70cb4f8bbf76898e6b"
   },
   "app/root.tsx": {
-    "mtime": 1788366598.5252998,
-    "seen": 1788366646.234192,
-    "ast_hash": "bb905eae9217d71e29079f9f585d736b",
+    "mtime": 1788542020.8092608,
+    "seen": 1788542460.7900631,
+    "ast_hash": "8ef0f6f929bf620c8c4af053de83e274",
     "semantic_hash": ""
   },
   "app/routes.ts": {
@@ -1722,9 +1722,9 @@
     "semantic_hash": "7d84b8e8dc020b20ab8e2c6d7b7d505c"
   },
   "app/routes/_index.tsx": {
-    "mtime": 1788324798.6021888,
-    "seen": 1788324906.027432,
-    "ast_hash": "b114d8496d40b7a307ba25711420d366",
+    "mtime": 1788542020.813542,
+    "seen": 1788542460.7900648,
+    "ast_hash": "ec3a7baac8d0679b8b6ee81de1c68548",
     "semantic_hash": ""
   },
   "app/routes/about.tsx": {
@@ -2016,9 +2016,9 @@
     "semantic_hash": "1d9cf9bb1647f6dc252e3e52186efff9"
   },
   "app/routes/household.shortlist.tsx": {
-    "mtime": 1788440689.8142943,
-    "seen": 1788440919.8004391,
-    "ast_hash": "95589925156af34e0c8bfd343a1d06f0",
+    "mtime": 1788542356.8135753,
+    "seen": 1788542460.790129,
+    "ast_hash": "5005c70ebdf5d747554d872da97ee461",
     "semantic_hash": ""
   },
   "app/routes/household/_layout.tsx": {
@@ -2058,9 +2058,9 @@
     "semantic_hash": ""
   },
   "app/routes/household/hiring-history.tsx": {
-    "mtime": 1788449804.60908,
-    "seen": 1788449937.903407,
-    "ast_hash": "cafe128b86b651c632793ac5dfc2c21b",
+    "mtime": 1788542071.3158314,
+    "seen": 1788542460.790134,
+    "ast_hash": "4e32d6f67e94d0b898c85097e256799a",
     "semantic_hash": ""
   },
   "app/routes/household/hiring.tsx": {
@@ -2160,9 +2160,9 @@
     "semantic_hash": "6058593721b89843289f5060ca0965e8"
   },
   "app/routes/shortlist.tsx": {
-    "mtime": 1788440689.813694,
-    "seen": 1788440919.800467,
-    "ast_hash": "b7d85992d781210db826dc7522261c40",
+    "mtime": 1788542356.8125865,
+    "seen": 1788542460.7901719,
+    "ast_hash": "bbfdf5879641937110d313026375c2e6",
     "semantic_hash": ""
   },
   "app/routes/signup.tsx": {
@@ -2694,10 +2694,10 @@
     "semantic_hash": "c01cfcfed4381eccc97eb5b404de1ef2"
   },
   "app/utils/lazyLoad.tsx": {
-    "mtime": 1785313538.2099998,
-    "seen": 1788110899.414836,
-    "ast_hash": "a77fca5d7e00f473b376437f370f75e3",
-    "semantic_hash": "a77fca5d7e00f473b376437f370f75e3"
+    "mtime": 1788542356.811538,
+    "seen": 1788542460.790255,
+    "ast_hash": "3efbb6b88beeec76b6ae5bf8b020104d",
+    "semantic_hash": ""
   },
   "app/utils/listingFeatures.ts": {
     "mtime": 1786014569.6453362,
@@ -3588,9 +3588,9 @@
     "semantic_hash": ""
   },
   "app/components/service-provider-pages/hiring-history.tsx": {
-    "mtime": 1788345666.9769826,
-    "seen": 1788346022.816517,
-    "ast_hash": "87efe3d7ec4177168e9775b475311c0a",
+    "mtime": 1788542071.3174238,
+    "seen": 1788542460.7899609,
+    "ast_hash": "ada377b171110f49a5dda48488a8dc77",
     "semantic_hash": ""
   },
   "app/routes/bureau.househelps.tsx": {
@@ -3783,6 +3783,18 @@
     "mtime": 1788541043.8876128,
     "seen": 1788541146.5440378,
     "ast_hash": "cf0faf8aa11d5795fb7c51e54783e067",
+    "semantic_hash": ""
+  },
+  "app/utils/routeTransitions.test.ts": {
+    "mtime": 1788542020.8080804,
+    "seen": 1788542460.790277,
+    "ast_hash": "e8cd5e933082da0840c5fb455781d99e",
+    "semantic_hash": ""
+  },
+  "app/utils/routeTransitions.ts": {
+    "mtime": 1788542020.8076184,
+    "seen": 1788542460.790278,
+    "ast_hash": "588b9319efdb82650641a1bdd6aa7f4c",
     "semantic_hash": ""
   }
 }

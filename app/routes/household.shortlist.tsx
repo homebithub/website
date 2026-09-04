@@ -18,6 +18,7 @@ import { normalizeOnboardingAmountFromStorage } from '~/utils/onboardingCompensa
 import { formatPlaceOrFallback } from '~/utils/place';
 import { ServiceProviderCardDetails } from '~/components/listing/ServiceProviderCardDetails';
 import { ListingViewToggle, useListingViewPreference } from '~/components/listing/ListingViewToggle';
+import { ShimmerListPlaceholder } from '~/components/ShimmerLoader';
 
 const formatDate = (value?: string) => {
   if (!value) return 'Flexible';
@@ -112,7 +113,7 @@ export default function HouseholdShortlistPage() {
   const navigate = useNavigate();
 
   const [items, setItems] = useState<ShortlistItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -259,8 +260,11 @@ export default function HouseholdShortlistPage() {
         );
         if (cancelled) return;
         const next: Record<string, any> = { ...profilesById };
+        // Remember failed lookups as well. Otherwise the same unavailable
+        // profile is requested after every render and the Saved page never
+        // settles into a stable state.
         missingIds.forEach((id, index) => {
-          if (profiles[index]) next[id] = profiles[index];
+          next[id] = profiles[index] || null;
         });
         setProfilesById(next);
       } catch {
@@ -274,6 +278,9 @@ export default function HouseholdShortlistPage() {
       cancelled = true;
     };
   }, [items, profilesById]);
+
+  const waitingForProfiles = savedServiceProviders.some((item) => !(item.profile_id in profilesById));
+  const initialLoading = (loading && items.length === 0) || waitingForProfiles;
 
   async function handleRemove(profileId: string) {
     setRemovingId(profileId);
@@ -339,7 +346,9 @@ export default function HouseholdShortlistPage() {
               <ListingViewToggle value={viewMode} onChange={setViewMode} />
             </div>
 
-            {visibleSavedServiceProviders.length === 0 && !loading && !loadingProfiles && !error && (
+            {initialLoading && <ShimmerListPlaceholder items={4} />}
+
+            {visibleSavedServiceProviders.length === 0 && !initialLoading && !error && (
               <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
@@ -361,7 +370,7 @@ export default function HouseholdShortlistPage() {
             {chatError && <ErrorAlert message={chatError} className="mb-4" />}
             {error && <ErrorAlert message={error} className="mb-4" />}
 	
-            <div className={isGridView ? 'grid gap-4 md:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}>
+            <div className={`${initialLoading ? 'hidden' : 'hb-data-panel-enter'} ${isGridView ? 'grid gap-4 md:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}`}>
               {visibleSavedServiceProviders
                 .map((s) => {
                   const listing = profilesById[s.profile_id] || {};
@@ -520,8 +529,8 @@ export default function HouseholdShortlistPage() {
             </div>
 
             <div ref={sentinelRef} className="h-8" />
-            {(loading || loadingProfiles) && (
-              <div className="mt-4 text-center text-gray-600 dark:text-gray-300">Loading...</div>
+            {(loading || loadingProfiles) && items.length > 0 && !waitingForProfiles && (
+              <ShimmerListPlaceholder items={1} className="mt-4" />
             )}
           </div>
         </main>

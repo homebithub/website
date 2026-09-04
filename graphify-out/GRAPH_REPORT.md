@@ -1,36 +1,36 @@
 # Graph Report - website  (2026-09-04)
 
 ## Corpus Check
-- 587 files · ~1,237,792 words
+- 589 files · ~1,238,375 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 17020 nodes · 24107 edges · 1111 communities (165 shown, 946 thin omitted)
+- 17025 nodes · 24126 edges · 1164 communities (171 shown, 993 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 45 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7726b02d`
+- Built from commit: `33791161`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - auth_grpc_web_pb.js
-- _index.tsx
+- authServices.ts
 - payments/payments.ts
 - components/Navigation.tsx
-- getStoredUserId
+- authStorage.ts
 - JsonResponse
-- ServiceProviderFilters.tsx
+- getStoredUserId
 - notifications/notifications.ts
 - auth/auth.ts
 - .create
 - IdRequest
 - household.profile.tsx
 - Components to Test (100+ components)
-- ShimmerLoader.tsx
+- NavigationContent
 - .create
-- authServices.ts
+- getAccessTokenFromCookies
 - Device
 - Timestamp
 - useIdentityVerification.ts
@@ -57,8 +57,8 @@
 - Subscription
 - SearchRequest
 - HouseholdProfileData
-- members.tsx
-- ConfirmDeviceRequest$Type
+- ShimmerLoader.tsx
+- .create
 - .create
 - notifications_pb.d.ts
 - VerificationInfo
@@ -70,17 +70,17 @@
 - BureauServiceProviderLinkRequest
 - device_grpc_web_pb.js
 - InviteCodeInput.tsx
-- requestCache.ts
+- subscriptions.tsx
 - AdminUser
 - User
 - PostAnalyticsResponse
 - ProrationCredit
-- Empty
+- device.ts
 - api.job-listings.ts
 - AdminEngagement
 - BureauHousehelpLinkRequest
 - DevicePendingConfirmation
-- auth_pb.js
+- callUnaryGrpc
 - OpenForWorkModal.tsx
 - AdminKYCSubmission
 - AdminPlatformDay
@@ -354,7 +354,7 @@
 - PaymentSucceeded
 - ShortlistRemoved
 - SubscriptionCancelled
-- blog_pb.d.ts
+- CategoryStats
 - DailyStats
 - ListBlogSubscribersRequest
 - ListCommentsRequest
@@ -385,7 +385,7 @@
 - UpdateFraudRuleResponse
 - WhitelistedUser
 - CreateShortlistReq
-- callUnaryGrpc
+- grpcRaw.server.ts
 - HouseholdKidsServiceClient
 - ServiceWaitlistPage.tsx
 - serverAuth.ts
@@ -489,7 +489,7 @@
 - DocumentServicePromiseClient
 - EmploymentContractServiceClient
 - GetChurnMetricsResponse
-- LocationPicker.tsx
+- employment-contract.tsx
 - grpcWebGeneric.ts
 - Website Code Quality Issues - Summary
 - BureauServiceClient
@@ -512,7 +512,7 @@
 - AdminRejectKYCRequest
 - AdminResendOTPResponse
 - AdminTokenResponse
-- CheckIsAdminRequest
+- Empty
 - ApplicationActionRequest
 - AssignRoleRequest
 - BureauHousehelpLinkVerifyRequest
@@ -584,7 +584,7 @@
 - GetChannelPerformanceResponse
 - GetConversationResponse
 - GetDeliveryResponse
-- GetDeliveryStatsResponse
+- HouseholdMemberServiceClient
 - GetFeatureFlagHistoryRequest
 - GetFeatureFlagHistoryResponse
 - GetNotificationResponse
@@ -615,7 +615,7 @@
 - SetDefaultPaymentMethodRequest
 - ToggleReactionResponse
 - UpdateTemplateResponse
-- StatusRequest
+- EmploymentContractServiceClient
 - CancelSubscriptionRequest
 - CheckPaymentStatusRequest
 - ConfirmCancellationRequest
@@ -627,7 +627,7 @@
 - ServiceProviderPreferencesServiceClient
 - ValidateTokenRequest
 - GetCohortAnalysisRequest
-- UnpublishPostRequest
+- DocumentServiceClient
 - GetCreditBalanceResponse
 - GetDefaultPaymentMethodResponse
 - GetFraudRulesResponse
@@ -636,12 +636,12 @@
 - GetPaymentMethodsResponse
 - GetPaymentRequest
 - GetPaymentResponse
-- GetPlanResponse
+- ContactServiceClient
 - GetPlansResponse
 - DeleteTemplateRequest
 - GetProrationHistoryResponse
 - GetRevenueMetricsRequest
-- GetSubscriptionRequest
+- RecordViewResponse
 - GetSubscriptionResponse
 - GetSubscriptionStatusesRequest
 - GetSubscriptionStatusesResponse
@@ -660,7 +660,7 @@
 - KYCServiceClient
 - UserProfileServiceClient
 - BlastActionResponse
-- BlogPostResponse
+- blog_pb.d.ts
 - CountResponse
 - IdRequest
 - JsonResponse
@@ -675,7 +675,7 @@
 - AdminResendOTPRequest
 - GetConversationRequest
 - WaitlistServicePromiseClient
-- ShortlistServiceClient
+- UserIdRequest
 - @react-router/node
 - ContactServiceClient
 - ContactServicePromiseClient
@@ -683,7 +683,7 @@
 - StringFieldRequest
 - Automated Test Generation Guide
 - AdminHiringFunnelRequest
-- DeletePushTokenRequest
+- GetCancellationStatusRequest
 - Testing Quick Start Guide
 - webVitals.ts
 - ServiceProviderPreferencesServicePromiseClient
@@ -693,13 +693,13 @@
 - marketplace_grpc_web_pb.js
 - RemoveFromSubscriptionWhitelistRequest
 - LocationQueryReq
-- CheckVerificationStatusResponse
+- wrappers/auth.ts
 - UnlikePostRequest
 - GetBlastResponse
 - GetProrationHistoryRequest
 - GetMultipleUsersResponse
 - ForecastRevenueRequest
-- GetPlanRequest
+- BureauServiceProviderLinkIdRequest
 - ListSubscriptionWhitelistResponse
 - Frontend Testing Implementation Guide
 - ProfileTypeRequest
@@ -741,13 +741,15 @@
 - PublishPostRequest
 - Deployment
 - UserProfileServicePromiseClient
-- GetMySubscriptionRequest
+- RatingRequest
 - HireContractServicePromiseClient
-- premium.server.ts
+- DeletePostRequest
 - GetUserAnalyticsRequest
 - RemovePhoneFromBlacklistResponse
 - AdminValidateTokenRequest
 - PetsServiceClient
+- BlastActionRequest
+- RemovePaymentMethodResponse
 - GetMySubscriptionRequest
 - HouseholdPrefReq
 - BureauHousehelpLinkIdRequest
@@ -756,7 +758,7 @@
 - GetPushTokensRequest
 - PetsServicePromiseClient
 - EmailReceiptResponse
-- HouseholdKidsServicePromiseClient
+- SetDefaultPaymentMethodResponse
 - MarkAllNotificationsAsClickedRequest
 - ProfileViewServiceClient
 - GetFraudStatsResponse$Type
@@ -775,18 +777,24 @@
 - UpdateFraudRuleRequest$Type
 - formErrorPlacement.test.ts
 - fix-grpc-imports.js
+- HouseholdKidsServiceClient
 - forms/SignupFlow.tsx
 - grpc.ts
-- GetPostBySlugRequest
+- ApproveRejectReq$Type
 - BureauHousehelpLinkInitiateRequest
 - UnsubscribeFromBlogRequest
+- ApproveVerificationRequest$Type
 - NotificationCreated$Type
 - GetBlacklistedPhonesRequest
 - BureauResponse$Type
+- BureauListResponse$Type
 - CheckVerificationStatusRequest$Type
 - ForgotPasswordRequest
+- ChangePasswordRequest$Type
 - GetPostRequest
 - PreferencesServicePromiseClient
+- CompleteGoogleSignupRequest$Type
+- CountResponse$Type
 - DeletePushTokenResponse
 - CreateInterestReq$Type
 - GetVerificationStatusRequest
@@ -796,16 +804,23 @@
 - serviceProviderRoutes.ts
 - GetBlastRequest
 - CreateShortlistReq$Type
+- CreateContractReq$Type
 - AdminRefreshTokenRequest
+- CreateHireRequestReq$Type
 - GetGoogleAuthURLResponse$Type
+- CreateHouseholdKidReq$Type
+- CreateInvitationReq$Type
+- CreateLocationReq$Type
+- CreatePetReq$Type
 - ToggleFeatureFlagRequest
 - blog.service.ts
 - OTPSent$Type
 - GetChurnMetricsRequest
+- CreateProfileStatusReq$Type
 - GetMRRMetricsRequest
 - InterestExistsReq$Type
 - RevokeDeviceRequest$Type
-- UserSignedUp$Type
+- CreateReviewReq$Type
 - subscription_grpc_web_pb.js
 - ListEmploymentContractsReq$Type
 - ListHireContractsReq$Type
@@ -818,6 +833,8 @@
 - CreateSubscriptionCheckoutRequest$Type
 - MigratePrefsReq$Type
 - PaginatedUserRequest$Type
+- ForgotPasswordRequest$Type
+- ForgotPasswordResponse$Type
 - RatingRequest$Type
 - CreateSubscriptionCheckoutResponse$Type
 - RefreshTokenRequest$Type
@@ -832,32 +849,54 @@
 - GetPaymentResponse$Type
 - GetSubscriptionRequest$Type
 - InitiateCancellationRequest$Type
+- GetByBureauRequest$Type
 - SignupRequest$Type
 - SignupResponse$Type
+- GetGoogleAuthURLRequest$Type
+- GetMultipleUsersRequest$Type
 - Payment$Type
 - ProrationDetails$Type
 - TransferOwnershipReq$Type
 - RemoveIPFromBlacklistResponse$Type
+- GetRecentViewersReq$Type
 - SubscriptionPlan$Type
 - UndoCancellationRequest$Type
+- GetUserDocumentsReq$Type
 - UpdatePaymentMethodNicknameResponse$Type
 - GetTemplateRequest
+- GetUserRequest$Type
 - ListMySubscriptionsRequest
 - UpdateJobReq$Type
 - AddNegotiationReq$Type
+- GetVerificationStatusRequest$Type
 - BoolResponse$Type
 - UpdatePetReq$Type
+- GoogleSignInResponse$Type
 - CheckVerificationStatusResponse$Type
+- HireEmploymentReq$Type
 - UpdateProfileRequest$Type
 - UpdateProfileStatusReq$Type
 - UpdateShortlistReq$Type
+- HouseholdPrefReq$Type
 - CreateBureauRequest$Type
+- JoinHouseholdReq$Type
 - User$Type
+- JsonResponse$Type
+- ListHireRequestsReq$Type
+- LoginRequest$Type
+- LoginResponse$Type
+- PhoneRequest$Type
+- PreferencesReq$Type
+- ResendOTPRequest$Type
 - ConfirmDeviceResponse$Type
 - GetDeviceRequest$Type
 - ProfileServiceClient
 - RegisterDeviceResponse$Type
+- SalaryRangeRequest$Type
+- SaveUserLocationRequest$Type
+- SignContractReq$Type
 - CreateBlastRequest$Type
+- StatusRequest$Type
 - DeleteMessageRequest$Type
 - DeleteMessageResponse$Type
 - DeletePushTokenRequest$Type
@@ -873,7 +912,7 @@
 - GetProfileDocumentsRequest$Type
 - GetDeliveryResponse$Type
 - GetDeliveryStatsRequest$Type
-- RegisterDeviceRequest$Type
+- StepRequest$Type
 - GetNotificationRequest$Type
 - GetNotificationResponse$Type
 - GetPushTokensRequest$Type
@@ -914,17 +953,22 @@
 - MarkNotificationAsClickedResponse$Type
 - AddPaymentMethodRequest$Type
 - AddPaymentMethodResponse$Type
+- StringFieldRequest$Type
 - BlacklistedPhone$Type
 - BlacklistIPRequest$Type
 - BlacklistIPResponse$Type
+- TerminateEmploymentReq$Type
 - BlacklistPhoneResponse$Type
+- TransitionStatusReq$Type
 - CancelSubscriptionResponse$Type
 - ChangePlanResponse$Type
 - CheckPaymentStatusRequest$Type
 - CheckPaymentStatusResponse$Type
+- TwoIdRequest$Type
 - IdRequest$Type
 - ConfirmCancellationRequest$Type
 - ConfirmCancellationResponse$Type
+- UpdateBureauRequest$Type
 - JsonPayload$Type
 - CreateSubscriptionRequest$Type
 - CreateSubscriptionResponse$Type
@@ -932,7 +976,9 @@
 - DownloadReceiptResponse$Type
 - EmailReceiptRequest$Type
 - EmailReceiptResponse$Type
+- UpdateByIdPayload$Type
 - ForecastRevenueRequest$Type
+- UpdateDocumentReq$Type
 - GetAnalyticsRequest$Type
 - GetAnalyticsResponse$Type
 - GetBlacklistedIPsRequest$Type
@@ -948,10 +994,12 @@
 - GetDefaultPaymentMethodResponse$Type
 - GetFlaggedUsersResponse$Type
 - GetMySubscriptionRequest$Type
+- UpdateEmailResponse$Type
 - GetPauseStatusRequest$Type
 - GetPauseStatusResponse$Type
 - GetPaymentMethodsRequest$Type
 - GetPaymentMethodsResponse$Type
+- UpdateHireRequestReq$Type
 - LogoutRequest$Type
 - GetPlanResponse$Type
 - GetPlansResponse$Type
@@ -974,6 +1022,7 @@
 - RejectVerificationRequest$Type
 - PlanSummary$Type
 - PreviewProrationRequest$Type
+- UpdateKYCStatusReq$Type
 - RemoveIPFromBlacklistRequest$Type
 - ResendOTPResponse$Type
 - RemovePhoneFromBlacklistResponse$Type
@@ -982,6 +1031,8 @@
 - RevenueForecast$Type
 - SetDefaultPaymentMethodRequest$Type
 - Subscription$Type
+- UpdateLocationReq$Type
+- UpdateMemberRoleReq$Type
 - UndoCancellationResponse$Type
 - UpdateFraudRuleResponse$Type
 - UpdatePaymentMethodNicknameRequest$Type
@@ -1026,10 +1077,13 @@
 - features.ts
 - events_pb.js
 - ShortlistExistsReq$Type
+- UpdatePhoneRequest$Type
 - EditMessageResponse
 - @heroicons/react
 - install_performance_deps.sh
+- UpdatePhoneResponse$Type
 - GetBlastResponse
+- UpdateProfileFieldRequest$Type
 - package.json
 - Frontend Testing - Complete Summary
 - Detailed Test Breakdown
@@ -1064,6 +1118,7 @@
 - Running Tests
 - Writing New Tests
 - 5. Common Test Patterns
+- UpdateUserRequest$Type
 - Test Coverage Statistics
 - Testing Phases Overview
 - Tasks To Be Undertaken
@@ -1086,24 +1141,22 @@
 - react-router-dom
 - socket.io-client
 - @types/google-protobuf
+- UploadDocumentsReq$Type
 - UpdateEmailRequest$Type
+- UserIdRequest$Type
 - UpdateHousehelpFieldsRequest$Type
+- ValidateTokenRequest$Type
+- ValidateTokenResponse$Type
+- VerificationInfo$Type
+- VerificationStatusResponse$Type
+- VerifyOTPRequest$Type
+- VerifyOTPResponse$Type
+- SubscriptionCancelled$Type
 - UploadImagesReq$Type
-- Device$Type
-- DeviceActivityLog$Type
-- GetDeviceActivityRequest$Type
-- GetDeviceActivityResponse$Type
-- GetUserDevicesRequest$Type
-- GetUserDevicesResponse$Type
+- Empty$Type
+- AnimatedStatCard.tsx
 - RevokeAllDevicesRequest$Type
-- .create
-- EventEnvelope$Type
-- HouseholdUpdated$Type
-- OnboardingProgressUpdated$Type
-- PaymentFailed$Type
-- PaymentSucceeded$Type
-- SubscriptionCreated$Type
-- grpcRaw.server.ts
+- decodeGenericResponse
 
 ## God Nodes (most connected - your core abstractions)
 1. `JsonResponse` - 339 edges
@@ -1118,49 +1171,49 @@
 10. `handleApiError()` - 66 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `HouseholdEmployment()` --calls--> `getAccessTokenFromCookies()`  [EXTRACTED]
-  app/routes/household/employment.tsx → app/utils/cookie.ts
-- `getAuthenticatedUserId()` --calls--> `getAccessTokenFromCookies()`  [EXTRACTED]
-  app/utils/userTracking.ts → app/utils/cookie.ts
-- `AccountProfileSwitcher()` --calls--> `getStoredUserProfileId()`  [EXTRACTED]
-  app/components/AccountProfileSwitcher.tsx → app/utils/authStorage.ts
-- `AuthenticatedHome()` --calls--> `getStoredCanonicalProfileType()`  [EXTRACTED]
-  app/components/AuthenticatedHome.tsx → app/utils/authStorage.ts
-- `AuthenticatedHome()` --calls--> `getStoredUserId()`  [EXTRACTED]
-  app/components/AuthenticatedHome.tsx → app/utils/authStorage.ts
+- `FileUpload()` --calls--> `getAccessTokenFromCookies()`  [EXTRACTED]
+  app/components/upload/FileUpload.tsx → app/utils/cookie.ts
+- `BureauServiceProviders()` --calls--> `getStoredAccessToken()`  [EXTRACTED]
+  app/routes/bureau/service-providers.tsx → app/utils/authStorage.ts
+- `resolveUserId()` --calls--> `getStoredUserId()`  [EXTRACTED]
+  app/services/grpc/auth.service.ts → app/utils/authStorage.ts
+- `resolveUserId()` --calls--> `getStoredUserId()`  [EXTRACTED]
+  app/services/grpc/device.service.ts → app/utils/authStorage.ts
+- `resolveUserId()` --calls--> `getStoredUserId()`  [EXTRACTED]
+  app/services/grpc/notifications.service.ts → app/utils/authStorage.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (1111 total, 946 thin omitted)
+## Communities (1164 total, 993 thin omitted)
 
 ### Community 0 - "auth_grpc_web_pb.js"
 Cohesion: 0.01
 Nodes (357): grpc, methodDescriptor_AdminAuthService_AcceptInvitation, methodDescriptor_AdminAuthService_AdminLogin, methodDescriptor_AdminAuthService_AdminLogout, methodDescriptor_AdminAuthService_AdminRefreshToken, methodDescriptor_AdminAuthService_AdminResendOTP, methodDescriptor_AdminAuthService_AdminValidateToken, methodDescriptor_AdminAuthService_AdminVerifyOTP (+349 more)
 
-### Community 1 - "_index.tsx"
-Cohesion: 0.12
-Nodes (12): ProfileSelectionModal(), ProfileSelectionModalProps, MARKETING_SERVICES, MarketingService, MarketingServiceIcon, useScrollFadeIn(), AuthenticatedHome, Index() (+4 more)
+### Community 1 - "authServices.ts"
+Cohesion: 0.03
+Nodes (69): ConversationHire(), featureGroups(), HireRequestModal(), HireRequestModalProps, rowsFrom(), BureauServiceProviders(), LinkFlowState, buildIdRequest() (+61 more)
 
 ### Community 2 - "payments/payments.ts"
 Cohesion: 0.02
 Nodes (113): AcceptRetentionOfferRequest, AcceptRetentionOfferResponse, AddPaymentMethodRequest, AddPaymentMethodResponse, AnalyticsMetrics, BlacklistIPRequest, BlacklistIPResponse, BlacklistPhoneRequest (+105 more)
 
 ### Community 3 - "components/Navigation.tsx"
-Cohesion: 0.03
-Nodes (117): Error(), ErrorProps, ErrorBoundary(), getDefaultMessage(), logErrorToMonitoring(), BureauSidebar(), menu, FullPageErrorProps (+109 more)
-
-### Community 4 - "getStoredUserId"
 Cohesion: 0.02
-Nodes (183): AccountProfile, AccountProfileSwitcher(), labelFor(), DeviceRevocationWatcher(), HouseholdSidebar(), menu, NotificationsModal, getNotificationBody() (+175 more)
+Nodes (130): Error(), ErrorProps, ErrorBoundary(), getDefaultMessage(), logErrorToMonitoring(), BureauSidebar(), menu, HouseholdSidebar() (+122 more)
+
+### Community 4 - "authStorage.ts"
+Cohesion: 0.02
+Nodes (151): AccountProfile, AccountProfileSwitcher(), labelFor(), DeviceRevocationWatcher(), FileUpload(), FileUploadProps, UploadedFile, UploadProgress (+143 more)
 
 ### Community 5 - "JsonResponse"
-Cohesion: 0.02
-Nodes (48): ApproveRejectReq, ContactServiceClient, EmploymentContractServiceClient, HousehelpPreferencesServiceClient, HouseholdMemberServiceClient, IContactServiceClient, IEmploymentContractServiceClient, IHousehelpPreferencesServiceClient (+40 more)
+Cohesion: 0.03
+Nodes (20): IJobServiceClient, IKYCServiceClient, IProfileServiceClient, IWaitlistServiceClient, JobServiceClient, KYCServiceClient, ProfileServiceClient, WaitlistServiceClient (+12 more)
 
-### Community 6 - "ServiceProviderFilters.tsx"
-Cohesion: 0.06
-Nodes (32): CHORES, HouseholdFilters(), HouseholdSearchFields, Props, RELIGIONS, ChangeHandler, EXPERIENCES, GENDERS (+24 more)
+### Community 6 - "getStoredUserId"
+Cohesion: 0.03
+Nodes (126): AuthenticatedHome(), AuthenticatedHomeProps, EXPERIENCE_MIN_OPTIONS, HouseholdHomeVariant, normalizeServiceProviderProfile(), ServiceProviderProfile, CHORES, HouseholdFilters() (+118 more)
 
 ### Community 7 - "notifications/notifications.ts"
 Cohesion: 0.04
@@ -1168,7 +1221,7 @@ Nodes (75): Struct, BlastActionRequest, BlastActionResponse, INotificationsServi
 
 ### Community 8 - "auth/auth.ts"
 Cohesion: 0.03
-Nodes (83): AddNegotiationReq, ApproveVerificationRequest, AuthService, BureauService, ChangePasswordRequest, CheckVerificationStatusRequest, CheckVerificationStatusResponse, AuthServiceClient (+75 more)
+Nodes (90): AddNegotiationReq, ApproveVerificationRequest, AuthService, BureauService, ChangePasswordRequest, CheckVerificationStatusRequest, CheckVerificationStatusResponse, AuthServiceClient (+82 more)
 
 ### Community 9 - ".create"
 Cohesion: 0.02
@@ -1176,31 +1229,31 @@ Nodes (25): AcceptRetentionOfferResponse$Type, CancellationRequest$Type, ChangeP
 
 ### Community 10 - "IdRequest"
 Cohesion: 0.03
-Nodes (24): DocumentServiceClient, EmploymentServiceClient, HireContractServiceClient, HireRequestServiceClient, IDocumentServiceClient, IEmploymentServiceClient, IHireContractServiceClient, IHireRequestServiceClient (+16 more)
+Nodes (20): EmploymentServiceClient, HireContractServiceClient, HireRequestServiceClient, IEmploymentServiceClient, IHireContractServiceClient, IHireRequestServiceClient, IInterestServiceClient, InterestServiceClient (+12 more)
 
 ### Community 11 - "household.profile.tsx"
-Cohesion: 0.03
-Nodes (134): ConfirmDialog(), ConfirmDialogProps, ImageViewModal(), ImageViewModalProps, buildSelectedFeatureGroups(), FeaturePropertyChoice, nestedRecord(), normalizeArray() (+126 more)
+Cohesion: 0.04
+Nodes (101): buildSelectedFeatureGroups(), FeaturePropertyChoice, nestedRecord(), normalizeArray(), pickPropertyId(), ProfileChoicesSectionProps, SelectedFeatureGroup, UnknownRecord (+93 more)
 
 ### Community 12 - "Components to Test (100+ components)"
 Cohesion: 0.05
 Nodes (43): Accessibility ✅, Account & Settings Pages (7), Authentication Pages (9), Bureau Pages (5), Communication Pages (2), Components to Test (100+ components), Comprehensive Testing Plan - Homebit Frontend, Daily Goals (+35 more)
 
-### Community 13 - "ShimmerLoader.tsx"
-Cohesion: 0.04
-Nodes (69): InlineShimmer(), HireRequest, ServiceProviderHireRequests(), TabType, DetailPageSkeleton(), InboxPageSkeleton(), ListPageSkeleton(), PageSkeletonProps (+61 more)
+### Community 13 - "NavigationContent"
+Cohesion: 0.03
+Nodes (81): Negotiation, NegotiationPanel(), NegotiationPanelProps, NavigationContent(), normalizeProfileRole(), NotificationsModal, useCoalescedRefresh(), getNotificationBody() (+73 more)
 
 ### Community 14 - ".create"
 Cohesion: 0.03
 Nodes (19): BlastActionRequest$Type, BlastActionResponse$Type, CreateBlastResponse$Type, CreateTemplateRequest$Type, GetBlastStatusResponse$Type, GetChannelPerformanceRequest$Type, GetChannelPerformanceResponse$Type, GetConversationRequest$Type (+11 more)
 
-### Community 15 - "authServices.ts"
-Cohesion: 0.02
-Nodes (218): BackgroundCheckConsent(), Certifications(), Child, Children(), options, Chores(), ExpectingModal(), ExpectingModalProps (+210 more)
+### Community 15 - "getAccessTokenFromCookies"
+Cohesion: 0.03
+Nodes (158): BackgroundCheckConsent(), Certifications(), Child, Children(), options, Chores(), ExpectingModal(), ExpectingModalProps (+150 more)
 
 ### Community 17 - "Timestamp"
-Cohesion: 0.12
-Nodes (24): VerificationInfo, DeviceActivityLog, BlastMessage, EventEnvelope, HouseholdUpdated, NotificationCreated, OnboardingProgressUpdated, OTPSent (+16 more)
+Cohesion: 0.11
+Nodes (25): VerificationInfo, DeviceActivityLog, BlastMessage, EventEnvelope, HouseholdUpdated, NotificationCreated, OnboardingProgressUpdated, OTPSent (+17 more)
 
 ### Community 18 - "useIdentityVerification.ts"
 Cohesion: 0.06
@@ -1212,7 +1265,7 @@ Nodes (47): canvas-confetti, chart.js, chartjs-plugin-datalabels, cors, dompurif
 
 ### Community 21 - "routes/profile.tsx"
 Cohesion: 0.08
-Nodes (29): AnimatedStatCardProps, Error(), ErrorProps, Input, InputProps, OfferCard(), OfferCardProps, asRecord() (+21 more)
+Nodes (31): BaseModal(), BaseModalProps, sizeClasses, Error(), ErrorProps, Input, InputProps, OfferCard() (+23 more)
 
 ### Community 22 - "payments_grpc_web_pb.js"
 Cohesion: 0.03
@@ -1220,15 +1273,15 @@ Nodes (61): grpc, methodDescriptor_PaymentsService_AcceptRetentionOffer, methodD
 
 ### Community 23 - "CountResponse"
 Cohesion: 0.08
-Nodes (5): IProfileViewServiceClient, ProfileViewServiceClient, CountResponse, GetRecentViewersReq, TwoIdRequest
+Nodes (4): IProfileViewServiceClient, ProfileViewServiceClient, CountResponse, RecordViewReq
 
 ### Community 24 - "Browser retest checklist"
 Cohesion: 0.05
 Nodes (38): 10. Public support surfaces, 11. Bureau compatibility, 1. Authentication and device security, 2. Profile catalogue, location, media, and verification, 3. Household membership and invitations, 4. Jobs, applications, shortlist, and interest, 5. Inbox and hiring lifecycle, 6. Optional employment contracts (+30 more)
 
 ### Community 27 - "inbox.tsx"
-Cohesion: 0.05
-Nodes (54): AppLaunchScreen(), Props, GuidedRouteTour(), TourPoint, tours, HireContextBanner(), HireContextBannerProps, PersistentNavigation() (+46 more)
+Cohesion: 0.04
+Nodes (57): AppLaunchScreen(), Props, HireContextBanner(), HireContextBannerProps, PersistentNavigation(), API_ENDPOINTS, GATEWAY_API_BASE_URL, getGatewayBaseUrl() (+49 more)
 
 ### Community 28 - "service-provider/index.ts"
 Cohesion: 0.07
@@ -1240,11 +1293,11 @@ Nodes (53): autoprefixer, baseline-browser-mapping, cross-env, eslint, eslint-im
 
 ### Community 30 - "payments_pb.d.ts"
 Cohesion: 0.04
-Nodes (7): AsObject, GetCancellationStatusRequest, GetFraudRulesRequest, GetPlansRequest, ListSubscriptionWhitelistRequest, RemovePaymentMethodResponse, SetDefaultPaymentMethodResponse
+Nodes (8): AsObject, GetFraudRulesRequest, GetMySubscriptionRequest, GetPlanRequest, GetPlanResponse, GetPlansRequest, GetSubscriptionRequest, ListSubscriptionWhitelistRequest
 
 ### Community 31 - "auth_grpc_web_pb.d.ts"
 Cohesion: 0.03
-Nodes (11): HireNegotiationServiceClient, HireNegotiationServicePromiseClient, HouseholdKidsServiceClient, HouseholdPreferencesServiceClient, HouseholdPreferencesServicePromiseClient, ImageServiceClient, ImageServicePromiseClient, KYCServicePromiseClient (+3 more)
+Nodes (11): HireNegotiationServiceClient, HireNegotiationServicePromiseClient, HouseholdKidsServicePromiseClient, HouseholdPreferencesServiceClient, HouseholdPreferencesServicePromiseClient, ImageServiceClient, ImageServicePromiseClient, KYCServicePromiseClient (+3 more)
 
 ### Community 33 - "notifications_grpc_web_pb.js"
 Cohesion: 0.04
@@ -1262,17 +1315,21 @@ Nodes (5): AsObject, IdRequest, JsonResponse, SearchRequest, UserIdRequest
 Cohesion: 0.05
 Nodes (42): BUDGET_TYPES, BudgetStepProps, HOUSE_SIZES, CHORE_OPTIONS, ChoresStepProps, BUDGET_TYPES, BudgetStep(), BudgetStepProps (+34 more)
 
-### Community 42 - "members.tsx"
-Cohesion: 0.13
-Nodes (26): InviteCodeGenerator(), InviteCodeGeneratorProps, useSSESubscription(), HouseholdChoicePage(), HouseholdMembersPage(), JoinHouseholdPage(), PendingApprovalPage(), setStoredActiveUserProfileId() (+18 more)
+### Community 42 - "ShimmerLoader.tsx"
+Cohesion: 0.06
+Nodes (44): EmploymentSalarySection(), EmploymentSalarySectionProps, InviteCodeGenerator(), InviteCodeGeneratorProps, FormPageSkeleton(), InboxPageSkeleton(), PageSkeletonProps, ShimmerHeroPanel() (+36 more)
+
+### Community 43 - ".create"
+Cohesion: 0.05
+Nodes (9): ConfirmDeviceRequest$Type, Device$Type, DeviceActivityLog$Type, GetDeviceActivityRequest$Type, GetDeviceActivityResponse$Type, GetUserDevicesRequest$Type, GetUserDevicesResponse$Type, RegisterDeviceRequest$Type (+1 more)
 
 ### Community 44 - ".create"
-Cohesion: 0.16
-Nodes (3): PaymentCreated$Type, SubscriptionCancelled$Type, SystemMaintenanceAlert$Type
+Cohesion: 0.05
+Nodes (9): EventEnvelope$Type, HouseholdUpdated$Type, OnboardingProgressUpdated$Type, PaymentCreated$Type, PaymentFailed$Type, PaymentSucceeded$Type, SubscriptionCreated$Type, SystemMaintenanceAlert$Type (+1 more)
 
 ### Community 45 - "notifications_pb.d.ts"
-Cohesion: 0.07
-Nodes (5): AsObject, BlastActionRequest, GetBlastStatusRequest, GetChannelPerformanceRequest, GetDeliveryStatsRequest
+Cohesion: 0.05
+Nodes (6): AsObject, DeletePushTokenRequest, GetBlastStatusRequest, GetChannelPerformanceRequest, GetDeliveryStatsRequest, GetDeliveryStatsResponse
 
 ### Community 53 - "device_grpc_web_pb.js"
 Cohesion: 0.05
@@ -1282,25 +1339,25 @@ Nodes (14): DeviceServiceClient, DeviceServicePromiseClient, grpc, methodDescrip
 Cohesion: 0.28
 Nodes (11): HouseholdCodePrompt(), HouseholdCodePromptProps, formatInviteCode(), INVITE_CODE_SEGMENT_LENGTHS, INVITE_CODE_TOTAL_LENGTH, InviteCodeInput(), InviteCodeInputProps, isInviteCodeComplete() (+3 more)
 
-### Community 55 - "requestCache.ts"
-Cohesion: 0.12
-Nodes (25): Payment, Subscription, SubscriptionPlan, SubscriptionWallet(), SubscriptionsPage(), CacheEntry, invalidateCached(), memoryCache (+17 more)
+### Community 55 - "subscriptions.tsx"
+Cohesion: 0.15
+Nodes (24): CreditBalanceCard(), CreditBalanceCardProps, Payment, Subscription, SubscriptionPlan, SubscriptionWallet(), Payment, Subscription (+16 more)
 
-### Community 60 - "Empty"
-Cohesion: 0.06
-Nodes (23): IPreferencesServiceClient, PreferencesServiceClient, HireEmploymentReq, PreferencesReq, TerminateEmploymentReq, DeviceServiceClient, IDeviceServiceClient, ConfirmDeviceRequest (+15 more)
+### Community 60 - "device.ts"
+Cohesion: 0.13
+Nodes (16): DeviceServiceClient, IDeviceServiceClient, ConfirmDeviceRequest, ConfirmDeviceResponse, Device, DeviceService, GetDeviceActivityRequest, GetDeviceActivityResponse (+8 more)
 
 ### Community 61 - "api.job-listings.ts"
 Cohesion: 0.19
 Nodes (35): action(), annotateWithScores(), buildFeatureLookup(), concatBytes(), displayName(), encodeApplicationAction(), encodeBoolField(), encodeCreateApplication() (+27 more)
 
-### Community 65 - "auth_pb.js"
-Cohesion: 0.12
-Nodes (16): proto, AuthServiceClient, AuthServicePromiseClient, LoginRequest, LoginResponse, SendOTPRequest, SignupRequest, SignupResponse (+8 more)
+### Community 65 - "callUnaryGrpc"
+Cohesion: 0.17
+Nodes (15): proto, asData(), loader(), action(), createPhoneVerification(), isValidUUID(), resolveSignupProfileId(), action() (+7 more)
 
 ### Community 66 - "OpenForWorkModal.tsx"
-Cohesion: 0.11
-Nodes (23): displayJobType(), JOB_TYPES, listingId(), OpenForWorkModal(), OpenForWorkModalProps, toDateInputValue(), todayInputValue(), toSalaryInputValue() (+15 more)
+Cohesion: 0.09
+Nodes (28): ConfirmDialog(), ConfirmDialogProps, displayJobType(), JOB_TYPES, listingId(), OpenForWorkModal(), OpenForWorkModalProps, toDateInputValue() (+20 more)
 
 ### Community 69 - "blog_grpc_web_pb.js"
 Cohesion: 0.06
@@ -1308,7 +1365,7 @@ Nodes (31): grpc, methodDescriptor_BlogService_CreateCategory, methodDescriptor_
 
 ### Community 74 - "service-provider-pages/hiring-history.tsx"
 Cohesion: 0.04
-Nodes (90): ApplicationHistory(), describe(), when(), ConversationHire(), HiringCardModal(), HiringCardModalProps, HiringDetailField, isHiringCardAction() (+82 more)
+Nodes (94): ApplicationHistory(), describe(), when(), HiringCardModal(), HiringCardModalProps, HiringDetailField, isHiringCardAction(), ListingDetails() (+86 more)
 
 ### Community 81 - "GenericHeader"
 Cohesion: 0.07
@@ -1319,24 +1376,24 @@ Cohesion: 0.09
 Nodes (24): Props, ServiceProviderMoreFilterFields, ServiceProviderMoreFilters(), ALL_LANGUAGES, CERTIFICATIONS, CHILDREN_AGE_RANGES, DAYS_OF_WEEK, EXPERIENCE_LEVELS (+16 more)
 
 ### Community 101 - "HouseholdJobsHome.tsx"
-Cohesion: 0.02
-Nodes (206): AuthenticatedHome(), AuthenticatedHomeProps, EXPERIENCE_MIN_OPTIONS, HouseholdHomeVariant, normalizeServiceProviderProfile(), ServiceProviderProfile, EmploymentSalarySection(), EmploymentSalarySectionProps (+198 more)
+Cohesion: 0.03
+Nodes (102): compareNumbers(), DEFAULT_OPEN_FOR_WORK_FILTERS, deriveServiceProviderResponsivenessBadge(), describeActivity(), describeAvgMinutes(), describeJobExpiry(), describeResponseRate(), extractShortlistItems() (+94 more)
 
 ### Community 102 - "struct.ts"
 Cohesion: 0.10
 Nodes (7): ListValue, ListValue$Type, NullValue, NULL_VALUE, Struct$Type, Value, Value$Type
 
 ### Community 115 - ".create"
-Cohesion: 0.01
-Nodes (68): ApproveRejectReq$Type, ApproveVerificationRequest$Type, BureauListResponse$Type, ChangePasswordRequest$Type, CompleteGoogleSignupRequest$Type, CountResponse$Type, CreateContractReq$Type, CreateHireRequestReq$Type (+60 more)
+Cohesion: 0.10
+Nodes (5): GoogleSignInRequest$Type, ListPendingVerificationsResponse$Type, RemoveMemberReq$Type, UpdateHouseholdKidReq$Type, UpdateStatusReq$Type
 
 ### Community 124 - "ShortlistServiceClient"
 Cohesion: 0.08
 Nodes (4): HireRequestServiceClient, HireRequestServicePromiseClient, ShortlistServiceClient, ShortlistServicePromiseClient
 
 ### Community 126 - "ThemeContext.tsx"
-Cohesion: 0.08
-Nodes (33): authenticatedIcon(), guestItems, MobileBottomNavigation(), MobileBottomNavigationProps, NavigationItem, BeforeInstallPromptEvent, dismissalIsCurrent(), isAppleMobileDevice() (+25 more)
+Cohesion: 0.07
+Nodes (36): authenticatedIcon(), guestItems, MobileBottomNavigation(), MobileBottomNavigationProps, NavigationItem, BeforeInstallPromptEvent, dismissalIsCurrent(), isAppleMobileDevice() (+28 more)
 
 ### Community 127 - "scripts"
 Cohesion: 0.13
@@ -1351,8 +1408,8 @@ Cohesion: 0.09
 Nodes (21): grpc, methodDescriptor_ClientProfileService_AttachJobTypeFeatures, methodDescriptor_ClientProfileService_CreateJobType, methodDescriptor_ClientProfileService_DeleteSavedFilter, methodDescriptor_ClientProfileService_DetachJobTypeFeature, methodDescriptor_ClientProfileService_GetHiringAttention, methodDescriptor_ClientProfileService_GetJobType, methodDescriptor_ClientProfileService_GetJobTypeFeatureBundles (+13 more)
 
 ### Community 140 - "JobPostModal.tsx"
-Cohesion: 0.09
-Nodes (43): asArray(), catalogueFeatureName(), FeatureBundle, featureHasOptions(), featureId(), featureName(), featureProperties(), FeatureProperty (+35 more)
+Cohesion: 0.08
+Nodes (44): asArray(), catalogueFeatureName(), FeatureBundle, featureHasOptions(), featureId(), featureName(), featureProperties(), FeatureProperty (+36 more)
 
 ### Community 148 - "waitlist.tsx"
 Cohesion: 0.10
@@ -1407,24 +1464,20 @@ Cohesion: 0.07
 Nodes (28): Authentication (AuthContext), Comparison to Phase 5, Conclusion, Contexts Tested (3 contexts, 111 tests, 77 passing - 69% pass rate), Core Functionality Verified, Coverage Highlights, Documentation, Environment-Related Failures (34 tests) (+20 more)
 
 ### Community 234 - "resolveAuthGrpcBaseUrl"
-Cohesion: 0.18
-Nodes (21): action(), loader(), normalizeSwitchedUser(), action(), normalizeUser(), action(), action(), loader() (+13 more)
+Cohesion: 0.16
+Nodes (23): action(), loader(), normalizeSwitchedUser(), action(), encodeCreateApplication(), action(), normalizeUser(), action() (+15 more)
 
 ### Community 292 - "devices.ts"
 Cohesion: 0.13
 Nodes (14): ConfirmDeviceRequest, ConfirmDeviceResponse, Device, DEVICE_STATUS_COLORS, DEVICE_STATUS_LABELS, DEVICE_TYPE_ICONS, DeviceActivityLog, DeviceResponse (+6 more)
 
-### Community 339 - "blog_pb.d.ts"
-Cohesion: 0.08
-Nodes (3): AsObject, CategoryStats, DeletePostRequest
-
-### Community 370 - "callUnaryGrpc"
-Cohesion: 0.19
-Nodes (23): action(), encodeCreateApplication(), asData(), encodeJobTypeId(), encodeListJobTypes(), loader(), asData(), loader() (+15 more)
+### Community 370 - "grpcRaw.server.ts"
+Cohesion: 0.16
+Nodes (27): asData(), encodeJobTypeId(), encodeListJobTypes(), loader(), encodePick(), encodePicksRequest(), loader(), callUnaryGrpcMessage() (+19 more)
 
 ### Community 371 - "HouseholdKidsServiceClient"
 Cohesion: 0.15
-Nodes (3): HouseholdKidsServiceClient, IHouseholdKidsServiceClient, CreateHouseholdKidReq
+Nodes (3): HouseholdKidsServiceClient, IHouseholdKidsServiceClient, UpdateHouseholdKidReq
 
 ### Community 372 - "ServiceWaitlistPage.tsx"
 Cohesion: 0.17
@@ -1438,9 +1491,9 @@ Nodes (8): normalizeGatewayBaseUrl(), loader(), createTransport(), createWaitlis
 Cohesion: 0.07
 Nodes (27): 🎉 Achievement Summary, All Phases Combined, API Utilities, API Utilities (2 files - 55 tests), 📊 Completed Utilities, ✅ Completion Checklist, Components/Utilities Tested, 🎉 Conclusion (+19 more)
 
-### Community 474 - "LocationPicker.tsx"
-Cohesion: 0.22
-Nodes (11): componentName(), GoogleLocationPicker(), loadMaps(), PreciseLocation, Window, EMPTY, LocationPicker(), LocationPickerProps (+3 more)
+### Community 474 - "employment-contract.tsx"
+Cohesion: 0.09
+Nodes (29): FIELD_BASE_CLASS, FIELD_LABEL_CLASS, INPUT_CLASS, RequiredLegend(), RequiredMark(), componentName(), GoogleLocationPicker(), loadMaps() (+21 more)
 
 ### Community 475 - "grpcWebGeneric.ts"
 Cohesion: 0.33
@@ -1460,7 +1513,11 @@ Nodes (7): allowedOrigins, app, backendApiProxy, BUILD_CLIENT_DIR, defaultAllowe
 
 ### Community 490 - "auth_pb.d.ts"
 Cohesion: 0.06
-Nodes (5): AdminPWAAnalyticsRequest, AsObject, BureauServiceProviderLinkIdRequest, RatingRequest, RecordViewResponse
+Nodes (5): AdminPWAAnalyticsRequest, AsObject, CheckIsAdminRequest, CheckVerificationStatusResponse, StatusRequest
+
+### Community 497 - "Empty"
+Cohesion: 0.05
+Nodes (10): HousehelpPreferencesServiceClient, IHousehelpPreferencesServiceClient, IPreferencesServiceClient, IProfileSetupServiceClient, PreferencesServiceClient, ProfileSetupServiceClient, HireEmploymentReq, JsonPayload (+2 more)
 
 ### Community 549 - "Production URLs (homebit.co.ke)"
 Cohesion: 0.08
@@ -1482,17 +1539,37 @@ Nodes (10): grpc, methodDescriptor_UserProfileService_AddPicks, methodDescriptor
 Cohesion: 0.35
 Nodes (8): PullToRefresh(), scrollContainer(), PWARegistration(), AUTH_API_BASE_URL, installationId(), isInstalledPWA(), PWAEvent, reportPWAEvent()
 
+### Community 569 - "HouseholdMemberServiceClient"
+Cohesion: 0.06
+Nodes (7): ApproveRejectReq, HouseholdMemberServiceClient, IHouseholdMemberServiceClient, CreateInvitationReq, JoinHouseholdReq, RemoveMemberReq, RevokeInvitationReq
+
+### Community 600 - "EmploymentContractServiceClient"
+Cohesion: 0.11
+Nodes (4): EmploymentContractServiceClient, IEmploymentContractServiceClient, ListEmploymentContractsReq, SignContractReq
+
+### Community 612 - "DocumentServiceClient"
+Cohesion: 0.13
+Nodes (4): DocumentServiceClient, IDocumentServiceClient, UpdateDocumentReq, UploadDocumentsReq
+
+### Community 621 - "ContactServiceClient"
+Cohesion: 0.18
+Nodes (3): ContactServiceClient, IContactServiceClient, UpdateStatusReq
+
 ### Community 640 - "Deploy Website Fixes"
 Cohesion: 0.12
 Nodes (16): 1. Malformed CSS (Commit: c22dada), 2. React Router Action Handlers (Commits: 1c95d9c, 2d2273c), CSS Fix, Deploy Website Fixes, Expected Results, How to Deploy, Notes, Option 1: Merge to Master (Automatic Deployment via GitHub Actions) (+8 more)
+
+### Community 645 - "blog_pb.d.ts"
+Cohesion: 0.07
+Nodes (4): AsObject, BlogPostResponse, GetPostBySlugRequest, UnpublishPostRequest
 
 ### Community 655 - "api.saved-filters.ts"
 Cohesion: 0.51
 Nodes (9): action(), authMetadata(), concatBytes(), encodeBoolField(), encodeSavedFilterRequest(), encodeSaveFilter(), encodeStringField(), encodeVarint() (+1 more)
 
-### Community 660 - "ShortlistServiceClient"
-Cohesion: 0.05
-Nodes (10): BoolResponse, IPetsServiceClient, IShortlistServiceClient, PetsServiceClient, ShortlistServiceClient, CreatePetReq, InterestExistsReq, ShortlistExistsReq (+2 more)
+### Community 660 - "UserIdRequest"
+Cohesion: 0.04
+Nodes (14): BoolResponse, IImageServiceClient, ImageServiceClient, IPetsServiceClient, IShortlistServiceClient, PetsServiceClient, ShortlistServiceClient, CreatePetReq (+6 more)
 
 ### Community 666 - "Automated Test Generation Guide"
 Cohesion: 0.14
@@ -1503,12 +1580,16 @@ Cohesion: 0.14
 Nodes (14): 10. Need Help?, 1. Install Dependencies, 2. Run Tests, 3. Playwright Browser Setup, 3. Write Your First Test, 6. Useful Helpers, 7. Best Practices, 8. Coverage Goals (+6 more)
 
 ### Community 670 - "webVitals.ts"
-Cohesion: 0.33
-Nodes (8): RouteProgress(), getWebVitalsEndpoint(), Metric, PerformanceDetail, reportPerformance(), sendToAnalytics(), trackSlowResources(), trackWebVitals()
+Cohesion: 0.25
+Nodes (10): RouteProgress(), isFullPageNavigation(), shouldRevalidateRootEnvironment(), getWebVitalsEndpoint(), Metric, PerformanceDetail, reportPerformance(), sendToAnalytics() (+2 more)
 
 ### Community 675 - "marketplace_grpc_web_pb.js"
 Cohesion: 0.20
 Nodes (9): grpc, methodDescriptor_HireRequestService_AcceptHireRequest, methodDescriptor_HireRequestService_DeclineHireRequest, methodDescriptor_HireRequestService_ListHireRequests, methodDescriptor_ShortlistService_CreateShortlist, methodDescriptor_ShortlistService_DeleteShortlist, methodDescriptor_ShortlistService_GetShortlistCount, methodDescriptor_ShortlistService_ListByHousehold (+1 more)
+
+### Community 678 - "wrappers/auth.ts"
+Cohesion: 0.20
+Nodes (9): AuthServiceClient, AuthServicePromiseClient, LoginRequest, LoginResponse, SendOTPRequest, SignupRequest, SignupResponse, VerifyOTPRequest (+1 more)
 
 ### Community 686 - "Frontend Testing Implementation Guide"
 Cohesion: 0.18
@@ -1525,10 +1606,6 @@ Nodes (8): Definition of done per page, Global layout, Hiring and marketplace, M
 ### Community 724 - "Deployment"
 Cohesion: 0.22
 Nodes (8): Deployment, Development, DIY, End-to-end testing (dev), Environment variables, Google waitlist OAuth callback, Homebit, Production environment variables
-
-### Community 728 - "premium.server.ts"
-Cohesion: 0.46
-Nodes (7): attachPremiumStatus(), decodeEntry(), decodeStatuses(), encodeRepeatedString(), paymentsBaseUrl(), PremiumStatus, readVarint()
 
 ### Community 736 - "HouseholdPrefReq"
 Cohesion: 0.36
@@ -1702,29 +1779,29 @@ Nodes (3): Phase 5: Utilities, Hooks & Helper Functions, Phase 6: Contexts & Com
 Cohesion: 0.67
 Nodes (3): ts-proto, ts-proto, ts-proto
 
-### Community 1177 - "grpcRaw.server.ts"
-Cohesion: 0.31
-Nodes (12): callUnaryGrpcMessage(), createGrpcFrame(), decodeGenericHeader(), decodeGenericResponse(), decodeGrpcMessage(), decodeJsonResponse(), encodeStructField(), GRPC_CODE_NAMES (+4 more)
+### Community 1177 - "decodeGenericResponse"
+Cohesion: 0.80
+Nodes (5): decodeGenericHeader(), decodeGenericResponse(), decodeJsonResponse(), readVarint(), skipField()
 
 ## Knowledge Gaps
-- **1792 isolated node(s):** `AccountProfile`, `ServiceProviderProfile`, `HouseholdHomeVariant`, `AuthenticatedHomeProps`, `EXPERIENCE_MIN_OPTIONS` (+1787 more)
+- **1793 isolated node(s):** `AccountProfile`, `ServiceProviderProfile`, `HouseholdHomeVariant`, `AuthenticatedHomeProps`, `EXPERIENCE_MIN_OPTIONS` (+1788 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **946 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **993 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `API_BASE_URL` connect `getStoredUserId` to `blog.service.ts`, `components/Navigation.tsx`, `HouseholdJobsHome.tsx`, `household.profile.tsx`, `ShimmerLoader.tsx`, `authServices.ts`, `useIdentityVerification.ts`, `handleGrpcError`, `serverAuth.ts`, `inbox.tsx`, `service-provider/index.ts`?**
-  _High betweenness centrality (0.126) - this node is a cross-community bridge._
-- **Why does `Struct` connect `notifications/notifications.ts` to `HouseholdPrefReq`, `JsonResponse`, `struct.ts`, `auth/auth.ts`, `IdRequest`, `HouseholdKidsServiceClient`, `ShortlistServiceClient`, `EditMessageResponse`, `serverAuth.ts`, `LocationServiceClient`, `GetBlastResponse`, `BureauResponse`?**
+- **Why does `API_BASE_URL` connect `authStorage.ts` to `blog.service.ts`, `authServices.ts`, `components/Navigation.tsx`, `getStoredUserId`, `household.profile.tsx`, `NavigationContent`, `getAccessTokenFromCookies`, `useIdentityVerification.ts`, `handleGrpcError`, `serverAuth.ts`, `employment-contract.tsx`, `inbox.tsx`, `service-provider/index.ts`?**
+  _High betweenness centrality (0.127) - this node is a cross-community bridge._
+- **Why does `Struct` connect `notifications/notifications.ts` to `HouseholdPrefReq`, `DocumentServiceClient`, `JsonResponse`, `struct.ts`, `auth/auth.ts`, `IdRequest`, `Empty`, `HouseholdKidsServiceClient`, `UserIdRequest`, `EditMessageResponse`, `serverAuth.ts`, `LocationServiceClient`, `GetBlastResponse`, `HouseholdMemberServiceClient`, `BureauResponse`?**
   _High betweenness centrality (0.051) - this node is a cross-community bridge._
-- **Why does `Timestamp` connect `Timestamp` to `auth/auth.ts`, `payments/payments.ts`, `Empty`, `Timestamp$Type`?**
+- **Why does `Timestamp` connect `Timestamp` to `auth/auth.ts`, `payments/payments.ts`, `device.ts`?**
   _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **What connects `AccountProfile`, `ServiceProviderProfile`, `HouseholdHomeVariant` to the rest of the system?**
-  _1792 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1793 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `auth_grpc_web_pb.js` be split into smaller, more focused modules?**
   _Cohesion score 0.00558659217877095 - nodes in this community are weakly interconnected._
-- **Should `_index.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.11688311688311688 - nodes in this community are weakly interconnected._
+- **Should `authServices.ts` be split into smaller, more focused modules?**
+  _Cohesion score 0.0344044141512496 - nodes in this community are weakly interconnected._
 - **Should `payments/payments.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.022265288544358313 - nodes in this community are weakly interconnected._

@@ -286,7 +286,8 @@ export default function HiringHistory() {
   const [applicants, setApplicants] = useState<Interest[]>([]);
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [applicantsCount, setApplicantsCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [hasLoadedApplicants, setHasLoadedApplicants] = useState(false);
+  const [hasLoadedJobs, setHasLoadedJobs] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -720,7 +721,6 @@ export default function HiringHistory() {
   // from one round trip and switching tabs is instant. A household's own
   // applications are a bounded set, so this stays small.
   const fetchApplicants = async () => {
-    setLoading(true);
     setError(null);
     try {
       const ownerProfileId = getStoredUserProfileId();
@@ -734,12 +734,11 @@ export default function HiringHistory() {
     } catch (err: any) {
       setError(err.message || 'Failed to load applicants');
     } finally {
-      setLoading(false);
+      setHasLoadedApplicants(true);
     }
   };
 
   const fetchJobs = async () => {
-    setLoading(true);
     setError(null);
     try {
       const raw = await jobService.listJobs(limit, offset, getStoredUserProfileId());
@@ -749,12 +748,11 @@ export default function HiringHistory() {
     } catch (err: any) {
       setError(err.message || 'Failed to load job postings');
     } finally {
-      setLoading(false);
+      setHasLoadedJobs(true);
     }
   };
 
   const fetchHireRequests = async () => {
-    setLoading(true);
     setError(null);
     try {
       // No status filter: the tab names are application statuses now, and hire
@@ -765,8 +763,6 @@ export default function HiringHistory() {
       setTotal(extractTotal(raw, items.length));
     } catch (err: any) {
       setError(err.message || 'Failed to load hiring history');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -1056,6 +1052,14 @@ export default function HiringHistory() {
     () => (activeTab === 'jobs' ? [] : applicantsByTab[activeTab] ?? []),
     [activeTab, applicantsByTab],
   );
+  // Jobs and applications load concurrently. A shared boolean let whichever
+  // request finished first hide the skeleton for the other one, briefly
+  // rendering an incorrect empty state. Only the data needed by the selected
+  // tab now controls its first paint; later realtime refreshes retain the
+  // existing rows instead of blanking the panel again.
+  const loading = activeTab === 'jobs'
+    ? !hasLoadedJobs
+    : !hasLoadedApplicants || !hasLoadedJobs;
 
   const tabs: { key: TabType; label: string; count?: number }[] = useMemo(
     () => [
@@ -1336,14 +1340,14 @@ export default function HiringHistory() {
 
         {/* Loading State */}
         {loading && (
-          <div className="py-6">
+          <div key={`loading-${activeTab}`} className="hb-data-panel-enter py-6">
             <ListPageSkeleton items={4} />
           </div>
         )}
 
         {/* Empty State for Jobs */}
         {!loading && activeTab === 'jobs' && jobs.length === 0 && (
-          <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+          <div key="jobs-empty" className="hb-data-panel-enter bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <Briefcase className="w-16 h-16 text-purple-400 dark:text-purple-300 mx-auto mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
               No job postings yet
@@ -1362,7 +1366,7 @@ export default function HiringHistory() {
 
         {/* Jobs List */}
         {!loading && activeTab === 'jobs' && jobs.length > 0 && (
-          <div className="space-y-4">
+          <div key="jobs-ready" className="hb-data-panel-enter space-y-4">
             {jobs.map((job) => {
               const highlights = listingHighlights(job);
 
@@ -1485,7 +1489,7 @@ export default function HiringHistory() {
 
         {/* Empty State for Applicants */}
         {!loading && activeTab !== 'jobs' && visibleApplicants.length === 0 && (
-          <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+          <div key={`${activeTab}-empty`} className="hb-data-panel-enter bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <HandHeart className="w-16 h-16 text-green-400 dark:text-green-300 mx-auto mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
               {EMPTY_TAB_COPY[activeTab as Exclude<TabType, 'jobs'>]?.title ?? 'Nothing here yet'}
@@ -1498,7 +1502,7 @@ export default function HiringHistory() {
 
         {/* Applicants List */}
         {!loading && activeTab !== 'jobs' && visibleApplicants.length > 0 && (
-          <div className="space-y-5">
+          <div key={`${activeTab}-ready`} className="hb-data-panel-enter space-y-5">
             {visibleApplicants.map((interest) => {
               const listing = jobs.find(
                 (job) => String(job.id) === String((interest as any).listing_id ?? ''),

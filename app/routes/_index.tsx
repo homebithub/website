@@ -6,9 +6,16 @@ import { getAuthFromCookies } from "~/utils/cookie";
 import { useAuth } from "~/contexts/useAuth";
 import { getStoredProfileType } from "~/utils/authStorage";
 import { isServiceProviderProfileType } from "~/utils/profileType";
+import { ListPageSkeleton } from "~/components/ShimmerLoader";
 
-const AuthenticatedHome = lazyLoad(() => import("~/components/HouseholdJobsHome"));
-const ServiceProviderHome = lazyLoad(() => import("~/components/ServiceProviderJobsHome"));
+const homeFallback = (
+  <div className="hb-content-rail py-6 sm:py-8">
+    <ListPageSkeleton items={3} />
+  </div>
+);
+
+const AuthenticatedHome = lazyLoad(() => import("~/components/HouseholdJobsHome"), { fallback: homeFallback });
+const ServiceProviderHome = lazyLoad(() => import("~/components/ServiceProviderJobsHome"), { fallback: homeFallback });
 const LandingPage = lazyLoad(() => import("~/routes/landing"));
 
 export async function loader({ request }: Route.LoaderArgs) {

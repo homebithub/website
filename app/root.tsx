@@ -17,6 +17,7 @@ import { PWAInstallPrompt } from "~/components/PWAInstallPrompt";
 import { AppLaunchScreen } from "~/components/AppLaunchScreen";
 import { PullToRefresh } from "~/components/PullToRefresh";
 import GuidedRouteTour from '~/components/GuidedRouteTour';
+import { shouldRevalidateRootEnvironment } from '~/utils/routeTransitions';
 import stylesheet from "./tailwind.css?url";
 
 export const meta: Route.MetaFunction = () => [
@@ -100,6 +101,8 @@ export function loader({ request }: Route.LoaderArgs) {
 		},
 	};
 }
+
+export const shouldRevalidate = shouldRevalidateRootEnvironment;
 
 // Add action handler to prevent "no action" errors from external POST requests
 export async function action() {

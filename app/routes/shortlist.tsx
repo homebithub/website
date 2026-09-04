@@ -16,6 +16,7 @@ import { formatTimeAgo } from "~/utils/timeAgo";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
+import { ShimmerListPlaceholder } from '~/components/ShimmerLoader';
 
 type JobLocation = {
   name?: string;
@@ -78,7 +79,7 @@ type ShortlistedJob = {
 export default function ShortlistPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<ShortlistedJob[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -129,6 +130,7 @@ export default function ShortlistPage() {
         setItems([]);
         setHasMore(false);
         setError("User profile information is missing. Please sign in again.");
+        setLoading(false);
         return;
       }
 
@@ -191,6 +193,8 @@ export default function ShortlistPage() {
     return () => io.disconnect();
   }, [loading, hasMore]);
 
+  const initialLoading = loading && items.length === 0;
+
   async function handleRemove(jobId: string) {
     setRemovingId(jobId);
     setError(null);
@@ -248,7 +252,9 @@ export default function ShortlistPage() {
               <ListingViewToggle value={viewMode} onChange={setViewMode} />
             </div>
 
-            {(!items || items.length === 0) && !loading && !error && (
+            {initialLoading && <ShimmerListPlaceholder items={4} />}
+
+            {(!items || items.length === 0) && !initialLoading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
                 <h3 className="text-base font-bold text-gray-900 dark:text-white">No saved jobs yet</h3>
@@ -259,7 +265,7 @@ export default function ShortlistPage() {
 
             {error && <ErrorAlert message={error} className="mb-4" />}
 
-            <div className={isGridView ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
+            <div className={`${initialLoading ? 'hidden' : 'hb-data-panel-enter'} ${isGridView ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "space-y-4"}`}>
               {(Array.isArray(items) ? items : [])
                 .map((job) => {
                   const jobId = String(job.id || '');
@@ -412,9 +418,7 @@ export default function ShortlistPage() {
             </div>
 
             <div ref={sentinelRef} className="h-8" />
-            {loading && (
-              <div className="mt-4 text-center text-gray-600 dark:text-gray-300">Loading...</div>
-            )}
+            {loading && items.length > 0 && <ShimmerListPlaceholder items={1} className="mt-4" />}
           </div>
         </main>
       </PurpleThemeWrapper>

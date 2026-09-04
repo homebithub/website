@@ -423,6 +423,34 @@ body > * {
   100% { transform: translateX(260%); }
 }
 
+/* Data panels enter as one stable surface. This keeps a tab label and its
+   content visually connected instead of flashing an empty state between them. */
+.hb-data-panel-enter {
+  animation: hb-data-panel-enter 180ms ease-out both;
+}
+
+@keyframes hb-data-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hb-data-panel-enter {
+    animation: none;
+  }
+
+  .hb-route-veil {
+    transition: none;
+  }
+}
+
 /* This surface is emitted in the server HTML, so an installed PWA has branded
    pixels from its first web-view paint. Normal browser tabs never display it. */
 .hb-launch-screen {

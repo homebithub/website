@@ -27,8 +27,8 @@ export function lazyLoad<T extends ComponentType<any>>(
   const LazyComponent = lazy(importFunc);
   
   const fallback = options.fallback || (
-    <div className="flex items-center justify-center p-8">
-      <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-300/30 border-t-purple-500" />
+    <div className="hb-content-rail py-6 sm:py-8">
+      <SkeletonLoader />
     </div>
   );
 

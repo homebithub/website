@@ -920,6 +920,8 @@ export default function ServiceProviderHiringHistory() {
           </div>
         )}
 
+        <div key={`${activeTab}:${loading ? 'loading' : 'ready'}`} className="hb-data-panel-enter">
+
         {/* Loading State */}
         {loading && (
           <div className="py-6">
@@ -1354,6 +1356,7 @@ export default function ServiceProviderHiringHistory() {
             </button>
           </div>
         )}
+        </div>
       </div>
 
       {selectedHiringCard && (() => {
