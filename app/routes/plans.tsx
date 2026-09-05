@@ -17,7 +17,7 @@ import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { paymentsService } from "~/services/grpc/payments.service";
-import { getStoredCanonicalProfileType } from "~/utils/authStorage";
+import { getStoredCanonicalProfileType, getStoredUserProfileId } from "~/utils/authStorage";
 import { notifySubscriptionChanged } from "~/utils/subscriptionEvents";
 import { normalizeProfileType, profileTypesMatch } from "~/utils/profileType";
 
@@ -343,7 +343,7 @@ export default function PlansPage() {
         "",
         resolvedPlanId,
         formattedPhone,
-        "",
+        getStoredUserProfileId(),
         pt
       )) as any;
       const result = data?.toObject?.() ?? data;

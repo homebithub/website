@@ -4,6 +4,8 @@ import { useSubscriptionSSE } from './useSubscriptionSSE';
 import { extractSubscription, extractSubscriptionAccess } from '~/utils/subscriptionData';
 import { cachedRequest } from '~/utils/requestCache';
 import { SUBSCRIPTION_CHANGED_EVENT } from '~/utils/subscriptionEvents';
+import { getStoredCanonicalProfileType, getStoredUserProfileId } from '~/utils/authStorage';
+import { normalizeProfileType } from '~/utils/profileType';
 
 const SUBSCRIPTION_STALE_MS = 2 * 60_000;
 
@@ -42,7 +44,11 @@ export type UseSubscriptionResult = {
   refetch: () => void;
 };
 
-export function useSubscription(userId?: string | null): UseSubscriptionResult {
+export function useSubscription(
+  userId?: string | null,
+  profileId?: string | null,
+  profileType?: string | null,
+): UseSubscriptionResult {
   const [status, setStatus] = useState<SubscriptionStatus>('loading');
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +57,8 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [accessMessage, setAccessMessage] = useState<string | null>(null);
   const [isEarlyAdopter, setIsEarlyAdopter] = useState(false);
+  const resolvedProfileId = profileId || getStoredUserProfileId();
+  const resolvedProfileType = normalizeProfileType(profileType || getStoredCanonicalProfileType());
 
   const fetchSubscription = useCallback(async (force = false) => {
     if (!userId) {
@@ -65,12 +73,12 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       setError(null);
 
       const [subscriptionResult, accessResult] = await cachedRequest(
-        `subscription:${userId}`,
+        `subscription:${userId}:${resolvedProfileType}:${resolvedProfileId}`,
         async () => {
           const { subscriptionReadService } = await import('~/services/grpc/subscriptionRead.service');
           return Promise.allSettled([
-            subscriptionReadService.getMySubscription(userId),
-            subscriptionReadService.checkSubscriptionAccess(userId),
+            subscriptionReadService.getMySubscription(userId, resolvedProfileId, resolvedProfileType),
+            subscriptionReadService.checkSubscriptionAccess(userId, resolvedProfileId, resolvedProfileType),
           ]);
         },
         { maxAgeMs: SUBSCRIPTION_STALE_MS, force },
@@ -144,7 +152,7 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [resolvedProfileId, resolvedProfileType, userId]);
 
   useEffect(() => {
     void fetchSubscription();

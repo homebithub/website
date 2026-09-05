@@ -165,6 +165,12 @@ export class GetMySubscriptionRequest extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): GetMySubscriptionRequest;
 
+  getProfileId(): string;
+  setProfileId(value: string): GetMySubscriptionRequest;
+
+  getProfileType(): string;
+  setProfileType(value: string): GetMySubscriptionRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetMySubscriptionRequest.AsObject;
   static toObject(includeInstance: boolean, msg: GetMySubscriptionRequest): GetMySubscriptionRequest.AsObject;
@@ -176,6 +182,8 @@ export class GetMySubscriptionRequest extends jspb.Message {
 export namespace GetMySubscriptionRequest {
   export type AsObject = {
     userId: string;
+    profileId: string;
+    profileType: string;
   };
 }
 
@@ -203,6 +211,12 @@ export class CheckSubscriptionAccessRequest extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): CheckSubscriptionAccessRequest;
 
+  getProfileId(): string;
+  setProfileId(value: string): CheckSubscriptionAccessRequest;
+
+  getProfileType(): string;
+  setProfileType(value: string): CheckSubscriptionAccessRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CheckSubscriptionAccessRequest.AsObject;
   static toObject(includeInstance: boolean, msg: CheckSubscriptionAccessRequest): CheckSubscriptionAccessRequest.AsObject;
@@ -214,6 +228,8 @@ export class CheckSubscriptionAccessRequest extends jspb.Message {
 export namespace CheckSubscriptionAccessRequest {
   export type AsObject = {
     userId: string;
+    profileId: string;
+    profileType: string;
   };
 }
 

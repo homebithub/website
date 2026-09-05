@@ -11,6 +11,7 @@ import {
   getStoredAccessToken,
   getStoredCanonicalProfileType,
   getStoredUserId,
+  getStoredUserProfileId,
 } from '~/utils/authStorage';
 import { normalizeProfileType } from '~/utils/profileType';
 
@@ -21,6 +22,14 @@ const paymentsClient = new PaymentsServiceClient(GRPC_WEB_BASE_URL, null, null);
 function resolveUserId(userId: string): string {
   if (userId) return userId;
   return getStoredUserId();
+}
+
+function resolveProfileId(profileId: string): string {
+  return profileId || getStoredUserProfileId();
+}
+
+function resolveProfileType(profileType: string): string {
+  return normalizeProfileType(profileType || getStoredCanonicalProfileType());
 }
 
 function getMetadata(): { [key: string]: string } {
@@ -56,10 +65,12 @@ export const paymentsService = {
   },
 
   // ── Subscriptions ───────────────────────────────────
-  async getMySubscription(userId: string): Promise<any> {
+  async getMySubscription(userId: string, profileId = '', profileType = ''): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetMySubscriptionRequest();
       request.setUserId(resolveUserId(userId));
+      request.setProfileId(resolveProfileId(profileId));
+      request.setProfileType(resolveProfileType(profileType));
       retryOnExpiry((cb) => paymentsClient.getMySubscription(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -90,10 +101,12 @@ export const paymentsService = {
     });
   },
 
-  async checkSubscriptionAccess(userId: string): Promise<any> {
+  async checkSubscriptionAccess(userId: string, profileId = '', profileType = ''): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.CheckSubscriptionAccessRequest();
       request.setUserId(resolveUserId(userId));
+      request.setProfileId(resolveProfileId(profileId));
+      request.setProfileType(resolveProfileType(profileType));
       retryOnExpiry((cb) => paymentsClient.checkSubscriptionAccess(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -187,8 +200,8 @@ export const paymentsService = {
       request.setUserId(resolveUserId(userId));
       request.setPlanId(planId);
       request.setPhoneNumber(phoneNumber);
-      request.setProfileId(profileId);
-      request.setProfileType(normalizeProfileType(profileType));
+      request.setProfileId(resolveProfileId(profileId));
+      request.setProfileType(resolveProfileType(profileType));
       retryOnExpiry((cb) => paymentsClient.createSubscriptionCheckout(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);

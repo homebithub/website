@@ -45,10 +45,18 @@ message Subscription {
   google.protobuf.Timestamp updated_at = 14;
 }
 
-message GetMySubscriptionRequest { string user_id = 1; }
+message GetMySubscriptionRequest {
+  string user_id = 1;
+  string profile_id = 2;
+  string profile_type = 3;
+}
 message GetMySubscriptionResponse { Subscription subscription = 1; }
 
-message CheckSubscriptionAccessRequest { string user_id = 1; }
+message CheckSubscriptionAccessRequest {
+  string user_id = 1;
+  string profile_id = 2;
+  string profile_type = 3;
+}
 message CheckSubscriptionAccessResponse {
   bool has_access = 1;
   string status = 2;

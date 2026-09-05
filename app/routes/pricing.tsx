@@ -19,7 +19,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { paymentsService } from '~/services/grpc/payments.service';
-import { getStoredCanonicalProfileType, getStoredUser } from "~/utils/authStorage";
+import { getStoredCanonicalProfileType, getStoredUser, getStoredUserProfileId } from "~/utils/authStorage";
 import { normalizeProfileType, profileTypesMatch } from "~/utils/profileType";
 
 export const meta = () => [
@@ -304,7 +304,7 @@ export default function Pricing() {
     setErrorMessage('');
 
     try {
-      const data = await paymentsService.createSubscriptionCheckout('', resolvedPlanId, formattedPhone, '', profileType) as any;
+      const data = await paymentsService.createSubscriptionCheckout('', resolvedPlanId, formattedPhone, getStoredUserProfileId(), profileType) as any;
       const result = data?.toObject?.() ?? data;
       setCurrentPaymentId(result.paymentId || result.payment_id);
       setPaymentStatus('processing');

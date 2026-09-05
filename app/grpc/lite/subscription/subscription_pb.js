@@ -1410,7 +1410,9 @@ proto.payments.GetMySubscriptionRequest.prototype.toObject = function(opt_includ
  */
 proto.payments.GetMySubscriptionRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-userId: jspb.Message.getFieldWithDefault(msg, 1, "")
+userId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+profileId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+profileType: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -1451,6 +1453,14 @@ proto.payments.GetMySubscriptionRequest.deserializeBinaryFromReader = function(m
       var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setUserId(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setProfileId(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setProfileType(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -1487,6 +1497,20 @@ proto.payments.GetMySubscriptionRequest.serializeBinaryToWriter = function(messa
       f
     );
   }
+  f = message.getProfileId();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
+  f = message.getProfileType();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
 };
 
 
@@ -1505,6 +1529,42 @@ proto.payments.GetMySubscriptionRequest.prototype.getUserId = function() {
  */
 proto.payments.GetMySubscriptionRequest.prototype.setUserId = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string profile_id = 2;
+ * @return {string}
+ */
+proto.payments.GetMySubscriptionRequest.prototype.getProfileId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.payments.GetMySubscriptionRequest} returns this
+ */
+proto.payments.GetMySubscriptionRequest.prototype.setProfileId = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional string profile_type = 3;
+ * @return {string}
+ */
+proto.payments.GetMySubscriptionRequest.prototype.getProfileType = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.payments.GetMySubscriptionRequest} returns this
+ */
+proto.payments.GetMySubscriptionRequest.prototype.setProfileType = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 
@@ -1691,7 +1751,9 @@ proto.payments.CheckSubscriptionAccessRequest.prototype.toObject = function(opt_
  */
 proto.payments.CheckSubscriptionAccessRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-userId: jspb.Message.getFieldWithDefault(msg, 1, "")
+userId: jspb.Message.getFieldWithDefault(msg, 1, ""),
+profileId: jspb.Message.getFieldWithDefault(msg, 2, ""),
+profileType: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -1732,6 +1794,14 @@ proto.payments.CheckSubscriptionAccessRequest.deserializeBinaryFromReader = func
       var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setUserId(value);
       break;
+    case 2:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setProfileId(value);
+      break;
+    case 3:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setProfileType(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -1768,6 +1838,20 @@ proto.payments.CheckSubscriptionAccessRequest.serializeBinaryToWriter = function
       f
     );
   }
+  f = message.getProfileId();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
+  f = message.getProfileType();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
 };
 
 
@@ -1786,6 +1870,42 @@ proto.payments.CheckSubscriptionAccessRequest.prototype.getUserId = function() {
  */
 proto.payments.CheckSubscriptionAccessRequest.prototype.setUserId = function(value) {
   return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string profile_id = 2;
+ * @return {string}
+ */
+proto.payments.CheckSubscriptionAccessRequest.prototype.getProfileId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.payments.CheckSubscriptionAccessRequest} returns this
+ */
+proto.payments.CheckSubscriptionAccessRequest.prototype.setProfileId = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
+};
+
+
+/**
+ * optional string profile_type = 3;
+ * @return {string}
+ */
+proto.payments.CheckSubscriptionAccessRequest.prototype.getProfileType = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.payments.CheckSubscriptionAccessRequest} returns this
+ */
+proto.payments.CheckSubscriptionAccessRequest.prototype.setProfileType = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 

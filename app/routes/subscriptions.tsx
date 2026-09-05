@@ -26,7 +26,7 @@ import { CancelSubscriptionFlow } from '~/components/subscriptions/CancelSubscri
 import { ChangePlanModal } from '~/components/subscriptions/ChangePlanModal';
 import { CreditBalanceCard } from '~/components/subscriptions/CreditBalanceCard';
 import type { CreditBalanceResponse, CancelReason } from '~/types/payments';
-import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { notifySubscriptionChanged } from '~/utils/subscriptionEvents';
 import {
   extractPayments,
@@ -54,6 +54,7 @@ export default function SubscriptionsPage() {
   const currentUserPhone = currentUser?.phone || '';
   const currentUserEmail = currentUser?.email || '';
   const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId();
+	const currentProfileId = currentUser?.user_profile_id || currentUser?.userProfileId || getStoredUserProfileId();
   const [dataLoading, setDataLoading] = useState(false);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -92,7 +93,7 @@ export default function SubscriptionsPage() {
   const [checkoutPolling, setCheckoutPolling] = useState<NodeJS.Timeout | null>(null);
 
   // Filter plans by user's profile type
-  const profileType: string = currentUser?.profile_type || getStoredProfileType() || '';
+  const profileType: string = getStoredCanonicalProfileType();
   // The server's plan rows are the source of truth for price and trial wording.
   // A hardcoded fallback can advertise a trial that an administrator disabled.
   const availablePlans = plans.filter(p => p.is_active && p.profile_type === profileType);
@@ -173,7 +174,7 @@ export default function SubscriptionsPage() {
     setCheckoutStatus('initiating');
     setCheckoutError('');
     try {
-      const data = await paymentsService.createSubscriptionCheckout('', selectedCheckoutPlan.id, formatted, '', '') as any;
+      const data = await paymentsService.createSubscriptionCheckout('', selectedCheckoutPlan.id, formatted, currentProfileId, profileType) as any;
       const result = data?.toObject?.() ?? data;
       const paymentId = result.paymentId || result.payment_id;
       if (!paymentId && (result.status === 'trial' || result.status === 'completed')) {
@@ -252,7 +253,7 @@ export default function SubscriptionsPage() {
     setDataLoading(true);
     try {
       try {
-        const subData = await paymentsService.getMySubscription('') as any;
+        const subData = await paymentsService.getMySubscription('', currentProfileId, profileType) as any;
         setSubscription(extractSubscription(subData));
       } catch (err) {
         console.error('[Subscriptions] Failed to fetch subscription:', err);
@@ -260,7 +261,7 @@ export default function SubscriptionsPage() {
       }
 
       try {
-        const accessData = await paymentsService.checkSubscriptionAccess('') as any;
+        const accessData = await paymentsService.checkSubscriptionAccess('', currentProfileId, profileType) as any;
         setSubscriptionAccess(extractSubscriptionAccess(accessData));
       } catch (err) {
         console.error('[Subscriptions] Failed to fetch subscription access:', err);
@@ -285,7 +286,7 @@ export default function SubscriptionsPage() {
     } finally {
       setDataLoading(false);
     }
-  }, []);
+  }, [currentProfileId, profileType]);
 
   const currentPlan =
     subscription?.plan ||

@@ -174,7 +174,11 @@ export default function ServiceProviderPublicProfile() {
   });
   const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
   const viewedServiceProviderUserId = profile?.user_id || profile?.user?.user_id || profile?.user?.id || user?.user_id || user?.id || null;
-  const viewedSubscription = useSubscription(isViewingOther ? viewedServiceProviderUserId : currentUserId);
+  const viewedSubscription = useSubscription(
+    isViewingOther ? viewedServiceProviderUserId : currentUserId,
+    isViewingOther ? '' : undefined,
+    isViewingOther ? 'service_provider' : currentProfileType,
+  );
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   useEffect(() => {

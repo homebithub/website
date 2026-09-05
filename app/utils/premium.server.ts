@@ -182,7 +182,10 @@ export async function attachPremiumStatus(
     const payload = await callUnaryGrpcMessage(
       paymentsBaseUrl(baseUrl),
       "/payments.PaymentsService/GetSubscriptionStatuses",
-      encodeRepeatedString(1, ids),
+      concatBytes([
+        encodeRepeatedString(1, ids),
+        encodeStringField(2, "service_provider"),
+      ]),
       metadata,
     );
     statuses = decodeStatuses(payload);
