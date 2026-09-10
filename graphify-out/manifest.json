@@ -828,9 +828,9 @@
     "semantic_hash": ""
   },
   "app/components/profile/ProfileChoicesSection.tsx": {
-    "mtime": 1788210466.7606137,
-    "seen": 1788234279.38611,
-    "ast_hash": "823c642724669d3bf15417b14a3c60cb",
+    "mtime": 1789064897.5113254,
+    "seen": 1789064903.3690739,
+    "ast_hash": "0c098fdc01ba4131ea7359c4e4146f69",
     "semantic_hash": ""
   },
   "app/components/profile/ProfileCompletionBanner.tsx": {
@@ -3150,9 +3150,9 @@
     "semantic_hash": ""
   },
   "k8s/preprod-deployment.yaml": {
-    "mtime": 1788539412.3775132,
-    "seen": 1788541146.5440772,
-    "ast_hash": "b8d1e4768e44b1e89ce13526502fd56b",
+    "mtime": 1788582564.419044,
+    "seen": 1789064903.369385,
+    "ast_hash": "fe070677492ad255eb2c2de7d6f0eae6",
     "semantic_hash": ""
   },
   "public/offline.html": {
@@ -3666,9 +3666,9 @@
     "semantic_hash": ""
   },
   "app/routes/service-provider.public-profile.tsx": {
-    "mtime": 1788558320.52633,
-    "seen": 1788581641.231937,
-    "ast_hash": "0f1962462760bca7933c6f9d192bf341",
+    "mtime": 1789064897.5175521,
+    "seen": 1789064903.369247,
+    "ast_hash": "ac602b022f36f258c6d98ea677fb5551",
     "semantic_hash": ""
   },
   "app/routes/service-provider_.tsx": {
@@ -3789,6 +3789,18 @@
     "mtime": 1788542020.8076184,
     "seen": 1788542460.790278,
     "ast_hash": "588b9319efdb82650641a1bdd6aa7f4c",
+    "semantic_hash": ""
+  },
+  "app/utils/serviceProviderProfileData.test.ts": {
+    "mtime": 1789064810.095999,
+    "seen": 1789064903.369338,
+    "ast_hash": "fa1ecd0cf45e21e63ce3a52bcdf42ba4",
+    "semantic_hash": ""
+  },
+  "app/utils/serviceProviderProfileData.ts": {
+    "mtime": 1789064810.0956502,
+    "seen": 1789064903.369339,
+    "ast_hash": "499886de9f4fbe581e8f85e45dec08e4",
     "semantic_hash": ""
   }
 }
