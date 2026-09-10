@@ -240,7 +240,7 @@ export function ProfileChoicesSection({
             ✨ {title}
           </h2>
           <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-            Features and options selected for this {profileType} profile.
+            Features and options selected for this {profileType.replaceAll('_', ' ')} profile.
           </p>
         </div>
         {editable && onEdit && (
@@ -297,7 +297,9 @@ export function ProfileChoicesSection({
       ) : (
         <div className="rounded-xl border border-dashed border-purple-200 p-4 dark:border-purple-500/30">
           <p className="text-xs text-gray-600 dark:text-gray-400">
-            No profile choices selected yet. Use Edit to choose the features and options that describe this profile.
+            {editable
+              ? 'No profile choices selected yet. Use Edit to choose the features and options that describe this profile.'
+              : 'No profile choices have been added yet.'}
           </p>
         </div>
       )}

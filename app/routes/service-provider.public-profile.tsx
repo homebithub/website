@@ -23,6 +23,7 @@ import { useProfileViewTracking } from "~/hooks/useProfileViewTracking";
 import { ProfileChoicesSection } from '~/components/profile/ProfileChoicesSection';
 import { FullPageError } from '~/components/FullPageError';
 import { resolveServiceProviderProfile } from '~/utils/serviceProviderProfiles';
+import { readServiceProviderProfile } from '~/utils/serviceProviderProfileData';
 import { PremiumBadge } from '~/components/PremiumBadge';
 
 interface UserData {
@@ -175,9 +176,9 @@ export default function ServiceProviderPublicProfile() {
   const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
   const viewedServiceProviderUserId = profile?.user_id || profile?.user?.user_id || profile?.user?.id || user?.user_id || user?.id || null;
   const viewedSubscription = useSubscription(
-    isViewingOther ? viewedServiceProviderUserId : currentUserId,
-    isViewingOther ? '' : undefined,
-    isViewingOther ? 'service_provider' : currentProfileType,
+    viewedServiceProviderUserId,
+    profile?.id,
+    'service_provider',
   );
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
@@ -248,18 +249,22 @@ export default function ServiceProviderPublicProfile() {
       : 'Back');
 
   useEffect(() => {
+    let cancelled = false;
     const fetchProfile = async () => {
       setLoading(true);
       setError(null);
+      setProfile(null);
+      setUser(null);
+      setViewingProfileId(null);
+      setOpenForWorkId(queryOpenForWorkId);
+      setIsShortlisted(false);
+      setImageLoaded({});
       try {
         const token = getAccessTokenFromCookies();
         if (!token) throw new Error("Not authenticated");
 
         // Get profileId from query string (for iframe modal) or navigation state fallback
         const profileId = queryProfileId || queryUserId || navigationState.profileId;
-
-        // Store the profileId we're viewing
-        setViewingProfileId(profileId || null);
 
         // If profileId is provided, fetch that specific profile, otherwise fetch own profile
         let profileData: any;
@@ -269,30 +274,16 @@ export default function ServiceProviderPublicProfile() {
           profileData = await grpcProfileService.getCurrentServiceProviderProfile('');
         }
 
-        // Handle nested response structure
-        let rawProfile: any;
-        let rawUser: UserData | null = null;
-
-        if (profileData?.ServiceProvider || profileData?.service_provider || profileData?.Househelp) {
-          rawProfile = profileData.ServiceProvider || profileData.service_provider || profileData.Househelp;
-          rawUser = profileData.User || null;
-        } else if (profileData?.data?.ServiceProvider || profileData?.data?.service_provider || profileData?.data?.Househelp) {
-          rawProfile = profileData.data.ServiceProvider || profileData.data.service_provider || profileData.data.Househelp;
-          rawUser = profileData.data.User || null;
-        } else if (profileData && typeof profileData === 'object' && !Array.isArray(profileData)) {
-          rawProfile = profileData?.data || profileData;
-          rawUser = profileData?.user || profileData?.User || null;
-        } else {
-          rawProfile = profileData;
-          rawUser = null;
-        }
-
+        if (cancelled) return;
+        const rawProfile = readServiceProviderProfile(profileData);
+        const rawUser: UserData | null = rawProfile.user || null;
         const normalizedProfile = normalizeServiceProviderData(rawProfile);
         if (rawUser && !normalizedProfile.user) {
           normalizedProfile.user = rawUser;
         }
         setUser(rawUser);
-        setIsViewingOther(!!profileId); // Set to true if viewing someone else's profile
+        setViewingProfileId(normalizedProfile.id || null);
+        setIsViewingOther(!!profileId && (rawProfile.user_id || rawUser?.id) !== currentUserId);
 
         // The page is released here, not after everything below finishes.
         //
@@ -321,6 +312,7 @@ export default function ServiceProviderPublicProfile() {
         // complete edge round trip from the time it takes the secondary profile
         // controls to settle.
         const [docsData, listing] = await Promise.all([photosPromise, listingPromise]);
+        if (cancelled) return;
         const docs = docsData?.data || docsData?.documents || docsData || [];
         const documentsArray = Array.isArray(docs) ? docs : [];
         const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
@@ -335,6 +327,7 @@ export default function ServiceProviderPublicProfile() {
         if (profileId) {
           try {
             const res = shortlistTargetId ? await shortlistService.shortlistExists('', shortlistTargetId) : null;
+            if (cancelled) return;
             const exists = res?.getExists?.() ?? res?.exists ?? false;
             setIsShortlisted(exists);
           } catch (err) {
@@ -342,17 +335,19 @@ export default function ServiceProviderPublicProfile() {
           }
         }
       } catch (err: any) {
+        if (cancelled) return;
         console.error("Error loading service provider profile:", err);
         setError(err.message || "Failed to load profile");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchProfile();
-  }, [navigationState.profileId, queryOpenForWorkId, queryProfileId, queryUserId, retryKey]);
+    return () => { cancelled = true; };
+  }, [currentUserId, navigationState.profileId, queryOpenForWorkId, queryProfileId, queryUserId, retryKey]);
 
-  const targetProfileId = viewingProfileId || profile?.profile_id || profile?.id;
+  const targetProfileId = profile?.id;
   const shortlistTargetId = openForWorkId || queryOpenForWorkId || null;
 
   const handleChat = async () => {
