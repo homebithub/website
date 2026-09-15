@@ -9,8 +9,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const code = url.searchParams.get("code");
   const rawState = url.searchParams.get("state") || "";
   
-  // Get base URL for redirects
-  const origin = url.origin;
+  // The TLS-terminating ingress forwards the original scheme separately.
+  // Keep the browser on HTTPS when Google returns to this server-rendered
+  // callback rather than issuing an avoidable http:// redirect first.
+  const forwardedProto = request.headers.get("x-forwarded-proto")
+    ?.split(",", 1)[0]
+    ?.trim()
+    .toLowerCase();
+  const origin = forwardedProto === "https" ? `https://${url.host}` : url.origin;
 
   if (!code) {
     return Response.redirect(`${origin}/?waitlist=1&error=missing_code`);

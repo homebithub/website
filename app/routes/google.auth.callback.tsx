@@ -9,8 +9,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state") || "";
   
-  // Get base URL for redirects
-  const origin = url.origin;
+  // TLS is terminated by the ingress before this SSR server receives the
+  // request. Preserve the browser's HTTPS scheme so Google callback redirects
+  // never bounce through an insecure-looking http:// URL.
+  const forwardedProto = request.headers.get("x-forwarded-proto")
+    ?.split(",", 1)[0]
+    ?.trim()
+    .toLowerCase();
+  const origin = forwardedProto === "https" ? `https://${url.host}` : url.origin;
 
   if (!code) {
     return Response.redirect(`${origin}/login?error=missing_code`);
