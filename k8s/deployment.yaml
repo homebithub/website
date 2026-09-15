@@ -4,6 +4,13 @@ metadata:
   name: website
 spec:
   replicas: 1
+  # The production node cannot reserve a second website pod during a surge.
+  # Permit a deliberate singleton replacement instead of a stuck rollout.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: website
