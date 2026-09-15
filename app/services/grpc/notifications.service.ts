@@ -7,16 +7,29 @@
 import { NotificationsServiceClient } from '~/grpc/generated/notifications/notifications_grpc_web_pb';
 import notifications_pb_module from '~/grpc/generated/notifications/notifications_pb';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import { GRPC_WEB_BASE_URL, handleGrpcError, callWithAuthRetry } from './client';
 import {
   getStoredAccessToken,
-  getStoredProfileType,
+  getStoredCanonicalProfileType,
   getStoredUserId,
 } from '~/utils/authStorage';
+import { normalizeProfileType } from '~/utils/profileType';
 
 const notifications_pb = notifications_pb_module as any;
 
 const notificationsClient = new NotificationsServiceClient(GRPC_WEB_BASE_URL, null, null);
+
+export async function getPublicFeatureFlag(name: string): Promise<boolean> {
+  const request = new notifications_pb.GetPublicFeatureFlagRequest();
+  request.setName(name);
+  const response = await new Promise<any>((resolve, reject) => {
+    notificationsClient.getPublicFeatureFlag(request, {}, (error: any, result: any) => {
+      if (error) reject(error);
+      else resolve(result);
+    });
+  });
+  return Boolean(response?.getEnabled?.());
+}
 
 function resolveUserId(userId: string): string {
   if (userId) return userId;
@@ -27,7 +40,7 @@ function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
   const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = getStoredCanonicalProfileType();
   if (profileType) md['x-profile-type'] = profileType;
   return md;
 }
@@ -41,14 +54,10 @@ function jsonResponseToJs(response: any): any {
   return response;
 }
 
-function grpcCall<T>(fn: (cb: (err: any, res: T) => void) => void): Promise<T> {
-  return new Promise((resolve, reject) => {
-    fn((err, res) => {
-      if (err) reject(handleGrpcError(err));
-      else resolve(res);
-    });
-  });
-}
+// Renews the session once and retries when the server says the token has
+// expired, rather than surfacing "please sign in again" to somebody holding a
+// perfectly good refresh token.
+const grpcCall = callWithAuthRetry;
 
 // ── Helper: convert JS object to google.protobuf.Struct ────────────────
 const _StructClass: any =
@@ -83,6 +92,24 @@ function toStruct(obj: Record<string, any>): any {
 }
 
 export const notificationsService = {
+  // ── Notification preferences ───────────────────────────
+
+  async getUserPreferences(userId = ''): Promise<any> {
+    const request = new notifications_pb.GetUserPreferencesRequest();
+    request.setUserId(resolveUserId(userId));
+    const res = await grpcCall((cb) => notificationsClient.getUserPreferences(request, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+
+  async updateUserPreferences(userId: string, preferences: Record<string, any>): Promise<any> {
+    const request = new notifications_pb.UpdateUserPreferencesRequest();
+    request.setUserId(resolveUserId(userId));
+    const struct = toStruct(preferences);
+    if (struct) request.setPreferences(struct);
+    const res = await grpcCall((cb) => notificationsClient.updateUserPreferences(request, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+
   // ── Conversations ──────────────────────────────────────
 
   async listConversations(userId: string, offset = 0, limit = 100): Promise<any> {
@@ -96,15 +123,27 @@ export const notificationsService = {
 
   async startConversation(payload: {
     householdUserId: string;
-    househelpUserId: string;
+    serviceProviderUserId: string;
     householdProfileId?: string;
-    househelpProfileId?: string;
+    serviceProviderProfileId?: string;
+    /** The job the thread is about. Empty puts it on the legacy pair row. */
+    listingId?: string;
   }): Promise<any> {
     const request = new notifications_pb.StartConversationRequest();
     request.setHouseholdUserId(payload.householdUserId);
-    request.setHousehelpUserId(payload.househelpUserId);
     request.setHouseholdProfileId(payload.householdProfileId || '');
-    request.setHousehelpProfileId(payload.househelpProfileId || '');
+    // Expand/migrate compatibility: current servers read the canonical fields,
+    // while older deployments still read the additive legacy aliases.
+    request.setServiceProviderUserId(payload.serviceProviderUserId);
+    request.setServiceProviderProfileId(payload.serviceProviderProfileId || '');
+    request.setHousehelpUserId(payload.serviceProviderUserId);
+    request.setHousehelpProfileId(payload.serviceProviderProfileId || '');
+    // Numeric on the wire; the caller holds it as a string because that is what
+    // a listing id looks like everywhere else in the browser.
+    const listingId = Number(payload.listingId || 0);
+    if (Number.isFinite(listingId) && listingId > 0) {
+      request.setListingId(listingId);
+    }
     const res = await grpcCall((cb) => notificationsClient.startConversation(request, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
@@ -142,7 +181,7 @@ export const notificationsService = {
     request.setReplyToId(replyToId);
     request.setUserId(resolveUserId(userId));
     request.setSenderProfileId(senderProfileId);
-    request.setSenderProfileType(senderProfileType);
+    request.setSenderProfileType(normalizeProfileType(senderProfileType));
     const res = await grpcCall((cb) => notificationsClient.sendMessage(request, getMetadata(), cb));
     return jsonResponseToJs(res);
   },

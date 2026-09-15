@@ -21,7 +21,7 @@ function grpcCjsPlugin(): Plugin {
     transform(code, id) {
       // Only run in dev serve — production build uses Rollup's commonjsOptions instead
       if (isBuild) return null;
-      if (!id.includes('/grpc/generated/') || !id.endsWith('.js')) return null;
+      if ((!id.includes('/grpc/generated/') && !id.includes('/grpc/lite/')) || !id.endsWith('.js')) return null;
 
       // Collect all require() calls and replace with ESM import references
       const imports: string[] = [];
@@ -73,7 +73,7 @@ export default defineConfig({
     target: "es2022",
     minify: "esbuild",
     commonjsOptions: {
-      include: [/node_modules/, /app\/grpc\/generated/],
+      include: [/node_modules/, /app\/grpc\/(?:generated|lite)/],
       transformMixedEsModules: true,
     },
     rollupOptions: {
@@ -81,7 +81,10 @@ export default defineConfig({
         manualChunks(id) {
           // Only apply manual chunks for client build (not SSR)
           if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom')) {
+            // Match React packages themselves, not every package whose name
+            // contains "react" (emoji-picker-react was accidentally forced
+            // into the universal vendor chunk by the old substring test).
+            if (/node_modules\/(?:react|react-dom|react-router|react-router-dom)\//.test(id)) {
               return 'vendor';
             }
             if (id.includes('chart.js') || id.includes('react-chartjs-2') || id.includes('chartjs-plugin-datalabels')) {

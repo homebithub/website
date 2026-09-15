@@ -22,6 +22,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ...props 
   }, ref) => {
     const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+    const errorId = inputId && error ? `${inputId}-error` : undefined;
+    const helpId = inputId && helpText && !error ? `${inputId}-help` : undefined;
 
     return (
       <div className={`flex flex-col gap-1.5 ${containerClassName}`}>
@@ -30,7 +32,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             htmlFor={inputId} 
             className="text-xs font-medium text-gray-700 dark:text-gray-300 ml-1"
           >
-            {label}
+            {label}{props.required && <span className="ml-0.5 font-bold text-pink-600 dark:text-pink-400" aria-hidden="true">*</span>}
           </label>
         )}
         
@@ -44,6 +46,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={inputId}
+            aria-invalid={error ? true : undefined}
+            aria-describedby={errorId || helpId}
             className={`
               w-full rounded-xl border-2 transition-all duration-200 outline-none
               bg-white dark:bg-dark-card
@@ -68,13 +72,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {error && (
-          <span className="text-xs font-medium text-red-500 ml-1 animate-fadeIn">
+          <span id={errorId} role="alert" className="text-xs font-medium text-red-500 ml-1 animate-fadeIn">
             {error}
           </span>
         )}
         
         {helpText && !error && (
-          <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+          <span id={helpId} className="text-xs text-gray-500 dark:text-gray-400 ml-1">
             {helpText}
           </span>
         )}

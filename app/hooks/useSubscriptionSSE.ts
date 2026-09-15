@@ -17,6 +17,8 @@ export type SubscriptionSSEEvent = {
     grace_period_end?: string;
     expires_at?: string;
     activated_at?: string;
+    old_status?: string;
+    new_status?: string;
     suspended_at?: string;
     reactivated_at?: string;
     trial_end?: string;
@@ -37,13 +39,28 @@ export function useSubscriptionSSE(
 ) {
   const { isConnected, reconnect } = useSSEContext();
 
+  const onStatusChanged = useMemo<SubscriptionSSEHandler | undefined>(() => {
+    if (!onSuspended && !onReactivated && !onPastDue) return undefined;
+
+    return (event) => {
+      const oldStatus = String(event.data?.old_status ?? '').toLowerCase();
+      const newStatus = String(event.data?.new_status ?? '').toLowerCase();
+
+      if (newStatus === 'suspended') {
+        onSuspended?.(event);
+      } else if (newStatus === 'past_due') {
+        onPastDue?.(event);
+      } else if (newStatus === 'active' && (oldStatus === 'suspended' || oldStatus === 'past_due')) {
+        onReactivated?.(event);
+      }
+    };
+  }, [onPastDue, onReactivated, onSuspended]);
+
   const subscriptions = useMemo(
     () =>
       [
         onActivated && { eventType: 'payments.subscription.activated', handler: onActivated as (event: any) => void },
-        onSuspended && { eventType: 'payments.subscription.suspended', handler: onSuspended as (event: any) => void },
-        onReactivated && { eventType: 'payments.subscription.reactivated', handler: onReactivated as (event: any) => void },
-        onPastDue && { eventType: 'payments.subscription.past_due', handler: onPastDue as (event: any) => void },
+        onStatusChanged && { eventType: 'payments.subscription.status_changed', handler: onStatusChanged as (event: any) => void },
         onTrialStarted && { eventType: 'payments.subscription.trial_started', handler: onTrialStarted as (event: any) => void },
         onExpiryWarning && { eventType: 'payments.subscription.expiry_warning_7d', handler: onExpiryWarning as (event: any) => void },
         onExpiryWarning && { eventType: 'payments.subscription.expiry_warning_1d', handler: onExpiryWarning as (event: any) => void },
@@ -51,7 +68,7 @@ export function useSubscriptionSSE(
         onLapsed && { eventType: 'payments.subscription.lapsed', handler: onLapsed as (event: any) => void },
         onCancelled && { eventType: 'payments.subscription.cancelled', handler: onCancelled as (event: any) => void },
       ].filter(Boolean) as Array<{ eventType: string; handler: (event: any) => void }>,
-    [onActivated, onCancelled, onExpiryWarning, onLapsed, onPastDue, onReactivated, onSuspended, onTrialStarted]
+    [onActivated, onCancelled, onExpiryWarning, onLapsed, onStatusChanged, onTrialStarted]
   );
 
   useSSESubscriptions(subscriptions, subscriptions.length > 0);

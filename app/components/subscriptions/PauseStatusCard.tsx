@@ -1,4 +1,3 @@
-import React from 'react';
 import { ClockIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import type { PauseStatusResponse } from '~/types/payments';
 import { formatDate } from '~/utils/formatting/currency';
@@ -12,12 +11,12 @@ interface PauseStatusCardProps {
 export function PauseStatusCard({ pauseStatus, loading, onResume }: PauseStatusCardProps) {
   if (loading) {
     return (
-      <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6">
-        <div className="animate-pulse">
-          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-4"></div>
+      <div className="hb-shimmer-surface rounded-2xl border border-purple-200/35 p-5 dark:border-purple-500/15">
+        <div>
+          <div className="hb-shimmer-piece mb-4 h-4 w-32 rounded-full" />
           <div className="space-y-2">
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+            <div className="hb-shimmer-piece h-3 w-full rounded-full" />
+            <div className="hb-shimmer-piece h-3 w-3/4 rounded-full" />
           </div>
         </div>
       </div>

@@ -136,7 +136,7 @@ export default function About() {
                                     <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">About Us</h2>
                                     <p className="mt-2 text-base sm:text-lg font-bold text-gray-900 dark:text-white">A Better Way to Manage Your Home</p>
                                     <p className="mt-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                                        Homebit bridges the gap between households seeking trustworthy househelps and nannies, and professionals seeking reliable jobs. We prioritize security, transparency, and a rigorous vetting process to ensure peace of mind for every family and worker.
+                                        Homebit bridges the gap between households seeking trustworthy service providers and nannies, and professionals seeking reliable jobs. We prioritize security, transparency, and a rigorous vetting process to ensure peace of mind for every family and worker.
                                     </p>
                                 </div>
                             </SlideUp>
@@ -145,7 +145,7 @@ export default function About() {
                                     <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">Our Mission</h2>
                                     <p className="mt-2 text-base sm:text-lg font-bold text-gray-900 dark:text-white">Connecting Families and Professionals</p>
                                     <p className="mt-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                                        At Homebit, our mission is to connect families with trustworthy, vetted househelps and nannies, making home management simpler, safer, and more reliable for everyone.
+                                        At Homebit, our mission is to connect families with trustworthy, vetted service providers and nannies, making home management simpler, safer, and more reliable for everyone.
                                     </p>
                                 </div>
                             </SlideUp>
@@ -199,13 +199,12 @@ export default function About() {
                                 Join thousands of families and professionals who trust HomeBit for their home management needs.
                             </p>
                             <div className="mt-6">
-                                {/* TODO: Uncomment signup link when going live */}
-                                {/* <Link
+                                <Link
                                     to="/signup"
                                     className="inline-block rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-xs sm:text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300"
                                 >
                                     Join HomeBit Today
-                                </Link> */}
+                                </Link>
                             </div>
                         </SlideUp>
                     </div>

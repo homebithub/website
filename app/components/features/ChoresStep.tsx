@@ -81,7 +81,7 @@ export function ChoresStep({ data, onUpdate, onNext }: ChoresStepProps) {
     <div className="space-y-6">
       <div className="text-center">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">What chores do you need help with?</h3>
-        <p className="text-gray-600">Select all the tasks you'd like your househelp to handle</p>
+        <p className="text-gray-600">Select all the tasks you'd like your service provider to handle</p>
       </div>
 
       <div className="space-y-4">

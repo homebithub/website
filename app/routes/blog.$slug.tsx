@@ -7,7 +7,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { BlogSubscribeForm } from "~/components/blog/BlogSubscribeForm";
 import { useAuth } from "~/contexts/useAuth";
-import { API_BASE_URL } from "~/config/api";
+import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { blogService } from "~/services/grpc/blog.service";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
@@ -47,6 +47,33 @@ interface Comment {
 interface LoaderData {
   post: BlogPost | null;
   relatedPosts: BlogPost[];
+}
+
+function isConnectionRefused(error: unknown): boolean {
+  const cause = (error as any)?.cause;
+  if (cause?.code === "ECONNREFUSED") return true;
+  if (Array.isArray(cause?.errors)) {
+    return cause.errors.some((err: any) => err?.code === "ECONNREFUSED");
+  }
+  return false;
+}
+
+async function readJSONOrNull(response: Response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!response.ok || !contentType.includes("application/json")) {
+    const body = await response.text().catch(() => "");
+    const upstreamUnavailable = [502, 503, 504].includes(response.status);
+    if (!upstreamUnavailable) {
+      console.warn("Blog API returned non-JSON response", {
+        status: response.status,
+        contentType,
+        bodyPreview: body.slice(0, 120),
+      });
+    }
+    return null;
+  }
+
+  return response.json();
 }
 
 export const meta: MetaFunction = ({ data }) => {
@@ -95,28 +122,33 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   try {
-    const apiUrl = API_BASE_URL;
+    const apiUrl = NOTIFICATIONS_API_BASE_URL;
     
     // Fetch the blog post
     const response = await fetch(`${apiUrl}/api/v1/blog/posts/${slug}`);
     
-    if (!response.ok) {
+    const data = await readJSONOrNull(response);
+    if (!data) {
       return Response.json({ post: null, relatedPosts: [] }, { status: 404 });
     }
 
-    const data = await response.json();
     const post = data.post;
+    if (!post) {
+      return Response.json({ post: null, relatedPosts: [] }, { status: 404 });
+    }
 
     // Fetch related posts (same category, limit 3)
     const relatedResponse = await fetch(
       `${apiUrl}/api/v1/blog/posts?category=${post.category}&limit=3&status=published`
     );
-    const relatedData = await relatedResponse.json();
-    const relatedPosts = (relatedData.posts || []).filter((p: BlogPost) => p.slug !== slug);
+    const relatedData = await readJSONOrNull(relatedResponse);
+    const relatedPosts = (relatedData?.posts || []).filter((p: BlogPost) => p.slug !== slug);
 
     return Response.json({ post, relatedPosts });
   } catch (error) {
-    console.error("Error loading blog post:", error);
+    if (!isConnectionRefused(error)) {
+      console.error("Error loading blog post:", error);
+    }
     return Response.json({ post: null, relatedPosts: [] }, { status: 500 });
   }
 }
@@ -613,7 +645,7 @@ export default function BlogPost() {
 
       {/* Auth Modal - shown when non-logged-in user tries to like */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowAuthModal(false)}
@@ -644,13 +676,12 @@ export default function BlogPost() {
                 >
                   Sign In
                 </Link>
-                {/* TODO: Uncomment signup link when going live */}
-                {/* <Link
+                <Link
                   to="/signup"
                   className="w-full px-6 py-3 border-2 border-purple-200 dark:border-purple-500/20 text-sm text-purple-700 dark:text-purple-300 rounded-xl font-semibold hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all text-center"
                 >
                   Create Account
-                </Link> */}
+                </Link>
               </div>
             </div>
           </div>

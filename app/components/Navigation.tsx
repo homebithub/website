@@ -1,22 +1,50 @@
 import { Link, useNavigate, useLocation } from "react-router";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon } from "@heroicons/react/20/solid";
+import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon, ChatBubbleLeftRightIcon, ArrowsRightLeftIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { API_BASE_URL } from "~/config/api";
-import DeviceApprovalBanner from '~/components/notifications/DeviceApprovalBanner';
-import { useDeviceAuthPendingApprovals } from '~/hooks/useDeviceAuthPendingApprovals';
-import { useProfileSetupStatus } from "~/hooks/useProfileSetupStatus";
+import { useAccountChoiceStatus } from "~/hooks/useAccountChoiceStatus";
 import { useNotifications } from "~/hooks/useNotifications";
-import NotificationsModal from "~/components/notifications/NotificationsModal";
+import { useSSESubscriptionSafe } from "~/hooks/useSSESubscription";
+import { useWebSocketContextSafe } from "~/contexts/WebSocketContext";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { shortlistService, interestService, hireRequestService } from '~/services/grpc/authServices';
-import { notificationsService } from '~/services/grpc/notifications.service';
-import authService from '~/services/grpc/auth.service';
-import { getStoredUser } from '~/utils/authStorage';
+import notificationsService from '~/services/grpc/notifications.service';
+import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
-import { useWebSocketContext } from '~/contexts/WebSocketContext';
+import { cachedRequest } from '~/utils/requestCache';
+import { countUnattendedHiringRecords, hiringAttentionScope, hydrateHiringAttention } from '~/utils/hiringAttention';
+import { collapseApplicationContracts } from '~/utils/hiringIdentifiers';
+import { PWAInstallMenuButton } from '~/components/PWAInstallPrompt';
+import { MobileBottomNavigation } from '~/components/MobileBottomNavigation';
+import { PROFILE_AVATAR_UPDATED_EVENT, firstProfileAvatar, getStoredProfileAvatar } from '~/utils/profileAvatar';
+import { openAdminDashboard } from '~/utils/adminDashboard';
+import { conversationBadgeId, extractConversationRows, isConversationUnread } from '~/utils/conversationBadges';
+import AccountProfileSwitcher from '~/components/AccountProfileSwitcher';
+
+const NAV_COUNT_STALE_MS = 2 * 60_000;
+const NAV_ADMIN_STALE_MS = 10 * 60_000;
+
+const NotificationsModal = lazy(() => import('~/components/notifications/NotificationsModal'));
+
+function useCoalescedRefresh(callback: () => void, delayMs = 250) {
+    const timerRef = useRef<number | null>(null);
+    const latestRef = useRef(callback);
+    latestRef.current = callback;
+
+    useEffect(() => () => {
+        if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    }, []);
+
+    return React.useCallback(() => {
+        if (timerRef.current !== null) return;
+        timerRef.current = window.setTimeout(() => {
+            timerRef.current = null;
+            latestRef.current();
+        }, delayMs);
+    }, [delayMs]);
+}
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -26,25 +54,46 @@ const navigation = [
     { name: "Pricing", href: "/pricing" },
 ];
 
-export function Navigation() {
+function normalizeProfileRole(profileType?: string | null): 'client' | 'service-provider' | 'bureau' | null {
+    const normalized = String(profileType || '').trim().toUpperCase();
+    if (!normalized) return null;
+    if (normalized === 'CLT' || normalized === 'CLIENT' || normalized === 'HOUSEHOLD') return 'client';
+    if (normalized === 'SVC_PVD' || normalized === 'SVD_PDD' || normalized === 'SERVICE_PROVIDER' || normalized === 'SERVICE PROVIDER') return 'service-provider';
+    if (normalized === 'BUREAU') return 'bureau';
+    return null;
+}
+
+function NavigationContent() {
     const { user, logout, loading } = useAuth();
-    const { isInSetupMode } = useProfileSetupStatus();
+    const { isInSetupMode } = useAccountChoiceStatus();
+    const location = useLocation();
     const authUser = (user as any)?.user ?? null;
     const storedUser = getStoredUser();
     const currentUser = authUser ?? storedUser ?? null;
     const [profileType, setProfileType] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
-    const [shortlistCount, setShortlistCount] = useState<number>(0);
+    const [profileAvatar, setProfileAvatar] = useState<string>('');
     const [inboxCount, setInboxCount] = useState<number>(0);
+    const unreadConversationIdsRef = useRef<Set<string>>(new Set());
     const [hireRequestCount, setHireRequestCount] = useState<number>(0);
+    const [savedCount, setSavedCount] = useState<number>(0);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-    const { unreadCount } = useNotifications({ pollingMs: 30000, pageSize: 20 });
-    const { approvals, newestApproval, dismiss, clearAll } = useDeviceAuthPendingApprovals(!isInSetupMode && !!user);
+    const [isProfileSwitcherOpen, setIsProfileSwitcherOpen] = useState(false);
+    const { unreadCount } = useNotifications({ pollingMs: 5 * 60_000, pageSize: 20, enabled: true });
     const navigate = useNavigate();
-    const location = useLocation();
-    const { addEventListener } = useWebSocketContext();
-    const pendingDeviceApprovals = approvals.length;
+
+    useEffect(() => {
+        const handleAvatarUpdate = (event: Event) => {
+            const detail = (event as CustomEvent<{ userId?: string; url?: string }>).detail || {};
+            const currentUserId = getStoredUserId() || String((currentUser as any)?.user_id || (currentUser as any)?.id || '');
+            if (!detail.userId || !currentUserId || detail.userId === currentUserId) {
+                setProfileAvatar(detail.url || '');
+            }
+        };
+        window.addEventListener(PROFILE_AVATAR_UPDATED_EVENT, handleAvatarUpdate);
+        return () => window.removeEventListener(PROFILE_AVATAR_UPDATED_EVENT, handleAvatarUpdate);
+    }, [currentUser]);
 
 
     // Detect if running on app subdomain
@@ -55,82 +104,134 @@ export function Navigation() {
         return host.startsWith('app.') || host === 'app.homebit.co.ke';
     }, []);
 
-    // Memoized dashboard path based on profile type
+    const adminDashboardUrl = React.useMemo(() => {
+        if (typeof window === 'undefined') return 'https://hba.homebit.co.ke';
+        const hostname = window.location.hostname.toLowerCase();
+        return hostname === 'preprod.homebit.co.ke' || hostname.startsWith('preprod.') || hostname === 'localhost'
+            ? 'https://preprod-hba.homebit.co.ke'
+            : 'https://hba.homebit.co.ke';
+    }, []);
+
+    // The root route is the real dashboard for both profiles: it resolves the
+    // signed-in role and renders HouseholdJobsHome or ServiceProviderJobsHome. The
+    // /household and the legacy /househelp paths are layout namespaces, not home pages;
+    // linking the mobile Home tab to them produced a 404 on direct navigation.
     const dashboardPath = React.useMemo(() => {
-        if (!profileType) return null;
-        if (profileType === "household" || profileType === "household") return "/household";
-        if (profileType === "househelp") return "/househelp";
+        const role = normalizeProfileRole(profileType);
+        if (!role) return null;
+        if (role === "client" || role === "service-provider") return "/";
         // Bureau users should not access regular navigation
         return null;
     }, [profileType]);
 
+    // The admin button is for someone who is both an admin and a person on the
+    // website — a household or a service provider. Being an admin alone is not enough:
+    // an account with no profile yet, or a bureau account, has no business on
+    // the site's own navigation, and dashboardPath is already exactly the
+    // "household or service provider" test.
+    const canSeeAdminDashboard = Boolean(user && isAdmin && dashboardPath);
+    const handleAdminDashboard = React.useCallback((event?: React.MouseEvent<HTMLAnchorElement>) => {
+        event?.preventDefault();
+        void openAdminDashboard(adminDashboardUrl);
+    }, [adminDashboardUrl]);
+
     const authLinks = React.useMemo(() => {
-        const shortlistHref = profileType === 'household' ? '/household/shortlist' : '/shortlist';
-        const hiringHistoryHref = profileType === 'household' ? '/household/hiring' : '/househelp/hiring';
+        const role = normalizeProfileRole(profileType);
+        const isClient = role === 'client';
+        const shortlistHref = isClient ? '/household/shortlist' : '/shortlist';
+        const hiringHistoryHref = isClient ? '/household/hiring' : '/service-provider/hiring';
+        // One word for both sides. The page is where a person manages their own
+        // hiring over time — requests, contracts, work history — and that is the
+        // same activity whether you are filling a job or taking one. Browsing
+        // what is on offer happens on the home page.
+        const hiringLabel = 'Hiring';
         return [
-            { name: 'Shortlist', href: shortlistHref, count: shortlistCount },
+            // "Saved" rather than "Shortlist": this holds what someone bookmarked
+            // while browsing. A household shortlisting a candidate who applied to
+            // its job is a different act, and lives on the hiring page.
+            // Saved now carries a count, by request.
+            //
+            // It was deliberately left without one: the other badges mean "this
+            // is waiting on you" and go back to zero when dealt with, while a
+            // saved-items count is a total that mostly grows. Recorded because
+            // it is the thing to watch — if people start ignoring the Inbox and
+            // Hiring numbers, this is the first place to look.
+            { name: 'Saved', href: shortlistHref, count: savedCount },
             { name: 'Inbox', href: '/inbox', count: inboxCount },
-            { name: 'Hiring', href: hiringHistoryHref, count: hireRequestCount },
+            { name: hiringLabel, href: hiringHistoryHref, count: hireRequestCount },
             { name: 'Blog', href: '/blog', count: 0 },
         ];
-    }, [profileType, shortlistCount, inboxCount, hireRequestCount]);
+    }, [profileType, inboxCount, hireRequestCount, savedCount]);
 
-    // Fetch shortlist count
-    const fetchShortlistCount = async () => {
-        try {
-            if (!getAccessTokenFromCookies()) return;
-            const data = await shortlistService.getShortlistCount('', '');
-            const count = Number(data?.count) || 0;
-            setShortlistCount(count);
-        } catch (error) {
-            if (!shouldSilenceGatewayError(error)) {
-                console.error("[Shortlist Count] Failed to fetch:", error);
-            }
-        }
-    };
+    const profileRole = normalizeProfileRole(profileType);
+    const accountProfileHref = profileRole === 'client'
+        ? '/household/profile'
+        : profileRole === 'service-provider'
+            ? '/service-provider/profile'
+            : profileRole === 'bureau'
+                ? '/bureau/profile'
+                : '/';
+    const accountProfileLabel = profileRole === 'client'
+        ? 'My Household'
+        : profileRole === 'service-provider'
+            ? 'My Profile'
+            : 'Profile';
 
-    // Fetch inbox unread count
-    const fetchInboxCount = async () => {
-        try {
-            if (!getAccessTokenFromCookies()) return;
-            const data = await notificationsService.listConversations('', 0, 100);
-            const conversations: any[] = data?.conversations || [];
-            
-            const totalUnread = conversations.filter((c: any) => Number(c.unread_count || 0) > 0).length;
-            
-            setInboxCount(totalUnread);
-        } catch (error) {
-            setInboxCount(0);
-            if (!shouldSilenceGatewayError(error)) {
-                console.error("Failed to fetch inbox count:", error);
-            }
-        }
-    };
-
-    // Fetch hiring badge count: pending items the user has NOT acted upon
-    const fetchHireRequestCount = async (overrideProfileType?: string | null) => {
+    // Total unattended cards across every Hiring tab. The same versioned ledger
+    // drives the tab badges and card highlights, so opening the page alone never
+    // clears this number; a card interaction does.
+    const fetchHireRequestCount = React.useCallback(async (overrideProfileType?: string | null, force = false) => {
         try {
             if (!getAccessTokenFromCookies()) return;
             const pt = overrideProfileType ?? profileType;
-            let total = 0;
-
-            if (pt === 'household') {
-                // 1. Count pending/viewed interests from househelps
-                const iData = await interestService.listByHousehold('', '');
-                const interests: any[] = iData?.data || [];
-                total += interests.filter((i: any) => {
-                    const status = i.status || "";
-                    return status === 'pending' || status === 'viewed';
-                }).length;
-
-                // 2. Count pending hire requests
-                const hData = await hireRequestService.listHireRequests('', '', 'pending');
-                total += hData?.total || (Array.isArray(hData?.data) ? hData.data.length : 0);
-            } else if (pt === 'househelp') {
-                // Count pending hire requests received from households
-                const data = await hireRequestService.listHireRequests('', '', 'pending');
-                total = data?.total || (Array.isArray(data?.data) ? data.data.length : 0);
-            }
+            const role = normalizeProfileRole(pt);
+            const userId = getStoredUserId() || '';
+            const profileId = getStoredUserProfileId() || '';
+            if (!role || !userId || !profileId) return;
+            const attentionScope = hiringAttentionScope(profileId, role);
+            // The server ledger is authoritative across devices. Waiting for it
+            // prevents a flash of phantom badges from the empty local ledger.
+            await hydrateHiringAttention(attentionScope);
+            const total = await cachedRequest(`nav:hiring:${userId}:${role}`, async () => {
+                const {
+                    marketplaceHireRequestService: hireRequestService,
+                    marketplaceListingApplicationService: listingApplicationService,
+                } = await import('~/services/grpc/marketplace.service');
+                if (role === 'client') {
+                    const raw = await listingApplicationService.listApplications({
+                        ownerProfileId: profileId,
+                        limit: 200,
+                    });
+                    const rows = Array.isArray(raw?.data) ? raw.data : (Array.isArray(raw) ? raw : []);
+                    return countUnattendedHiringRecords(attentionScope, [
+                        { kind: 'application', records: rows },
+                    ]);
+                }
+                const {
+                    hireContractService,
+                    employmentContractService,
+                    employmentService,
+                } = await import('~/services/grpc/authServices');
+                const applicantPromise = listingApplicationService.listApplications({ applicantProfileId: profileId, limit: 200 });
+                const [requestsRaw, applicationsRaw, employmentContractsRaw, legacyContractsRaw, workRaw] = await Promise.all([
+                    hireRequestService.listHireRequests('', 'service_provider'),
+                    applicantPromise,
+                    employmentContractService.listEmploymentContracts('', undefined, 200, 0),
+                    hireContractService.listHireContracts('', 'service_provider'),
+                    employmentService.listByServiceProvider(userId, 200, 0),
+                ]);
+                const rows = (raw: any) => {
+                    const value = raw?.data?.data ?? raw?.data ?? raw ?? [];
+                    return Array.isArray(value) ? value : [];
+                };
+                const visibleEmploymentContracts = collapseApplicationContracts(rows(employmentContractsRaw));
+                return countUnattendedHiringRecords(attentionScope, [
+                    { kind: 'request', records: rows(requestsRaw) },
+                    { kind: 'application', records: rows(applicationsRaw) },
+                    { kind: 'employment-contract', records: visibleEmploymentContracts },
+                    { kind: 'work', records: [...rows(legacyContractsRaw), ...rows(workRaw)] },
+                ]);
+            }, { maxAgeMs: NAV_COUNT_STALE_MS, force });
 
             setHireRequestCount(total);
         } catch (error) {
@@ -139,7 +240,91 @@ export function Navigation() {
                 console.error("Failed to fetch hire request count:", error);
             }
         }
-    };
+    }, [profileType]);
+
+    // Unread conversations, not unread messages. The navbar badge is a prompt
+    // to visit a thread, so five messages in one conversation should still be
+    // one item of attention.
+    const fetchInboxCount = React.useCallback(async (force = false) => {
+        try {
+            if (!getAccessTokenFromCookies()) return;
+            const userId = getStoredUserId() || '';
+            if (!userId) return;
+            const unread = await cachedRequest(`nav:inbox:${userId}`, async () => {
+                const raw = await notificationsService.listConversations(userId, 0, 100);
+                const unreadRows = extractConversationRows(raw).filter(isConversationUnread);
+                unreadConversationIdsRef.current = new Set(
+                    unreadRows.map(conversationBadgeId).filter(Boolean),
+                );
+                return unreadRows.length;
+            }, { maxAgeMs: NAV_COUNT_STALE_MS, force });
+            setInboxCount(unread);
+        } catch (error) {
+            setInboxCount(0);
+            if (!shouldSilenceGatewayError(error)) {
+                console.error("Failed to fetch inbox count:", error);
+            }
+        }
+    }, []);
+
+    // How many things are saved.
+    //
+    // GetShortlistCount runs the same query over saved_items that the Saved page
+    // lists from, so the badge and the page cannot disagree — counting client
+    // side from a fetched list would have been a second definition of the same
+    // number, and those drift.
+    const fetchSavedCount = React.useCallback(async (force = false) => {
+        try {
+            if (!getAccessTokenFromCookies()) return;
+            const role = normalizeProfileRole(profileType);
+            const savedProfileType = role === 'client' ? 'household' : role === 'service-provider' ? 'service_provider' : undefined;
+            if (!savedProfileType) {
+                setSavedCount(0);
+                return;
+            }
+            const userId = getStoredUserId() || '';
+            if (!userId) return;
+            const count = await cachedRequest(`nav:saved:${userId}:${savedProfileType}`, async () => {
+                const { marketplaceShortlistService: shortlistService } = await import('~/services/grpc/marketplace.service');
+                const raw: any = await shortlistService.getShortlistCount('', savedProfileType);
+                return Number(raw?.count ?? raw?.data?.count ?? 0);
+            }, { maxAgeMs: NAV_COUNT_STALE_MS, force });
+            setSavedCount(Number.isFinite(count) && count > 0 ? count : 0);
+        } catch (error) {
+            setSavedCount(0);
+            if (!shouldSilenceGatewayError(error)) {
+                console.error("Failed to fetch saved count:", error);
+            }
+        }
+    }, [profileType]);
+
+    // One user action can be echoed by a local event, SSE notification and a
+    // WebSocket event. Coalesce that burst into one forced read per badge.
+    const refreshHiring = useCoalescedRefresh(() => void fetchHireRequestCount(undefined, true));
+    const refreshInbox = useCoalescedRefresh(() => void fetchInboxCount(true));
+    const refreshSaved = useCoalescedRefresh(() => void fetchSavedCount(true));
+
+    // Make an incoming message visible immediately while the authoritative
+    // conversation read catches up. One badge represents one unread thread, so
+    // repeated messages in the same conversation never inflate the number.
+    const handleIncomingInboxMessage = React.useCallback((event: any) => {
+        const envelope = event?.data && typeof event.data === 'object' ? event.data : event;
+        const message = envelope?.message && typeof envelope.message === 'object' ? envelope.message : envelope;
+        const currentUserId = getStoredUserId() || '';
+        const recipientId = String(envelope?.recipient_id ?? envelope?.recipientId ?? '').trim();
+        const senderId = String(message?.sender_id ?? message?.senderId ?? envelope?.sender_id ?? '').trim();
+        const conversationId = String(
+            envelope?.conversation_id ?? envelope?.conversationId ?? message?.conversation_id ?? message?.conversationId ?? '',
+        ).trim();
+
+        if (recipientId && currentUserId && recipientId !== currentUserId) return;
+        if (senderId && currentUserId && senderId === currentUserId) return;
+        if (location.pathname !== '/inbox' && conversationId && !unreadConversationIdsRef.current.has(conversationId)) {
+            unreadConversationIdsRef.current.add(conversationId);
+            setInboxCount((count) => count + 1);
+        }
+        refreshInbox();
+    }, [location.pathname, refreshInbox]);
 
     // Parse user profile type and name from localStorage
     useEffect(() => {
@@ -148,19 +333,36 @@ export function Navigation() {
                 if (!currentUser) {
                     setProfileType(null);
                     setUserName(null);
+                    setIsAdmin(false);
                     return;
                 }
 
                 const resolvedProfileType = currentUser.profile_type || null;
 
-                // Check admin status using the canonical current user email
+                // Check admin status using the canonical current user email.
+                // Every branch has to land on a value. This only ever set the
+                // flag on a successful answer, so when the check was skipped
+                // the previous person's answer kept showing: an admin signing
+                // out and someone else signing in without a full page load left
+                // the button on screen for them.
+                //
+                // This is a public call that already swallows its own errors,
+                // so it is safe to keep the admin indicator in sync on every
+                // authenticated route.
                 const email = currentUser.email || '';
                 if (email) {
-                    authService.checkIsAdmin(email).then((admin) => setIsAdmin(admin)).catch(() => setIsAdmin(false));
+                    cachedRequest(`nav:admin:${email.toLowerCase()}`, async () => {
+                        const { default: authService } = await import('~/services/grpc/auth.service');
+                        return authService.checkIsAdmin(email);
+                    }, {
+                        maxAgeMs: NAV_ADMIN_STALE_MS,
+                    }).then((admin) => setIsAdmin(admin)).catch(() => setIsAdmin(false));
+                } else {
+                    setIsAdmin(false);
                 }
 
                 // Bureau users should not access regular navigation
-                if (resolvedProfileType === "bureau") {
+                if (normalizeProfileRole(resolvedProfileType) === "bureau") {
                     setProfileType(null);
                     setUserName(null);
                     return;
@@ -170,79 +372,187 @@ export function Navigation() {
                 // Get user name for greeting
                 const firstName = currentUser.first_name || currentUser.firstName || "";
                 setUserName(firstName);
+                const currentUserId = getStoredUserId() || String(currentUser.user_id || currentUser.id || '');
+                setProfileAvatar(firstProfileAvatar(
+                    currentUser.avatar_url,
+                    currentUser.avatarUrl,
+                    currentUser.profile_image,
+                    currentUser.profileImage,
+                    getStoredProfileAvatar(currentUserId),
+                ));
+
+                // The auth session does not always include the profile's
+                // avatar URL. Hydrate it once from the active profile so the
+                // navbar is correct on a fresh device as well as after an
+                // in-page avatar change.
+                void (async () => {
+                    try {
+                        const role = normalizeProfileRole(resolvedProfileType);
+                        if (!role || !currentUserId) return;
+                        const { profileService } = await import('~/services/grpc/authServices');
+                        const profileData = role === 'client'
+                            ? await profileService.getCurrentHouseholdProfile('')
+                            : await profileService.getCurrentServiceProviderProfile('');
+                        const avatar = firstProfileAvatar(
+                            profileData?.avatar_url,
+                            profileData?.avatarUrl,
+                            profileData?.user?.avatar_url,
+                            profileData?.user?.profile_image,
+                        );
+                        if (avatar) {
+                            setProfileAvatar(avatar);
+                        }
+                    } catch {
+                        // Avatar hydration is cosmetic; the initials fallback remains available.
+                    }
+                })();
 
                 // Fetch counts only for authenticated users who finished onboarding
                 if (!isInSetupMode) {
-                    fetchShortlistCount();
-                    fetchInboxCount();
                     fetchHireRequestCount(resolvedProfileType);
+                    fetchInboxCount();
+                    fetchSavedCount();
                 }
             } catch {
                 setProfileType(null);
                 setUserName(null);
+                setIsAdmin(false);
             }
         } else {
             setProfileType(null);
             setUserName(null);
-            setShortlistCount(0);
+            setProfileAvatar('');
             setInboxCount(0);
+            setSavedCount(0);
+            setIsAdmin(false);
         }
     }, [user, currentUser, isInSetupMode]);
 
-    // Listen for shortlist and inbox updates (only when not in setup mode)
+    // Listen for hiring updates (only when not in setup mode)
     useEffect(() => {
         if (isInSetupMode) return;
 
-        const handleShortlistUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchShortlistCount();
-        };
-
-        const handleInboxUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchInboxCount();
-        };
+        const storedProfileId = getStoredUserProfileId();
+        const attentionRole = getStoredCanonicalProfileType();
+        if (storedProfileId && attentionRole) void hydrateHiringAttention(hiringAttentionScope(storedProfileId, attentionRole));
 
         const handleHiringUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchHireRequestCount();
+            if (getAccessTokenFromCookies()) refreshHiring();
+        };
+        // The inbox page has dispatched this on every read since it was written;
+        // nothing was listening, so the badge stayed put until the next poll.
+        const handleInboxUpdate = () => {
+            if (getAccessTokenFromCookies()) refreshInbox();
         };
 
-        window.addEventListener('shortlist-updated', handleShortlistUpdate);
-        window.addEventListener('inbox-updated', handleInboxUpdate);
+        // Every place that saves or unsaves already dispatches this — the two
+        // home pages, the jobs board and the Saved page itself. Nothing was
+        // listening, which is the same gap the inbox badge had: the number was
+        // correct on load and then stood still while the heart was clicked.
+        const handleShortlistUpdate = () => {
+            if (getAccessTokenFromCookies()) refreshSaved();
+        };
+
         window.addEventListener('hiring-updated', handleHiringUpdate);
+        window.addEventListener('hiring-attention-updated', handleHiringUpdate);
+        window.addEventListener('storage', handleHiringUpdate);
+        window.addEventListener('inbox-updated', handleInboxUpdate);
+        window.addEventListener('shortlist-updated', handleShortlistUpdate);
         return () => {
-            window.removeEventListener('shortlist-updated', handleShortlistUpdate);
-            window.removeEventListener('inbox-updated', handleInboxUpdate);
             window.removeEventListener('hiring-updated', handleHiringUpdate);
+            window.removeEventListener('hiring-attention-updated', handleHiringUpdate);
+            window.removeEventListener('storage', handleHiringUpdate);
+            window.removeEventListener('inbox-updated', handleInboxUpdate);
+            window.removeEventListener('shortlist-updated', handleShortlistUpdate);
         };
-    }, [isInSetupMode]);
+    }, [isInSetupMode, profileType, refreshHiring, refreshInbox, refreshSaved]);
 
-    // Poll all counts every 60 seconds (skip during onboarding)
+    const badgesAreLive = Boolean(user) && !isInSetupMode;
+
+    // Realtime updates invalidate only the count they can change. A hiring
+    // event previously reloaded hiring, inbox and saved data, then the related
+    // notification caused the same three reads again.
+    useSSESubscriptionSafe('hiring.application.submitted', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.accepted', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.declined', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.approved', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.shortlisted', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.application.closed', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.contract.signed', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.contract.terminated', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.employment_contract.sent_to_service_provider', refreshHiring, badgesAreLive);
+    useSSESubscriptionSafe('hiring.employment_contract.fully_signed', refreshHiring, badgesAreLive);
+
+    // The inbox screen has always used the durable SSE stream, but the global
+    // navigation only listened to the best-effort WebSocket. Subscribe here as
+    // well so the badge refreshes even while somebody is reading a different
+    // conversation (or is elsewhere in the app).
+    useSSESubscriptionSafe('messaging.message.received', handleIncomingInboxMessage, badgesAreLive);
+    useSSESubscriptionSafe('messaging.message.read', refreshInbox, badgesAreLive);
+    useSSESubscriptionSafe('messaging.message.deleted', refreshInbox, badgesAreLive);
+    useSSESubscriptionSafe('messaging.conversation.started', refreshInbox, badgesAreLive);
+    useSSESubscriptionSafe('messaging.conversation.archived', refreshInbox, badgesAreLive);
+
+    // Keep WebSocket subscriptions too: they update the badge before the SSE
+    // replay arrives, while SSE remains the reliable path after a reconnect.
+    const webSocket = useWebSocketContextSafe();
+    useEffect(() => {
+        if (!badgesAreLive || !webSocket) return;
+
+        const unsubscribers = [
+            webSocket.addEventListener('new_message', handleIncomingInboxMessage),
+            ...['message_read', 'conversation_started', 'conversation_archived'].map((type) =>
+                webSocket.addEventListener(type, refreshInbox),
+            ),
+        ];
+        return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
+    }, [badgesAreLive, webSocket, handleIncomingInboxMessage, refreshInbox]);
+
+    // Coming back to the tab, and moving between pages.
+    //
+    // A background tab is where staleness is most obvious: the timer is
+    // throttled by the browser and the SSE connection may have been dropped
+    // entirely, so what is on screen when someone returns can be minutes old.
+    // Route changes cover acting on something and navigating away — the badge
+    // should have dropped by the time the next page renders.
+    useEffect(() => {
+        if (!badgesAreLive) return;
+
+        const onVisible = () => {
+            if (document.visibilityState === 'visible') {
+                void fetchHireRequestCount();
+                void fetchInboxCount();
+                void fetchSavedCount();
+            }
+        };
+
+        const onFocus = () => {
+            void fetchHireRequestCount();
+            void fetchInboxCount();
+            void fetchSavedCount();
+        };
+
+        document.addEventListener('visibilitychange', onVisible);
+        window.addEventListener('focus', onFocus);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisible);
+            window.removeEventListener('focus', onFocus);
+        };
+    }, [badgesAreLive, fetchHireRequestCount, fetchInboxCount, fetchSavedCount]);
+
+    // A slow backstop, for a session that loses its stream without noticing.
     useEffect(() => {
         if (!user || !profileType || isInSetupMode) return;
 
         const pollCounts = () => {
-            fetchShortlistCount();
-            fetchInboxCount();
             fetchHireRequestCount();
-        };
-
-        const intervalId = setInterval(pollCounts, 60_000);
-        return () => clearInterval(intervalId);
-    }, [user, profileType, isInSetupMode]);
-
-    useEffect(() => {
-        if (!user || isInSetupMode) return;
-
-        const refreshInboxCount = () => {
             fetchInboxCount();
+            fetchSavedCount();
         };
 
-        const offNewMessage = addEventListener('new_message', refreshInboxCount);
-        const offMessageRead = addEventListener('message_read', refreshInboxCount);
-        return () => {
-            offNewMessage?.();
-            offMessageRead?.();
-        };
-    }, [addEventListener, user, isInSetupMode]);
+        const intervalId = setInterval(pollCounts, 5 * 60_000);
+        return () => clearInterval(intervalId);
+    }, [user, profileType, isInSetupMode, fetchHireRequestCount, fetchInboxCount, fetchSavedCount]);
 
     // Badge helper: 0 = null (hidden), 1-9 = number, >9 = "9+"
     const renderBadge = (count: number, gradient = 'from-purple-600 to-pink-600', shadow = 'shadow-purple-500/50') => {
@@ -275,18 +585,18 @@ export function Navigation() {
         return null;
     }
 
-    // Hide navbar during profile setup flow
+    // Hide account navigation while a household is choosing or joining a household.
     if (isInSetupMode) {
         return null;
     }
 
     return (
-        <nav className="sticky top-0 z-40 shadow-xl shadow-purple-200/50 bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f]  overflow-visible border-b border-primary-200/60 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
-            <DeviceApprovalBanner approval={newestApproval} onDismiss={dismiss} onClearAll={clearAll} />
-            <div className="flex justify-between items-center px-8 sm:px-16 lg:px-32 min-h-[64px] sm:min-h-[72px]">
+        <>
+        <nav className="hb-safe-nav fixed inset-x-0 top-0 z-40 overflow-visible border-b border-primary-200/60 bg-gradient-to-br from-primary-100 via-white to-purple-200 shadow-lg shadow-purple-200/40 transition-all duration-300 dark:border-purple-500/20 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] dark:shadow-glow-sm">
+            <div className="hb-content-rail relative flex min-h-[56px] items-center justify-between sm:min-h-[60px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
-  <Link to="/" prefetch="intent" className="relative font-extrabold text-xl sm:text-2xl px-3 py-1 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-purple-300/50 hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
+  <Link to="/" prefetch="intent" className="relative rounded-xl px-2 py-1 text-lg font-extrabold drop-shadow-md transition-all duration-300 hover:bg-primary-50 hover:shadow-lg hover:shadow-purple-300/50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md sm:text-xl">
     <span className="logo-shimmer">
       <span className="text-gray-900 dark:text-white">Home</span>
       <span className="gradient-text">Bit</span>
@@ -296,20 +606,21 @@ export function Navigation() {
 
                 {/* Public Navigation Links - Show on non-app hosts for all users */}
                 {!isAppHost && (
-                    <div className="hidden lg:flex items-center space-x-4 ml-auto">
+                    <div className="absolute left-[41%] hidden -translate-x-1/2 items-center gap-2 xl:left-[43%] lg:flex">
                         {(user ? authLinks : navigation).map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
                             <Link
                                 key={item.name}
+                                data-tour={item.name === 'Hiring' ? 'nav-hiring' : item.name === 'Inbox' ? 'nav-inbox' : undefined}
                                 to={item.href}
                                 prefetch="intent"
-                                className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
+                                className={`link relative rounded-xl px-3.5 py-2 text-sm font-semibold tracking-[0.01em] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 ${isActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25 ring-1 ring-white/10' : 'text-gray-900 hover:bg-purple-100 hover:text-purple-800 dark:text-white dark:hover:bg-white/10 dark:hover:text-white'}`}
                             >
                                 {item.name}
-                                {'count' in item && item.name === 'Shortlist' && renderBadge((item as any).count)}
+                                {'count' in item && item.name === 'Saved' && renderBadge((item as any).count)}
                                 {'count' in item && item.name === 'Inbox' && renderBadge((item as any).count)}
-                                {'count' in item && item.name === 'Hiring' && renderBadge((item as any).count)}
+                                {'count' in item && (item.href === '/household/hiring' || item.href === '/service-provider/hiring') && renderBadge((item as any).count)}
                             </Link>
                             );
                         })}
@@ -318,21 +629,22 @@ export function Navigation() {
 
                 {/* App navigation for authenticated users on app subdomain */}
                 {isAppHost && user && (
-                    <div className="hidden lg:flex items-center space-x-3 ml-auto">
+                    <div className="absolute left-[41%] hidden -translate-x-1/2 items-center gap-2 xl:left-[43%] lg:flex">
                         {authLinks.map((item) => {
                             const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
                             return (
                             <Link
                                 key={item.name}
+                                data-tour={item.name === 'Hiring' ? 'nav-hiring' : item.name === 'Inbox' ? 'nav-inbox' : undefined}
                                 to={item.href}
                                 prefetch="intent"
-                                className={`link text-xs sm:text-sm font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
-                                id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
+                                className={`link relative rounded-xl px-3.5 py-2 text-sm font-semibold tracking-[0.01em] transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 ${isActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25 ring-1 ring-white/10' : 'text-gray-900 hover:bg-purple-100 hover:text-purple-800 dark:text-white dark:hover:bg-white/10 dark:hover:text-white'}`}
+                                id={item.name === 'Saved' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
-                                {item.name === 'Shortlist' && renderBadge(shortlistCount)}
+                                {item.name === 'Saved' && renderBadge(savedCount)}
                                 {item.name === 'Inbox' && renderBadge(inboxCount)}
-                                {item.name === 'Hiring' && renderBadge(hireRequestCount)}
+                                {(item.href === '/household/hiring' || item.href === '/service-provider/hiring') && renderBadge(hireRequestCount)}
                             </Link>
                             );
                         })}
@@ -340,36 +652,28 @@ export function Navigation() {
                 )}
 
                 {/* Right section */}
-                <div className="flex items-center space-x-4 ml-6 relative">
+                <div className="relative ml-auto flex items-center gap-2">
 
                     {/* Notifications (logged-in only) */}
                     {user && (
                         <button
                             type="button"
                             onClick={() => setIsNotificationsOpen(true)}
-                            className="relative hidden lg:inline-flex items-center justify-center rounded-xl p-2 bg-white dark:bg-white/10 border-2 border-purple-200 dark:border-purple-500/30 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all shadow-sm dark:shadow-glow-sm"
+                            className="relative hidden items-center justify-center rounded-lg border border-purple-200 bg-white p-1.5 shadow-sm transition-all hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:hover:bg-purple-900/30 lg:ml-3 lg:inline-flex"
                             aria-label="Notifications"
                         >
-                            <BellIcon className="h-6 w-6 text-purple-700 dark:text-purple-200" />
+                            <BellIcon className="h-5 w-5 text-purple-700 dark:text-purple-200" />
                             {renderBadge(unreadCount)}
-                            {pendingDeviceApprovals > 0 && (
-                                <span
-                                    className="absolute -bottom-1.5 -right-1.5 min-w-[22px] px-1.5 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-semibold shadow-lg shadow-amber-400/60"
-                                    data-testid="device-approval-count"
-                                >
-                                    {pendingDeviceApprovals > 9 ? '9+' : pendingDeviceApprovals}
-                                </span>
-                            )}
                         </button>
                     )}
 
-                    {/* Admin Dashboard - visible on desktop for admins only */}
-                    {user && isAdmin && (
+                    {/* Admin Dashboard - desktop, for admins who are also on the site */}
+                    {canSeeAdminDashboard && (
                         <a
-                            href="https://hba.homebit.co.ke"
+                            href={adminDashboardUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hidden lg:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105 transition-all duration-200"
+                            className="hidden"
                         >
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -385,12 +689,18 @@ export function Navigation() {
                     </div>
 
                     {showAuthButtons && (
-                        <div className="flex items-center space-x-3">
+                        <div className="hidden items-center gap-2 lg:flex">
                             <Link
-                                to="/waitlist"
-                                className="link hidden lg:block text-xs font-medium rounded-xl transition-all duration-200 px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+                                to="/login"
+                                className="link rounded-xl border border-purple-300 px-4 py-1.5 text-xs font-semibold text-purple-700 transition-all duration-200 hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-purple-500/40 dark:text-purple-300 dark:hover:bg-purple-900/30"
                             >
-                                Join Waitlist
+                                Log in
+                            </Link>
+                            <Link
+                                to="/signup"
+                                className="link rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1.5 text-xs font-semibold text-white shadow-md transition-all duration-200 hover:scale-105 hover:from-purple-700 hover:to-pink-700 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                            >
+                                Sign up
                             </Link>
                         </div>
                     )}
@@ -399,6 +709,13 @@ export function Navigation() {
                     {user && userName && (
                         <Menu as="div" className="relative hidden lg:inline-block text-left">
                             <Menu.Button className="flex items-center space-x-2 px-4 py-1 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all">
+                                {profileAvatar ? (
+                                    <img src={profileAvatar} alt="" className="h-7 w-7 rounded-full object-cover ring-1 ring-purple-300/70 dark:ring-purple-500/50" />
+                                ) : (
+                                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-600 text-[10px] font-bold text-white">
+                                        {(userName || 'HB').slice(0, 2).toUpperCase()}
+                                    </span>
+                                )}
                                 <div className="text-xs text-gray-600 dark:text-gray-300">
                                     <span className="font-semibold text-sm">Hello, {userName}</span>
                                 </div>
@@ -421,12 +738,24 @@ export function Navigation() {
                                         <Menu.Item>
                                             {({ active }) => (
                                                 <Link
-                                                    to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
+                                                    to={accountProfileHref}
                                                     className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
                                                 >
                                                     <UserIcon className="mr-3 h-5 w-5" />
-                                                    {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
+                                                    {accountProfileLabel}
                                                 </Link>
+                                            )}
+                                        </Menu.Item>
+                                        <Menu.Item>
+                                            {({ active }) => (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsProfileSwitcherOpen(true)}
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex w-[calc(100%-16px)] items-center px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
+                                                >
+                                                    <ArrowsRightLeftIcon className="mr-3 h-5 w-5" />
+                                                    Switch profile
+                                                </button>
                                             )}
                                         </Menu.Item>
                                         <Menu.Item>
@@ -451,7 +780,24 @@ export function Navigation() {
                                                 </Link>
                                             )}
                                         </Menu.Item>
-                                        <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                                        {canSeeAdminDashboard && (
+                                            <>
+                                                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <a
+                                                            href={adminDashboardUrl}
+                                                            onClick={handleAdminDashboard}
+                                                            className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-purple-600 dark:text-purple-400'} flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
+                                                        >
+                                                            <CogIcon className="mr-3 h-5 w-5" />
+                                                            Admin Dashboard
+                                                        </a>
+                                                    )}
+                                                </Menu.Item>
+                                                <div className="my-2 border-t border-gray-200 dark:border-gray-700" />
+                                            </>
+                                        )}
                                         <Menu.Item>
                                             {({ active }) => (
                                                 <button
@@ -470,12 +816,12 @@ export function Navigation() {
                     )}
 
                     {/* Menu Dropdown - Only show on mobile */}
-                    <Menu as="div" className="relative inline-block text-left lg:hidden">
+                    <Menu as="div" className="hidden text-left">
                         <Menu.Button
-                            className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 dark:from-purple-600 dark:to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 dark:shadow-glow-sm hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-glow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:from-purple-600 dark:to-pink-600 dark:shadow-glow-sm"
                             aria-label="Open navigation menu"
                         >
-                            <Bars3Icon className="h-7 w-7" />
+                            <Bars3Icon className="h-6 w-6" />
                         </Menu.Button>
 
                         <Transition
@@ -513,16 +859,24 @@ export function Navigation() {
 
                                     {/* Mobile Auth Options */}
                                     {showAuthButtons && (
-                                        <Menu.Item>
-                                            {({ active }) => (
+                                        <div className="mx-2 mt-2 grid grid-cols-2 gap-2 border-t border-purple-100 px-2 pt-3 dark:border-purple-500/20">
+                                            <Menu.Item>
                                                 <Link
-                                                    to="/waitlist"
-                                                    className={`font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-4 py-1 text-xs rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
+                                                    to="/login"
+                                                    className="rounded-xl border border-purple-300 px-4 py-2 text-center text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-300 dark:hover:bg-purple-900/30"
                                                 >
-                                                    Join Waitlist
+                                                    Log in
                                                 </Link>
-                                            )}
-                                        </Menu.Item>
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                <Link
+                                                    to="/signup"
+                                                    className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-center text-xs font-semibold text-white shadow-md transition-all hover:from-purple-700 hover:to-pink-700 hover:shadow-lg"
+                                                >
+                                                    Sign up
+                                                </Link>
+                                            </Menu.Item>
+                                        </div>
                                     )}
 
                                     {/* Notifications in Mobile Menu */}
@@ -544,16 +898,22 @@ export function Navigation() {
                                                                 {unreadCount > 9 ? '9+' : unreadCount}
                                                             </span>
                                                         )}
-                                                        {pendingDeviceApprovals > 0 && (
-                                                            <span className="bg-amber-500/90 text-white text-[10px] font-bold rounded-full min-w-[20px] h-[18px] flex items-center justify-center px-1" data-testid="device-approval-count-mobile">
-                                                                {pendingDeviceApprovals > 9 ? '9+' : pendingDeviceApprovals}
-                                                            </span>
-                                                        )}
                                                     </span>
                                                 </button>
                                             )}
                                         </Menu.Item>
                                     )}
+
+                                    {/* Theme Toggle in Mobile Menu */}
+                                    <Menu.Item>
+                                      {({ active }) => (
+                                        <button type="button" onClick={() => window.dispatchEvent(new Event('open-support-chat'))} className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-primary-700 dark:text-purple-400'} flex w-[calc(100%-16px)] items-center gap-2 rounded-xl px-5 py-2 text-base mx-2`}>
+                                          <ChatBubbleLeftRightIcon className="h-5 w-5" /> Help & support
+                                        </button>
+                                      )}
+                                    </Menu.Item>
+
+                                    <PWAInstallMenuButton />
 
                                     {/* Theme Toggle in Mobile Menu */}
                                     <div className="px-5 py-3 flex items-center justify-between">
@@ -566,9 +926,16 @@ export function Navigation() {
                                         <>
                                             <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                                             {/* User Greeting in Mobile Menu */}
-                                            <div className="px-5 py-1 text-base font-bold rounded-xl text-primary-700 dark:text-purple-400 border-b border-primary-100 dark:border-gray-700">
-  <div className="font-semibold text-sm">Hello, {userName}</div>
-</div>
+                                            <div className="flex items-center gap-2 px-5 py-2 text-base font-bold rounded-xl text-primary-700 dark:text-purple-400 border-b border-primary-100 dark:border-gray-700">
+                                                {profileAvatar ? (
+                                                    <img src={profileAvatar} alt="" className="h-8 w-8 rounded-full object-cover ring-1 ring-purple-300/70 dark:ring-purple-500/50" />
+                                                ) : (
+                                                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-pink-600 text-[10px] font-bold text-white">
+                                                        {(userName || 'HB').slice(0, 2).toUpperCase()}
+                                                    </span>
+                                                )}
+                                                <div className="font-semibold text-sm">Hello, {userName}</div>
+                                            </div>
 
 
 
@@ -579,9 +946,9 @@ export function Navigation() {
                                                         <Menu.Item key={item.name}>{({ active }) => (
                                                             <Link to={item.href} className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-1 text-xs relative`}>
                                                                 <span>{item.name}</span>
-                                                                {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                                                {item.name === 'Saved' && savedCount > 0 && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
-                                                                        {shortlistCount > 9 ? '9+' : shortlistCount}
+                                                                        {savedCount > 9 ? '9+' : savedCount}
                                                                     </span>
                                                                 )}
                                                                 {item.name === 'Inbox' && inboxCount > 0 && (
@@ -589,7 +956,7 @@ export function Navigation() {
                                                                         {inboxCount > 9 ? '9+' : inboxCount}
                                                                     </span>
                                                                 )}
-                                                                {item.name === 'Hiring' && hireRequestCount > 0 && (
+                                                                {(item.href === '/household/hiring' || item.href === '/service-provider/hiring') && hireRequestCount > 0 && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
                                                                         {hireRequestCount > 9 ? '9+' : hireRequestCount}
                                                                     </span>
@@ -604,14 +971,26 @@ export function Navigation() {
                                             <Menu.Item>
                                                 {({ active }) => (
                                                     <Link
-                                                        to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
+                                                        to={accountProfileHref}
                                                         className={`${
                                                             active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
                                                         } flex items-center px-4 py-1 text-xs`}
                                                     >
                                                         <UserIcon className="mr-3 h-5 w-5" />
-                                                        {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
+                                                        {accountProfileLabel}
                                                     </Link>
+                                                )}
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsProfileSwitcherOpen(true)}
+                                                        className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'} flex w-full items-center px-4 py-1 text-xs`}
+                                                    >
+                                                        <ArrowsRightLeftIcon className="mr-3 h-5 w-5" />
+                                                        Switch profile
+                                                    </button>
                                                 )}
                                             </Menu.Item>
                                             <Menu.Item>
@@ -640,13 +1019,12 @@ export function Navigation() {
                                                     </Link>
                                                 )}
                                             </Menu.Item>
-                                            {isAdmin && (
+                                            {canSeeAdminDashboard && (
                                                 <Menu.Item>
                                                     {({ active }) => (
                                                         <a
-                                                            href="https://hba.homebit.co.ke"
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
+                                                            href={adminDashboardUrl}
+                                                            onClick={(event) => handleAdminDashboard(event)}
                                                             className={`${
                                                                 active ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'text-purple-600 dark:text-purple-400'
                                                             } flex items-center px-4 py-1 text-xs font-semibold`}
@@ -683,8 +1061,49 @@ export function Navigation() {
             </div>
 
             {/* Notifications Modal */}
-            <NotificationsModal isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
+            {isNotificationsOpen && (
+                <Suspense fallback={null}>
+                    <NotificationsModal isOpen onClose={() => setIsNotificationsOpen(false)} />
+                </Suspense>
+            )}
+            <AccountProfileSwitcher open={isProfileSwitcherOpen} onClose={() => setIsProfileSwitcherOpen(false)} />
 
         </nav>
+        <MobileBottomNavigation
+            user={Boolean(user)}
+            homeHref={dashboardPath || '/'}
+            authenticatedItems={authLinks}
+            profileHref={accountProfileHref}
+            profileLabel={accountProfileLabel}
+            unreadNotifications={unreadCount}
+            canSeeAdmin={canSeeAdminDashboard}
+            onOpenAdminDashboard={() => openAdminDashboard(adminDashboardUrl)}
+            onOpenNotifications={() => setIsNotificationsOpen(true)}
+            onSwitchProfile={() => setIsProfileSwitcherOpen(true)}
+            onLogout={() => void handleLogout()}
+        />
+        {/* A fixed header leaves normal document flow. Keep every route's first
+            control visible without making individual pages know the navbar's
+            responsive height. */}
+        <div className="hb-safe-nav-spacer shrink-0" aria-hidden="true" />
+        </>
     );
+}
+
+/**
+ * The root route owns the real navigation instance so it survives child route
+ * transitions. Existing pages still render <Navigation /> while they are
+ * migrated away from the old page-owned layout; keeping this compatibility
+ * component empty prevents 69 duplicate mounts without a risky all-routes
+ * rewrite.
+ */
+export function Navigation() {
+    return null;
+}
+
+export function PersistentNavigation() {
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    if (params.get('embed') === '1' || params.get('embed') === 'true') return null;
+    return <NavigationContent />;
 }

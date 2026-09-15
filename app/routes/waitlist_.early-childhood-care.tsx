@@ -5,7 +5,7 @@ export const meta = () => [
   {
     name: "description",
     content:
-      "Join Homebit's early childhood care waitlist as a household or househelp and get early access.",
+      "Join Homebit's early childhood care waitlist as a household or service provider and get early access.",
   },
 ];
 
@@ -15,7 +15,7 @@ const config = {
   serviceOptions: [
     "Early Childhood Care",
     "Baby Sitter",
-    "Househelp",
+    "Service provider",
     "Indoor Cleaning",
     "Home Deep Cleaning",
     "Laundry & Ironing",
@@ -35,7 +35,7 @@ const config = {
       servicePrompt: "Would you need additional services?",
       concernPrompt: "Biggest concern",
     },
-    househelp: {
+    service_provider: {
       heading: "You offer early childhood care?",
       paragraph:
         "Join the early childhood care waitlist to be among the first early childhood professionals households discover on Homebit. We are creating a trusted marketplace where early childhood caregivers can present their skills with confidence and be matched to families who value quality developmental care. If you have experience with early childhood education, developmental activities, preschool preparation, toddler care, or specialized learning support, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the age groups and developmental areas you specialize in. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for early childhood professionals who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent early childhood care work with families who appreciate developmental expertise and trust, the waitlist is the first step.",

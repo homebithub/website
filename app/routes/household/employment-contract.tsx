@@ -7,8 +7,13 @@ import {
   FileText, CheckCircle, XCircle, Download, Mail, Send,
   ChevronLeft, Edit3, Check, AlertCircle, Plus, Trash2
 } from 'lucide-react';
-import { resolveHousehelpProfile, resolveHousehelpProfileId } from '~/utils/househelpProfiles';
+import { resolveServiceProviderProfile, resolveServiceProviderUserId } from '~/utils/serviceProviderProfiles';
+import { isServiceProviderProfileType, normalizeProfileType } from '~/utils/profileType';
 import { FormPageSkeleton } from "~/components/ShimmerLoader";
+import CustomSelect from '~/components/ui/CustomSelect';
+import { contractPdfBytes, downloadContractPdf } from '~/utils/contractDocument';
+import { FormError } from '~/components/FormError';
+import { RequiredMark } from '~/components/ui/formStyles';
 
 interface ContractClause {
   id: string;
@@ -21,9 +26,9 @@ interface EmploymentContract {
   id: string;
   hire_contract_id?: string;
   household_id: string;
-  househelp_id: string;
+  service_provider_id: string;
   household_user_id: string;
-  househelp_user_id: string;
+  service_provider_user_id: string;
   status: string;
   job_title: string;
   job_description: string;
@@ -37,14 +42,28 @@ interface EmploymentContract {
   household_signature: string;
   household_signed_at?: string;
   household_signer_name: string;
-  househelp_signature: string;
-  househelp_signed_at?: string;
-  househelp_signer_name: string;
+  service_provider_signature: string;
+  service_provider_signed_at?: string;
+  service_provider_signer_name: string;
   notes: string;
   created_at: string;
   updated_at: string;
   household?: any;
-  househelp?: any;
+  service_provider?: any;
+}
+
+function normalizeEmploymentContract(raw: any): EmploymentContract {
+  return {
+    ...(raw || {}),
+    service_provider_id:
+      raw?.service_provider_id || raw?.service_provider_profile_id || raw?.househelp_id || raw?.househelp_profile_id || '',
+    service_provider_user_id: raw?.service_provider_user_id || raw?.househelp_user_id || '',
+    service_provider_signature: raw?.service_provider_signature || raw?.househelp_signature || '',
+    service_provider_signed_at: raw?.service_provider_signed_at || raw?.househelp_signed_at,
+    service_provider_signer_name: raw?.service_provider_signer_name || raw?.househelp_signer_name || '',
+    service_provider: raw?.service_provider || raw?.househelp,
+    status: raw?.status === 'pending_househelp' ? 'pending_service_provider' : raw?.status,
+  } as EmploymentContract;
 }
 
 type ViewMode = 'configure' | 'preview' | 'view';
@@ -54,21 +73,29 @@ export default function EmploymentContractPage() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const contractId = searchParams.get('id');
-  const househelpId = searchParams.get('househelp_id');
+  const serviceProviderId = searchParams.get('service_provider_id') || searchParams.get('househelp_id');
   const hireContractId = searchParams.get('hire_contract_id');
+  const applicationId = searchParams.get('application_id');
+  const listingId = searchParams.get('listing_id');
   const backTo = searchParams.get('backTo') || (contractId ? '/household/employment-contracts' : '/household/hiring');
   const backLabel = searchParams.get('backLabel') || (contractId ? 'Back to Contracts' : 'Back to Hiring');
   const printRef = useRef<HTMLDivElement>(null);
   const [emailSending, setEmailSending] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
-  const [resolvedHousehelpProfileId, setResolvedHousehelpProfileId] = useState<string>(househelpId || '');
+  const [resolvedServiceProviderProfileId, setResolvedServiceProviderProfileId] = useState<string>(serviceProviderId || '');
+  // What the advert said about pay, when it named a band rather than a figure.
+  // Shown beside the salary field instead of being guessed at: picking an end of
+  // somebody's posted range and calling it their wage is not a default to make
+  // quietly.
+  const postedSalary = searchParams.get('posted_salary') || '';
 
   const [viewMode, setViewMode] = useState<ViewMode>(contractId ? 'view' : 'configure');
   const [contract, setContract] = useState<EmploymentContract | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [success, setSuccess] = useState<string | null>(null);
 
   // Configuration form state
@@ -88,22 +115,35 @@ export default function EmploymentContractPage() {
   const [employerName, setEmployerName] = useState('');
   const [employeeName, setEmployeeName] = useState('');
   const [showSigningModal, setShowSigningModal] = useState(false);
-  const [signingAs, setSigningAs] = useState<'household' | 'househelp'>('household');
+  const [downloading, setDownloading] = useState(false);
+  const [signingAs, setSigningAs] = useState<'household' | 'service_provider'>('household');
 
   // Load default clauses on mount and pre-fill from URL params
   useEffect(() => {
     if (!contractId) {
       fetchDefaultClauses();
-      // Pre-fill from URL params (when coming from hire request)
+      // Pre-filled from the job the contract is for.
+      //
+      // The household wrote all of this when they posted the advert — the
+      // title, where the work is, when it starts, what it involves — and the
+      // form asked for every word of it again. Retyping is not just tedious: a
+      // second description of the same job can disagree with the one the
+      // service provider answered, and it is the contract that binds.
       const paramJobType = searchParams.get('job_type');
       const paramSalary = searchParams.get('salary');
       const paramSalaryFreq = searchParams.get('salary_frequency');
       const paramStartDate = searchParams.get('start_date');
+      const paramEndDate = searchParams.get('end_date');
+      const paramLocation = searchParams.get('work_location');
+      const paramDescription = searchParams.get('job_description');
       const paramNotes = searchParams.get('notes');
       if (paramJobType && !jobTitle) setJobTitle(paramJobType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
       if (paramSalary && !salary) setSalary(paramSalary);
       if (paramSalaryFreq) setSalaryFrequency(paramSalaryFreq);
       if (paramStartDate && !startDate) setStartDate(paramStartDate);
+      if (paramEndDate && !endDate) setEndDate(paramEndDate);
+      if (paramLocation && !workLocation) setWorkLocation(paramLocation);
+      if (paramDescription && !jobDescription) setJobDescription(paramDescription);
       if (paramNotes && !notes) setNotes(paramNotes);
     }
   }, []);
@@ -118,32 +158,41 @@ export default function EmploymentContractPage() {
   useEffect(() => {
     let cancelled = false;
 
-    const resolveTargetHousehelp = async () => {
-      const targetId = contract?.househelp_id || househelpId;
+    const resolveTargetServiceProvider = async () => {
+      const targetId = contract?.service_provider_id || serviceProviderId;
       if (!targetId) {
-        if (!cancelled) setResolvedHousehelpProfileId('');
+        if (!cancelled) setResolvedServiceProviderProfileId('');
         return;
       }
 
       try {
-        const profile = await resolveHousehelpProfile(targetId, { identifierType: 'auto' });
-        const profileId = resolveHousehelpProfileId(profile) || targetId;
+        const profile = await resolveServiceProviderProfile(targetId, { identifierType: 'auto' });
+        // Auth matches this against user_profile.id or user_profile.user_id, so
+        // send one of those — the id we were handed already is one, since it
+        // comes off the application's applicant_profile_id.
+        //
+        // This preferred resolveServiceProviderProfileId, which returns `profile_id`
+        // first: the profile record, which matches neither. So a perfectly good
+        // id was swapped for one that resolves to nothing, and the contract
+        // stopped with "we could not find the service provider this contract is for"
+        // about the applicant whose card had just been used to open it.
+        const resolved = resolveServiceProviderUserId(profile) || targetId;
         if (!cancelled) {
-          setResolvedHousehelpProfileId(profileId);
+          setResolvedServiceProviderProfileId(resolved);
         }
       } catch {
         if (!cancelled) {
-          setResolvedHousehelpProfileId(targetId);
+          setResolvedServiceProviderProfileId(targetId);
         }
       }
     };
 
-    resolveTargetHousehelp();
+    resolveTargetServiceProvider();
 
     return () => {
       cancelled = true;
     };
-  }, [contract?.househelp_id, househelpId]);
+  }, [contract?.service_provider_id, serviceProviderId]);
 
   // Prefill the current user's name into the correct field based on their profile type
   useEffect(() => {
@@ -151,35 +200,35 @@ export default function EmploymentContractPage() {
       const u = (user as any).user || user;
       const fullName = `${u.first_name || ''} ${u.last_name || ''}`.trim();
       if (!fullName) return;
-      const pt = u.profile_type || localStorage.getItem('profile_type') || '';
+      const pt = normalizeProfileType(u.profile_type || localStorage.getItem('profile_type') || '');
       if (pt === 'household' && !employerName) setEmployerName(fullName);
-      if (pt === 'househelp' && !employeeName) setEmployeeName(fullName);
+      if (isServiceProviderProfileType(pt) && !employeeName) setEmployeeName(fullName);
     }
   }, [user]);
 
-  // Prefill employee name from househelp profile when creating a new contract
+  // Prefill employee name from the service-provider profile when creating a contract.
   useEffect(() => {
-    const fetchHousehelpName = async () => {
-      const hhId = resolvedHousehelpProfileId || contract?.househelp_id || househelpId;
+    const fetchServiceProviderName = async () => {
+      const hhId = resolvedServiceProviderProfileId || contract?.service_provider_id || serviceProviderId;
       if (!hhId) return;
       // If contract already has signer names, use those
-      if (contract?.househelp_signer_name) {
-        if (!employeeName) setEmployeeName(contract.househelp_signer_name);
+      if (contract?.service_provider_signer_name) {
+        if (!employeeName) setEmployeeName(contract.service_provider_signer_name);
         return;
       }
       if (contract?.household_signer_name) {
         if (!employerName) setEmployerName(contract.household_signer_name);
       }
-      // Try to get name from contract's nested househelp object
-      if (contract?.househelp) {
-        const hh = contract.househelp;
+      // Try to get the name from the contract's nested provider object.
+      if (contract?.service_provider) {
+        const hh = contract.service_provider;
         const name = `${hh.first_name || hh.user?.first_name || ''} ${hh.last_name || hh.user?.last_name || ''}`.trim();
         if (name && !employeeName) setEmployeeName(name);
         return;
       }
-      // Fetch househelp profile to get their name
+      // Fetch the service-provider profile to get their name.
       try {
-        const hh = await resolveHousehelpProfile(hhId, { identifierType: 'auto' });
+        const hh = await resolveServiceProviderProfile(hhId, { identifierType: 'auto' });
         const profile = hh || {};
         const name = `${profile.first_name || profile.user?.first_name || ''} ${profile.last_name || profile.user?.last_name || ''}`.trim();
         if (name && !employeeName) setEmployeeName(name);
@@ -187,15 +236,39 @@ export default function EmploymentContractPage() {
         // Non-critical
       }
     };
-    fetchHousehelpName();
-  }, [contract, househelpId, resolvedHousehelpProfileId]);
+    fetchServiceProviderName();
+  }, [contract, serviceProviderId, resolvedServiceProviderProfileId]);
 
   const fetchDefaultClauses = async () => {
     try {
-      const data = await employmentContractService.getDefaultClauses();
-      setClauses(data?.clauses || []);
+      const raw = await employmentContractService.getDefaultClauses();
+      // Unwrapped, and shaped the way this page renders a clause.
+      //
+      // This read `data.clauses` off the envelope rather than its body, so it
+      // always found nothing — the panel rendered its heading and its
+      // instructions above an empty list, and a contract went out with no terms
+      // in it. The service also used to answer with bare strings, which this
+      // page cannot draw: it wants a heading and a body it can show and let the
+      // household switch off.
+      const list = raw?.data?.clauses ?? raw?.clauses ?? [];
+      const normalised: ContractClause[] = (Array.isArray(list) ? list : []).map(
+        (entry: any, index: number) =>
+          typeof entry === 'string'
+            ? { id: `clause-${index}`, title: entry, body: '', included: true }
+            : {
+                id: String(entry?.id ?? `clause-${index}`),
+                title: String(entry?.title ?? ''),
+                body: String(entry?.body ?? ''),
+                included: entry?.included !== false,
+              },
+      ).filter((clause) => clause.title || clause.body);
+      setClauses(normalised);
     } catch (err) {
+      // Said out loud. This only logged to the console, so when the call failed
+      // the panel rendered its heading above an empty list and looked like a
+      // contract that simply had no clauses — which is how it went unnoticed.
       console.error('Failed to fetch default clauses:', err);
+      setError('We could not load the standard clauses. You can still add your own below.');
     }
   };
 
@@ -205,7 +278,8 @@ export default function EmploymentContractPage() {
     try {
       const data = await employmentContractService.getEmploymentContract(id);
       const c = data?.data || data;
-      setContract(c);
+      const normalizedContract = normalizeEmploymentContract(c);
+      setContract(normalizedContract);
       // Populate form fields from existing contract
       setJobTitle(c.job_title || '');
       setJobDescription(c.job_description || '');
@@ -218,7 +292,7 @@ export default function EmploymentContractPage() {
       setClauses(c.clauses || []);
       setCustomClauses(c.custom_clauses || []);
       // Lock to preview/view once any party has signed
-      if (c.household_signed_at || c.househelp_signed_at) {
+      if (normalizedContract.household_signed_at || normalizedContract.service_provider_signed_at) {
         setViewMode('preview');
       }
     } catch (err: any) {
@@ -229,15 +303,33 @@ export default function EmploymentContractPage() {
   };
 
   const handleCreateContract = async () => {
-    if (!jobTitle || !salary || !resolvedHousehelpProfileId) {
-      setError('Job title, salary, and househelp are required');
+    const nextFieldErrors: Record<string, string> = {};
+    if (!jobTitle.trim()) nextFieldErrors.jobTitle = 'Enter the job title.';
+    if (!salary.trim()) nextFieldErrors.salary = 'Enter the agreed salary.';
+    else if (!Number.isFinite(Number(salary)) || Number(salary) <= 0) nextFieldErrors.salary = 'Enter a salary greater than zero.';
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setError(null);
+      return;
+    }
+    if (!resolvedServiceProviderProfileId) {
+      setError('We could not identify the applicant. Return to Hiring and open the contract from the applicant’s card.');
+      return;
+    }
+    if (endDate && !startDate) {
+      setFieldErrors({ endDate: 'Select a start date before choosing an end date.' });
+      return;
+    }
+    if (startDate && endDate && endDate < startDate) {
+      setFieldErrors({ endDate: 'Choose an end date on or after the start date.' });
       return;
     }
     setSaving(true);
+    setFieldErrors({});
     setError(null);
     try {
       const body: any = {
-        househelp_id: resolvedHousehelpProfileId,
+        service_provider_id: resolvedServiceProviderProfileId,
         job_title: jobTitle,
         job_description: jobDescription,
         salary: parseFloat(salary),
@@ -248,12 +340,19 @@ export default function EmploymentContractPage() {
         custom_clauses: customClauses.filter(c => c.trim()),
       };
       if (hireContractId) body.hire_contract_id = hireContractId;
+      if (applicationId) body.application_id = applicationId;
+      if (listingId) body.listing_id = listingId;
       if (startDate) body.start_date = new Date(startDate).toISOString();
       if (endDate) body.end_date = new Date(endDate).toISOString();
 
-      const data = await employmentContractService.createEmploymentContract('', body);
+      // CreateFromHireRequest has already created the one contract attached to
+      // this application. Configure that draft instead of creating an unrelated
+      // second engagement every time this form is submitted.
+      const data = hireContractId
+        ? await employmentContractService.updateEmploymentContract(hireContractId, '', body)
+        : await employmentContractService.createEmploymentContract('', body);
       const newContract = data?.data || data;
-      setContract(newContract);
+      setContract(normalizeEmploymentContract(newContract));
       setViewMode('preview');
       setSuccess('Contract created successfully! Review the preview below.');
     } catch (err: any) {
@@ -265,7 +364,25 @@ export default function EmploymentContractPage() {
 
   const handleUpdateContract = async () => {
     if (!contract) return;
+    const nextFieldErrors: Record<string, string> = {};
+    if (!jobTitle.trim()) nextFieldErrors.jobTitle = 'Enter the job title.';
+    if (!salary.trim()) nextFieldErrors.salary = 'Enter the agreed salary.';
+    else if (!Number.isFinite(Number(salary)) || Number(salary) <= 0) nextFieldErrors.salary = 'Enter a salary greater than zero.';
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setError(null);
+      return;
+    }
+    if (endDate && !startDate) {
+      setFieldErrors({ endDate: 'Select a start date before choosing an end date.' });
+      return;
+    }
+    if (startDate && endDate && endDate < startDate) {
+      setFieldErrors({ endDate: 'Choose an end date on or after the start date.' });
+      return;
+    }
     setSaving(true);
+    setFieldErrors({});
     setError(null);
     try {
       const body: any = {
@@ -282,7 +399,7 @@ export default function EmploymentContractPage() {
       if (endDate) body.end_date = new Date(endDate).toISOString();
 
       const data = await employmentContractService.updateEmploymentContract(contract.id, '', body);
-      setContract(data?.data || data);
+      setContract(normalizeEmploymentContract(data?.data || data));
       setViewMode('preview');
       setSuccess('Contract updated successfully!');
     } catch (err: any) {
@@ -294,7 +411,7 @@ export default function EmploymentContractPage() {
 
   const [savingNames, setSavingNames] = useState(false);
 
-  const handleAcceptAndSign = async (role: 'household' | 'househelp') => {
+  const handleAcceptAndSign = async (role: 'household' | 'service_provider') => {
     if (!contract) return;
     const name = role === 'household' ? employerName.trim() : employeeName.trim();
     if (!name) {
@@ -306,7 +423,7 @@ export default function EmploymentContractPage() {
     try {
       // 1. Save the signer name on the contract (only possible while in draft status)
       if (contract.status === 'draft') {
-        const nameField = role === 'household' ? 'household_signer_name' : 'househelp_signer_name';
+        const nameField = role === 'household' ? 'household_signer_name' : 'service_provider_signer_name';
         try {
           await employmentContractService.updateEmploymentContract(contract.id, '', { [nameField]: name });
         } catch {
@@ -318,13 +435,13 @@ export default function EmploymentContractPage() {
       if (role === 'household') {
         await employmentContractService.signByHousehold(contract.id, '', name, name);
       } else {
-        await employmentContractService.signByHousehelp(contract.id, '', name, name);
+        await employmentContractService.signByServiceProvider(contract.id, '', name, name);
       }
 
-      // 3. If household just signed, also forward the contract to the househelp
+      // 3. If the household just signed, forward the contract to the service provider.
       if (role === 'household') {
         try {
-          await employmentContractService.forwardToHousehelp(contract.id);
+          await employmentContractService.forwardToServiceProvider(contract.id);
         } catch (fwdErr: any) {
           // Don't throw — signing succeeded, forwarding is secondary
           console.warn('Forward failed:', fwdErr.message);
@@ -334,7 +451,7 @@ export default function EmploymentContractPage() {
       // 4. Re-fetch the contract to get updated state
       await fetchContract(contract.id);
       setSuccess(role === 'household'
-        ? 'Signed and forwarded! The househelp can now review and sign.'
+        ? 'Signed and forwarded! The service provider can now review and sign.'
         : 'Signed! Both parties have now signed the contract.');
     } catch (err: any) {
       setError(err.message || 'Failed to sign');
@@ -344,6 +461,14 @@ export default function EmploymentContractPage() {
   };
 
   const signerName = signingAs === 'household' ? employerName : employeeName;
+
+  // Whether there is anything here to sign.
+  //
+  // A draft created by "send contract" starts empty, and the service provider could
+  // sign it in that state — a document with no position, no pay and no dates.
+  const contractHasTerms = Boolean(
+    contract && (contract.job_title || contract.salary || contract.start_date),
+  );
 
   const handleSign = async () => {
     if (!contract || !signerName.trim()) {
@@ -357,12 +482,12 @@ export default function EmploymentContractPage() {
       if (signingAs === 'household') {
         data = await employmentContractService.signByHousehold(contract.id, '', signerName.trim(), signerName.trim());
       } else {
-        data = await employmentContractService.signByHousehelp(contract.id, '', signerName.trim(), signerName.trim());
+        data = await employmentContractService.signByServiceProvider(contract.id, '', signerName.trim(), signerName.trim());
       }
       setContract(data?.data || data);
       setShowSigningModal(false);
       setSuccess(signingAs === 'household'
-        ? 'Contract signed! You can now forward it to the househelp.'
+        ? 'Contract signed! You can now forward it to the service provider.'
         : 'Contract signed! Both parties have now signed.');
     } catch (err: any) {
       setError(err.message || 'Failed to sign contract');
@@ -376,9 +501,9 @@ export default function EmploymentContractPage() {
     setSaving(true);
     setError(null);
     try {
-      await employmentContractService.forwardToHousehelp(contract.id);
+      await employmentContractService.forwardToServiceProvider(contract.id);
       await fetchContract(contract.id);
-      setSuccess('Contract forwarded to househelp! They will be notified via SMS and email.');
+      setSuccess('Contract forwarded to service provider! They will be notified via SMS and email.');
     } catch (err: any) {
       setError(err.message || 'Failed to forward contract');
     } finally {
@@ -395,25 +520,13 @@ export default function EmploymentContractPage() {
   };
 
   const handleSendContractEmail = async () => {
-    if (!contract || !printRef.current || !emailAddress.trim()) return;
+    if (!contract || !emailAddress.trim()) return;
     setEmailSending(true);
     setError(null);
     try {
-      // Generate PDF from contract HTML
-      const html2pdf = (await import('html2pdf.js')).default;
-      const pdfBlob: Blob = await html2pdf()
-        .set({
-          margin: [10, 10, 10, 10],
-          filename: `employment-contract-${contract.id}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        })
-        .from(printRef.current)
-        .outputPdf('blob');
-
-      const arrayBuffer = await pdfBlob.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
+      // Rendered by the server from the contract's own rows, so the attachment
+      // is the agreement rather than a picture of this page.
+      const uint8Array = await contractPdfBytes(contract.id);
 
       const userObj = (user as any)?.user || user;
       const firstName = userObj?.first_name || 'there';
@@ -429,7 +542,7 @@ export default function EmploymentContractPage() {
           firstName,
           jobTitle: contract.job_title || 'Employment Position',
           employerName: contract.household_signer_name || '',
-          employeeName: contract.househelp_signer_name || '',
+          employeeName: contract.service_provider_signer_name || '',
           startDate: contract.start_date ? new Date(contract.start_date).toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }) : '',
           contractUrl,
         },
@@ -446,31 +559,17 @@ export default function EmploymentContractPage() {
     }
   };
 
-  const handleDownload = () => {
-    if (!printRef.current) return;
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Employment Contract</title>
-          <style>
-            body { font-family: 'Georgia', serif; padding: 40px; max-width: 800px; margin: 0 auto; background: white; color: #1a1a1a; }
-            h1 { text-align: center; font-size: 24px; margin-bottom: 8px; }
-            h2 { font-size: 18px; margin-top: 24px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
-            .clause { margin-bottom: 16px; }
-            .clause-title { font-weight: bold; margin-bottom: 4px; }
-            .signature-block { margin-top: 40px; display: flex; justify-content: space-between; }
-            .signature-line { border-top: 1px solid #333; padding-top: 8px; width: 45%; text-align: center; }
-            .meta { text-align: center; color: #666; font-size: 14px; margin-bottom: 24px; }
-            @media print { body { padding: 20px; } }
-          </style>
-        </head>
-        <body>${printRef.current.innerHTML}</body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
+  const handleDownload = async () => {
+    if (!contract) return;
+    setDownloading(true);
+    setError(null);
+    try {
+      await downloadContractPdf(contract.id);
+    } catch (err: any) {
+      setError(err?.message || 'We could not produce that document. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const toggleClause = (id: string) => {
@@ -495,11 +594,21 @@ export default function EmploymentContractPage() {
   };
 
   const userObj = (user as any)?.user || user;
-  const profileType = userObj?.profile_type || localStorage.getItem('profile_type') || '';
+  const profileType = normalizeProfileType(userObj?.profile_type || localStorage.getItem('profile_type') || '');
   const isHousehold = profileType === 'household';
-  const isHousehelp = profileType === 'househelp';
-  const isSignedByBoth = contract?.household_signed_at && contract?.househelp_signed_at;
-  const canDownload = !!isSignedByBoth;
+  const isServiceProvider = isServiceProviderProfileType(profileType);
+  const isSignedByBoth = contract?.household_signed_at && contract?.service_provider_signed_at;
+  // Anyone party to it can take a copy, signed or not.
+  //
+  // This used to wait for both signatures, because the old download was a
+  // screenshot of the page with nothing on it to say whether it had been agreed,
+  // so an unsigned copy could be mistaken for a real one. The rendered document
+  // states its status across the top — "AWAITING THE SERVICE PROVIDER'S SIGNATURE" — and
+  // leaves an unsigned party's line blank, so it cannot be mistaken for anything.
+  //
+  // Reading an offer away from the site is exactly when somebody wants it:
+  // to think it over, or to show it to a family member before signing.
+  const canDownload = !!contract;
   const handleBackNavigation = () => navigate(backTo, { replace: true });
 
   if (loading) {
@@ -520,7 +629,7 @@ export default function EmploymentContractPage() {
           </button>
           <div className="flex-1">
             <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1 dark:text-purple-300">
-              Household • Contract
+              {isServiceProvider ? 'Service provider' : 'Household'} • Contract
             </p>
             <h1 className="text-lg font-extrabold text-gray-900 dark:text-white">
               {contractId ? 'Employment Contract' : 'Create Employment Contract'}
@@ -532,7 +641,7 @@ export default function EmploymentContractPage() {
             </p>
           </div>
           {/* View mode toggle */}
-          {contract && contract.status === 'draft' && isHousehold && !contract.household_signed_at && !contract.househelp_signed_at && (
+          {contract && contract.status === 'draft' && isHousehold && !contract.household_signed_at && !contract.service_provider_signed_at && (
             <div className="flex gap-2">
               <button
                 onClick={() => setViewMode('configure')}
@@ -554,26 +663,36 @@ export default function EmploymentContractPage() {
         {contract && (
           <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
             contract.status === 'signed_by_both' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200' :
-            contract.status === 'pending_househelp' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200' :
+            contract.status === 'pending_service_provider' ? 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200' :
             contract.status === 'draft' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200' :
             'bg-gray-50 dark:bg-gray-800 text-gray-800 dark:text-gray-200'
           }`}>
             {contract.status === 'signed_by_both' && <CheckCircle className="w-5 h-5" />}
-            {contract.status === 'pending_househelp' && <AlertCircle className="w-5 h-5" />}
+            {contract.status === 'pending_service_provider' && <AlertCircle className="w-5 h-5" />}
             {contract.status === 'draft' && <FileText className="w-5 h-5" />}
+            {/* Said from the side of whoever is reading it.
+                Every line here was written for the household, so a service provider
+                who had just signed was told the page was "awaiting service provider
+                signature" — waiting, apparently, for themselves. Both sides
+                open this same page. */}
             <span className="font-medium">
-              {contract.status === 'draft' && !contract.household_signed_at && 'Draft — Sign and forward to househelp'}
-              {contract.status === 'draft' && contract.household_signed_at && 'Signed by you — Forward to househelp for their signature'}
-              {contract.status === 'pending_househelp' && 'Awaiting househelp signature'}
-              {contract.status === 'signed_by_both' && 'Fully signed by both parties'}
-              {contract.status === 'active' && 'Active contract'}
-              {contract.status === 'terminated' && 'Terminated'}
+              {contract.status === 'signed_by_both' || (contract.household_signed_at && contract.service_provider_signed_at)
+                ? 'Signed by both of you'
+                : contract.household_signed_at && !contract.service_provider_signed_at
+                  ? (isServiceProvider ? 'Waiting for your signature' : 'Waiting for the service provider to sign')
+                  : contract.service_provider_signed_at && !contract.household_signed_at
+                    ? (isServiceProvider ? 'Signed — waiting for the household' : 'Waiting for your signature')
+                    : contract.status === 'terminated'
+                      ? 'Terminated'
+                      : contract.status === 'active'
+                        ? 'Active contract'
+                        : (isServiceProvider ? 'Not signed yet' : 'Draft — sign and send it to them')}
             </span>
           </div>
         )}
 
         {/* Alerts */}
-        {error && (
+        {error && viewMode !== 'configure' && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-xl flex items-center gap-2">
             <XCircle className="w-5 h-5 flex-shrink-0" />
             <span>{error}</span>
@@ -589,80 +708,114 @@ export default function EmploymentContractPage() {
         )}
 
         {/* ═══ CONFIGURE MODE ═══ (blocked once any party has signed) */}
-        {viewMode === 'configure' && !contract?.household_signed_at && !contract?.househelp_signed_at && (
-          <div className="space-y-6">
+        {viewMode === 'configure' && !contract?.household_signed_at && !contract?.service_provider_signed_at && (
+          // Tightened: every card was p-6 with 2.5-high fields and three-row
+          // text areas, so a form of nine inputs ran past a laptop screen and
+          // the clause list — the part that needs reading — sat below the fold.
+          <div className="space-y-4">
             {/* Contract Details */}
-            <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Contract Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-4 dark:bg-purple-900/20 dark:border-purple-700/50">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Contract Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Title *</label>
-                  <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
-                    placeholder="e.g. Live-in Househelp" />
+                  <label htmlFor="contract-job-title" className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Title<RequiredMark /></label>
+                  <input id="contract-job-title" type="text" required aria-invalid={Boolean(fieldErrors.jobTitle)} aria-describedby={fieldErrors.jobTitle ? 'contract-job-title-error' : undefined} value={jobTitle} onChange={e => { setJobTitle(e.target.value); setFieldErrors(current => ({ ...current, jobTitle: '' })); }}
+                    className={`w-full px-3 py-1.5 border rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${fieldErrors.jobTitle ? 'border-red-500 focus:ring-red-500/20' : 'border-purple-200 dark:border-purple-500/30 focus:ring-purple-500 focus:border-purple-400'}`}
+                    placeholder="e.g. Live-in Service provider" />
+                  {fieldErrors.jobTitle && <p id="contract-job-title-error" className="mt-1 text-[11px] font-medium text-red-600 dark:text-red-300">{fieldErrors.jobTitle}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Work Location</label>
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Work Location</label>
                   <input type="text" value={workLocation} onChange={e => setWorkLocation(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                    className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                     placeholder="e.g. Nairobi, Kilimani" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary (KES) *</label>
-                  <input type="number" value={salary} onChange={e => setSalary(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                  <label htmlFor="contract-salary" className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary (KES)<RequiredMark /></label>
+                  <input id="contract-salary" type="number" min="1" required aria-invalid={Boolean(fieldErrors.salary)} aria-describedby={fieldErrors.salary ? 'contract-salary-error' : undefined} value={salary} onChange={e => { setSalary(e.target.value); setFieldErrors(current => ({ ...current, salary: '' })); }}
+                    className={`w-full px-3 py-1.5 border rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all ${fieldErrors.salary ? 'border-red-500 focus:ring-red-500/20' : 'border-purple-200 dark:border-purple-500/30 focus:ring-purple-500 focus:border-purple-400'}`}
                     placeholder="e.g. 15000" />
+                  {fieldErrors.salary && <p id="contract-salary-error" className="mt-1 text-[11px] font-medium text-red-600 dark:text-red-300">{fieldErrors.salary}</p>}
+                  {postedSalary && !contractId && (
+                    <p className="mt-1 text-[11px] text-gray-500 dark:text-purple-300">
+                      Your advert said {postedSalary}. Enter the figure you agreed.
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency *</label>
-                  <select value={salaryFrequency} onChange={e => setSalaryFrequency(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                    <option value="monthly">Monthly</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="bi-weekly">Bi-weekly</option>
-                    <option value="daily">Daily</option>
-                  </select>
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency<RequiredMark /></label>
+                  <CustomSelect
+                    value={salaryFrequency}
+                    onChange={setSalaryFrequency}
+                    ariaLabel="Salary frequency"
+                    options={[
+                      { value: 'monthly', label: 'Monthly' },
+                      { value: 'weekly', label: 'Weekly' },
+                      { value: 'bi-weekly', label: 'Bi-weekly' },
+                      { value: 'daily', label: 'Daily' },
+                    ]}
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Start Date</label>
-                  <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Start Date</label>
+                  <input type="date" value={startDate} onChange={e => {
+                    const nextStartDate = e.target.value;
+                    setStartDate(nextStartDate);
+                    if (endDate && nextStartDate && endDate < nextStartDate) {
+                      setEndDate('');
+                      setFieldErrors(current => ({ ...current, endDate: 'The previous end date was cleared. Choose a date on or after the new start date.' }));
+                    }
+                  }}
+                    className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">End Date (optional)</label>
-                  <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
+                  <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">End Date (optional)</label>
+                  <input type="date" value={endDate} min={startDate || undefined} disabled={!startDate} aria-invalid={Boolean(fieldErrors.endDate)} aria-describedby={fieldErrors.endDate ? 'contract-end-date-error' : undefined} onChange={e => {
+                    setEndDate(e.target.value);
+                    setFieldErrors(current => ({ ...current, endDate: '' }));
+                    setError(null);
+                  }}
+                    className={`w-full px-3 py-1.5 border rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 transition-all disabled:cursor-not-allowed disabled:opacity-50 ${fieldErrors.endDate ? 'border-red-500 focus:ring-red-500/20' : 'border-purple-200 dark:border-purple-500/30 focus:ring-purple-500 focus:border-purple-400'}`} />
+                  {fieldErrors.endDate && <p id="contract-end-date-error" className="mt-1 text-[11px] font-medium text-red-600 dark:text-red-300">{fieldErrors.endDate}</p>}
+                  {!startDate && <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">Select a start date first.</p>}
                 </div>
               </div>
               <div className="mt-4">
-                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Description</label>
-                <textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} rows={3}
-                  className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none"
+                <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Description</label>
+                <textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} rows={2}
+                  className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none"
                   placeholder="Describe the duties and responsibilities..." />
               </div>
               <div className="mt-4">
-                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Additional Notes</label>
+                <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Additional Notes</label>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
-                  className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none"
+                  className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none"
                   placeholder="Any additional notes..." />
               </div>
             </div>
 
             {/* Contract Clauses */}
-            <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Contract Clauses</h2>
-              <p className="text-xs text-gray-500 dark:text-purple-300 mb-4">Select which clauses to include in the contract. All are included by default.</p>
-              <div className="space-y-3">
+            <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-4 dark:bg-purple-900/20 dark:border-purple-700/50">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Contract Clauses</h2>
+              <p className="text-xs text-gray-500 dark:text-purple-300 mb-3">Select which clauses to include in the contract. All are included by default.</p>
+              <div className="space-y-1">
                 {clauses.map((clause) => (
-                  <label key={clause.id} className="flex items-start gap-3 p-3 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/40 cursor-pointer transition-colors">
+                  <label key={clause.id} className={`group flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-all ${
+                    clause.included
+                      ? 'border-purple-300 bg-purple-50/80 shadow-sm dark:border-purple-500/40 dark:bg-purple-500/10'
+                      : 'border-transparent hover:border-purple-200 hover:bg-purple-50/50 dark:hover:border-purple-500/30 dark:hover:bg-purple-900/30'
+                  }`}>
                     <input
                       type="checkbox"
                       checked={clause.included}
                       onChange={() => toggleClause(clause.id)}
-                      className="mt-1 w-4 h-4 text-purple-600 border-purple-300 dark:border-purple-500/50 rounded focus:ring-purple-500"
+                      className="peer sr-only"
                     />
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 border-purple-300 bg-white text-transparent shadow-sm transition-all group-hover:border-purple-500 peer-checked:border-transparent peer-checked:bg-gradient-to-br peer-checked:from-purple-600 peer-checked:to-pink-500 peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-purple-500 peer-focus-visible:ring-offset-2 dark:border-purple-500/60 dark:bg-[#13131a] dark:peer-focus-visible:ring-offset-[#21102f]">
+                      <Check className="h-3.5 w-3.5 stroke-[3]" />
+                    </span>
                     <div className="flex-1">
-                      <span className="font-medium text-gray-900 dark:text-white">{clause.title}</span>
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white">{clause.title}</span>
                       <p className="text-xs text-gray-600 dark:text-purple-200 mt-1">{clause.body}</p>
                     </div>
                   </label>
@@ -671,9 +824,9 @@ export default function EmploymentContractPage() {
             </div>
 
             {/* Custom Clauses */}
-            <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Additional Clauses</h2>
-              <p className="text-xs text-gray-500 dark:text-purple-300 mb-4">Add any custom clauses you'd like to include.</p>
+            <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-4 dark:bg-purple-900/20 dark:border-purple-700/50">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Additional Clauses</h2>
+              <p className="text-xs text-gray-500 dark:text-purple-300 mb-3">Add any custom clauses you'd like to include.</p>
               {customClauses.map((clause, index) => (
                 <div key={index} className="flex items-start gap-2 mb-3 p-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl border border-purple-100 dark:border-purple-700/40">
                   <span className="flex-1 text-xs text-gray-800 dark:text-purple-100">{clause}</span>
@@ -688,7 +841,7 @@ export default function EmploymentContractPage() {
                   value={newCustomClause}
                   onChange={e => setNewCustomClause(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addCustomClause()}
-                  className="flex-1 px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                  className="flex-1 px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                   placeholder="Type a custom clause and press Enter or click Add"
                 />
                 <button onClick={addCustomClause}
@@ -699,15 +852,16 @@ export default function EmploymentContractPage() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex justify-end gap-3">
+            <FormError message={error} />
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button onClick={handleBackNavigation}
-                className="px-6 py-2.5 border-2 border-purple-200 dark:border-purple-700/50 text-gray-700 dark:text-purple-200 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-all font-semibold">
+                className="w-full px-4 py-2.5 border border-purple-200 dark:border-purple-700/50 text-gray-700 dark:text-purple-200 rounded-lg text-xs hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-all font-semibold sm:w-auto">
                 Cancel
               </button>
               <button
                 onClick={contract ? handleUpdateContract : handleCreateContract}
                 disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg shadow-purple-500/30 disabled:opacity-50 flex items-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-xs font-semibold text-white shadow transition-all hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 sm:w-auto"
               >
                 {saving && <span className="hb-shimmer-piece h-4 w-4 rounded-full" />}
                 {contract ? 'Update & Preview' : 'Create & Preview'}
@@ -737,7 +891,7 @@ export default function EmploymentContractPage() {
                     <strong>Employer (Household):</strong> {contract.household_signer_name || 'Pending signature'}
                   </p>
                   <p className="text-gray-700">
-                    <strong>Employee (Househelp):</strong> {contract.househelp_signer_name || 'Pending signature'}
+                    <strong>Employee (Service provider):</strong> {contract.service_provider_signer_name || 'Pending signature'}
                   </p>
                 </div>
 
@@ -745,10 +899,23 @@ export default function EmploymentContractPage() {
                 <div className="mb-8">
                   <h2 className="text-base font-semibold text-gray-900 border-b border-gray-300 pb-1 mb-3">Terms of Employment</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-gray-700">
-                    <div><strong>Position:</strong> {contract.job_title}</div>
-                    <div><strong>Location:</strong> {contract.work_location || 'As agreed'}</div>
-                    <div><strong>Salary:</strong> KES {contract.salary?.toLocaleString()} / {contract.salary_frequency}</div>
-                    <div><strong>Start Date:</strong> {contract.start_date ? formatDate(contract.start_date) : 'As agreed'}</div>
+                    {/* A term nobody has filled in says so.
+                        "As agreed" reads like something the two of them settled
+                        between themselves; blank pay rendered as "KES /". On a
+                        document somebody is about to sign, an unfilled term must
+                        not look like a decided one. */}
+                    <div><strong>Position:</strong> {contract.job_title || <em className="text-gray-400">Not set</em>}</div>
+                    <div><strong>Location:</strong> {contract.work_location || <em className="text-gray-400">Not set</em>}</div>
+                    <div>
+                      <strong>Salary:</strong>{' '}
+                      {contract.salary
+                        ? `KES ${contract.salary.toLocaleString()} / ${contract.salary_frequency || 'month'}`
+                        : <em className="text-gray-400">Not set</em>}
+                    </div>
+                    <div>
+                      <strong>Start Date:</strong>{' '}
+                      {contract.start_date ? formatDate(contract.start_date) : <em className="text-gray-400">Not set</em>}
+                    </div>
                     {contract.end_date && <div><strong>End Date:</strong> {formatDate(contract.end_date)}</div>}
                   </div>
                   {contract.job_description && (
@@ -802,10 +969,10 @@ export default function EmploymentContractPage() {
                   </div>
                   <div className="text-center">
                     <div className="border-t border-gray-400 pt-3">
-                      {contract.househelp_signed_at ? (
+                      {contract.service_provider_signed_at ? (
                         <>
-                          <p className="font-semibold text-gray-900">{contract.househelp_signer_name}</p>
-                          <p className="text-xs text-gray-500">Signed: {formatDate(contract.househelp_signed_at)}</p>
+                          <p className="font-semibold text-gray-900">{contract.service_provider_signer_name}</p>
+                          <p className="text-xs text-gray-500">Signed: {formatDate(contract.service_provider_signed_at)}</p>
                         </>
                       ) : (
                         <p className="font-medium text-gray-700">{employeeName || 'Awaiting signature'}</p>
@@ -818,10 +985,10 @@ export default function EmploymentContractPage() {
             </div>
 
             {/* Editable Signer Names */}
-            {contract && (!contract.household_signed_at || !contract.househelp_signed_at) && (
-              <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
+            {contract && (!contract.household_signed_at || !contract.service_provider_signed_at) && (
+              <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-4 dark:bg-purple-900/20 dark:border-purple-700/50">
                 <h3 className="text-xs font-semibold text-gray-900 dark:text-white mb-1">Signer Names</h3>
-                <p className="text-xs text-gray-500 dark:text-purple-300 mb-4">
+                <p className="text-xs text-gray-500 dark:text-purple-300 mb-3">
                   These names will appear on the contract. Edit if needed before signing.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -835,7 +1002,7 @@ export default function EmploymentContractPage() {
                       value={employerName}
                       onChange={e => setEmployerName(e.target.value)}
                       disabled={!!contract.household_signed_at || !isHousehold}
-                      className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                       placeholder="Full legal name"
                     />
                     {contract.household_signed_at ? (
@@ -845,7 +1012,7 @@ export default function EmploymentContractPage() {
                     ) : (
                       <button
                         onClick={() => handleAcceptAndSign('household')}
-                        disabled={savingNames || !employerName.trim() || !isHousehold}
+                        disabled={savingNames || !employerName.trim() || !isHousehold || !contractHasTerms}
                         className={`w-full px-4 py-2.5 text-white rounded-xl transition-all font-semibold flex items-center justify-center gap-2 ${
                           isHousehold
                             ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/30 disabled:opacity-50'
@@ -858,35 +1025,35 @@ export default function EmploymentContractPage() {
                     )}
                   </div>
 
-                  {/* Employee (Househelp) side */}
+                  {/* Employee (service-provider) side */}
                   <div className="space-y-3">
                     <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400">
-                      Employee (Househelp)
+                      Employee (Service provider)
                     </label>
                     <input
                       type="text"
                       value={employeeName}
                       onChange={e => setEmployeeName(e.target.value)}
-                      disabled={!!contract.househelp_signed_at || !isHousehelp}
-                      className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                      disabled={!!contract.service_provider_signed_at || !isServiceProvider}
+                      className="w-full px-3 py-1.5 border border-purple-200 dark:border-purple-500/30 rounded-lg bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                       placeholder="Full legal name"
                     />
-                    {contract.househelp_signed_at ? (
+                    {contract.service_provider_signed_at ? (
                       <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" /> Signed on {formatDate(contract.househelp_signed_at)}
+                        <CheckCircle className="w-3 h-3" /> Signed on {formatDate(contract.service_provider_signed_at)}
                       </p>
                     ) : (
                       <button
-                        onClick={() => handleAcceptAndSign('househelp')}
-                        disabled={savingNames || !employeeName.trim() || !isHousehelp}
+                        onClick={() => handleAcceptAndSign('service_provider')}
+                        disabled={savingNames || !employeeName.trim() || !isServiceProvider || !contractHasTerms}
                         className={`w-full px-4 py-2.5 text-white rounded-xl transition-all font-semibold flex items-center justify-center gap-2 ${
-                          isHousehelp
+                          isServiceProvider
                             ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/30 disabled:opacity-50'
                             : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-50'
                         }`}
                       >
-                        {savingNames && isHousehelp ? <span className="hb-shimmer-piece h-4 w-4 rounded-full" /> : <Check className="w-4 h-4" />}
-                        {isHousehelp ? 'Accept & Sign' : 'Awaiting Employee'}
+                        {savingNames && isServiceProvider ? <span className="hb-shimmer-piece h-4 w-4 rounded-full" /> : <Check className="w-4 h-4" />}
+                        {isServiceProvider ? 'Accept & Sign' : 'Awaiting Employee'}
                       </button>
                     )}
                   </div>
@@ -895,35 +1062,28 @@ export default function EmploymentContractPage() {
             )}
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap gap-3 justify-end">
+            <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:justify-end">
               {/* Download - only when both signed */}
               {canDownload && (
-                <button onClick={handleDownload}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg shadow-purple-500/30 flex items-center gap-2">
-                  <Download className="w-4 h-4" /> Download Contract
+                <button onClick={handleDownload} disabled={downloading}
+                  className="flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-2.5 text-xs font-semibold text-white shadow-lg shadow-purple-500/30 transition-all hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 sm:px-6 sm:text-sm">
+                  <Download className="h-4 w-4 shrink-0" /> {downloading ? 'Preparing PDF…' : 'Download PDF'}
                 </button>
               )}
 
               {/* Email contract */}
               {canDownload && (
                 <button onClick={openEmailModal}
-                  className="px-6 py-2.5 border-2 border-purple-200 dark:border-purple-700/50 text-gray-700 dark:text-purple-200 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-all font-semibold flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
+                  className="flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border-2 border-purple-200 px-2 py-2.5 text-xs font-semibold text-gray-700 transition-all hover:bg-purple-50 dark:border-purple-700/50 dark:text-purple-200 dark:hover:bg-purple-900/40 sm:px-6 sm:text-sm">
+                  <Mail className="h-4 w-4 shrink-0" />
                   Email Contract
                 </button>
               )}
 
-              {/* Not signed by both - show disabled download with tooltip */}
-              {!canDownload && contract && (
-                <div className="relative group">
-                  <button disabled
-                    className="px-6 py-2.5 bg-purple-200/50 dark:bg-purple-900/30 text-purple-400 dark:text-purple-500 rounded-xl cursor-not-allowed flex items-center gap-2 border border-purple-200 dark:border-purple-700/40">
-                    <Download className="w-4 h-4" /> Download Contract
-                  </button>
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs rounded-xl px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-lg">
-                    Both parties must sign before downloading
-                  </div>
-                </div>
+              {contract && !isSignedByBoth && (
+                <p className="col-span-2 w-full text-right text-xs text-gray-500 dark:text-purple-300/70">
+                  The PDF will show this contract as still awaiting a signature.
+                </p>
               )}
             </div>
           </div>
@@ -931,15 +1091,25 @@ export default function EmploymentContractPage() {
 
         {/* ═══ SIGNING MODAL ═══ */}
         {showSigningModal && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={() => setShowSigningModal(false)} />
             <div className="relative bg-white dark:bg-[#0d0d15] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
+              <button
+                type="button"
+                onClick={() => setShowSigningModal(false)}
+                aria-label="Close"
+                className="absolute right-4 top-4 rounded-full border border-purple-200 p-1.5 text-gray-500 transition hover:bg-purple-50 hover:text-gray-900 dark:border-purple-500/30 dark:text-gray-300 dark:hover:bg-purple-500/15 dark:hover:text-white"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
               <h3 className="text-base font-extrabold text-gray-900 dark:text-white mb-2">Sign Contract</h3>
               <p className="text-xs text-gray-600 dark:text-purple-200 mb-4">
                 Enter your full legal name to sign this contract. This serves as your digital signature.
               </p>
               <div className="mb-4">
-                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Full Legal Name *</label>
+                <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Full Legal Name *</label>
                 <input
                   type="text"
                   value={signerName}
@@ -969,15 +1139,25 @@ export default function EmploymentContractPage() {
 
         {/* ═══ EMAIL CONTRACT MODAL ═══ */}
         {showEmailModal && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={() => setShowEmailModal(false)} />
             <div className="relative bg-white dark:bg-[#0d0d15] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
+              <button
+                type="button"
+                onClick={() => setShowEmailModal(false)}
+                aria-label="Close"
+                className="absolute right-4 top-4 rounded-full border border-purple-200 p-1.5 text-gray-500 transition hover:bg-purple-50 hover:text-gray-900 dark:border-purple-500/30 dark:text-gray-300 dark:hover:bg-purple-500/15 dark:hover:text-white"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
               <h3 className="text-base font-extrabold text-gray-900 dark:text-white mb-2">Email Contract</h3>
               <p className="text-xs text-gray-600 dark:text-purple-200 mb-4">
                 We'll send a copy of the signed contract to the email address below.
               </p>
               <div className="mb-5">
-                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Email Address *</label>
+                <label className="block text-[11px] font-semibold text-purple-600 dark:text-purple-400 mb-1">Email Address *</label>
                 <input
                   type="email"
                   value={emailAddress}

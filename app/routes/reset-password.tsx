@@ -83,8 +83,8 @@ export default function ResetPassword() {
       setError("Passwords do not match");
       return;
     }
-    if (passwordStrength.score < 3) {
-      setError("Password is too weak");
+    if (formData.password.length < 4) {
+      setError("Password must be at least 4 characters");
       return;
     }
 
@@ -182,6 +182,7 @@ export default function ResetPassword() {
                 name="password"
                 type="password"
                 autoComplete="new-password"
+                minLength={4}
                 required
                 value={formData.password}
                 onChange={handleChange}
@@ -216,6 +217,7 @@ export default function ResetPassword() {
                 name="confirmPassword"
                 type="password"
                 autoComplete="new-password"
+                minLength={4}
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
@@ -236,7 +238,7 @@ export default function ResetPassword() {
                 loading ||
                 !resetUserId ||
                 formData.password !== formData.confirmPassword ||
-                passwordStrength.score < 3
+                formData.password.length < 4
               }
               className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >

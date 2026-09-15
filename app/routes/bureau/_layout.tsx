@@ -18,7 +18,7 @@ export default function BureauDashboard() {
     <>
       <Navigation />
       <div className="relative min-h-screen w-full bg-gradient-to-br from-purple-50 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] transition-colors duration-300">
-        <div className="relative z-10 mx-auto w-full max-w-6xl flex flex-col sm:flex-row gap-2 items-start overflow-x-hidden">
+        <div className="relative z-10 mx-auto w-full max-w-6xl flex flex-col sm:flex-row gap-2 items-start overflow-x-clip">
           <BureauSidebar />
           <section className="flex-1 min-w-0">
             <Outlet />

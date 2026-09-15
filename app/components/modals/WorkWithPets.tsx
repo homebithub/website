@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../../utils/errorMessages';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { FormError } from '~/components/FormError';
 
 type PetPreference = 'with_pets' | 'no_pets';
 type PetType = 'dog' | 'cat' | 'bird' | 'fish' | 'reptile' | 'small_mammal' | 'other';
@@ -95,7 +96,7 @@ const WorkWithPets = () => {
                 pet_types: petPreference === 'with_pets' ? petTypes.join(',') : '',
             };
 
-            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
+            await grpcProfileService.updateServiceProviderFields('', 'service_provider', updates);
             
             setSuccess('Your pet preferences have been saved successfully!');
             // navigate('/next-step');
@@ -111,11 +112,6 @@ const WorkWithPets = () => {
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6">
             <h1 className="text-xl font-bold text-gray-900 mb-6">Pet Work Preferences</h1>
             
-            {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-xs">
-                    {error}
-                </div>
-            )}
             
             {success && (
                 <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-xs">
@@ -206,6 +202,10 @@ const WorkWithPets = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Beside the button, not at the top of a form the person has
+                    already scrolled past. */}
+                <FormError message={error} />
 
                 <div className="pt-2">
                     <button

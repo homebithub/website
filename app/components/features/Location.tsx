@@ -116,11 +116,6 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                     mapbox_id: selectedLocation.mapbox_id,
                     feature_type: selectedLocation.feature_type,
                 },
-                _step_metadata: {
-                    step_id: "location",
-                    step_number: 1,
-                    is_completed: true
-                }
             });
 
             setSubmitStatus({

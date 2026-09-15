@@ -25,8 +25,8 @@ const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _g
 
 import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js';
 const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb
-import * as device_pb from './device_pb.js';
-const proto = { auth: device_pb.default || device_pb };
+import * as auth_pb from './device_pb.js';
+const proto = { auth: auth_pb.default || auth_pb };
 
 /**
  * @param {string} hostname
@@ -388,6 +388,67 @@ proto.auth.DeviceServicePromiseClient.prototype.revokeDevice =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.DecideDeviceRequest,
+ *   !proto.auth.DecideDeviceResponse>}
+ */
+const methodDescriptor_DeviceService_DecideDevice = new grpc.web.MethodDescriptor(
+  '/auth.DeviceService/DecideDevice',
+  grpc.web.MethodType.UNARY,
+  proto.auth.DecideDeviceRequest,
+  proto.auth.DecideDeviceResponse,
+  /**
+   * @param {!proto.auth.DecideDeviceRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.DecideDeviceResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.DecideDeviceRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.DecideDeviceResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.DecideDeviceResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.DeviceServiceClient.prototype.decideDevice =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.DeviceService/DecideDevice',
+      request,
+      metadata || {},
+      methodDescriptor_DeviceService_DecideDevice,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.DecideDeviceRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.DecideDeviceResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.DeviceServicePromiseClient.prototype.decideDevice =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.DeviceService/DecideDevice',
+      request,
+      metadata || {},
+      methodDescriptor_DeviceService_DecideDevice);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.auth.RevokeAllDevicesRequest,
  *   !proto.google.protobuf.Empty>}
  */
@@ -571,5 +632,6 @@ proto.auth.DeviceServicePromiseClient.prototype.updateDeviceActivity =
 export default proto.auth;
 export const {
   DeviceServiceClient,
+  DeviceServicePromiseClient,
 } = proto.auth;
 

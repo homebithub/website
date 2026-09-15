@@ -1,12 +1,10 @@
-import React from 'react';
-
 const Loading = () => {
   return (
     <div className="flex items-center justify-center py-6">
       <div
         role="status"
         aria-label="Loading"
-        className="h-8 w-8 animate-spin rounded-full border-4 border-purple-200 border-t-primary"
+        className="h-7 w-7 animate-spin rounded-full border-2 border-purple-300/30 border-t-purple-500"
       />
     </div>
   );

@@ -128,17 +128,6 @@ export interface ReferenceRelationship {
   is_active: boolean;
 }
 
-export interface OnboardingStep {
-  id: number;
-  step_id: string;
-  profile_type: string;
-  title: string;
-  description: string;
-  step_number: number;
-  is_skippable: boolean;
-  is_active: boolean;
-}
-
 export interface OnboardingOptions {
   languages: Language[];
   certifications: Certification[];
@@ -156,7 +145,30 @@ export interface OnboardingOptions {
   location_type_preferences: LocationTypePreference[];
   family_type_preferences: FamilyTypePreference[];
   reference_relationships: ReferenceRelationship[];
-  onboarding_steps: OnboardingStep[];
+
+  // The rest of the catalogue, keyed by the feature's own name in snake_case.
+  //
+  // These were carried on listings all along and dropped from this response by
+  // a hardcoded name mapping in auth, so no client could read them. Optional
+  // because the list grows as features are added and this interface should not
+  // have to be edited for a filter to become possible.
+  start_timing?: CatalogueOption[];
+  shift_window?: CatalogueOption[];
+  preferred_days?: CatalogueOption[];
+  work_arrangement?: CatalogueOption[];
+  engagement_frequency?: CatalogueOption[];
+  engagement_duration?: CatalogueOption[];
+  urgency?: CatalogueOption[];
+}
+
+// The shape every catalogue property shares. Features carry extra fields —
+// a salary range has amounts — but a picker only ever needs these two.
+export interface CatalogueOption {
+  id: number;
+  name: string;
+  description?: string;
+  display_order?: number;
+  is_active?: boolean;
 }
 
 interface UseOnboardingOptionsResult {
@@ -217,7 +229,7 @@ function normalizeSalaryRanges(
  * Hook to fetch all onboarding options from the backend
  * Uses the optimized GetAllOptions endpoint for a single request
  */
-export function useOnboardingOptions(profileType: 'househelp' | 'household'): UseOnboardingOptionsResult {
+export function useOnboardingOptions(profileType: 'service_provider' | 'household'): UseOnboardingOptionsResult {
   const [options, setOptions] = useState<OnboardingOptions | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -1,6 +1,6 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState } from "react";
-import { househelpPreferencesService } from '~/services/grpc/authServices';
+import { serviceProviderPreferencesService } from '~/services/grpc/authServices';
 
 const CHORES = [
   "Laundry",
@@ -39,7 +39,7 @@ const Chores: React.FC = () => {
 
     try {
       const token = getAccessTokenFromCookies();
-      await househelpPreferencesService.addChores('', {
+      await serviceProviderPreferencesService.addChores('', {
         chores: selectedChores.map(chore => chore.toLowerCase())
       });
       setMessage("Chores saved successfully!");

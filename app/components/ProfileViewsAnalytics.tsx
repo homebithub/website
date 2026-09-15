@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Eye, TrendingUp, Clock, Calendar, Users, RefreshCw } from 'lucide-react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { profileViewService } from '~/services/grpc/profileView.service';
+import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 interface ProfileViewsAnalyticsProps {
   profileId: string;
@@ -27,15 +28,12 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(isOpen);
 
   useEffect(() => {
     if (isOpen) {
       loadAnalytics();
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
   }, [isOpen, profileId]);
 
   useEffect(() => {
@@ -62,9 +60,12 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
   };
 
   const formatDuration = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
+    // Analytics returns an average, so it can contain a long decimal. Display
+    // only whole seconds and keep the existing compact hour/minute format.
+    const wholeSeconds = Math.max(0, Math.round(seconds));
+    if (wholeSeconds < 60) return `${wholeSeconds}s`;
+    const minutes = Math.floor(wholeSeconds / 60);
+    const remainingSeconds = wholeSeconds % 60;
     if (minutes < 60) {
       return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
     }
@@ -95,7 +96,7 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
+    <div className="hb-mobile-modal-viewport fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div
         ref={backdropRef}
@@ -136,10 +137,10 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="animate-pulse h-20 bg-purple-900/10 dark:bg-purple-900/20 rounded-xl" />
+                  <div key={i} className="hb-shimmer-piece h-20 rounded-xl" />
                 ))}
               </div>
-              <div className="animate-pulse h-16 bg-purple-900/10 dark:bg-purple-900/20 rounded-xl" />
+              <div className="hb-shimmer-piece h-16 rounded-xl" />
             </div>
           )}
 

@@ -35,16 +35,16 @@ export const routeConfig: Record<string, RouteConfig> = {
   
   // Public profile pages (view only)
   '/household/public-profile': { path: '/household/public-profile', requiresAuth: false },
+  '/service-provider/public-profile': { path: '/service-provider/public-profile', requiresAuth: false },
+  // Legacy bookmarks stay readable during the route migration.
   '/househelp/public-profile': { path: '/househelp/public-profile', requiresAuth: false },
   
   // ==================== PROTECTED ROUTES ====================
   // ALL OTHER ROUTES REQUIRE AUTHENTICATION INCLUDING:
-  // - /profile-setup/household
-  // - /profile-setup/househelp
   // - /household/profile
-  // - /househelp/profile
+  // - /service-provider/profile
   // - /household/*
-  // - /househelp/*
+  // - /service-provider/*
   // - /bureau/*
   // - /inbox
   // - /settings
@@ -54,12 +54,10 @@ export const routeConfig: Record<string, RouteConfig> = {
   // - etc.
   
   // Explicitly defined protected routes (for reference)
-  '/profile': { path: '/profile', requiresAuth: true },
   '/settings': { path: '/settings', requiresAuth: true },
   '/change-password': { path: '/change-password', requiresAuth: true },
-  '/profile-setup/household': { path: '/profile-setup/household', requiresAuth: true },
-  '/profile-setup/househelp': { path: '/profile-setup/househelp', requiresAuth: true },
   '/household/profile': { path: '/household/profile', requiresAuth: true },
+  '/service-provider/profile': { path: '/service-provider/profile', requiresAuth: true },
   '/househelp/profile': { path: '/househelp/profile', requiresAuth: true },
   '/inbox': { path: '/inbox', requiresAuth: true },
   '/join-household': { path: '/join-household', requiresAuth: true },
@@ -87,6 +85,7 @@ export function isProtectedRoute(pathname: string): boolean {
   
   // Pattern match for public profile routes
   if (pathname.startsWith('/household/public-profile') || 
+      pathname.startsWith('/service-provider/public-profile') ||
       pathname.startsWith('/househelp/public-profile')) {
     return false;
   }
@@ -112,4 +111,4 @@ export const protectedRoutes = Object.entries(routeConfig)
 // Get all auth routes (login/signup)
 export const authRoutes = Object.entries(routeConfig)
   .filter(([_, config]) => config.redirectIfAuthenticated)
-  .map(([path, _]) => path); 
+  .map(([path, _]) => path);

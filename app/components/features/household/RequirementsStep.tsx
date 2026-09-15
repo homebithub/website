@@ -103,7 +103,7 @@ export function RequirementsStep({ data, onUpdate, onNext }: RequirementsStepPro
               <textarea
                 value={petDetails}
                 onChange={(e) => handlePetDetailsChange(e.target.value)}
-                placeholder="e.g., 2 dogs (Golden Retriever and German Shepherd), 1 cat, all friendly and well-trained. Househelp should be comfortable with pets and help with feeding and basic pet care."
+                placeholder="e.g., 2 dogs (Golden Retriever and German Shepherd), 1 cat, all friendly and well-trained. Service provider should be comfortable with pets and help with feeding and basic pet care."
                 rows={4}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 required

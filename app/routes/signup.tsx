@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { rememberPendingCode } from '~/services/referrals';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
@@ -7,17 +8,24 @@ import { signupSchema, validateForm, validateField, normalizeKenyanPhoneNumber }
 import { handleApiError } from '~/utils/errorMessages';
 import { useAuth } from '~/contexts/useAuth';
 import { Loading } from '~/components/Loading';
-import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { FcGoogle } from 'react-icons/fc';
 import { Modal } from '~/components/features/Modal';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorage';
+import { normalizeProfileType, SERVICE_PROVIDER_PROFILE_TYPE } from '~/utils/profileType';
+import { profileFeatureService } from '~/services/grpc/authServices';
+import { RequiredMark } from '~/components/ui/formStyles';
+import {
+    fallbackSignupProfileOptions,
+    normalizeSignupProfileOptions,
+    type SignupProfileOption,
+} from '~/utils/signupProfiles';
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
-    { name: "description", content: "Create your free Homebit account. Join as a household looking for help or as a househelp offering your services across Kenya." },
+    { name: "description", content: "Create your free Homebit account. Join as a household looking for help or as a service provider offering your skills across Kenya." },
     { property: "og:title", content: "Sign Up — Homebit" },
     { property: "og:url", content: "https://homebit.co.ke/signup" },
 ];
@@ -25,6 +33,7 @@ export const meta = () => [
 // Types for request and response
 export type SignupRequest = {
     profile_type: string;
+    profile_id?: string;
     password: string;
     first_name: string;
     last_name: string;
@@ -61,11 +70,82 @@ export type SignupResponse = {
 };
 
 
-// Profile type options - Bureau removed as they should not sign up through regular flow
-const profileOptions = [
-    { value: 'household', label: 'Household' },
-    { value: 'househelp', label: 'Househelp/Nanny' }
-];
+/**
+ * Putting a server error beside the input it is about.
+ *
+ * The server names the field — details.field on the error payload, surfaced as
+ * err.field by the gRPC client — so this reads that rather than searching the
+ * sentence for the word "phone". Searching worked until somebody reworded the
+ * message, and then it failed silently: the error still appeared, just at the
+ * top of the form with no indication of which box to fix.
+ *
+ * The word matching is kept as a fallback, for a server that has not been
+ * deployed yet. It can go once nothing older is running.
+ */
+function placeError(
+    err: unknown,
+    message: string,
+    setFieldErrors: (errors: Record<string, string>) => void,
+    setTouchedFields: (update: (prev: Record<string, boolean>) => Record<string, boolean>) => void,
+    setError: (message: string) => void,
+) {
+    const named = (err as { field?: string } | null)?.field;
+    const lower = message.toLowerCase();
+
+    const field = named
+        || (lower.includes('phone') ? 'phone' : '')
+        || (lower.includes('email') ? 'email' : '');
+
+    if (field === 'phone' || field === 'email') {
+        setFieldErrors({ [field]: message });
+        setTouchedFields(prev => ({ ...prev, [field]: true }));
+    }
+
+    setError(message);
+}
+
+function createPhoneVerification(authId: string, target: string) {
+    return {
+        id: '',
+        user_id: authId,
+        type: 'phone',
+        status: 'pending',
+        target,
+        expires_at: '',
+        next_resend_at: '',
+        attempts: 0,
+        max_attempts: 3,
+        resends: 0,
+        max_resends: 3,
+        created_at: '',
+        updated_at: '',
+    };
+}
+
+function verificationProtoToState(verificationProto: any) {
+    return {
+        id: verificationProto.getId(),
+        user_id: verificationProto.getUserId(),
+        type: verificationProto.getType(),
+        status: verificationProto.getStatus(),
+        target: verificationProto.getTarget(),
+        expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
+        next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
+        attempts: verificationProto.getAttempts(),
+        max_attempts: verificationProto.getMaxAttempts(),
+        resends: verificationProto.getResends(),
+        max_resends: verificationProto.getMaxResends(),
+        created_at: verificationProto.getCreatedAt()?.toDate?.().toISOString() || '',
+        updated_at: verificationProto.getUpdatedAt()?.toDate?.().toISOString() || '',
+    };
+}
+
+function genericResponseBodyToJs(response: any) {
+    const body = response?.getBody?.();
+    if (body?.toJavaScript) return body.toJavaScript();
+    if (body?.toObject) return body.toObject();
+    return body || {};
+}
 
 export default function SignupPage() {
     const { user, loading: authLoading } = useAuth();
@@ -77,17 +157,23 @@ export default function SignupPage() {
     const searchParams = new URLSearchParams(location.search);
     //const redirectUrl = searchParams.get('redirect');
     const bureauId = searchParams.get('bureauId');
-    const googleProfileType = searchParams.get('profile_type');
+    const googleProfileType = normalizeProfileType(searchParams.get('profile_type'));
     const isGoogleSignup = searchParams.get('google_signup') === '1';
     const googleEmail = searchParams.get('email') || '';
     const googleFirstName = searchParams.get('first_name') || '';
     const googleLastName = searchParams.get('last_name') || '';
     const googleId = searchParams.get('google_id') || '';
     const googlePicture = searchParams.get('picture') || '';
+    // A referral link still lands here, but the code is no longer asked for on
+    // this form. It waits in session storage and prefills the prompt shown once
+    // the account exists — a code cannot be spent before there is somebody to
+    // attach it to, and asking for one before the person has seen what they
+    // joined got it ignored.
     const referralCodeParam = searchParams.get('referral_code') || searchParams.get('ref') || searchParams.get('referral') || '';
     
     const [form, setForm] = useState<SignupRequest>({
         profile_type: googleProfileType || '',
+        profile_id: fallbackSignupProfileOptions.find((option) => option.value === googleProfileType)?.id || '',
         // For Google signups we don't actually use the password field,
         // but the shared validation schema expects a non-empty value.
         // Use a dummy value so validation and UI enablement pass while
@@ -96,7 +182,6 @@ export default function SignupPage() {
         first_name: googleFirstName,
         last_name: googleLastName,
         phone: '',
-        referral_code: referralCodeParam,
     });
     
     const [googleData, setGoogleData] = useState<{
@@ -114,32 +199,72 @@ export default function SignupPage() {
     const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
     const [showPassword, setShowPassword] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [profileOptions, setProfileOptions] = useState<SignupProfileOption[]>(fallbackSignupProfileOptions);
+    const [profilesLoading, setProfilesLoading] = useState(false);
     
     // Modal state - check if profile_type is in URL params from Google callback
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(!googleProfileType);
-    
+
     const [formLoading, setFormLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<SignupResponse | null>(null);
 
+    // Hold the code from the invite link until there is an account to spend it
+    // on. It survives the Google round trip, which leaves the site and returns.
+    useEffect(() => {
+        rememberPendingCode(referralCodeParam);
+    }, [referralCodeParam]);
+
     useEffect(() => {
         // If user is already authenticated, redirect them
         if (user) {
-            const profileType = user.user?.profile_type;
+            const profileType = normalizeProfileType(user.user?.profile_type);
             // Bureau users should not access regular signup flow
             if (profileType === "bureau") {
                 navigate("/");
                 return;
             }
-            if (profileType === "household" || profileType === "household") {
+            if (profileType === "household") {
                 navigate("/household/profile");
-            } else if (profileType === "househelp") {
-                navigate("/househelp");
+            } else if (profileType === SERVICE_PROVIDER_PROFILE_TYPE) {
+                navigate("/service-provider");
             } else {
                 navigate("/");
             }
         }
     }, [user, navigate]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadProfiles() {
+            setProfilesLoading(true);
+            try {
+                const response = await profileFeatureService.listProfiles();
+                const profiles = Array.isArray(response?.data) ? response.data : [];
+                const options = normalizeSignupProfileOptions(profiles);
+                if (cancelled) return;
+
+                setProfileOptions(options);
+                setForm((current) => {
+                    if (!current.profile_type) return current;
+                    const selected = options.find((option) => option.value === current.profile_type);
+                    if (!selected || current.profile_id === selected.id) return current;
+                    return { ...current, profile_id: selected.id };
+                });
+            } catch (err) {
+                console.error('[SIGNUP] Failed to load profiles:', err);
+                if (!cancelled) setProfileOptions(fallbackSignupProfileOptions);
+            } finally {
+                if (!cancelled) setProfilesLoading(false);
+            }
+        }
+
+        loadProfiles();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // No longer needed since we're using a modal instead of dropdown
     // useEffect(() => {
@@ -195,8 +320,8 @@ export default function SignupPage() {
         }
     };
 
-    const handleProfileTypeSelect = (value: string) => {
-        setForm({...form, profile_type: value});
+    const handleProfileSelect = (option: SignupProfileOption) => {
+        setForm({...form, profile_type: option.value, profile_id: option.id});
         // Don't auto-close modal - user must click Continue button after accepting terms
         
         // Clear field error when user selects an option
@@ -236,6 +361,13 @@ export default function SignupPage() {
         clearStoredAuthSession();
         localStorage.removeItem('user_id');
         const normalizedPhone = normalizeKenyanPhoneNumber(form.phone);
+        const signupPhone = normalizedPhone.replace(/^\+/, '');
+
+        if (!form.profile_id && !googleData) {
+            setError('Please choose an account profile');
+            setFormLoading(false);
+            return;
+        }
         
         try {
             // Check if this is a Google signup completion
@@ -248,10 +380,9 @@ export default function SignupPage() {
                         googleData.email,
                         form.first_name,
                         form.last_name,
-                        normalizedPhone,
-                        form.profile_type,
-                        form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
-                        form.referral_code
+                        signupPhone,
+                        form.profile_id || form.profile_type,
+                        form.profile_type === SERVICE_PROVIDER_PROFILE_TYPE && bureauId ? bureauId : undefined,
                     );
 
                     const userId = signupResponse.getUserId();
@@ -264,21 +395,7 @@ export default function SignupPage() {
                             profile_type: form.profile_type,
                         },
                         token: token,
-                        verification: verificationProto ? {
-                            id: verificationProto.getId(),
-                            user_id: verificationProto.getUserId(),
-                            type: verificationProto.getType(),
-                            status: verificationProto.getStatus(),
-                            target: verificationProto.getTarget(),
-                            expires_at: verificationProto.getExpiresAt()?.toDate().toISOString() || '',
-                            next_resend_at: verificationProto.getNextResendAt()?.toDate().toISOString() || '',
-                            attempts: verificationProto.getAttempts(),
-                            max_attempts: verificationProto.getMaxAttempts(),
-                            resends: verificationProto.getResends(),
-                            max_resends: verificationProto.getMaxResends(),
-                            created_at: verificationProto.getCreatedAt()?.toDate().toISOString() || '',
-                            updated_at: verificationProto.getUpdatedAt()?.toDate().toISOString() || '',
-                        } : undefined,
+                        verification: verificationProto ? verificationProtoToState(verificationProto) : undefined,
                     };
                 } catch (err: any) {
                     console.error('[SIGNUP] gRPC error:', err);
@@ -288,17 +405,7 @@ export default function SignupPage() {
                     const lowerMsg = errorMsg.toLowerCase();
 
                     if (grpcCode === 'ALREADY_EXISTS' || lowerMsg.includes('already')) {
-                        if (lowerMsg.includes('phone')) {
-                            setFieldErrors({ phone: 'This phone number is already registered' });
-                            setTouchedFields(prev => ({ ...prev, phone: true }));
-                            setError('This phone number is already registered');
-                        } else if (lowerMsg.includes('email')) {
-                            setFieldErrors({ email: 'This email is already registered' });
-                            setTouchedFields(prev => ({ ...prev, email: true }));
-                            setError('This email is already registered');
-                        } else {
-                            setError('Account already exists');
-                        }
+                        placeError(err, errorMsg, setFieldErrors, setTouchedFields, setError);
                         setFormLoading(false);
                         return;
                     }
@@ -315,7 +422,7 @@ export default function SignupPage() {
                 }
                 
                 const userId = data.user?.user_id;
-                const profileType = data.user?.profile_type || form.profile_type;
+                const profileType = normalizeProfileType(data.user?.profile_type || form.profile_type);
                 
                 if (!userId) {
                     console.error('[SIGNUP] No user_id in Google signup response:', data);
@@ -333,7 +440,8 @@ export default function SignupPage() {
                         state: { 
                             verification: data.verification,
                             profileType: profileType,
-                            isGoogleSignup: true 
+                            isGoogleSignup: true,
+                            from: 'signup',
                         } 
                     });
                 } else {
@@ -341,54 +449,37 @@ export default function SignupPage() {
                         state: {
                             userId: userId,
                             profileType: profileType,
-                            isGoogleSignup: true
+                            isGoogleSignup: true,
+                            from: 'signup',
                         }
                     });
                 }
                 return;
             }
             
-            // Regular signup flow - use gRPC-Web
+            // Regular signup flow uses the generated browser gRPC-Web client.
             let data: any;
             try {
-                // Use gRPC-Web instead of REST
                 const { default: authService } = await import('~/services/grpc/auth.service');
                 const signupResponse = await authService.signup(
-                    normalizedPhone,
+                    signupPhone,
                     form.password,
                     form.first_name,
                     form.last_name,
-                    form.profile_type,
-                    form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
-                    form.referral_code
+                    form.profile_id || form.profile_type,
+                    form.profile_type === SERVICE_PROVIDER_PROFILE_TYPE && bureauId ? bureauId : undefined,
                 );
-                
-                // Extract data from gRPC response
-                const userId = signupResponse.getUserId();
-                const token = signupResponse.getToken();
-                const verificationProto = signupResponse.getVerification();
 
+                const responseBody = genericResponseBodyToJs(signupResponse);
+                const authId = String(signupResponse.getUserId?.() || responseBody.auth_id || responseBody.authId || '');
+                const verificationProto = signupResponse.getVerification?.();
                 data = {
-                    user: {
-                        user_id: userId,
-                        profile_type: form.profile_type,
-                    },
-                    token: token,
-                    verification: verificationProto ? {
-                        id: verificationProto.getId(),
-                        user_id: verificationProto.getUserId(),
-                        type: verificationProto.getType(),
-                        status: verificationProto.getStatus(),
-                        target: verificationProto.getTarget(),
-                        expires_at: verificationProto.getExpiresAt()?.toDate().toISOString() || '',
-                        next_resend_at: verificationProto.getNextResendAt()?.toDate().toISOString() || '',
-                        attempts: verificationProto.getAttempts(),
-                        max_attempts: verificationProto.getMaxAttempts(),
-                        resends: verificationProto.getResends(),
-                        max_resends: verificationProto.getMaxResends(),
-                        created_at: verificationProto.getCreatedAt()?.toDate().toISOString() || '',
-                        updated_at: verificationProto.getUpdatedAt()?.toDate().toISOString() || '',
-                    } : undefined,
+                    auth_id: authId,
+                    profile_id: form.profile_id,
+                    profile_type: form.profile_type,
+                    verification: verificationProto
+                        ? verificationProtoToState(verificationProto)
+                        : createPhoneVerification(authId, signupPhone),
                 };
             } catch (err: any) {
                 console.error('[SIGNUP] gRPC error:', err);
@@ -399,17 +490,7 @@ export default function SignupPage() {
                 
                 // Handle duplicate phone/email errors
                 if (grpcCode === 'ALREADY_EXISTS' || lowerMsg.includes('already')) {
-                    if (lowerMsg.includes('phone')) {
-                        setFieldErrors({ phone: 'This phone number is already registered' });
-                        setTouchedFields(prev => ({ ...prev, phone: true }));
-                        setError('This phone number is already registered');
-                    } else if (lowerMsg.includes('email')) {
-                        setFieldErrors({ email: 'This email is already registered' });
-                        setTouchedFields(prev => ({ ...prev, email: true }));
-                        setError('This email is already registered');
-                    } else {
-                        setError('Account already exists');
-                    }
+                    placeError(err, errorMsg, setFieldErrors, setTouchedFields, setError);
                     setFormLoading(false);
                     return;
                 }
@@ -427,18 +508,24 @@ export default function SignupPage() {
                 return;
             }
 
-            // Extract user_id from either { user: { user_id } } or { user_id } shape
-            const userId = data.user?.user_id || data.user_id;
-            const profileType = data.user?.profile_type || form.profile_type;
+            const userId = data.auth_id || data.user?.user_id || data.user_id;
+            const profileType = normalizeProfileType(data.profile_type || data.user?.profile_type || form.profile_type);
+            const userProfileId = data.user_profile_id || data.userProfileId || '';
             
             if (!userId) {
-                console.error('[SIGNUP] No user_id in response:', data);
+                console.error('[SIGNUP] No auth_id/user_id in response:', data);
                 setError('Signup succeeded but response was unexpected. Please try logging in.');
                 return;
             }
             
             // Store user data temporarily (before verification)
             localStorage.setItem('user_id', userId);
+            if (data.profile_id || form.profile_id) {
+                localStorage.setItem('profile_id', data.profile_id || form.profile_id || '');
+            }
+            if (userProfileId) {
+                localStorage.setItem('user_profile_id', userProfileId);
+            }
             setStoredProfileType(profileType);
             
             // DO NOT store token yet - wait until after OTP verification
@@ -450,8 +537,11 @@ export default function SignupPage() {
                 navigate('/verify-otp', { 
                     state: { 
                         verification: data.verification,
-                        profileType: profileType 
-                } 
+                        profileType: profileType,
+                        profileId: data.profile_id || form.profile_id,
+                        userProfileId,
+                        from: 'signup',
+                    }
                 });
             } else {
                 // Fallback if no verification data - still navigate to verify-otp
@@ -459,7 +549,10 @@ export default function SignupPage() {
                 navigate('/verify-otp', {
                     state: {
                         userId: userId,
-                        profileType: profileType
+                        profileType: profileType,
+                        profileId: data.profile_id || form.profile_id,
+                        userProfileId,
+                        from: 'signup',
                     }
                 });
             }
@@ -481,7 +574,8 @@ export default function SignupPage() {
     };
 
     const getSelectedProfileLabel = () => {
-        const selected = profileOptions.find(option => option.value === form.profile_type);
+        const selected = profileOptions.find(option => option.id === form.profile_id)
+            || profileOptions.find(option => option.value === form.profile_type);
         return selected ? selected.label : 'Select profile type';
     };
 
@@ -490,8 +584,8 @@ export default function SignupPage() {
             // Pass profile_type in state to preserve it through OAuth redirect
             const statePayload = {
                 profile_type: form.profile_type,
+                profile_id: form.profile_id,
                 bureau_id: bureauId || undefined,
-                referral_code: form.referral_code?.trim() || undefined
             };
             const state = encodeURIComponent(JSON.stringify(statePayload));
             const { default: authService } = await import('~/services/grpc/auth.service');
@@ -509,7 +603,7 @@ export default function SignupPage() {
         }
     };
 
-    // If auth is loading and it's not a bureau registering a househelp, show loader
+    // If auth is loading and a bureau is not registering a service provider, show the loader.
     if (authLoading && !bureauId) {
         return <Loading text="Redirecting..." />;
     }
@@ -517,8 +611,8 @@ export default function SignupPage() {
     return (
         <div className="min-h-screen flex flex-col">
         <Navigation/>
-        <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
-        <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+        <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1 min-h-0 signup-page">
+        <main className="flex w-full flex-col items-center justify-start overflow-visible px-4 py-8 pb-12">
             {/* Profile Selection Modal */}
             <Modal 
                 isOpen={isProfileModalOpen} 
@@ -533,38 +627,40 @@ export default function SignupPage() {
                     <div className="flex flex-col gap-4">
                         {profileOptions.map((option) => (
                             <button
-                                key={option.value}
+                                key={option.id}
                                 type="button"
-                                onClick={() => handleProfileTypeSelect(option.value)}
+                                onClick={() => handleProfileSelect(option)}
                                 className={`group relative p-5 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
-                                    form.profile_type === option.value 
+                                    form.profile_id === option.id
                                         ? 'border-purple-500 dark:border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/40 dark:to-pink-900/40 shadow-lg dark:shadow-glow-md' 
                                         : 'border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-pink-50/50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 hover:shadow-md dark:hover:shadow-glow-sm bg-gray-50/50 dark:bg-gray-800/30'
                                 }`}
                             > 
                                 <div className="flex items-start gap-4">
                                     <div className={`flex-shrink-0 flex items-center justify-center w-6 h-6 border-2 rounded-full mt-0.5 transition-all duration-200 ${
-                                        form.profile_type === option.value 
+                                        form.profile_id === option.id
                                             ? 'bg-gradient-to-br from-purple-600 to-pink-600 border-purple-600 dark:border-purple-500 shadow-md' 
                                             : 'border-gray-400 dark:border-gray-500 group-hover:border-purple-500 dark:group-hover:border-purple-400'
                                     }`}>
-                                        {form.profile_type === option.value && (
+                                        {form.profile_id === option.id && (
                                             <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
                                         )}
                                     </div>
                                     <div className="flex-1">
                                         <h4 className="text-base font-bold text-gray-900 dark:text-white mb-1.5">{option.label}</h4>
                                         <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                                            {option.value === 'household' 
-                                                ? 'I need to hire help for my home and family needs' 
-                                                : 'I\'m looking for work opportunities and want to offer my services'
-                                            }
+                                            {option.description}
                                         </p>
                                     </div>
                                 </div>
                             </button>
                         ))}
                     </div>
+                    {profilesLoading && (
+                        <p className="mt-3 text-center text-xs text-gray-500 dark:text-gray-400">
+                            Loading account types...
+                        </p>
+                    )}
                     
                     {/* Terms Acceptance Checkbox */}
                     <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-500/30">
@@ -592,10 +688,10 @@ export default function SignupPage() {
                         <button
                             type="button"
                             onClick={() => setIsProfileModalOpen(false)}
-                            disabled={!form.profile_type || !acceptedTerms}
+                            disabled={!form.profile_id || !acceptedTerms}
                             className="glow-button px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
-                            Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label || 'User'}
+                            Continue as {getSelectedProfileLabel() === 'Select profile type' ? 'User' : getSelectedProfileLabel()}
                         </button>
                         <button
                             type="button"
@@ -681,7 +777,7 @@ export default function SignupPage() {
                         {!googleData && (
                           <>
                             <div>
-                                <label htmlFor="first_name" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">First Name</label>
+                                <label htmlFor="first_name" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">First Name<RequiredMark /></label>
                                 <input
                                     id="first_name"
                                     type="text"
@@ -703,7 +799,7 @@ export default function SignupPage() {
                                 )}
                             </div>
                             <div>
-                                <label htmlFor="last_name" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Last Name</label>
+                                <label htmlFor="last_name" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Last Name<RequiredMark /></label>
                                 <input
                                     id="last_name"
                                     type="text"
@@ -730,7 +826,7 @@ export default function SignupPage() {
                         {/* Only show password field for non-Google signups */}
                         {!googleData && (
                             <div>
-                                <label htmlFor="password" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Password</label>
+                                <label htmlFor="password" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Password<RequiredMark /></label>
                                 <div className="relative">
                                     <input
                                         id="password"
@@ -768,7 +864,7 @@ export default function SignupPage() {
                             </div>
                         )}
                         <div>
-    <label htmlFor="phone" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Phone</label>
+    <label htmlFor="phone" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Phone<RequiredMark /></label>
     <input
         id="phone"
         type="tel"
@@ -788,29 +884,6 @@ export default function SignupPage() {
     />
     {getFieldError('phone') && (
         <p className="text-red-600 text-xs mt-1">{getFieldError('phone')}</p>
-    )}
-</div>
-
-<div>
-    <label htmlFor="referral_code" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Referral code (optional)</label>
-    <input
-        id="referral_code"
-        type="text"
-        name="referral_code"
-        value={form.referral_code || ''}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
-            getFieldError('referral_code') 
-                ? 'border-red-300' 
-                : isFieldValid('referral_code')
-                ? 'border-green-300'
-                : 'border-purple-200'
-        }`}
-        placeholder="AB12CD"
-    />
-    {getFieldError('referral_code') && (
-        <p className="text-red-600 text-xs mt-1">{getFieldError('referral_code')}</p>
     )}
 </div>
 

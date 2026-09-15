@@ -3,13 +3,13 @@ import React, { useState, useEffect } from "react";
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 // Chores are now fetched from backend via context
 
 const Chores: React.FC = () => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedChores, setSelectedChores] = useState<string[]>([]);
   const [showOtherInput, setShowOtherInput] = useState(false);
@@ -110,15 +110,10 @@ const Chores: React.FC = () => {
       const token = getAccessTokenFromCookies();
       await grpcProfileService.updateHouseholdProfile('', 'household', {
         chores: selectedChores,
-        _step_metadata: {
-          step_id: 'chores',
-          step_number: 4,
-          is_completed: true
-        }
       });
 
       markClean();
-      updateStepData('chores', { selectedChores });
+      updateProfileDraft('chores', { selectedChores });
       setMessage("Chores saved successfully!");
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {

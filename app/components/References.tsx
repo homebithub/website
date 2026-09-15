@@ -4,7 +4,7 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 import CustomSelect from '~/components/ui/CustomSelect';
 
@@ -19,7 +19,7 @@ interface Reference {
 // Relationships are now fetched from backend via context
 
 const References: React.FC = () => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [references, setReferences] = useState<Reference[]>([
     { name: '', relationship: '', phone: '', email: '', duration: '' }
@@ -45,12 +45,18 @@ const References: React.FC = () => {
         const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        const data = await grpcProfileService.getCurrentServiceProviderProfile('');
         if (data?.reference) {
           try {
             const refs = typeof data.reference === 'string' ? JSON.parse(data.reference) : data.reference;
             if (Array.isArray(refs) && refs.length > 0) {
-              setReferences(refs.map((r: any) => ({ name: r.referee_name || '', relationship: '', phone: r.referee_tel || '', email: '', duration: '' })));
+              setReferences(refs.map((r: any) => ({
+                name: r.name || r.referee_name || '',
+                relationship: r.relationship || '',
+                phone: r.phone || r.referee_tel || '',
+                email: r.email || '',
+                duration: r.duration || r.time_known || '',
+              })));
             }
           } catch (e) {
             console.error('Failed to parse references:', e);
@@ -122,12 +128,12 @@ const References: React.FC = () => {
 
     try {
       const token = getAccessTokenFromCookies();
-      await grpcProfileService.updateHousehelpFields('', 'househelp', {
+      await grpcProfileService.updateServiceProviderFields('', 'service_provider', {
         references: JSON.stringify(validReferences),
-      }, { step_id: 'references', step_number: 12, is_completed: true });
+      });
 
       markClean();
-      updateStepData('references', { references: validReferences });
+      updateProfileDraft('references', { references: validReferences });
       setSuccess('References saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'references', 'Failed to save your references. Please try again.'));
@@ -141,7 +147,7 @@ const References: React.FC = () => {
     <div className="max-w-2xl mx-auto">
       <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">📞 References</h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
-        Provide contact information for people who can vouch for your work (Optional but recommended)
+        Add up to three people who can vouch for your work (optional but recommended). Ask for their consent first: Homebit may contact them to verify your experience. Their contact details are never shown on your public profile.
       </p>
       
       <form onSubmit={handleSubmit} className="space-y-6">

@@ -65,7 +65,7 @@ export function LocationStep({ data, onUpdate, onNext }: LocationStepProps) {
     <div className="space-y-6">
       <div className="text-center">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">Where are you located?</h3>
-        <p className="text-gray-600">Help us find househelp near you</p>
+        <p className="text-gray-600">Help us find service provider near you</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

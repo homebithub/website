@@ -5,7 +5,7 @@ export const meta = () => [
   {
     name: "description",
     content:
-      "Join Homebit's Airbnb cleaning waitlist as a household or househelp and get early access.",
+      "Join Homebit's Airbnb cleaning waitlist as a household or service provider and get early access.",
   },
 ];
 
@@ -16,7 +16,7 @@ const config = {
     "Airbnb Cleaning",
     "Home Deep Cleaning",
     "Indoor Cleaning",
-    "Househelp",
+    "Service provider",
     "Laundry & Ironing",
     "Meal Preps",
     "Pet Care",
@@ -36,7 +36,7 @@ const config = {
       servicePrompt: "Would you need additional services?",
       concernPrompt: "Biggest concern",
     },
-    househelp: {
+    service_provider: {
       heading: "You offer Airbnb cleaning services?",
       paragraph:
         "Join the Airbnb cleaning waitlist to be among the first Airbnb cleaning professionals hosts discover on Homebit. We are creating a trusted marketplace where Airbnb cleaners can present their skills with confidence and be matched to hosts who value reliable, thorough turnover cleaning. If you have experience with Airbnb cleaning, short-stay property turnover, guest-ready cleaning, time-sensitive cleaning, or hospitality-focused service, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so hosts can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the kind of Airbnb cleaning projects you specialize in. As we open access, we will prioritize waitlisted professionals, share new host requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for Airbnb cleaners who want stable opportunities, fair treatment, and a respectful relationship with the hosts they serve. If you are ready to build consistent Airbnb cleaning work with hosts who appreciate quality and reliability, the waitlist is the first step.",

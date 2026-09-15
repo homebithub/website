@@ -1,0 +1,1952 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSavedFilters } from '~/hooks/useSavedFilters';
+import { SavedFilterBar } from '~/components/SavedFilterBar';
+import { useNavigate, useLocation } from "react-router";
+import { Navigation } from "~/components/Navigation";
+import { Footer } from "~/components/Footer";
+import { ShimmerListPlaceholder } from "~/components/ShimmerLoader";
+import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
+import {
+  marketplaceJobService as jobService,
+  marketplaceListingApplicationService as listingApplicationService,
+  marketplaceShortlistService as shortlistService,
+} from "~/services/grpc/marketplace.service";
+import { profileReadService as grpcProfileService } from "~/services/grpc/profileRead.service";
+import { ErrorAlert } from "~/components/ui/ErrorAlert";
+import { SuccessAlert } from "~/components/ui/SuccessAlert";
+import { formatTimeAgo } from "~/utils/timeAgo";
+import { getStoredUser, getStoredUserId, getStoredUserProfileId } from "~/utils/authStorage";
+import {
+  getInboxRoute,
+  startOrGetConversation,
+  type StartConversationPayload,
+} from "~/utils/conversationLauncher";
+import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import {
+  resolveHouseholdProfile,
+  resolveHouseholdOwnerUserId,
+  type HouseholdProfileLike,
+} from "~/utils/householdProfiles";
+import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
+import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionReminder";
+import CustomSelect from "~/components/ui/CustomSelect";
+import LocationPicker, { type LocationSelection } from "~/components/ui/LocationPicker";
+import { ProfileCompletionCelebrationModal } from "~/components/profile/ProfileCompletionCelebrationModal";
+import { ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, SlidersHorizontal, X } from "lucide-react";
+import { useAuth } from "~/contexts/useAuth";
+import { useSubscription } from "~/hooks/useSubscription";
+import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
+import { IdentityVerificationPrompt } from "~/components/verification/IdentityVerificationPrompt";
+import { useIdentityVerification } from "~/hooks/useIdentityVerification";
+import { formatListingPlace, formatPlaceOrFallback } from "~/utils/place";
+import { OpenForWorkButton, type OpenForWorkButtonHandle } from "~/components/OpenForWorkButton";
+import { humanizeFeatureName, listingHighlights, remainingFeatureGroups } from "~/utils/listingFeatures";
+import { matchScoreClasses } from "~/utils/matchScore";
+import { ListingRating } from "~/components/ui/ListingRating";
+import { ListingCardFacts } from "~/components/listing/ListingCardFacts";
+import { InteractionFilterControls } from "~/components/listing/InteractionFilterControls";
+import { ListingViewToggle, useListingViewPreference } from "~/components/listing/ListingViewToggle";
+import { SidePanel } from "~/components/SidePanel";
+import { notificationsService } from "~/services/grpc/notifications.service";
+import { matchesInteractionFilters } from "~/utils/interactionFilters";
+import { useMarketplaceReadiness } from "~/hooks/useMarketplaceReadiness";
+import { MarketplaceReadinessBanner, MarketplaceReadinessRequiredModal } from "~/components/marketplace/MarketplaceReadiness";
+
+interface JobListing {
+  id: string;
+  title?: string;
+  description?: string;
+  location?: string | JobLocation;
+  // Resolved from the listing's ward by the auth service. This is where the
+  // work is, which is the only location a service provider sees — households are
+  // not discoverable, so their own address never appears.
+  ward?: string;
+  subcounty?: string;
+  county?: string;
+  job_types?: string[];
+  start_date?: string;
+  work_schedule?: Record<string, { morning?: boolean; afternoon?: boolean; evening?: boolean }>;
+  chores_ids?: number[] | string[];
+  pet_type_ids?: number[] | string[];
+  children_age_range_id?: number | string;
+  children_capacity_id?: number | string;
+  max_applicants?: number;
+  applicant_count?: number;
+  status?: string;
+  created_at?: string;
+  has_applied?: boolean;
+  fit_score?: number;
+  match_reasons?: string[];
+  owner_rating?: number;
+  owner_review_count?: number;
+}
+
+interface ServiceProviderSummary {
+  id?: string;
+  user_id?: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  photos?: string[];
+  town?: string;
+  location?: string;
+  years_of_experience?: number;
+  salary_expectation?: number;
+  salary_frequency?: string;
+  user?: {
+    id?: string;
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
+  };
+}
+
+interface JobLocation {
+  place_type?: string;
+  latitude?: number;
+  longitude?: number;
+  mapbox_id?: string;
+  name?: string;
+  place?: string;
+}
+
+type SalaryRangeOption = {
+  value: string;
+  label: string;
+  min: number | null;
+  max: number | null;
+  frequency?: string;
+};
+
+const DEFAULT_JOB_FILTERS = {
+  jobType: "",
+  // Location is filtered by the server, so it holds catalogue ids rather than a
+  // place name. Client-side matching could only ever filter the page already
+  // loaded, which made a narrow area look empty until you scrolled far enough
+  // to pull in a job from it.
+  countyId: "",
+  subcountyId: "",
+  wardId: "",
+  salaryRangeId: "",
+  choreId: "",
+  petTypeId: "",
+  childrenAgeRangeId: "",
+  childrenCapacityId: "",
+  minRating: "",
+  hideSaved: false,
+  hideContacted: false,
+  hideApplied: false,
+};
+
+
+/**
+ * The household that posted a job, as the listing actually names it.
+ *
+ * job.household_id was read in eight places on this page — the poster's name,
+ * their profile, the preview card, the detail sheet, and View profile — and set
+ * in none. ListJobs returns owner_user_id and user_profile_id; nothing in the
+ * response is called household_id, so every one of those reads was undefined
+ * and the whole household side of this screen quietly did nothing. View profile
+ * was the only one that said so out loud: "We couldn't open this household's
+ * profile right now."
+ *
+ * Kept as two functions over the raw field names rather than a normalisation
+ * step, because the listing shape differs between ListJobs and the hydrated
+ * GetListing response and both reach these cards.
+ */
+const householdProfileKey = (job: JobListing): string | undefined =>
+  (job as any).household_profile_id
+  || (job as any).user_profile_id
+  || (job as any).owner_profile_id
+  || undefined;
+
+const householdUserKey = (job: JobListing): string | undefined =>
+  (job as any).owner_user_id
+  || (job as any).household_user_id
+  || undefined;
+
+const normalizeToken = (value?: string) => (value || "").trim().toLowerCase();
+
+const formatDate = (value?: string) => {
+  if (!value) return "Flexible";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Flexible";
+  return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+};
+const isJobOpen = (job: { status?: string }) => {
+  // A listing's status is "active" — the value the service writes and the one
+  // the API returns. This compared against "open" alone, so every open job read
+  // as closed: the service-provider home page showed "0 roles available" beside a
+  // filter chip saying "2 total roles". It went unnoticed because the page had
+  // an All jobs toggle that skipped the check, and removing that toggle turned
+  // a wrong count into an empty page.
+  const status = (job.status || "active").toLowerCase();
+  return ["active", "open", "available"].includes(status);
+};
+
+const hasScheduleSlot = (
+  schedule: JobListing["work_schedule"],
+  slot: "morning" | "afternoon" | "evening"
+): boolean => {
+  if (!schedule) return false;
+  return Object.values(schedule).some((day) => day?.[slot]);
+};
+
+const toTimestamp = (value?: string): number | null => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.getTime();
+};
+
+const compareNumbers = (a: number | null, b: number | null, direction: "asc" | "desc") => {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return direction === "asc" ? a - b : b - a;
+};
+
+/**
+ * What a job pays, as one comparable number, for the budget sorts.
+ *
+ * This read job.salary_range.max — a field no listing carries. Every job
+ * therefore scored null, every comparison tied, and "Highest budget" and
+ * "Lowest budget" quietly returned the list in the order it arrived. Nothing
+ * looked broken; the sort simply did nothing, which is the worst way for a sort
+ * to fail.
+ *
+ * A listing carries its pay as the SalaryRange feature, already written for
+ * display: "daily: 500-1,000 KES", "monthly: 25,000+ KES". The top of the range
+ * is used, matching what the old code intended with max.
+ *
+ * Frequencies are normalised to a month so the two are comparable at all —
+ * 1,000 a day is more than 25,000 a month, and a sort that put them the other
+ * way round would be worse than the one that did nothing. The multipliers are a
+ * working month, not a legal definition, and they only ever decide an ordering.
+ */
+const MONTHLY_EQUIVALENT: Record<string, number> = {
+  hourly: 8 * 26,
+  daily: 26,
+  weekly: 4.33,
+  monthly: 1,
+  yearly: 1 / 12,
+};
+
+const getJobBudgetValue = (job: JobListing): number | null => {
+  const salary = listingHighlights(job).salary;
+  if (!salary) return null;
+
+  const frequency = Object.keys(MONTHLY_EQUIVALENT).find((key) =>
+    salary.toLowerCase().startsWith(key),
+  );
+
+  // Every number in the string, commas stripped. The last is the top of a
+  // range ("500-1,000") and the only one for an open-ended figure ("25,000+").
+  const amounts = (salary.replace(/,/g, "").match(/\d+(?:\.\d+)?/g) || [])
+    .map(Number)
+    .filter((value) => Number.isFinite(value));
+  if (amounts.length === 0) return null;
+
+  const top = Math.max(...amounts);
+  return top * (frequency ? MONTHLY_EQUIVALENT[frequency] : 1);
+};
+
+const extractArray = <T,>(raw: any): T[] => {
+  const payload: any = raw?.data?.data ?? raw?.data ?? raw ?? [];
+  if (Array.isArray(payload)) return payload as T[];
+  if (Array.isArray(payload?.data)) return payload.data as T[];
+  if (Array.isArray(payload?.items)) return payload.items as T[];
+  if (typeof payload === "object" && payload !== null) {
+    const firstArray = Object.values(payload).find(Array.isArray);
+    if (firstArray) return firstArray as T[];
+  }
+  return [];
+};
+
+
+/**
+ * A listing's id as a string, wherever it came from.
+ *
+ * JobListing.id is declared string and arrives from the API as a number. That
+ * mismatch is invisible to TypeScript, because the listing is parsed out of an
+ * untyped response — and it made the saved set useless: the ids fetched from the
+ * server are strings, the ids on the listings are numbers, and
+ * Set<string>.has(number) is always false. So a job you had saved came back
+ * looking unsaved, and the only hearts that ever filled were the ones you
+ * clicked in that same session.
+ */
+const jobKey = (job: { id?: unknown } | null | undefined): string =>
+  job?.id === undefined || job?.id === null ? "" : String(job.id);
+
+type ResponsivenessBadge = {
+  tone: "fast" | "steady" | "slow";
+  label: string;
+  detail?: string;
+};
+
+const RESPONSIVENESS_BADGE_STYLES: Record<ResponsivenessBadge["tone"], string> = {
+  fast: "bg-emerald-50 text-emerald-700 border border-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-200 dark:border-emerald-500/30",
+  steady: "bg-blue-50 text-blue-700 border border-blue-200/70 dark:bg-blue-500/10 dark:text-blue-200 dark:border-blue-500/30",
+  slow: "bg-amber-50 text-amber-700 border border-amber-200/70 dark:bg-amber-500/10 dark:text-amber-200 dark:border-amber-500/30",
+};
+
+const toNumericMetric = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+const minutesSince = (value?: string): number | null => {
+  if (!value) return null;
+  const ts = Date.parse(value);
+  if (Number.isNaN(ts)) return null;
+  return Math.max(0, Math.round((Date.now() - ts) / 60000));
+};
+
+const describeResponseRate = (rate: number) => `${Math.round(rate * 100)}% response rate`;
+const describeAvgMinutes = (minutes: number) => {
+  if (minutes < 60) return `~${Math.max(1, Math.round(minutes))} min avg reply`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `~${hours} hr response`;
+  const days = Math.round(hours / 24);
+  return `~${Math.max(1, days)} day response`;
+};
+const describeActivity = (minutes: number) => {
+  if (minutes < 60) return "Active this hour";
+  if (minutes < 360) return "Active today";
+  if (minutes < 1440) return "Active this week";
+  const days = Math.floor(minutes / 1440);
+  return days <= 14 ? `Active ${days}d ago` : `Inactive ${days}d`;
+};
+
+const deriveHouseholdResponsivenessBadge = (profile?: HouseholdProfileLike | null): ResponsivenessBadge | null => {
+  if (!profile) return null;
+  const anyProfile = profile as Record<string, any>;
+  const responseRate = toNumericMetric(anyProfile?.response_rate ?? anyProfile?.responseRate);
+  const avgMinutes = toNumericMetric(
+    anyProfile?.average_response_minutes ?? anyProfile?.avg_response_minutes ?? anyProfile?.response_minutes_avg,
+  );
+  const lastActiveMinutes = minutesSince(
+    (anyProfile?.last_active_at as string) ?? anyProfile?.lastActiveAt ?? anyProfile?.updated_at ?? anyProfile?.updatedAt,
+  );
+
+  if (responseRate != null) {
+    if (responseRate >= 0.85) return { tone: "fast", label: "Replies super fast", detail: describeResponseRate(responseRate) };
+    if (responseRate >= 0.6) return { tone: "steady", label: "Usually replies", detail: describeResponseRate(responseRate) };
+    return { tone: "slow", label: "Limited reply data", detail: describeResponseRate(responseRate) };
+  }
+
+  if (avgMinutes != null) {
+    if (avgMinutes <= 60) return { tone: "fast", label: "Replies in under 1h", detail: describeAvgMinutes(avgMinutes) };
+    if (avgMinutes <= 240) return { tone: "steady", label: "Replies same day", detail: describeAvgMinutes(avgMinutes) };
+    return { tone: "slow", label: "Replies in a day+", detail: describeAvgMinutes(avgMinutes) };
+  }
+
+  if (lastActiveMinutes != null) {
+    if (lastActiveMinutes <= 180) return { tone: "fast", label: "Active recently", detail: describeActivity(lastActiveMinutes) };
+    if (lastActiveMinutes <= 1440) return { tone: "steady", label: "Active this week", detail: describeActivity(lastActiveMinutes) };
+    return { tone: "slow", label: "Quiet lately", detail: describeActivity(lastActiveMinutes) };
+  }
+
+  const rating = toNumericMetric(anyProfile?.rating);
+  const reviewCount = toNumericMetric(anyProfile?.review_count);
+  if (rating != null && reviewCount != null && rating >= 4 && reviewCount >= 3) {
+    return { tone: "steady", label: "Highly rated household", detail: `${rating.toFixed(1)}★ • ${reviewCount} reviews` };
+  }
+
+  return null;
+};
+
+export default function ServiceProviderJobsHome() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const { user: authUser } = useAuth();
+  const memoizedStoredUser = useMemo(() => getStoredUser(), []);
+  const resolvedUser = (authUser as any)?.user ?? memoizedStoredUser ?? null;
+  const currentUserId: string | undefined = resolvedUser?.user_id || resolvedUser?.id || getStoredUserId() || undefined;
+  const plansHref = useMemo(() => `/pricing?return=${encodeURIComponent(location.pathname)}`, [location.pathname]);
+  const {
+    isActive: hasActiveSubscription,
+    status: subscriptionStatus,
+    loading: subscriptionLoading,
+  } = useSubscription(currentUserId);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [subscriptionActionLabel, setSubscriptionActionLabel] = useState("continue");
+  const marketplaceReadiness = useMarketplaceReadiness(currentUserId, "service_provider");
+  const openForWorkButtonRef = useRef<OpenForWorkButtonHandle>(null);
+  const [readinessModalOpen, setReadinessModalOpen] = useState(false);
+  const [previewProfileJob, setPreviewProfileJob] = useState<JobListing | null>(null);
+
+  const openSubscriptionGate = useCallback((actionLabel: string) => {
+    setSubscriptionActionLabel(actionLabel);
+    setSubscriptionModalOpen(true);
+  }, []);
+
+  const requireSubscription = useCallback(
+    (actionLabel: string) => {
+      if (hasActiveSubscription || subscriptionLoading) {
+        return false;
+      }
+      openSubscriptionGate(actionLabel);
+      return true;
+    },
+    [hasActiveSubscription, subscriptionLoading, openSubscriptionGate]
+  );
+
+  const [jobs, setJobs] = useState<JobListing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [serviceProviderProfileId, setServiceProviderProfileId] = useState<string>("");
+  const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
+  const [selectedJobDetail, setSelectedJobDetail] = useState<JobListing | null>(null);
+  const [pitch, setPitch] = useState("");
+  const [applyLoading, setApplyLoading] = useState(false);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [householdProfiles, setHouseholdProfiles] = useState<Record<string, HouseholdProfileLike | null>>({});
+
+  useEffect(() => {
+    const handleRefresh = () => {
+      setRefreshKey((value) => value + 1);
+      setOffset(0);
+      setJobs([]);
+      setHasMore(true);
+    };
+    window.addEventListener("homebit:refresh", handleRefresh);
+    return () => window.removeEventListener("homebit:refresh", handleRefresh);
+  }, []);
+  const renderHouseholdName = useCallback((job: JobListing) => {
+    const profileId = householdProfileKey(job);
+    const profile = profileId ? householdProfiles[profileId] : null;
+    return profile?.display_name || profile?.household_name || profile?.name || null;
+  }, [householdProfiles]);
+  const [shortlistedJobIds, setShortlistedJobIds] = useState<Set<string>>(() => new Set());
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(() => new Set());
+  const [contactedJobIds, setContactedJobIds] = useState<Set<string>>(() => new Set());
+  const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
+  const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  // Kept between visits. Narrowing a search used to be thrown away when the
+  // tab closed, so anyone returning daily redid the same work every day — and
+  // the people who return daily are the ones actually looking.
+  const viewerProfileId = useMemo(() => getStoredUserProfileId() || "", []);
+  const {
+    filters,
+    setFilters,
+    saved: savedFilters,
+    saveNamed,
+    applySaved,
+    deleteSaved,
+    restored: filtersRestored,
+  } = useSavedFilters(serviceProviderProfileId || viewerProfileId, DEFAULT_JOB_FILTERS);
+  const [locationPickerKey, setLocationPickerKey] = useState(0);
+  const [sortBy, setSortBy] = useState("best_match");
+  const [viewMode, setViewMode] = useListingViewPreference("homebit:marketplace-view");
+  const isGridView = viewMode === "grid";
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const limit = 12;
+  // The board's own address.
+  //
+  // This said "/service-provider/jobs", which is routed nowhere: flat-routes renders
+  // this component from _index, so the board is "/". Every Back to jobs link
+  // built from it therefore led to a dead route — including the one on the
+  // household profile a service provider reaches from these very cards.
+  const backToPath = "/";
+  const profileCompletionReminder = useProfileCompletionReminder(currentUserId || "", "service_provider");
+  const identityVerification = useIdentityVerification(currentUserId);
+
+  const { options: onboardingOptions } = useOnboardingOptions("household");
+  const openJobsCount = useMemo(() => jobs.filter((job) => isJobOpen(job)).length, [jobs]);
+  const jobTypeOptions = useMemo(() => {
+    const options = new Map<string, string>();
+    jobs.forEach((job) => {
+      job.job_types?.forEach((type) => {
+        const normalized = normalizeToken(type);
+        if (normalized) options.set(normalized, type.replace(/_/g, " "));
+      });
+    });
+    return Array.from(options.entries()).map(([value, label]) => ({ value, label }));
+  }, [jobs]);
+  const salaryRangeOptions = useMemo<SalaryRangeOption[]>(() => {
+    const ranges = onboardingOptions?.salary_ranges ?? [];
+    return ranges.map((range) => ({
+      value: String(range.id),
+      label: `${range.label}${range.frequency ? ` / ${range.frequency}` : ""}`,
+      min: range.min_amount ?? null,
+      max: range.max_amount ?? null,
+      frequency: range.frequency,
+    }));
+  }, [onboardingOptions]);
+  const selectedSalaryRange = useMemo(
+    () => salaryRangeOptions.find((range) => range.value === filters.salaryRangeId),
+    [salaryRangeOptions, filters.salaryRangeId]
+  );
+  const hasActiveFilters = useMemo(
+    () => Object.values(filters).some(Boolean),
+    [filters]
+  );
+  const activeFilterCount = useMemo(() => {
+    // Location occupies three keys but reads as one choice to the user, so a
+    // ward selection counts once rather than announcing three active filters.
+    const { countyId, subcountyId, wardId, ...rest } = filters;
+    const locationActive = Boolean(countyId || subcountyId || wardId);
+    return Object.values(rest).filter(Boolean).length + (locationActive ? 1 : 0);
+  }, [filters]);
+  const clearFilters = () => {
+    setFilters({ ...DEFAULT_JOB_FILTERS });
+    // The picker holds its own county/subcounty/ward state and only reads the
+    // initial props once, so clearing the filters here would leave its
+    // dropdowns showing a selection that is no longer being applied. Bumping
+    // its key remounts it with the cleared values.
+    setLocationPickerKey((key) => key + 1);
+  };
+  // Every filter is applied by the listings query now.
+  //
+  // The predicates that used to live here read job_types, chores_ids,
+  // pet_type_ids, children_age_range_id, children_capacity_id, start_date,
+  // work_schedule and salary_range — none of which a listing response contains.
+  // `!job.job_types?.some(...)` on an absent field is `!undefined`, so setting
+  // any of those filters removed every job from the list. The filter bar looked
+  // like it worked and emptied the results instead.
+  //
+  // Open-only stays local: it reads status, which the response does carry, and
+  // the toggle is meant to feel instant.
+  const filteredJobs = useMemo(
+    () => jobs
+      .filter((job) => isJobOpen(job))
+      .filter((job) => matchesInteractionFilters(filters, {
+        saved: shortlistedJobIds.has(jobKey(job)),
+        contacted: contactedJobIds.has(jobKey(job)),
+        applied: appliedJobIds.has(jobKey(job)) || Boolean(job.has_applied),
+      }))
+      .filter((job) => {
+        const minimum = Number(filters.minRating || 0);
+        const rating = Number(job.owner_rating ?? 0);
+        return !minimum || rating >= minimum;
+      }),
+    [appliedJobIds, contactedJobIds, shortlistedJobIds, jobs, filters],
+  );
+  const sortedJobs = useMemo(() => {
+    if (!sortBy) return filteredJobs;
+    const items = [...filteredJobs];
+    switch (sortBy) {
+      case "best_match":
+        items.sort((a, b) => compareNumbers(a.fit_score ?? null, b.fit_score ?? null, "desc"));
+        break;
+      case "budget_desc":
+        items.sort((a, b) => compareNumbers(getJobBudgetValue(a), getJobBudgetValue(b), "desc"));
+        break;
+      case "budget_asc":
+        items.sort((a, b) => compareNumbers(getJobBudgetValue(a), getJobBudgetValue(b), "asc"));
+        break;
+      case "created_asc":
+        items.sort((a, b) => compareNumbers(toTimestamp(a.created_at), toTimestamp(b.created_at), "asc"));
+        break;
+      case "created_desc":
+      case "default":
+      default:
+        items.sort((a, b) => compareNumbers(toTimestamp(a.created_at), toTimestamp(b.created_at), "desc"));
+        break;
+    }
+    return items;
+  }, [filteredJobs, sortBy]);
+
+  // Refetches, because location is a server-side filter. Guarded against
+  // no-op reports: the picker emits on every internal change, including the
+  // ones caused by its own option lists loading, and setting identical state
+  // would restart the query and clear the results for nothing.
+  const handleLocationFilterChange = useCallback((selection: LocationSelection) => {
+    setFilters((prev) => {
+      const countyId = selection.countyId ? String(selection.countyId) : "";
+      const subcountyId = selection.subcountyId ? String(selection.subcountyId) : "";
+      const wardId = selection.wardId ? String(selection.wardId) : "";
+      if (prev.countyId === countyId && prev.subcountyId === subcountyId && prev.wardId === wardId) {
+        return prev;
+      }
+      return { ...prev, countyId, subcountyId, wardId };
+    });
+  }, []);
+
+  const searchKey = useMemo(
+    () => {
+      const { hideSaved: _hideSaved, hideContacted: _hideContacted, hideApplied: _hideApplied, ...serverFilters } = filters;
+      return JSON.stringify({ filters: serverFilters, sortBy, salaryRangeId: filters.salaryRangeId });
+    },
+    [filters, sortBy]
+  );
+
+  useEffect(() => {
+    setOffset(0);
+    setHasMore(true);
+    setJobs([]);
+  }, [searchKey]);
+
+  // The panel closes on a click outside it, and starts closed on every visit.
+  //
+  // Its open state used to be remembered across reloads, so a panel opened once
+  // reappeared on every subsequent visit covering the results underneath — and
+  // the only way to shut it was to find the toggle again. A filter sheet is a
+  // transient thing: the filters themselves persist, whether the drawer happens
+  // to be open does not.
+  useEffect(() => {
+    if (!filtersOpen) return;
+
+    const dismiss = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const panel = document.getElementById("service-provider-job-filters");
+      // The toggle is excluded so its own click is not counted twice: it would
+      // close the panel here and immediately reopen it in the button's handler.
+      const toggle = document.getElementById("service-provider-job-filters-toggle");
+      // CustomSelect renders its menu into document.body so it cannot be
+      // clipped by this scrolling panel. Treat that portalled menu as part of
+      // the filter panel; selecting one option must not dismiss all filters.
+      const insideSelectMenu = target instanceof Element && Boolean(target.closest('[data-custom-select-panel="true"]'));
+      if (panel?.contains(target) || toggle?.contains(target) || insideSelectMenu) return;
+      setFiltersOpen(false);
+    };
+
+    document.addEventListener("mousedown", dismiss);
+    return () => document.removeEventListener("mousedown", dismiss);
+  }, [filtersOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchShortlisted = async () => {
+      try {
+        const raw = await shortlistService.listByHousehold('');
+        if (cancelled) return;
+        const items = extractArray<{ profile_id?: string; profile_type?: string }>(raw);
+        setShortlistedJobIds(new Set(
+          items
+            .filter((item) => item.profile_type === 'job')
+            .map((item) => (item.profile_id === undefined || item.profile_id === null ? '' : String(item.profile_id)))
+            .filter((id): id is string => Boolean(id))
+        ));
+      } catch (err) {
+        // Silently ignore; shortlist button will still function
+      }
+    };
+
+    fetchShortlisted();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Search responses cannot be trusted to decorate every row with
+  // `has_applied` (older gateway versions omit it). Applications are the
+  // source of truth, so load them once for this profile and compare normalized
+  // listing ids before discovery cards are rendered.
+  useEffect(() => {
+    if (!serviceProviderProfileId) return;
+    let cancelled = false;
+
+    const fetchAppliedListings = async () => {
+      try {
+        const raw = await listingApplicationService.listApplications({
+          applicantProfileId: serviceProviderProfileId,
+          limit: 200,
+          offset: 0,
+        });
+        if (cancelled) return;
+        const applications = extractArray<Record<string, any>>(raw);
+        const ids = applications
+          .map((application) => application.listing_id ?? application.listingId ?? application.job_listing_id ?? application.jobListingId)
+          .filter((id) => id !== undefined && id !== null && String(id) !== '')
+          .map(String);
+        setAppliedJobIds((previous) => new Set([...previous, ...ids]));
+      } catch {
+        // The create endpoint still rejects duplicates. Keep discovery usable
+        // if this non-blocking status lookup is temporarily unavailable.
+      }
+    };
+
+    void fetchAppliedListings();
+    return () => { cancelled = true; };
+  }, [serviceProviderProfileId]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    let cancelled = false;
+
+    const fetchContactedJobs = async () => {
+      try {
+        const raw = await notificationsService.listConversations(currentUserId, 0, 200);
+        if (cancelled) return;
+        const conversations = Array.isArray(raw?.conversations)
+          ? raw.conversations
+          : Array.isArray(raw?.data)
+            ? raw.data
+            : Array.isArray(raw)
+              ? raw
+              : [];
+        const ids = conversations
+          .map((conversation: Record<string, any>) => conversation.listing_id ?? conversation.listingId)
+          .filter((id: unknown) => id !== undefined && id !== null && String(id) !== '')
+          .map(String);
+        setContactedJobIds(new Set(ids));
+      } catch {
+        // Contact status is a card decoration and optional filter; chat itself
+        // remains available if this lookup is temporarily unavailable.
+      }
+    };
+
+    void fetchContactedJobs();
+    return () => { cancelled = true; };
+  }, [currentUserId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchProfile = async () => {
+      try {
+        const profile = await grpcProfileService.getCurrentServiceProviderProfile("");
+        const resolvedId = profile?.id || profile?.profile_id || "";
+        if (!cancelled) setServiceProviderProfileId(resolvedId);
+      } catch (err) {
+        // Non-blocking: allow browsing even if we can't resolve profile ID yet
+      }
+    };
+    fetchProfile();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Wait for the stored filters to arrive before asking for listings.
+    // Otherwise the page fetches once with the defaults and again the moment
+    // the saved set lands — a wasted request, and results that visibly change
+    // under the person a beat after they appear.
+    if (!filtersRestored) return;
+
+    let cancelled = false;
+    const fetchJobs = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const payload: Record<string, any> = {
+          limit,
+          offset,
+        };
+        payload.status = "open";
+        // Jobs, not other service providers.
+        //
+        // Households' job posts and service providers' open-for-work posts share one
+        // table, and this asked for listings without saying whose — so the board
+        // showed "Available for work", posted by another service provider, with an
+        // Apply button under it.
+        payload.owner = "household";
+        if (filters.jobType) payload.job_type_id = Number(filters.jobType);
+        if (filters.wardId) payload.ward_id = Number(filters.wardId);
+        else if (filters.subcountyId) payload.subcounty_id = Number(filters.subcountyId);
+        else if (filters.countyId) payload.county_id = Number(filters.countyId);
+
+        // Chore, pet type, children age range, capacity and salary range are all
+        // feature properties, and the ids the pickers carry are the catalogue's
+        // own feature_properties ids, so they go over as one list.
+        const propertyIds = [
+          filters.choreId,
+          filters.petTypeId,
+          filters.childrenAgeRangeId,
+          filters.childrenCapacityId,
+          filters.salaryRangeId,
+        ]
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value) && value > 0);
+        if (propertyIds.length > 0) payload.property_ids = propertyIds;
+
+        if (sortBy === "best_match") payload.sort = "best_match";
+
+        // Who is looking. The service scores each job against what this person
+        // asked for during onboarding, and the score arrives as fit_score. Sent
+        // regardless of the sort, so switching to Best match does not need a
+        // second trip, and harmless without it — an unread field.
+        if (serviceProviderProfileId) payload.match_for = serviceProviderProfileId;
+
+        const raw = await jobService.searchJobs(payload, currentUserId);
+        const data = raw?.data || raw || {};
+        const items = Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data)
+            ? data
+            : [];
+        if (cancelled) return;
+        setJobs((prev) => (offset === 0 ? items : [...prev, ...items]));
+        setAppliedJobIds((prev) => {
+          const next = new Set(prev);
+          items.forEach((job: JobListing) => {
+            if (job.has_applied) next.add(jobKey(job));
+          });
+          return next;
+        });
+        setHasMore(items.length === limit);
+      } catch (err: any) {
+        if (!cancelled) {
+          setError(err.message || "Failed to load job listings");
+          // Stop the intersection observer from advancing the offset after a
+          // failed request. Without this, an empty page keeps retrying while
+          // the sentinel is visible and quickly exhausts the gateway limit.
+          setHasMore(false);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchJobs();
+
+    return () => {
+      cancelled = true;
+    };
+  // serviceProviderProfileId is a dependency because the score depends on it.
+  //
+  // It is resolved by a separate effect, so on a fresh load it is still "" when
+  // this first runs: match_for is omitted, the service returns the list
+  // unranked, and — without this dependency — nothing re-ran when the id
+  // arrived a moment later. The board therefore showed no match scores at all
+  // until something else happened to change, such as touching a filter, which
+  // is why the percentages looked like they came and went at random.
+  }, [offset, searchKey, selectedSalaryRange, currentUserId, filtersRestored, serviceProviderProfileId, refreshKey]);
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const el = sentinelRef.current;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !loading && hasMore && !error) {
+          setOffset((prev) => prev + limit);
+        }
+      },
+      { rootMargin: "240px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loading, hasMore, error]);
+
+  useEffect(() => {
+    const missingIds = jobs
+      .map((job) => householdProfileKey(job))
+      .filter((id): id is string => Boolean(id))
+      .filter((id) => !(id in householdProfiles));
+
+    if (missingIds.length === 0) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const resolved = await Promise.all(
+          missingIds.map(async (id) => {
+            try {
+              return await resolveHouseholdProfile(id, { identifierType: 'profileId' });
+            } catch (err) {
+              return null;
+            }
+          }),
+        );
+
+        if (cancelled) return;
+
+        setHouseholdProfiles((prev) => {
+          const next = { ...prev } as Record<string, HouseholdProfileLike | null>;
+          missingIds.forEach((id, index) => {
+            next[id] = resolved[index];
+          });
+          return next;
+        });
+      } catch (err) {
+        // ignore profile lookups failing entirely
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [jobs, householdProfiles]);
+
+  const getHouseholdProfileId = (job: JobListing): string | undefined => {
+    const lookupId = householdProfileKey(job);
+    const profile = lookupId ? householdProfiles[lookupId] : null;
+    return profile?.id || profile?.profile_id || lookupId;
+  };
+
+  const getHouseholdUserId = (job: JobListing): string | undefined => {
+    const lookupId = householdProfileKey(job);
+    const profile = lookupId ? householdProfiles[lookupId] : null;
+    // The listing's own owner_user_id is the fallback that matters: the profile
+    // lookup can fail or still be in flight, and the public profile route can
+    // be opened with just the user id.
+    return resolveHouseholdOwnerUserId(profile) || profile?.user_id || householdUserKey(job);
+  };
+
+  const handleOpenApplyModal = (job: JobListing) => {
+    if (appliedJobIds.has(jobKey(job)) || job.has_applied) {
+      setSuccess("You have already applied to this job.");
+      return;
+    }
+    if (!marketplaceReadiness.interactionAllowed) {
+      setReadinessModalOpen(true);
+      return;
+    }
+    if (requireSubscription("apply to jobs")) {
+      return;
+    }
+    setSelectedJob(job);
+    setPitch("");
+    setApplyError(null);
+  };
+
+  const handleOpenJobDetail = (job: JobListing) => {
+    setSelectedJobDetail(job);
+  };
+
+  const handleCloseJobDetail = () => {
+    setSelectedJobDetail(null);
+  };
+
+  const handleCloseApplyModal = () => {
+    if (applyLoading) return;
+    setSelectedJob(null);
+    setApplyError(null);
+  };
+
+  const handleSubmitApplication = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedJob) return;
+
+    if (appliedJobIds.has(jobKey(selectedJob)) || selectedJob.has_applied) {
+      setApplyError("You have already applied to this job.");
+      return;
+    }
+
+    if (!serviceProviderProfileId) {
+      setApplyError("Please complete your service provider profile before applying.");
+      return;
+    }
+
+    setApplyLoading(true);
+    setApplyError(null);
+
+    try {
+      // One write, carrying the pitch. applications.message is what the
+      // household's hiring workspace reads and what the state machine,
+      // engagements and reviews all hang off.
+      //
+      // The parallel interest record this used to create alongside it is gone.
+      // It had no reader once the hiring view moved to applications, and it lost
+      // data: interests are unique per household-and-provider pair, so applying
+      // to a second job from the same household was rejected as a duplicate and
+      // the old catch block swallowed it, leaving the applicant believing they
+      // had applied.
+      await jobService.applyForJob(selectedJob.id, serviceProviderProfileId, pitch.trim());
+
+      setSuccess("Application submitted successfully.");
+      setAppliedJobIds((prev) => new Set(prev).add(jobKey(selectedJob)));
+      setSelectedJob(null);
+      setPitch("");
+    } catch (err: any) {
+      const message = err?.message || "Failed to submit application. Please try again.";
+      if (message.toLowerCase().includes("already applied")) {
+        setAppliedJobIds((prev) => new Set(prev).add(jobKey(selectedJob)));
+        setSuccess("You have already applied to this job.");
+        setSelectedJob(null);
+        setPitch("");
+      } else {
+        setApplyError(message);
+      }
+    } finally {
+      setApplyLoading(false);
+    }
+  };
+
+  const handleChatWithHousehold = async (job: JobListing) => {
+    if (!marketplaceReadiness.interactionAllowed) {
+      setReadinessModalOpen(true);
+      return;
+    }
+    if (requireSubscription("message households")) {
+      return;
+    }
+    const householdUserId = getHouseholdUserId(job);
+    if (!householdUserId || !currentUserId) {
+      setError("We couldn’t start a chat right now. Please try again later.");
+      return;
+    }
+
+    setChatLoadingId(job.id);
+    try {
+      const payload: StartConversationPayload = {
+        household_user_id: householdUserId,
+        service_provider_user_id: currentUserId,
+      };
+
+      const householdProfileId = getHouseholdProfileId(job);
+      if (householdProfileId) payload.household_profile_id = householdProfileId;
+      if (serviceProviderProfileId) payload.service_provider_profile_id = serviceProviderProfileId;
+      // The job this chat is about, so it gets its own thread rather than
+      // joining whatever these two last talked about.
+      if (job.id) payload.listing_id = job.id;
+
+      const conversationId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      setContactedJobIds((previous) => new Set(previous).add(jobKey(job)));
+      navigate(getInboxRoute(conversationId));
+    } catch (err) {
+      setError("Could not open chat. Please try again.");
+    } finally {
+      setChatLoadingId(null);
+    }
+  };
+
+  const handleShortlistJob = async (job: JobListing) => {
+    setShortlistLoadingId(job.id);
+    const shortlisted = shortlistedJobIds.has(jobKey(job));
+    try {
+      if (shortlisted) {
+        await shortlistService.deleteShortlist(job.id);
+        setShortlistedJobIds((prev) => {
+          const next = new Set(prev);
+          next.delete(jobKey(job));
+          return next;
+        });
+        setSuccess("Job removed from saved.");
+      } else {
+        if (!serviceProviderProfileId) {
+          throw new Error("User profile information is missing. Please sign in again.");
+        }
+
+        // A bookmark, through the same service the household side already uses.
+        // This used to call shortlistListing, which files a formal application
+        // against the household's listing — so saving a job for later put the
+        // service provider into that household's hiring funnel, listed among the
+        // candidates it had shortlisted. Removing it already went through
+        // shortlistService, so the pair was mismatched either way.
+        // String, not the raw id.
+        //
+        // The interface calls JobListing.id a string and the service returns a
+        // number — TypeScript cannot see that, because the listing comes back
+        // from an untyped API response. Sent as-is it crosses the wire as a
+        // protobuf NumberValue, and the handler reads that field with a string
+        // type assertion, which fails and leaves it empty: "profile_id is
+        // required", for a request that carried one.
+        await shortlistService.createShortlist('', 'service_provider', {
+          profile_id: String(job.id),
+          profile_type: 'job',
+        });
+
+        setShortlistedJobIds((prev) => new Set(prev).add(jobKey(job)));
+        setSuccess("Job saved.");
+      }
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
+    } catch (err: any) {
+      setError(err?.message || "Failed to update shortlist. Please try again.");
+    } finally {
+      setShortlistLoadingId(null);
+    }
+  };
+
+  const handleViewProfile = (job: JobListing) => {
+    if (requireSubscription("view full household profiles")) {
+      setPreviewProfileJob(job);
+      return;
+    }
+
+    const profileId = getHouseholdProfileId(job);
+    const householdUserId = getHouseholdUserId(job);
+    if (!profileId && !householdUserId) {
+      setError("We couldn’t open this household’s profile right now.");
+      return;
+    }
+
+    const url = householdUserId
+      ? `/household/public-profile?userId=${encodeURIComponent(householdUserId)}&jobId=${encodeURIComponent(job.id)}&from=jobs&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to jobs')}`
+      : `/household/public-profile?profileId=${encodeURIComponent(profileId!)}&jobId=${encodeURIComponent(job.id)}&from=jobs&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to jobs')}`;
+
+    navigate(url, { state: { backTo: backToPath, backLabel: 'Back to jobs' } });
+  };
+
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
+        <main className="flex-1 pb-10">
+          <section data-tour="home-heading" className="hb-safe-sticky-below-nav sticky z-30 mb-4 h-14 w-full border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:h-16">
+            <div className="hb-content-rail flex h-full items-center gap-2 sm:gap-3">
+              <div className="hidden min-w-0 flex-1 sm:block">
+                <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">Latest job openings</h1>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {sortedJobs.length} {sortedJobs.length === 1 ? "role" : "roles"} available
+                </p>
+              </div>
+
+
+              {/* Always on screen while browsing. A service provider reading job
+                  adverts is exactly the person who should be told they can be
+                  found instead. */}
+              <OpenForWorkButton ref={openForWorkButtonRef} className="hidden shrink-0 sm:flex" verification={identityVerification} />
+
+              <ListingViewToggle value={viewMode} onChange={setViewMode} />
+
+              <label className="min-w-0 flex-1 sm:flex-none">
+                <span className="sr-only">Sort job openings</span>
+                <CustomSelect
+                  value={sortBy}
+                  onChange={(value) => setSortBy(value)}
+                  options={[
+                    { value: "best_match", label: "Best match" },
+                    { value: "default", label: "Newest first" },
+                    { value: "created_asc", label: "Oldest first" },
+                    { value: "budget_desc", label: "Budget high to low" },
+                    { value: "budget_asc", label: "Budget low to high" },
+                  ]}
+                  className="w-full sm:w-[180px]"
+                  size="sm"
+                  placeholder="Best match"
+                />
+              </label>
+
+              <button
+                data-tour="discovery-filters"
+                type="button"
+                onClick={() => setFiltersOpen((prev) => !prev)}
+                id="service-provider-job-filters-toggle"
+                aria-label={filtersOpen ? "Hide job filters" : "Show job filters"}
+                aria-expanded={filtersOpen}
+                aria-controls="service-provider-job-filters"
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-purple-200/70 bg-white/80 px-3 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span>
+                  {!filtersOpen && activeFilterCount > 0
+                    ? `${activeFilterCount} ${activeFilterCount === 1 ? 'filter' : 'filters'} applied`
+                    : 'Filters'}
+                </span>
+                {filtersOpen && activeFilterCount > 0 && (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-1 text-[10px] text-white shadow-sm">
+                    {activeFilterCount}
+                  </span>
+                )}
+                <ChevronDown className={`h-3.5 w-3.5 transition ${filtersOpen ? "rotate-180" : ""}`} />
+              </button>
+            </div>
+
+            {filtersOpen && (
+              <SidePanel
+                isOpen
+                onClose={() => setFiltersOpen(false)}
+                title="Filters"
+                maxWidth="max-w-[560px]"
+              >
+              <div id="service-provider-job-filters" className="hb-filter-panel w-full pb-4">
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Job type
+                    <CustomSelect
+                      value={filters.jobType}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, jobType: value }))}
+                      options={[
+                        { value: "", label: "Any job type" },
+                        ...jobTypeOptions.map((option) => ({ value: option.value, label: option.label })),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any job type"
+                    />
+                  </label>
+                  <LocationPicker
+                    key={locationPickerKey}
+                    onChange={handleLocationFilterChange}
+                    initialCountyId={filters.countyId ? Number(filters.countyId) : null}
+                    initialSubcountyId={filters.subcountyId ? Number(filters.subcountyId) : null}
+                    initialWardId={filters.wardId ? Number(filters.wardId) : null}
+                    layout="contents"
+                    anyLabel="Anywhere"
+                  />
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Salary range
+                    <CustomSelect
+                      value={filters.salaryRangeId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, salaryRangeId: value }))}
+                      options={[
+                        { value: "", label: "Any salary" },
+                        ...salaryRangeOptions.map((option) => ({ value: option.value, label: option.label })),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any salary"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Chore focus
+                    <CustomSelect
+                      value={filters.choreId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, choreId: value }))}
+                      options={[
+                        { value: "", label: "Any chores" },
+                        ...(onboardingOptions?.chores?.map((chore) => ({ value: String(chore.id), label: chore.name })) ?? []),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any chores"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Pet type
+                    <CustomSelect
+                      value={filters.petTypeId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, petTypeId: value }))}
+                      options={[
+                        { value: "", label: "Any pets" },
+                        ...(onboardingOptions?.pet_types?.map((pet) => ({ value: String(pet.id), label: pet.name })) ?? []),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any pets"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Children age range
+                    <CustomSelect
+                      value={filters.childrenAgeRangeId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, childrenAgeRangeId: value }))}
+                      options={[
+                        { value: "", label: "Any age range" },
+                        ...(onboardingOptions?.children_age_ranges?.map((range) => ({ value: String(range.id), label: range.label })) ?? []),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any age range"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Children capacity
+                    <CustomSelect
+                      value={filters.childrenCapacityId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, childrenCapacityId: value }))}
+                      options={[
+                        { value: "", label: "Any capacity" },
+                        ...(onboardingOptions?.children_capacities?.map((capacity) => ({ value: String(capacity.id), label: capacity.label })) ?? []),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any capacity"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Minimum household rating
+                    <CustomSelect
+                      value={filters.minRating}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, minRating: value }))}
+                      options={[
+                        { value: "", label: "Any rating" },
+                        { value: "4", label: "4★ and above" },
+                        { value: "3", label: "3★ and above" },
+                        { value: "2", label: "2★ and above" },
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any rating"
+                    />
+                  </label>
+                  <InteractionFilterControls
+                    hideSaved={Boolean(filters.hideSaved)}
+                    hideContacted={Boolean(filters.hideContacted)}
+                    hideApplied={Boolean(filters.hideApplied)}
+                    onChange={(name, checked) => setFilters((prev) => ({ ...prev, [name]: checked }))}
+                  />
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200 font-semibold">
+                      {openJobsCount} open now
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                      {jobs.length} total roles
+                    </span>
+                    {hasActiveFilters && (
+                      <span className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-3 py-1 font-semibold text-white">
+                        {filteredJobs.length} match your filters
+                      </span>
+                    )}
+                  </div>
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="text-xs font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+
+                <SavedFilterBar
+                  saved={savedFilters}
+                  hasActiveFilters={hasActiveFilters}
+                  onSave={saveNamed}
+                  onApply={applySaved}
+                  onDelete={deleteSaved}
+                  notifySubject="new jobs"
+                />
+              </div>
+              </SidePanel>
+            )}
+          </section>
+          <div className="hb-content-rail flex flex-col">
+            <div className="mb-3 min-w-0 max-w-full sm:hidden">
+              <OpenForWorkButton className="w-full" verification={identityVerification} />
+            </div>
+            <IdentityVerificationPrompt verification={identityVerification} />
+            <MarketplaceReadinessBanner
+              readiness={marketplaceReadiness}
+              onListingAction={() => openForWorkButtonRef.current?.open()}
+            />
+            {profileCompletionReminder.shouldShowCelebration && (
+              <ProfileCompletionCelebrationModal
+                isOpen
+                profileType="service_provider"
+                celebration={profileCompletionReminder.celebration}
+                onSeen={profileCompletionReminder.markCelebrationSeen}
+                onClose={() => void profileCompletionReminder.markCelebrationSeen()}
+              />
+            )}
+
+
+            {error && <ErrorAlert message={error} className="mb-6" onClose={() => setError(null)} />}
+            {success && <SuccessAlert message={success} className="mb-6" onClose={() => setSuccess(null)} />}
+
+            {loading ? (
+                <ShimmerListPlaceholder items={3} />
+            ) : sortedJobs.length === 0 ? (
+              <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  {hasActiveFilters ? "No jobs match your filters" : "No open jobs right now"}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                  {hasActiveFilters
+                    ? "Try adjusting your filters or clear them to see more openings."
+                    : "Households will post new open roles soon. Check back shortly or broaden your filters."}
+                </p>
+              </div>
+            ) : (
+              <div className={isGridView ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "space-y-4"}>
+                {sortedJobs.map((job) => {
+                  const householdName = renderHouseholdName(job);
+                  const shortlisted = shortlistedJobIds.has(jobKey(job));
+                  const hasApplied = appliedJobIds.has(jobKey(job)) || Boolean(job.has_applied);
+                  const contacted = contactedJobIds.has(jobKey(job));
+                  const householdKey = householdProfileKey(job);
+                    const householdProfile = householdKey ? householdProfiles[householdKey] : null;
+                  const responseBadge = deriveHouseholdResponsivenessBadge(householdProfile);
+                  const highlights = listingHighlights(job);
+                  return (
+                    <div
+                      data-tour="marketplace-card"
+                      key={job.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleOpenJobDetail(job)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handleOpenJobDetail(job);
+                        }
+                      }}
+                      className={`cursor-pointer rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400 dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6 ${isGridView ? "flex h-full flex-col" : ""}`}
+                    >
+                      <div className={isGridView ? "flex flex-col gap-3" : "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8"}>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="min-w-0 text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{job.title || "Household Job"}</h3>
+                            {typeof job.fit_score === "number" && job.fit_score >= 0 && (
+                              <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${matchScoreClasses(job.fit_score)}`}>
+                                Match {job.fit_score}%
+                              </span>
+                            )}
+                            {hasApplied && (
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                                You applied for this job
+                              </span>
+                            )}
+                            {contacted && (
+                              <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+                                You two are in contact
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatListingPlace(job)}</p>
+                          {/* What earned the score, on the card.
+                              A percentage on its own is a number nobody can
+                              argue with or learn from — it invites people to
+                              either over-trust it or ignore it. The matching
+                              service already returns its reasons; showing the
+                              first few here turns the score into something a
+                              person can act on, and the rest are in the job
+                              detail. */}
+                          {typeof job.fit_score === "number" && job.fit_score > 0 && (job.match_reasons?.length ?? 0) > 0 && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                              {job.match_reasons!.slice(0, isGridView ? 2 : 3).map((reason) => (
+                                <span
+                                  key={reason}
+                                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium capitalize text-gray-800 dark:bg-white/10 dark:text-gray-100"
+                                >
+                                  <span aria-hidden>✓</span>
+                                  {reason.replace(/_/g, " ")}
+                                </span>
+                              ))}
+                              {(job.match_reasons?.length ?? 0) > (isGridView ? 2 : 3) && (
+                                <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                  +{job.match_reasons!.length - (isGridView ? 2 : 3)} more
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {householdName && (
+                            <p className="mt-1 text-xs font-semibold text-purple-600 dark:text-purple-300">Hosted by {householdName}</p>
+                          )}
+                          <ListingRating
+                            rating={householdProfile?.rating ?? job.owner_rating}
+                            reviewCount={householdProfile?.review_count ?? job.owner_review_count}
+                            className="mt-1"
+                          />
+                          {responseBadge && (
+                            <div className="mt-2 space-y-1">
+                              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
+                                {responseBadge.label}
+                              </span>
+                              {!isGridView && responseBadge.detail && (
+                                <p className="text-[11px] text-gray-500 dark:text-gray-400">{responseBadge.detail}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {!isGridView && <ListingCardFacts listing={job} />}
+                        <div className={`flex shrink-0 items-start gap-1.5 sm:gap-2 ${isGridView ? "justify-between" : ""}`}>
+                          <span className={`px-2.5 py-1 text-[11px] font-semibold rounded-full sm:px-3 sm:text-xs ${isJobOpen(job)
+                            ? "bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-white"
+                            : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300"}`}
+                          >
+                            {job.status || "open"}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleChatWithHousehold(job);
+                              }}
+                              disabled={chatLoadingId === job.id}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-purple-200/60 bg-white text-purple-700 transition hover:bg-purple-50 disabled:opacity-60 dark:border-purple-500/30 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10 sm:h-9 sm:w-9"
+                              aria-label="Chat with household"
+                            >
+                              {chatLoadingId === job.id ? (
+                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+                              ) : (
+                                <MessageCircle className="w-4 h-4" />
+                              )}
+                            </button>
+                            {/* Restored. It was removed as dead, and it was not
+                                — it opens the household's profile, and that was
+                                broken by the household_id bug rather than by
+                                this button. */}
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleViewProfile(job);
+                              }}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-purple-200/60 bg-white text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10 sm:h-9 sm:w-9"
+                              aria-label="View household profile"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {job.description && (
+                        <p className={`mt-3 text-sm text-gray-600 dark:text-gray-300 ${isGridView ? "line-clamp-2" : "line-clamp-3"}`}>
+                          {job.description}
+                        </p>
+                      )}
+
+                      {/* Salary and start timing live in the listing's feature
+                          picks. Read from salary_range and start_date, fields no
+                          listing carries, every card claimed "Not specified". */}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {(job.job_types || []).length > 0
+                          ? job.job_types?.slice(0, isGridView ? 2 : job.job_types.length).map((type) => (
+                            <span
+                              key={type}
+                              className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
+                            >
+                              {type.replace(/_/g, " ")}
+                            </span>
+                          ))
+                          : null}
+                        {highlights.salary ? (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-white">
+                            {highlights.salary}
+                          </span>
+                        ) : null}
+                        {highlights.startTiming ? (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                            Start {highlights.startTiming}
+                          </span>
+                        ) : null}
+                        {job.max_applicants ? (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                            {Math.max(0, Number(job.applicant_count || 0))} / {job.max_applicants} applicants
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className={`mt-4 flex items-center justify-between ${isGridView ? "mt-auto pt-4" : ""}`}>
+                        <span className="text-xs text-gray-400">Posted {formatTimeAgo(job.created_at)}</span>
+                        <div className="flex gap-2 flex-wrap justify-end">
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleShortlistJob(job);
+                            }}
+                            disabled={shortlistLoadingId === job.id}
+                            className={`px-4 py-2 text-xs font-semibold rounded-xl border transition ${
+                              shortlisted
+                                ? "border-pink-400 bg-pink-500 text-white"
+                                : "border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                            } disabled:opacity-60`}
+                          >
+                            {shortlistLoadingId === job.id
+                              ? "Updating..."
+                              : shortlisted
+                                ? "Saved"
+                                : "Save"}
+                          </button>
+                          {!hasApplied && (
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleOpenApplyModal(job);
+                              }}
+                              disabled={!isJobOpen(job)}
+                              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1.5 text-xs font-semibold text-white hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              Apply
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {!loading && hasMore && jobs.length > 0 && (
+              <div className="mt-8 flex justify-center">
+                <button
+                  onClick={() => setOffset((prev) => prev + limit)}
+                  className="px-6 py-2 rounded-xl border border-purple-300 text-purple-700 font-semibold hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                >
+                  Load More
+                </button>
+              </div>
+            )}
+            <div ref={sentinelRef} className="h-1" />
+          </div>
+        </main>
+      </PurpleThemeWrapper>
+      <MarketplaceReadinessRequiredModal
+        readiness={marketplaceReadiness}
+        open={readinessModalOpen}
+        onClose={() => setReadinessModalOpen(false)}
+        onListingAction={() => openForWorkButtonRef.current?.open()}
+      />
+      <Footer />
+
+      {previewProfileJob && (() => {
+        const previewKey = householdProfileKey(previewProfileJob);
+        const profile = previewKey ? householdProfiles[previewKey] : null;
+        const profileData = (profile ?? {}) as Record<string, any>;
+        const householdName = profile?.display_name || profile?.household_name || profile?.name || profileData["display_name"] || "Verified household";
+        const shortName = householdName.split(" ")[0] || householdName;
+        const locationLabel = formatPlaceOrFallback(
+          profileData["location"] ?? previewProfileJob.location,
+          { town: profileData["town"] },
+        );
+        const lifestyle = (profileData["household_type"] as string | undefined) || (profileData["vibe"] as string | undefined) || "Family-focused";
+        const maskedDetails = [
+          {
+            label: "Household bio",
+            value: (profileData["about"] as string | undefined) || "Stories, routines, and preferences unlocked with any plan.",
+          },
+          {
+            label: "Contact info",
+            value: "Phone, WhatsApp, and chat access are hidden until you subscribe.",
+          },
+          {
+            label: "Exact location",
+            value: `${locationLabel} • Full neighborhood & directions hidden`,
+          },
+        ];
+
+        const renderMaskedDetail = (detail: { label: string; value: string }, index: number) => (
+          <div key={`${detail.label}-${index}`} className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">{detail.label}</p>
+            <div className="relative overflow-hidden rounded-2xl border border-purple-100/60 dark:border-white/10 bg-white/80 dark:bg-white/5 px-4 py-3 shadow-inner">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white relative z-10">{detail.value}</p>
+              <div className="absolute inset-0 backdrop-blur-[3px] bg-gradient-to-r from-purple-500/30 via-pink-500/20 to-purple-600/30 opacity-80" aria-hidden="true" />
+              <span className="absolute top-2 right-3 text-[10px] font-semibold uppercase tracking-[0.4em] text-white/80">Locked</span>
+            </div>
+          </div>
+        );
+
+        return (
+          <div className="hb-mobile-modal-viewport fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setPreviewProfileJob(null)} />
+            <div className="relative w-full sm:max-w-xl bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl border border-purple-200/60 dark:border-purple-700/30 shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Limited profile preview</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">{shortName}&apos;s household</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{locationLabel}</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-300 mt-2">Lifestyle hint: {lifestyle}</p>
+                  <p className="text-xs text-gray-400 mt-2">Subscribe to reveal verified contact details, reviews, and trust badges.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewProfileJob(null)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  aria-label="Close household preview"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-4">
+                {maskedDetails.map(renderMaskedDetail)}
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-purple-50/80 dark:bg-purple-900/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-purple-600 dark:text-purple-200">What you unlock</p>
+                <ul className="mt-3 text-sm text-purple-900 dark:text-purple-100 space-y-2">
+                  <li>✔️ Full household bio, routines, and amenities</li>
+                  <li>✔️ Direct chat + phone access</li>
+                  <li>✔️ Reviews, verification badges, and trust score</li>
+                </ul>
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewProfileJob(null);
+                    openSubscriptionGate("view full household profiles");
+                  }}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700"
+                >
+                  Unlock full profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewProfileJob(null)}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Maybe later
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {selectedJobDetail && (() => {
+        const shortlisted = shortlistedJobIds.has(jobKey(selectedJobDetail));
+        const hasApplied = appliedJobIds.has(jobKey(selectedJobDetail)) || Boolean(selectedJobDetail.has_applied);
+        const contacted = contactedJobIds.has(jobKey(selectedJobDetail));
+        const scheduleSlots = [
+          hasScheduleSlot(selectedJobDetail.work_schedule, "morning") && "Morning",
+          hasScheduleSlot(selectedJobDetail.work_schedule, "afternoon") && "Afternoon",
+          hasScheduleSlot(selectedJobDetail.work_schedule, "evening") && "Evening",
+        ].filter(Boolean) as string[];
+        const detailKey = householdProfileKey(selectedJobDetail);
+        const householdProfile = detailKey ? householdProfiles[detailKey] : null;
+        const responseBadge = deriveHouseholdResponsivenessBadge(householdProfile);
+        const detailHighlights = listingHighlights(selectedJobDetail);
+        // Salary and start timing already have their own cells above, so they
+        // are left out here rather than repeated a few pixels lower.
+        const detailFeatureGroups = remainingFeatureGroups(selectedJobDetail);
+
+        return (
+          <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseJobDetail} />
+            <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Job opening</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selectedJobDetail.title || "Household Job"}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {formatListingPlace(selectedJobDetail)}</p>
+                  {(hasApplied || contacted) && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {hasApplied && (
+                        <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                          You applied for this job
+                        </span>
+                      )}
+                      {contacted && (
+                        <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">
+                          You two are in contact
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {responseBadge && (
+                    <div className="mt-3 space-y-1">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
+                        {responseBadge.label}
+                      </span>
+                      {responseBadge.detail && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{responseBadge.detail}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseJobDetail}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  aria-label="Close details"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {selectedJobDetail.description && (
+                <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">
+                  {selectedJobDetail.description}
+                </p>
+              )}
+
+              {/* What produced the match score.
+                  The percentage on the card is a number with no argument behind
+                  it, which invites people to either over-trust it or ignore it.
+                  The matching service already returns why it scored what it did;
+                  it was simply never rendered. Shown here rather than on the card
+                  because it is a list, and a card has room for a number. */}
+              {typeof selectedJobDetail.fit_score === "number" && selectedJobDetail.fit_score > 0 && (
+                <div className="mt-4 rounded-xl border border-purple-200/60 dark:border-purple-500/25 bg-purple-50/60 dark:bg-purple-500/5 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-purple-600 dark:text-purple-300">
+                    Why this is a {selectedJobDetail.fit_score}% match
+                  </p>
+                  {(selectedJobDetail.match_reasons?.length ?? 0) > 0 ? (
+                    <ul className="mt-2 space-y-1">
+                      {selectedJobDetail.match_reasons!.map((reason) => (
+                        <li key={reason} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-200">
+                          <span aria-hidden className="mt-[3px] text-purple-500">✓</span>
+                          <span className="capitalize">{reason.replace(/_/g, " ")}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    // The score is computed from the profile either way, so an
+                    // empty reason list means the service matched on things it
+                    // does not name rather than that nothing matched.
+                    <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">
+                      Based on your location, availability and the chores on your profile.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Salary</p>
+                  <p className="mt-1">{detailHighlights.salary || "Not specified"}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Starts</p>
+                  <p className="mt-1">{detailHighlights.startTiming || "Flexible"}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Status</p>
+                  <p className="mt-1 capitalize">{selectedJobDetail.status || "open"}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Posted</p>
+                  <p className="mt-1">{formatTimeAgo(selectedJobDetail.created_at)}</p>
+                </div>
+              </div>
+
+              {/* Everything the card had no room for. This is the whole point of
+                  opening the job: the household answered a dozen questions when
+                  posting it, and none of them were reaching anyone. */}
+              {detailFeatureGroups.length > 0 && (
+                <div className="mt-5 border-t border-purple-100 pt-5 dark:border-purple-500/20">
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">About this job</p>
+                  <dl className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+                    {detailFeatureGroups.map((group) => (
+                      <div key={group.featureId || group.key}>
+                        <dt className="text-xs font-semibold text-purple-700 dark:text-purple-300">{group.name}</dt>
+                        <dd className="mt-0.5 text-sm text-gray-600 dark:text-gray-300">
+                          {group.properties.join(", ")}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {(selectedJobDetail.job_types || []).length > 0 ? (
+                  selectedJobDetail.job_types?.map((type) => (
+                    <span
+                      key={type}
+                      className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
+                    >
+                      {type.replace(/_/g, " ")}
+                    </span>
+                  ))
+                ) : (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                    Flexible role
+                  </span>
+                )}
+                {scheduleSlots.map((slot) => (
+                  <span
+                    key={slot}
+                    className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200"
+                  >
+                    {slot}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleViewProfile(selectedJobDetail)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                >
+                  View Profile
+                </button>
+                <button
+                  onClick={() => handleChatWithHousehold(selectedJobDetail)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                >
+                  Message
+                </button>
+                <button
+                  onClick={() => handleShortlistJob(selectedJobDetail)}
+                  disabled={shortlistLoadingId === selectedJobDetail.id}
+                  className={`px-4 py-2 text-xs font-semibold rounded-xl border transition ${
+                    shortlisted
+                      ? "border-pink-400 bg-pink-500 text-white"
+                      : "border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                  } disabled:opacity-60`}
+                >
+                  {shortlistLoadingId === selectedJobDetail.id
+                    ? "Updating..."
+                    : shortlisted
+                      ? "Saved"
+                      : "Save"}
+                </button>
+                {!hasApplied && (
+                  <button
+                    onClick={() => {
+                      handleOpenApplyModal(selectedJobDetail);
+                      handleCloseJobDetail();
+                    }}
+                    disabled={!isJobOpen(selectedJobDetail)}
+                    className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Apply
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {selectedJob && (
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseApplyModal} />
+          <div className="relative w-full sm:max-w-lg bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-purple-500 dark:text-purple-300 font-semibold mb-1">Apply to household</p>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">{selectedJob.title || "Household Job"}</h2>
+                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                  <p>📍 {formatListingPlace(selectedJob)}</p>
+                  <p>💰 {listingHighlights(selectedJob).salary || "Not specified"}</p>
+                  <p>🗓️ Start {formatDate(selectedJob.start_date)}</p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseApplyModal}
+                className="text-gray-500 hover:text-purple-600 transition"
+                aria-label="Close application modal"
+                disabled={applyLoading}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {applyError && <ErrorAlert message={applyError} className="mt-4" onClose={() => setApplyError(null)} />}
+
+            <form onSubmit={handleSubmitApplication} className="mt-6 space-y-5">
+              <div>
+                <label className="mb-2 block text-xs font-semibold text-purple-600 dark:text-purple-300">Introduction (optional)</label>
+                <textarea
+                  value={pitch}
+                  onChange={(event) => setPitch(event.target.value)}
+                  rows={5}
+                  placeholder="Introduce yourself and explain why you would be a good fit for this household."
+                  className="w-full text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/40 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition resize-none"
+                />
+                <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">We’ll share your introduction with the household together with your application.</p>
+              </div>
+
+              <div className="rounded-xl border border-purple-200 bg-purple-50 p-3 text-xs text-purple-800 dark:border-purple-600/30 dark:bg-purple-900/20 dark:text-purple-200">
+                Your application and introduction will appear in the household’s applicants list immediately.
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handleCloseApplyModal}
+                  disabled={applyLoading}
+                  className="min-h-11 rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={applyLoading}
+                  className="min-h-11 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-purple-500/30 transition hover:from-purple-700 hover:to-pink-700 disabled:opacity-60"
+                >
+                  {applyLoading ? "Submitting..." : "Submit application"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <SubscriptionRequiredModal
+        open={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        status={subscriptionStatus}
+        actionLabel={subscriptionActionLabel}
+        plansHref={plansHref}
+      />
+    </div>
+  );
+}

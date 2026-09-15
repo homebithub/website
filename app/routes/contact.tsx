@@ -7,6 +7,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { extractErrorMessage } from '~/utils/errorMessages';
 import { contactService } from '~/services/grpc/authServices';
 import CustomSelect from '~/components/ui/CustomSelect';
+import { RequiredMark } from '~/components/ui/formStyles';
 
 export const meta = () => [
     { title: "Contact Us — Homebit Kenya" },
@@ -102,7 +103,7 @@ export default function Contact() {
                   htmlFor="name"
                   className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2"
                 >
-                  Name
+                  Name<RequiredMark />
                 </label>
                 <input
                   type="text"
@@ -120,7 +121,7 @@ export default function Contact() {
                   htmlFor="email"
                   className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2"
                 >
-                  Email
+                  Email<RequiredMark />
                 </label>
                 <input
                   type="email"
@@ -138,7 +139,7 @@ export default function Contact() {
                   htmlFor="subject"
                   className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2"
                 >
-                  Subject
+                  Subject<RequiredMark />
                 </label>
                 <CustomSelect
                   value={formData.subject}

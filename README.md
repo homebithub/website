@@ -26,7 +26,7 @@ GATEWAY_API_BASE_URL="http://localhost:3005" \
 npm run dev
 ```
 
-- `GATEWAY_API_BASE_URL` should point to the API gateway (e.g. `http://localhost:3005` locally or `https://api.homebit.co.ke` in production). The website should not call auth, notifications, payments, or other backend services directly.
+- `GATEWAY_API_BASE_URL` should point to the API gateway (e.g. `http://localhost:3005` locally or `https://preprod-api.homebit.co.ke` in production). The website should not call auth, notifications, payments, or other backend services directly.
 - `GOOGLE_CLIENT_ID` is your Google OAuth Client ID for Google Identity Services.
 
 ### Google waitlist OAuth callback
@@ -68,7 +68,7 @@ Make sure to deploy the output of `remix build`
 Set the following in your hosting environment:
 
 - `GOOGLE_CLIENT_ID`
-- `GATEWAY_API_BASE_URL` (e.g. `https://api.homebit.co.ke`)
+- `GATEWAY_API_BASE_URL` (e.g. `https://preprod-api.homebit.co.ke`)
 
 ### End-to-end testing (dev)
 

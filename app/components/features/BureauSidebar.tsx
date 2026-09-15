@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router";
 const menu = [
   { label: "Dashboard", to: "/bureau/home" },
   { label: "Profile", to: "/bureau/profile" },
-  { label: "Househelps", to: "/bureau/househelps" },
+  { label: "Service providers", to: "/bureau/service-providers" },
 ];
 
 export default function BureauSidebar() {

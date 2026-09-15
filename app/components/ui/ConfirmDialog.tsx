@@ -1,12 +1,16 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
+import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: string;
+  /** ReactNode, not string: a confirmation that only says "are you sure?"
+      leaves the person to guess the consequences. Plain strings still work. */
+  message: React.ReactNode;
   confirmText?: string;
   cancelText?: string;
   variant?: 'danger' | 'warning' | 'info';
@@ -24,6 +28,7 @@ export function ConfirmDialog({
   variant = 'danger',
   isLoading = false,
 }: ConfirmDialogProps) {
+  useBodyScrollLock(isOpen);
   if (!isOpen) return null;
 
   const variantStyles = {
@@ -43,8 +48,8 @@ export function ConfirmDialog({
 
   const styles = variantStyles[variant];
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
+  return createPortal(
+    <div className="hb-mobile-modal-viewport fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" 
@@ -104,6 +109,7 @@ export function ConfirmDialog({
             </button>
           </div>
         </div>
-      </div>
+    </div>,
+    document.body
   );
 }

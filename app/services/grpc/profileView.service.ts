@@ -7,14 +7,14 @@
 
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import { GRPC_WEB_BASE_URL, handleGrpcError, callWithAuthRetry } from './client';
 import {
   getStoredAccessToken,
-  getStoredProfileType,
+  getStoredCanonicalProfileType,
   getStoredUserId,
 } from '~/utils/authStorage';
+import { normalizeProfileType } from '~/utils/profileType';
 
-// @ts-ignore - Generated protobuf code
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const { ProfileViewServiceClient } = auth_grpc_web_module as any;
 
@@ -24,19 +24,15 @@ function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
   const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = getStoredCanonicalProfileType();
   if (profileType) md['x-profile-type'] = profileType;
   return md;
 }
 
-function grpcCall<T>(fn: (cb: (err: any, res: T) => void) => void): Promise<T> {
-  return new Promise((resolve, reject) => {
-    fn((err, res) => {
-      if (err) reject(handleGrpcError(err));
-      else resolve(res);
-    });
-  });
-}
+// Renews the session once and retries when the server says the token has
+// expired, rather than surfacing "please sign in again" to somebody holding a
+// perfectly good refresh token.
+const grpcCall = callWithAuthRetry;
 
 function jsonResponseToJs(res: any): any {
   const struct = res?.getData?.();
@@ -58,7 +54,7 @@ export const profileViewService = {
       const req = new auth_pb.RecordViewReq();
       req.setViewerUserId(resolveUserId(viewerUserId));
       req.setProfileId(profileId);
-      req.setProfileType(profileType);
+      req.setProfileType(normalizeProfileType(profileType));
       const res: any = await grpcCall((cb) => profileViewClient.recordView(req, getMetadata(), cb));
       return {
         viewId: res?.getViewId?.() ?? '',
@@ -77,13 +73,13 @@ export const profileViewService = {
     try {
       const req = new auth_pb.GetAnalyticsReq();
       req.setProfileId(profileId);
-      req.setProfileType(profileType);
+      req.setProfileType(normalizeProfileType(profileType));
       const res: any = await grpcCall((cb) => profileViewClient.getAnalytics(req, getMetadata(), cb));
       const data = jsonResponseToJs(res);
       if (data) return data;
       return {
         profile_id: profileId,
-        profile_type: profileType,
+        profile_type: normalizeProfileType(profileType),
         total_views: 0,
         unique_views: 0,
         views_today: 0,

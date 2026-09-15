@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { getAccessTokenFromCookies } from "~/utils/cookie";
-import { householdMemberService } from '~/services/grpc/authServices';
 import { Button } from '~/components/ui/Button';
 import { useSSESubscription } from '~/hooks/useSSESubscription';
 import { FormPageSkeleton } from "~/components/ShimmerLoader";
+import { getLatestJoinRequest } from "~/utils/householdApi";
+import { setStoredActiveUserProfileId } from "~/utils/authStorage";
 
 export default function PendingApprovalPage() {
   const navigate = useNavigate();
@@ -21,8 +22,7 @@ export default function PendingApprovalPage() {
     }
 
     try {
-      const data = await householdMemberService.getJoinRequestStatus('');
-      const request = data?.data || data;
+      const request = await getLatestJoinRequest();
 
       if (!request || !request.status) {
         navigate("/household-choice", { replace: true });
@@ -33,6 +33,8 @@ export default function PendingApprovalPage() {
       setHouseholdName(request.household_name || "the household");
 
       if (request.status === 'approved') {
+        const householdId = String(request.household_id || request.household_profile_id || "");
+        if (householdId) setStoredActiveUserProfileId(householdId);
         navigate("/household/profile", { replace: true });
       }
     } catch (err) {
@@ -53,9 +55,43 @@ export default function PendingApprovalPage() {
     }
   }, [checkRequestStatus, requestStatus]);
 
-  useSSESubscription('notifications.snapshot', refreshPendingStatus, requestStatus === 'pending');
-  useSSESubscription('notifications.created', refreshPendingStatus, requestStatus === 'pending');
+  // auth.household.updated is the one that carries an approval. The other two are
+  // kept because an in-app notification arriving is also a reason to re-check, and
+  // re-checking is cheap.
   useSSESubscription('auth.household.updated', refreshPendingStatus, requestStatus === 'pending');
+  useSSESubscription('notifications.created', refreshPendingStatus, requestStatus === 'pending');
+  useSSESubscription('notifications.snapshot', refreshPendingStatus, requestStatus === 'pending');
+
+  // A slow poll underneath the live updates.
+  //
+  // This is the one screen where being wrong means someone stares at a spinner
+  // indefinitely — they cannot use the product until it resolves, and they have no
+  // reason to think reloading would help. SSE is the fast path; this is the floor
+  // under it, and thirty seconds is frequent enough to feel attentive without
+  // being a cost.
+  useEffect(() => {
+    if (requestStatus !== 'pending') return;
+
+    const timer = window.setInterval(() => {
+      // Skip while the tab is hidden: nobody is watching, and a backgrounded tab
+      // polling for hours is pure waste.
+      if (document.visibilityState === 'visible') {
+        void checkRequestStatus();
+      }
+    }, 30_000);
+
+    // Coming back to the tab is exactly when someone wants an answer, so check
+    // immediately rather than waiting out the interval.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void checkRequestStatus();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [requestStatus, checkRequestStatus]);
 
   if (loading) {
     return (
@@ -121,7 +157,7 @@ export default function PendingApprovalPage() {
                     </Button>
                     <Button
                       as={Link}
-                      to="/profile-setup/household?step=1"
+                      to="/household-choice"
                       variant="secondary"
                       size="lg"
                       fullWidth

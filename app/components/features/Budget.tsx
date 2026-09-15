@@ -5,7 +5,7 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { handleApiError } from '../../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useSalaryRanges, type SalaryRange } from '~/hooks/useOnboardingOptions';
 import CustomSelect from '~/components/ui/CustomSelect';
 
@@ -13,7 +13,7 @@ type BudgetFrequency = 'daily' | 'weekly' | 'monthly';
 type BudgetRange = string;
 
 const Budget: React.FC = () => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const [frequency, setFrequency] = useState<BudgetFrequency>('monthly');
   const { ranges: budgetRanges, loading: rangesLoading } = useSalaryRanges(frequency);
   const [selectedRange, setSelectedRange] = useState<string>('');
@@ -129,15 +129,10 @@ const Budget: React.FC = () => {
         budget_min: budgetMin,
         budget_max: budgetMax,
         salary_frequency: frequency.toLowerCase(),
-        _step_metadata: {
-          step_id: 'budget',
-          step_number: 5,
-          is_completed: true
-        }
       });
 
       markClean();
-      updateStepData('budget', {
+      updateProfileDraft('budget', {
         min: budgetMin,
         max: budgetMax,
         frequency,

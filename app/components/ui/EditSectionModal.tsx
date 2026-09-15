@@ -1,28 +1,20 @@
 import React, { useEffect, useRef } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { ProfileSetupProvider } from '~/contexts/ProfileSetupContext';
+import { ProfileEditorProvider } from '~/contexts/ProfileEditorContext';
 import { OnboardingOptionsProvider } from '~/contexts/OnboardingOptionsContext';
+import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 interface EditSectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  profileType: 'household' | 'househelp';
+  profileType: 'household' | 'service_provider';
   children: React.ReactNode;
 }
 
 export default function EditSectionModal({ isOpen, onClose, title, profileType, children }: EditSectionModalProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
-
-  // Lock body scroll when modal is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
+  useBodyScrollLock(isOpen);
 
   // Close on Escape key
   useEffect(() => {
@@ -37,7 +29,7 @@ export default function EditSectionModal({ isOpen, onClose, title, profileType, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
+    <div className="hb-mobile-modal-viewport fixed inset-0 z-[80] flex items-end sm:items-center justify-center">
       {/* Backdrop */}
       <div
         ref={backdropRef}
@@ -61,11 +53,11 @@ export default function EditSectionModal({ isOpen, onClose, title, profileType, 
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          <ProfileSetupProvider>
+          <ProfileEditorProvider>
             <OnboardingOptionsProvider profileType={profileType}>
               {children}
             </OnboardingOptionsProvider>
-          </ProfileSetupProvider>
+          </ProfileEditorProvider>
         </div>
       </div>
     </div>

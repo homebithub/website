@@ -5,7 +5,7 @@ export const meta = () => [
   {
     name: "description",
     content:
-      "Join Homebit's meal preps waitlist as a household or househelp and get early access.",
+      "Join Homebit's meal preps waitlist as a household or service provider and get early access.",
   },
 ];
 
@@ -14,7 +14,7 @@ const config = {
   serviceName: "Meal Preps",
   serviceOptions: [
     "Meal Preps",
-    "Househelp",
+    "Service provider",
     "Indoor Cleaning",
     "Home Deep Cleaning",
     "Laundry & Ironing",
@@ -35,7 +35,7 @@ const config = {
       servicePrompt: "Would you need additional services?",
       concernPrompt: "Biggest concern",
     },
-    househelp: {
+    service_provider: {
       heading: "You offer meal prep services?",
       paragraph:
         "Join the meal prep waitlist to be among the first cooking professionals households discover on Homebit. We are creating a trusted marketplace where cooks can present their skills with confidence and be matched to families who value nutritious, home-cooked meals. If you have experience with meal prep, batch cooking, dietary restrictions, specialized cuisines, or family meal planning, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the kind of meal projects you specialize in. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for cooks who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent meal prep work with families who appreciate quality and reliability, the waitlist is the first step.",

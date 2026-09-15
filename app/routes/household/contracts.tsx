@@ -4,12 +4,13 @@ import { hireContractService } from '~/services/grpc/authServices';
 import { FileText, CheckCircle, XCircle, Calendar, DollarSign, Briefcase } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
+import { getServiceProviderCandidateIds } from '~/utils/hiringIdentifiers';
 
 interface HireContract {
   id: string;
   hire_request_id: string;
   household_id: string;
-  househelp_id: string;
+  service_provider_id: string;
   contract_start_date?: string;
   contract_end_date?: string;
   actual_salary: number;
@@ -20,13 +21,22 @@ interface HireContract {
   termination_reason?: string;
   created_at: string;
   updated_at: string;
-  househelp?: {
+  service_provider?: {
     id: string;
     first_name: string;
     last_name: string;
     avatar_url?: string;
     photos?: string[];
   };
+}
+
+function normalizeHireContract(raw: any): HireContract {
+  return {
+    ...(raw || {}),
+    service_provider_id:
+      raw?.service_provider_id || raw?.service_provider_profile_id || raw?.househelp_id || raw?.househelp_profile_id || '',
+    service_provider: raw?.service_provider || raw?.househelp,
+  } as HireContract;
 }
 
 type TabType = 'all' | 'active' | 'completed' | 'terminated';
@@ -47,6 +57,17 @@ export default function HouseholdContracts() {
   const [offset, setOffset] = useState(0);
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
+
+  const viewServiceProviderProfile = (contract: HireContract) => {
+    const profileId = getServiceProviderCandidateIds(contract)[0];
+    if (!profileId) {
+      setError("We couldn't identify this service provider's profile. Refresh the page and try again.");
+      return;
+    }
+    navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Contracts')}`, {
+      state: { profileId, backTo: backToPath, backLabel: 'Back to Contracts' },
+    });
+  };
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -78,7 +99,7 @@ export default function HouseholdContracts() {
       const status = activeTab !== 'all' ? activeTab : undefined;
       const raw = await hireContractService.listHireContracts('', 'household', status);
       const items = raw?.data || raw || [];
-      setContracts(Array.isArray(items) ? items : []);
+      setContracts(Array.isArray(items) ? items.map(normalizeHireContract) : []);
       setTotal(typeof raw?.total === 'number' ? raw.total : (Array.isArray(items) ? items.length : 0));
     } catch (err: any) {
       setError(err.message || 'Failed to load contracts');
@@ -136,11 +157,11 @@ export default function HouseholdContracts() {
         <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-between">
           <div>
             <h3 className="font-medium text-purple-900 dark:text-purple-200">Formal Employment Contracts</h3>
-            <p className="text-xs text-purple-700 dark:text-purple-300">Create, sign, and manage formal employment contracts with your househelps</p>
+            <p className="text-xs text-purple-700 dark:text-purple-300">Create, sign, and manage formal employment contracts with your service providers</p>
           </div>
           <button
             onClick={() => navigate('/household/employment-contracts')}
-            className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors whitespace-nowrap text-xs font-medium"
+            className="whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-medium text-white shadow-md transition hover:from-purple-700 hover:to-pink-700"
           >
             View Employment Contracts
           </button>
@@ -202,7 +223,7 @@ export default function HouseholdContracts() {
             </p>
             <button
               onClick={() => navigate('/household/hiring')}
-              className="px-6 py-1.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-medium transition-colors"
+              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-1.5 font-medium text-white shadow-md transition hover:from-purple-700 hover:to-pink-700"
             >
               View Hire Requests
             </button>
@@ -218,19 +239,19 @@ export default function HouseholdContracts() {
                 className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between">
-                  {/* Left: Househelp Info */}
+                  {/* Left: service-provider info */}
                   <div className="flex items-start gap-4 flex-1">
                     {/* Avatar */}
                     <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                      {contract.househelp?.avatar_url || contract.househelp?.photos?.[0] ? (
+                      {contract.service_provider?.avatar_url || contract.service_provider?.photos?.[0] ? (
                         <img
-                          src={contract.househelp.avatar_url || contract.househelp.photos?.[0]}
-                          alt={`${contract.househelp.first_name} ${contract.househelp.last_name}`}
+                          src={contract.service_provider.avatar_url || contract.service_provider.photos?.[0]}
+                          alt={`${contract.service_provider.first_name} ${contract.service_provider.last_name}`}
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">
-                          {contract.househelp?.first_name?.[0]}{contract.househelp?.last_name?.[0]}
+                          {contract.service_provider?.first_name?.[0]}{contract.service_provider?.last_name?.[0]}
                         </div>
                       )}
                     </div>
@@ -239,7 +260,7 @@ export default function HouseholdContracts() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                          {contract.househelp?.first_name} {contract.househelp?.last_name}
+                          {contract.service_provider?.first_name} {contract.service_provider?.last_name}
                         </h3>
                         <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(contract.status)}`}>
                           {contract.status === 'active' && <CheckCircle className="w-4 h-4" />}
@@ -311,15 +332,13 @@ export default function HouseholdContracts() {
                   <div className="flex flex-col gap-2 ml-4">
                     <button
                       onClick={() => navigate(`/household/contracts/${contract.id}`)}
-                      className="px-4 py-1 text-xs bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors whitespace-nowrap"
+                      className="whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1 text-xs text-white shadow-md transition hover:from-purple-700 hover:to-pink-700"
                     >
                       View Details
                     </button>
 
                     <button
-                      onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(contract.househelp_id)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Contracts')}`, {
-                        state: { profileId: contract.househelp_id, backTo: backToPath, backLabel: 'Back to Contracts' }
-                      })}
+                      onClick={() => viewServiceProviderProfile(contract)}
                       className="px-4 py-1 text-xs border border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors whitespace-nowrap"
                     >
                       View Profile

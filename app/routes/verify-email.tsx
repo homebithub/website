@@ -7,7 +7,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
-import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
+import { normalizeProfileType, SERVICE_PROVIDER_PROFILE_TYPE } from '~/utils/profileType';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -76,29 +76,17 @@ export default function VerifyEmail() {
     try {
       const storedUser = getStoredUser();
       const profileType = getStoredProfileType() || '';
-      const pt = storedUser?.profile_type || profileType;
+      const pt = normalizeProfileType(storedUser?.profile_type || profileType);
+      const isNewSignup = from === 'signup';
 
       if (pt === 'household') {
-        const destination = await resolveProfileSetupDestination({
-          profileType: 'household',
-          completedPath: '/',
-        });
-        navigate(destination);
+        navigate(isNewSignup ? '/household-choice' : '/');
         return;
       }
 
-      if (pt === 'househelp') {
-        try {
-          const destination = await resolveProfileSetupDestination({
-            profileType: 'househelp',
-            completedPath: '/',
-          });
-          navigate(destination);
-          return;
-        } catch {
-          navigate('/profile-setup/househelp?step=1');
-          return;
-        }
+      if (pt === SERVICE_PROVIDER_PROFILE_TYPE) {
+        navigate(isNewSignup ? '/service-provider/profile' : '/');
+        return;
       }
 
       if (pt === 'bureau') {
@@ -139,8 +127,8 @@ export default function VerifyEmail() {
           attempts: verificationProto.getAttempts(),
           next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
         };
-        // Navigate to verify-otp page with verification object in state
-        // After email OTP verification, it will redirect to household setup
+        // Preserve the signup marker so OTP verification can choose the
+        // correct role-specific destination.
         const params = new URLSearchParams({
           userId,
           afterEmailVerification: '1',

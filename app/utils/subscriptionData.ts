@@ -56,6 +56,16 @@ export type NormalizedPayment = {
   retry_count?: number;
 };
 
+/** The reference a payer can use to reconcile or query one payment. */
+export function resolvePaymentReference(payment: NormalizedPayment): string {
+  return [
+    payment.mpesa_receipt_number,
+    payment.fingo_transaction_id,
+    payment.merchant_transaction_id,
+    payment.id,
+  ].map((value) => String(value || '').trim()).find(Boolean) || 'Not available';
+}
+
 export type NormalizedSubscriptionAccess = {
   has_access: boolean;
   status: string;

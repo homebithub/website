@@ -263,8 +263,7 @@ export class GetPlansRequest extends jspb.Message {
 }
 
 export namespace GetPlansRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class GetPlansResponse extends jspb.Message {
@@ -421,6 +420,12 @@ export class GetMySubscriptionRequest extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): GetMySubscriptionRequest;
 
+  getProfileId(): string;
+  setProfileId(value: string): GetMySubscriptionRequest;
+
+  getProfileType(): string;
+  setProfileType(value: string): GetMySubscriptionRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetMySubscriptionRequest.AsObject;
   static toObject(includeInstance: boolean, msg: GetMySubscriptionRequest): GetMySubscriptionRequest.AsObject;
@@ -432,6 +437,8 @@ export class GetMySubscriptionRequest extends jspb.Message {
 export namespace GetMySubscriptionRequest {
   export type AsObject = {
     userId: string;
+    profileId: string;
+    profileType: string;
   };
 }
 
@@ -537,6 +544,12 @@ export class CheckSubscriptionAccessRequest extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): CheckSubscriptionAccessRequest;
 
+  getProfileId(): string;
+  setProfileId(value: string): CheckSubscriptionAccessRequest;
+
+  getProfileType(): string;
+  setProfileType(value: string): CheckSubscriptionAccessRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CheckSubscriptionAccessRequest.AsObject;
   static toObject(includeInstance: boolean, msg: CheckSubscriptionAccessRequest): CheckSubscriptionAccessRequest.AsObject;
@@ -548,6 +561,8 @@ export class CheckSubscriptionAccessRequest extends jspb.Message {
 export namespace CheckSubscriptionAccessRequest {
   export type AsObject = {
     userId: string;
+    profileId: string;
+    profileType: string;
   };
 }
 
@@ -596,6 +611,76 @@ export namespace CheckSubscriptionAccessResponse {
     isEarlyAdopter: boolean;
     daysRemaining: number;
     message: string;
+  };
+}
+
+export class GetSubscriptionStatusesRequest extends jspb.Message {
+  getUserIdsList(): Array<string>;
+  setUserIdsList(value: Array<string>): GetSubscriptionStatusesRequest;
+  clearUserIdsList(): GetSubscriptionStatusesRequest;
+  addUserIds(value: string, index?: number): GetSubscriptionStatusesRequest;
+
+  getProfileType(): string;
+  setProfileType(value: string): GetSubscriptionStatusesRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetSubscriptionStatusesRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: GetSubscriptionStatusesRequest): GetSubscriptionStatusesRequest.AsObject;
+  static serializeBinaryToWriter(message: GetSubscriptionStatusesRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetSubscriptionStatusesRequest;
+  static deserializeBinaryFromReader(message: GetSubscriptionStatusesRequest, reader: jspb.BinaryReader): GetSubscriptionStatusesRequest;
+}
+
+export namespace GetSubscriptionStatusesRequest {
+  export type AsObject = {
+    userIdsList: Array<string>;
+    profileType: string;
+  };
+}
+
+export class SubscriptionStatusEntry extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): SubscriptionStatusEntry;
+
+  getHasAccess(): boolean;
+  setHasAccess(value: boolean): SubscriptionStatusEntry;
+
+  getIsTrial(): boolean;
+  setIsTrial(value: boolean): SubscriptionStatusEntry;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SubscriptionStatusEntry.AsObject;
+  static toObject(includeInstance: boolean, msg: SubscriptionStatusEntry): SubscriptionStatusEntry.AsObject;
+  static serializeBinaryToWriter(message: SubscriptionStatusEntry, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SubscriptionStatusEntry;
+  static deserializeBinaryFromReader(message: SubscriptionStatusEntry, reader: jspb.BinaryReader): SubscriptionStatusEntry;
+}
+
+export namespace SubscriptionStatusEntry {
+  export type AsObject = {
+    userId: string;
+    hasAccess: boolean;
+    isTrial: boolean;
+  };
+}
+
+export class GetSubscriptionStatusesResponse extends jspb.Message {
+  getStatusesList(): Array<SubscriptionStatusEntry>;
+  setStatusesList(value: Array<SubscriptionStatusEntry>): GetSubscriptionStatusesResponse;
+  clearStatusesList(): GetSubscriptionStatusesResponse;
+  addStatuses(value?: SubscriptionStatusEntry, index?: number): SubscriptionStatusEntry;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetSubscriptionStatusesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetSubscriptionStatusesResponse): GetSubscriptionStatusesResponse.AsObject;
+  static serializeBinaryToWriter(message: GetSubscriptionStatusesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetSubscriptionStatusesResponse;
+  static deserializeBinaryFromReader(message: GetSubscriptionStatusesResponse, reader: jspb.BinaryReader): GetSubscriptionStatusesResponse;
+}
+
+export namespace GetSubscriptionStatusesResponse {
+  export type AsObject = {
+    statusesList: Array<SubscriptionStatusEntry.AsObject>;
   };
 }
 
@@ -1911,8 +1996,7 @@ export class GetFraudRulesRequest extends jspb.Message {
 }
 
 export namespace GetFraudRulesRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class GetFraudRulesResponse extends jspb.Message {
@@ -3749,8 +3833,7 @@ export class ListSubscriptionWhitelistRequest extends jspb.Message {
 }
 
 export namespace ListSubscriptionWhitelistRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class ListSubscriptionWhitelistResponse extends jspb.Message {

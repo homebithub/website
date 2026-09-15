@@ -1,8 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { paymentsService } from '~/services/grpc/payments.service';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { useSubscriptionSSE } from './useSubscriptionSSE';
 import { extractSubscription, extractSubscriptionAccess } from '~/utils/subscriptionData';
+import { cachedRequest } from '~/utils/requestCache';
+import { SUBSCRIPTION_CHANGED_EVENT } from '~/utils/subscriptionEvents';
+import { getStoredCanonicalProfileType, getStoredUserProfileId } from '~/utils/authStorage';
+import { normalizeProfileType } from '~/utils/profileType';
+
+const SUBSCRIPTION_STALE_MS = 2 * 60_000;
 
 export type SubscriptionStatus = 'loading' | 'active' | 'trial' | 'none' | 'expired' | 'error';
 
@@ -39,7 +44,11 @@ export type UseSubscriptionResult = {
   refetch: () => void;
 };
 
-export function useSubscription(userId?: string | null): UseSubscriptionResult {
+export function useSubscription(
+  userId?: string | null,
+  profileId?: string | null,
+  profileType?: string | null,
+): UseSubscriptionResult {
   const [status, setStatus] = useState<SubscriptionStatus>('loading');
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,8 +57,10 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [accessMessage, setAccessMessage] = useState<string | null>(null);
   const [isEarlyAdopter, setIsEarlyAdopter] = useState(false);
+  const resolvedProfileId = profileId || getStoredUserProfileId();
+  const resolvedProfileType = normalizeProfileType(profileType || getStoredCanonicalProfileType());
 
-  const fetchSubscription = useCallback(async () => {
+  const fetchSubscription = useCallback(async (force = false) => {
     if (!userId) {
       setStatus('none');
       setIsEarlyAdopter(false);
@@ -61,10 +72,17 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       setLoading(true);
       setError(null);
 
-      const [subscriptionResult, accessResult] = await Promise.allSettled([
-        paymentsService.getMySubscription(userId),
-        paymentsService.checkSubscriptionAccess(userId),
-      ]);
+      const [subscriptionResult, accessResult] = await cachedRequest(
+        `subscription:${userId}:${resolvedProfileType}:${resolvedProfileId}`,
+        async () => {
+          const { subscriptionReadService } = await import('~/services/grpc/subscriptionRead.service');
+          return Promise.allSettled([
+            subscriptionReadService.getMySubscription(userId, resolvedProfileId, resolvedProfileType),
+            subscriptionReadService.checkSubscriptionAccess(userId, resolvedProfileId, resolvedProfileType),
+          ]);
+        },
+        { maxAgeMs: SUBSCRIPTION_STALE_MS, force },
+      );
 
       const sub =
         subscriptionResult.status === 'fulfilled'
@@ -134,46 +152,45 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [resolvedProfileId, resolvedProfileType, userId]);
 
   useEffect(() => {
-    fetchSubscription();
+    void fetchSubscription();
   }, [fetchSubscription]);
+
+  const refreshSubscription = useCallback(() => {
+    void fetchSubscription(true);
+  }, [fetchSubscription]);
+
+  useEffect(() => {
+    const onSubscriptionChanged = (event: Event) => {
+      const changedUserId = (event as CustomEvent<{ userId?: string | null }>).detail?.userId;
+      if (!changedUserId || changedUserId === userId) refreshSubscription();
+    };
+    window.addEventListener(SUBSCRIPTION_CHANGED_EVENT, onSubscriptionChanged);
+    return () => window.removeEventListener(SUBSCRIPTION_CHANGED_EVENT, onSubscriptionChanged);
+  }, [refreshSubscription, userId]);
 
   // SSE for real-time subscription updates
   useSubscriptionSSE(
     // onActivated
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onSuspended
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onReactivated
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onPastDue
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onTrialStarted
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onExpiryWarning
     useCallback(() => {
       // Could show a toast notification here
     }, []),
     // onLapsed
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription]),
+    refreshSubscription,
     // onCancelled
-    useCallback(() => {
-      fetchSubscription();
-    }, [fetchSubscription])
+    refreshSubscription
   );
 
   const isActive = status === 'active' || status === 'trial';
@@ -188,6 +205,6 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
     accessMessage,
     loading,
     error,
-    refetch: fetchSubscription,
+    refetch: refreshSubscription,
   };
 }

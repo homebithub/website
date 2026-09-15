@@ -256,7 +256,7 @@ export default function FileUpload({
           
           <button
             type="button"
-            className="px-4 py-1 bg-purple-600 dark:bg-purple-700 text-white rounded-xl hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors disabled:opacity-50"
+            className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1 text-white shadow-md transition hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
             disabled={isUploading}
           >
             <CloudArrowUpIcon className="h-5 w-5 inline-block mr-2" />
@@ -326,7 +326,7 @@ export default function FileUpload({
                         className={`h-2 rounded-full transition-all duration-300 ${
                           progress.status === 'complete' ? 'bg-green-500 dark:bg-green-400' :
                           progress.status === 'error' ? 'bg-red-500 dark:bg-red-400' :
-                          'bg-purple-600 dark:bg-purple-500'
+                          'bg-gradient-to-r from-purple-600 to-pink-500'
                         }`}
                         style={{ width: `${progress.progress}%` }}
                       />
@@ -360,4 +360,3 @@ export default function FileUpload({
     </div>
   );
 }
-

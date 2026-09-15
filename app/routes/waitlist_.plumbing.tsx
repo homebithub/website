@@ -5,7 +5,7 @@ export const meta = () => [
   {
     name: "description",
     content:
-      "Join Homebit's plumbing waitlist as a household or househelp and get early access.",
+      "Join Homebit's plumbing waitlist as a household or service provider and get early access.",
   },
 ];
 
@@ -14,7 +14,7 @@ const config = {
   serviceName: "Plumbing",
   serviceOptions: [
     "Plumbing",
-    "Househelp",
+    "Service provider",
     "Indoor Cleaning",
     "Home Deep Cleaning",
     "Laundry & Ironing",
@@ -35,7 +35,7 @@ const config = {
       servicePrompt: "Would you need additional services?",
       concernPrompt: "Biggest concern",
     },
-    househelp: {
+    service_provider: {
       heading: "You offer plumbing services?",
       paragraph:
         "Join the plumbing waitlist to be among the first plumbing professionals households discover on Homebit. We are creating a trusted marketplace where plumbers can present their skills with confidence and be matched to families who value quality plumbing work. If you have experience with residential plumbing, emergency repairs, installation work, maintenance services, or specialized plumbing solutions, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the kind of plumbing projects you specialize in. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for plumbers who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent plumbing work with families who appreciate quality and reliability, the waitlist is the first step.",

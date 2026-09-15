@@ -360,6 +360,60 @@ export namespace RevokeDeviceRequest {
   };
 }
 
+export class DecideDeviceRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): DecideDeviceRequest;
+
+  getDeviceId(): string;
+  setDeviceId(value: string): DecideDeviceRequest;
+
+  getDecision(): string;
+  setDecision(value: string): DecideDeviceRequest;
+
+  getReason(): string;
+  setReason(value: string): DecideDeviceRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DecideDeviceRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: DecideDeviceRequest): DecideDeviceRequest.AsObject;
+  static serializeBinaryToWriter(message: DecideDeviceRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DecideDeviceRequest;
+  static deserializeBinaryFromReader(message: DecideDeviceRequest, reader: jspb.BinaryReader): DecideDeviceRequest;
+}
+
+export namespace DecideDeviceRequest {
+  export type AsObject = {
+    userId: string;
+    deviceId: string;
+    decision: string;
+    reason: string;
+  };
+}
+
+export class DecideDeviceResponse extends jspb.Message {
+  getMessage(): string;
+  setMessage(value: string): DecideDeviceResponse;
+
+  getDevice(): Device | undefined;
+  setDevice(value?: Device): DecideDeviceResponse;
+  hasDevice(): boolean;
+  clearDevice(): DecideDeviceResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DecideDeviceResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: DecideDeviceResponse): DecideDeviceResponse.AsObject;
+  static serializeBinaryToWriter(message: DecideDeviceResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DecideDeviceResponse;
+  static deserializeBinaryFromReader(message: DecideDeviceResponse, reader: jspb.BinaryReader): DecideDeviceResponse;
+}
+
+export namespace DecideDeviceResponse {
+  export type AsObject = {
+    message: string;
+    device?: Device.AsObject;
+  };
+}
+
 export class RevokeAllDevicesRequest extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): RevokeAllDevicesRequest;

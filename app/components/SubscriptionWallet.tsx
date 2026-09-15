@@ -15,6 +15,7 @@ import {
   extractPayments,
   extractPlans,
   extractSubscription,
+  resolvePaymentReference,
   type NormalizedPayment,
   type NormalizedSubscription,
   type NormalizedSubscriptionPlan,
@@ -202,7 +203,7 @@ export function SubscriptionWallet() {
             <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4 text-center">
               <Transition.Child
                 as={Fragment}
@@ -305,7 +306,7 @@ export function SubscriptionWallet() {
                       ) : (
                         <div className="text-center py-8">
                           <p className="text-gray-500 dark:text-gray-400 mb-4">No active subscription</p>
-                          <button className="px-6 py-1 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors">
+                          <button className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-1 text-white shadow-md transition hover:from-purple-700 hover:to-pink-700">
                             View Plans
                           </button>
                         </div>
@@ -334,9 +335,7 @@ export function SubscriptionWallet() {
                                   </div>
                                   <p className="text-xs text-gray-500 dark:text-gray-400">
                                     {formatDate(payment.created_at)}
-                                    {payment.mpesa_receipt_number && (
-                                      <span className="ml-2">• Receipt: {payment.mpesa_receipt_number}</span>
-                                    )}
+                                    <span className="ml-2">• Ref: {resolvePaymentReference(payment)}</span>
                                   </p>
                                 </div>
                                 <div className="text-right">
@@ -382,7 +381,7 @@ export function SubscriptionWallet() {
             <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
               <Transition.Child
                 as={Fragment}

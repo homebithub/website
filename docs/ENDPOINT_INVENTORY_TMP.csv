@@ -1,10 +1,8 @@
 method,endpoint_expr,file,line
 GET?,API_ENDPOINTS.auth.me,website/app/contexts/AuthContext.tsx,62
 POST,`${API_BASE_URL}/api/v1/auth/login`,website/app/contexts/AuthContext.tsx,99
-GET?,`${API_BASE_URL}/api/v1/profile-setup-progress`,website/app/contexts/AuthContext.tsx,148
 POST,`${API_BASE_URL}/api/v1/auth/register`,website/app/contexts/AuthContext.tsx,212
 POST,`${API_BASE_URL}/api/v1/auth/logout`,website/app/contexts/AuthContext.tsx,265
-GET?,`${API_BASE_URL}/api/v1/profile-setup-steps`,website/app/contexts/ProfileSetupContext.tsx,138
 POST,`${API_BASE_URL}/api/v1/households/${householdId}/invitations`,website/app/utils/householdApi.ts,98
 GET?,`${API_BASE_URL}/api/v1/households/${householdId}/invitations`,website/app/utils/householdApi.ts,118
 DELETE,`${API_BASE_URL}/api/v1/households/${householdId}/invitations/${invitationId}`,website/app/utils/householdApi.ts,137
@@ -48,8 +46,6 @@ GET?,API_ENDPOINTS.payments.plans,website/app/components/SubscriptionWallet.tsx,
 POST,API_ENDPOINTS.payments.transactions.initiate,website/app/components/SubscriptionWallet.tsx,118
 GET?,API_ENDPOINTS.payments.transactions.status(paymentId),website/app/components/SubscriptionWallet.tsx,159
 GET?,`${API_BASE_URL}/api/v1/househelp_kids`,website/app/components/MyKids.tsx,26
-POST,`${API_BASE_URL}/api/v1/profile-setup-steps`,website/app/components/Photos.tsx,161
-POST,`${API_BASE_URL}/api/v1/profile-setup-progress`,website/app/components/Photos.tsx,181
 GET?,`${API_BASE_URL}/api/v1/shortlists/count`,website/app/components/Navigation.tsx,69
 GET?,`${API_BASE_URL}/api/v1/inbox/conversations?limit=100`,website/app/components/Navigation.tsx,97
 GET?,`${API_BASE_URL}/api/v1/hire-requests${params}`,website/app/components/Navigation.tsx,121
@@ -67,7 +63,6 @@ PATCH,`${API_BASE_URL}/api/v1/household/profile`,website/app/components/features
 POST,`${API_BASE_URL}/api/v1/househelp-preferences/chores`,website/app/components/features/Chores.tsx,41
 POST,API_ENDPOINTS.hiring.requests.base,website/app/components/modals/HireRequestModal.tsx,137
 POST,API_ENDPOINTS.interests.base,website/app/components/modals/ShowInterestModal.tsx,59
-GET?,`${API_BASE_URL}/api/v1/profile/househelp/me`,website/app/components/profile/HousehelpProfileDesign.tsx,108
 GET,API_ENDPOINTS.hiring.requests.negotiations(hireRequestId),website/app/components/hiring/NegotiationPanel.tsx,50
 POST,API_ENDPOINTS.hiring.requests.negotiate(hireRequestId),website/app/components/hiring/NegotiationPanel.tsx,77
 DELETE,`${API_BASE_URL}/api/v1/documents/${imageId}`,website/app/components/upload/ImageGallery.tsx,85

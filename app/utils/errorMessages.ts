@@ -49,6 +49,8 @@ const ERROR_MAPPINGS: { [key: string]: string } = {
   'a user with the same phone number already exists': 'An account with this phone number already exists. Please log in instead.',
   'a user with the same email already exists': 'An account with this email address already exists. Please log in instead.',
   'Account not verified': 'Please verify your phone number before signing in',
+  'method Login not implemented': 'Password login is not available right now. Please use OTP verification or contact support.',
+  'Login not implemented': 'Password login is not available right now. Please use OTP verification or contact support.',
   'password must be at least 4 characters': 'Password must be at least 4 characters',
   'first_name, last_name, phone, password, and profile_type are required': 'Please fill in all required fields',
   
@@ -84,7 +86,7 @@ const ERROR_MAPPINGS: { [key: string]: string } = {
   '"location" is not allowed to be empty': 'Please select your location',
   '"availability" is not allowed to be empty': 'Please set your availability',
   '"available_from" is not allowed to be empty': 'Please select when you are available from',
-  '"service_type" is not allowed to be empty': 'Please select the type of househelp service',
+  '"service_type" is not allowed to be empty': 'Please select the type of service provider service',
   '"certifications" is not allowed to be empty': 'Please add your certifications or select "None"',
   '"photos" is not allowed to be empty': 'Please upload at least one photo',
 };
@@ -144,8 +146,8 @@ const CONTEXT_SPECIFIC_ERRORS: { [context: string]: FieldErrorMap } = {
     'required': 'Please select your location'
   },
   nannyType: {
-    '"value" is not allowed to be empty': 'Please select the type of househelp service',
-    'required': 'Please select the type of househelp service'
+    '"value" is not allowed to be empty': 'Please select the type of service provider service',
+    'required': 'Please select the type of service provider service'
   },
   certifications: {
     '"value" is not allowed to be empty': 'Please add your certifications or select "None"',
@@ -165,6 +167,14 @@ const CONTEXT_SPECIFIC_ERRORS: { [context: string]: FieldErrorMap } = {
  */
 export function transformErrorMessage(errorMessage: string, context?: string): string {
   if (!errorMessage) return 'An error occurred. Please try again.';
+
+  const lower = errorMessage.toLowerCase();
+  if (
+    lower.includes('reviews_one_per_engagement_reviewer') ||
+    (lower.includes('engagement_id') && lower.includes('reviewer_user_id'))
+  ) {
+    return 'You have already reviewed this work engagement. You can leave another review after a new Homebit hire has ended.';
+  }
 
   // First check context-specific errors if context is provided
   if (context && CONTEXT_SPECIFIC_ERRORS[context]) {
@@ -202,13 +212,21 @@ export function transformErrorMessage(errorMessage: string, context?: string): s
 
   // If message is a vague internal error, show a helpful generic message.
   // Only catch truly unhelpful messages; preserve anything actionable.
-  const lower = errorMessage.toLowerCase();
   if (
     lower === 'signup failed' ||
     lower === 'login failed' ||
     lower === 'failed' ||
     lower === 'internal server error' ||
-    lower === 'an internal error occurred'
+    lower === 'an internal error occurred' ||
+    lower.includes('sqlstate') ||
+    lower.includes('duplicate key') ||
+    lower.includes('unique constraint') ||
+    lower.includes('foreign key constraint') ||
+    lower.includes('violates constraint') ||
+    lower.includes('a record with the same value for') ||
+    lower.includes('no such column') ||
+    lower.includes('no such table') ||
+    lower.includes('stack trace')
   ) {
     return 'Something went wrong. Please try again or contact support if the problem persists.';
   }

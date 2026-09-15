@@ -52,8 +52,8 @@ export function BaseModal({
           <div className="fixed inset-0 bg-black/40 backdrop-blur-md transition-opacity" />
         </Transition.Child>
 
-        <div className="fixed inset-0 z-10 overflow-y-auto">
-          <div className="flex min-h-full items-end justify-center text-center sm:items-center sm:p-4">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-10 overflow-y-auto overscroll-contain">
+          <div className="flex min-h-0 min-h-full items-end justify-center text-center sm:items-center sm:p-4">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -65,15 +65,15 @@ export function BaseModal({
             >
               <Dialog.Panel 
                 className={`
-                  relative transform overflow-hidden rounded-t-2xl sm:rounded-2xl
+                  relative min-h-0 transform overflow-hidden rounded-t-2xl sm:rounded-2xl
                   bg-white dark:bg-dark-card 
-                  px-6 pb-8 pt-8 text-left shadow-2xl transition-all 
-                  w-full ${sizeClasses[size]} max-h-[90vh] sm:max-h-[85vh] overflow-y-auto
+                  px-4 pb-8 pt-6 text-left shadow-2xl transition-all sm:px-6 sm:pt-8
+                  hb-mobile-modal-panel w-full ${sizeClasses[size]} overflow-y-auto overscroll-contain
                   border border-purple-100 dark:border-purple-500/20
                 `}
               >
                 {showCloseButton && (
-                  <div className="absolute right-6 top-6 z-10">
+                  <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
                     <button
                       type="button"
                       className="
@@ -96,7 +96,7 @@ export function BaseModal({
                       {title && (
                         <Dialog.Title
                           as="h3"
-                          className="text-xl font-bold text-gray-900 dark:text-white leading-tight"
+                          className="pr-12 text-lg font-bold leading-tight text-gray-900 dark:text-white sm:text-xl"
                         >
                           {title}
                         </Dialog.Title>

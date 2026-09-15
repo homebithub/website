@@ -4,13 +4,13 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 // Certifications and skills are now fetched from backend via context
 
 const Certifications: React.FC = () => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [selectedHelp, setSelectedHelp] = useState<string[]>([]);
@@ -40,7 +40,7 @@ const Certifications: React.FC = () => {
         const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        const data = await grpcProfileService.getCurrentServiceProviderProfile('');
         
         // Parse certifications
         if (data?.certifications) {
@@ -136,13 +136,13 @@ const Certifications: React.FC = () => {
       const allCerts = [...selectedCerts, ...validOtherCerts];
       const allHelp = [...selectedHelp, ...validOtherHelp];
       
-      await grpcProfileService.updateHousehelpFields('', 'househelp', {
+      await grpcProfileService.updateServiceProviderFields('', 'service_provider', {
         certifications: allCerts.join(','),
         can_help_with: allHelp.join(','),
-      }, { step_id: 'certifications', step_number: 5, is_completed: true });
+      });
 
       markClean();
-      updateStepData('certifications', { certs: allCerts, helpWith: allHelp });
+      updateProfileDraft('certifications', { certs: allCerts, helpWith: allHelp });
       setSuccess('Certifications saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'certifications', 'Failed to save your information. Please try again.'));
@@ -218,7 +218,7 @@ const Certifications: React.FC = () => {
                   <button
                     type="button"
                     onClick={addOtherCert}
-                    className="px-4 py-1 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold transition-all flex items-center justify-center shadow-md hover:shadow-lg"
+                    className="flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1 font-bold text-white shadow-md transition-all hover:from-purple-700 hover:to-pink-700 hover:shadow-lg"
                     aria-label="Add certification"
                     title="Add another certification"
                   >
@@ -307,7 +307,7 @@ const Certifications: React.FC = () => {
                   <button
                     type="button"
                     onClick={addOtherHelp}
-                    className="px-4 py-1 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold transition-all flex items-center justify-center shadow-md hover:shadow-lg"
+                    className="flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-1 font-bold text-white shadow-md transition-all hover:from-purple-700 hover:to-pink-700 hover:shadow-lg"
                     aria-label="Add skill"
                     title="Add another skill"
                   >

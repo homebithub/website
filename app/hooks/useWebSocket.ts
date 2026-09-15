@@ -28,6 +28,48 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
   const eventHandlersRef = useRef<Map<string, Set<(event: MessageEvent) => void>>>(new Map());
   const shouldReconnectRef = useRef(true);
   const hasConnectedRef = useRef(false);
+  // Lets scheduleReconnect call the latest connect without the two useCallbacks
+  // depending on each other.
+  const connectRef = useRef<() => void>(() => {});
+  // So exhausting the budget is reported once, not on every subsequent close.
+  const exhaustedLoggedRef = useRef(false);
+
+  const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+
+  const clearPendingReconnect = () => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  };
+
+  const scheduleReconnect = useCallback(() => {
+    if (!shouldReconnectRef.current || !enabled) return;
+
+    // While the browser reports no network, a retry cannot succeed and would
+    // spend the attempt budget during the outage — leaving nothing left when
+    // connectivity returns. Stay dormant; the online listener resumes us.
+    if (isOffline()) return;
+
+    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+      if (!exhaustedLoggedRef.current) {
+        exhaustedLoggedRef.current = true;
+        console.warn('[WebSocket] Giving up for now; will retry when the network or tab returns');
+      }
+      return;
+    }
+
+    reconnectAttemptsRef.current++;
+    const backoff = Math.min(reconnectInterval * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
+    // Jitter so many tabs coming back from one outage do not retry in lockstep.
+    const delay = Math.round(backoff * (0.5 + Math.random() * 0.5));
+
+    clearPendingReconnect();
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+      connectRef.current();
+    }, delay);
+  }, [enabled, maxReconnectAttempts, reconnectInterval]);
 
   const connect = useCallback(() => {
     if (!enabled) {
@@ -100,22 +142,12 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
         setConnectionState('error');
       };
 
-      ws.onclose = (event) => {
+      ws.onclose = () => {
         setConnectionState('disconnected');
         wsRef.current = null;
         const suppressLocalRetry = isLocalGatewayUrl(url) && !hasConnectedRef.current;
-
-        // Attempt to reconnect
-        if (!suppressLocalRetry && shouldReconnectRef.current && reconnectAttemptsRef.current < maxReconnectAttempts) {
-          reconnectAttemptsRef.current++;
-          const delay = Math.min(reconnectInterval * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
-          
-          reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
-          }, delay);
-        } else if (!suppressLocalRetry && reconnectAttemptsRef.current >= maxReconnectAttempts) {
-          console.error('[WebSocket] Max reconnect attempts reached');
-        }
+        if (suppressLocalRetry) return;
+        scheduleReconnect();
       };
     } catch (error) {
       if (!(isLocalGatewayUrl(url) && !hasConnectedRef.current)) {
@@ -123,15 +155,11 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
       }
       setConnectionState('error');
     }
-  }, [enabled, maxReconnectAttempts, onMessage, reconnectInterval, token, url]);
+  }, [enabled, onMessage, scheduleReconnect, token, url]);
 
   const disconnect = useCallback(() => {
     shouldReconnectRef.current = false;
-    
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
+    clearPendingReconnect();
 
     if (wsRef.current) {
       wsRef.current.close();
@@ -165,10 +193,51 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
     };
   }, []);
 
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
+
+  /**
+   * Recover from an outage.
+   *
+   * The attempt budget exists to stop a doomed socket retrying forever, but on
+   * its own it made a transient outage permanent: ten failures during a dropped
+   * connection or a sleeping laptop left live updates dead until a full page
+   * reload. Coming back online, or returning to the tab, is new evidence that a
+   * retry may now succeed, so the budget resets and we reconnect at once.
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined' || !enabled) return;
+
+    const resume = () => {
+      if (!shouldReconnectRef.current) return;
+      if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+      reconnectAttemptsRef.current = 0;
+      exhaustedLoggedRef.current = false;
+      clearPendingReconnect();
+      connectRef.current();
+    };
+
+    const handleOnline = () => resume();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') resume();
+    };
+
+    window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [enabled]);
+
   // Connect on mount, disconnect on unmount
   useEffect(() => {
     shouldReconnectRef.current = true;
     hasConnectedRef.current = false;
+    reconnectAttemptsRef.current = 0;
+    exhaustedLoggedRef.current = false;
     if (enabled) {
       connect();
     } else {

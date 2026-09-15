@@ -3,7 +3,27 @@ import * as jspb from 'google-protobuf'
 import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb'; // proto import: "google/protobuf/timestamp.proto"
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
 import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb'; // proto import: "google/protobuf/struct.proto"
+import * as shared_shared_pb from '../shared/shared_pb'; // proto import: "shared/shared.proto"
+import * as client_profile_client_profile_pb from '../client_profile/client_profile_pb'; // proto import: "client_profile/client_profile.proto"
 
+
+export class AdminPWAAnalyticsRequest extends jspb.Message {
+  getDays(): number;
+  setDays(value: number): AdminPWAAnalyticsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminPWAAnalyticsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminPWAAnalyticsRequest): AdminPWAAnalyticsRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminPWAAnalyticsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminPWAAnalyticsRequest;
+  static deserializeBinaryFromReader(message: AdminPWAAnalyticsRequest, reader: jspb.BinaryReader): AdminPWAAnalyticsRequest;
+}
+
+export namespace AdminPWAAnalyticsRequest {
+  export type AsObject = {
+    days: number;
+  };
+}
 
 export class User extends jspb.Message {
   getId(): string;
@@ -346,6 +366,32 @@ export class ListRequest extends jspb.Message {
   getOffset(): number;
   setOffset(value: number): ListRequest;
 
+  getUserProfileId(): string;
+  setUserProfileId(value: string): ListRequest;
+
+  getStatus(): string;
+  setStatus(value: string): ListRequest;
+
+  getCountyId(): number;
+  setCountyId(value: number): ListRequest;
+
+  getSubcountyId(): number;
+  setSubcountyId(value: number): ListRequest;
+
+  getWardId(): number;
+  setWardId(value: number): ListRequest;
+
+  getJobTypeId(): number;
+  setJobTypeId(value: number): ListRequest;
+
+  getPropertyIdsList(): Array<number>;
+  setPropertyIdsList(value: Array<number>): ListRequest;
+  clearPropertyIdsList(): ListRequest;
+  addPropertyIds(value: number, index?: number): ListRequest;
+
+  getOwnerProfileType(): string;
+  setOwnerProfileType(value: string): ListRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListRequest): ListRequest.AsObject;
@@ -358,6 +404,14 @@ export namespace ListRequest {
   export type AsObject = {
     limit: number;
     offset: number;
+    userProfileId: string;
+    status: string;
+    countyId: number;
+    subcountyId: number;
+    wardId: number;
+    jobTypeId: number;
+    propertyIdsList: Array<number>;
+    ownerProfileType: string;
   };
 }
 
@@ -452,6 +506,32 @@ export class BoolResponse extends jspb.Message {
 export namespace BoolResponse {
   export type AsObject = {
     value: boolean;
+  };
+}
+
+export class AdminDeviceActivityRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): AdminDeviceActivityRequest;
+
+  getDeviceId(): string;
+  setDeviceId(value: string): AdminDeviceActivityRequest;
+
+  getLimit(): number;
+  setLimit(value: number): AdminDeviceActivityRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminDeviceActivityRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminDeviceActivityRequest): AdminDeviceActivityRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminDeviceActivityRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminDeviceActivityRequest;
+  static deserializeBinaryFromReader(message: AdminDeviceActivityRequest, reader: jspb.BinaryReader): AdminDeviceActivityRequest;
+}
+
+export namespace AdminDeviceActivityRequest {
+  export type AsObject = {
+    userId: string;
+    deviceId: string;
+    limit: number;
   };
 }
 
@@ -610,20 +690,8 @@ export class SignupRequest extends jspb.Message {
   getPassword(): string;
   setPassword(value: string): SignupRequest;
 
-  getProfileType(): string;
-  setProfileType(value: string): SignupRequest;
-
-  getBureauId(): string;
-  setBureauId(value: string): SignupRequest;
-
-  getHouseholdId(): string;
-  setHouseholdId(value: string): SignupRequest;
-
-  getDateOfBirth(): string;
-  setDateOfBirth(value: string): SignupRequest;
-
-  getSignedDate(): string;
-  setSignedDate(value: string): SignupRequest;
+  getProfileId(): string;
+  setProfileId(value: string): SignupRequest;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SignupRequest.AsObject;
@@ -639,11 +707,7 @@ export namespace SignupRequest {
     lastName: string;
     phone: string;
     password: string;
-    profileType: string;
-    bureauId: string;
-    householdId: string;
-    dateOfBirth: string;
-    signedDate: string;
+    profileId: string;
   };
 }
 
@@ -1621,6 +1685,200 @@ export namespace BureauHousehelpLinkResponse {
   };
 }
 
+export class BureauServiceProviderLinkRequest extends jspb.Message {
+  getId(): string;
+  setId(value: string): BureauServiceProviderLinkRequest;
+
+  getBureauId(): string;
+  setBureauId(value: string): BureauServiceProviderLinkRequest;
+
+  getServiceProviderUserId(): string;
+  setServiceProviderUserId(value: string): BureauServiceProviderLinkRequest;
+
+  getServiceProviderProfileId(): string;
+  setServiceProviderProfileId(value: string): BureauServiceProviderLinkRequest;
+
+  getPhone(): string;
+  setPhone(value: string): BureauServiceProviderLinkRequest;
+
+  getStatus(): string;
+  setStatus(value: string): BureauServiceProviderLinkRequest;
+
+  getExpiresAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setExpiresAt(value?: google_protobuf_timestamp_pb.Timestamp): BureauServiceProviderLinkRequest;
+  hasExpiresAt(): boolean;
+  clearExpiresAt(): BureauServiceProviderLinkRequest;
+
+  getVerifiedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setVerifiedAt(value?: google_protobuf_timestamp_pb.Timestamp): BureauServiceProviderLinkRequest;
+  hasVerifiedAt(): boolean;
+  clearVerifiedAt(): BureauServiceProviderLinkRequest;
+
+  getCreatedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setCreatedAt(value?: google_protobuf_timestamp_pb.Timestamp): BureauServiceProviderLinkRequest;
+  hasCreatedAt(): boolean;
+  clearCreatedAt(): BureauServiceProviderLinkRequest;
+
+  getUpdatedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setUpdatedAt(value?: google_protobuf_timestamp_pb.Timestamp): BureauServiceProviderLinkRequest;
+  hasUpdatedAt(): boolean;
+  clearUpdatedAt(): BureauServiceProviderLinkRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauServiceProviderLinkRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauServiceProviderLinkRequest): BureauServiceProviderLinkRequest.AsObject;
+  static serializeBinaryToWriter(message: BureauServiceProviderLinkRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauServiceProviderLinkRequest;
+  static deserializeBinaryFromReader(message: BureauServiceProviderLinkRequest, reader: jspb.BinaryReader): BureauServiceProviderLinkRequest;
+}
+
+export namespace BureauServiceProviderLinkRequest {
+  export type AsObject = {
+    id: string;
+    bureauId: string;
+    serviceProviderUserId: string;
+    serviceProviderProfileId: string;
+    phone: string;
+    status: string;
+    expiresAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    verifiedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    createdAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    updatedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class BureauServiceProvider extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): BureauServiceProvider;
+
+  getProfileId(): string;
+  setProfileId(value: string): BureauServiceProvider;
+
+  getFirstName(): string;
+  setFirstName(value: string): BureauServiceProvider;
+
+  getLastName(): string;
+  setLastName(value: string): BureauServiceProvider;
+
+  getPhone(): string;
+  setPhone(value: string): BureauServiceProvider;
+
+  getBureauId(): string;
+  setBureauId(value: string): BureauServiceProvider;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauServiceProvider.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauServiceProvider): BureauServiceProvider.AsObject;
+  static serializeBinaryToWriter(message: BureauServiceProvider, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauServiceProvider;
+  static deserializeBinaryFromReader(message: BureauServiceProvider, reader: jspb.BinaryReader): BureauServiceProvider;
+}
+
+export namespace BureauServiceProvider {
+  export type AsObject = {
+    userId: string;
+    profileId: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    bureauId: string;
+  };
+}
+
+export class BureauServiceProviderLinkInitiateRequest extends jspb.Message {
+  getPhone(): string;
+  setPhone(value: string): BureauServiceProviderLinkInitiateRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauServiceProviderLinkInitiateRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauServiceProviderLinkInitiateRequest): BureauServiceProviderLinkInitiateRequest.AsObject;
+  static serializeBinaryToWriter(message: BureauServiceProviderLinkInitiateRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauServiceProviderLinkInitiateRequest;
+  static deserializeBinaryFromReader(message: BureauServiceProviderLinkInitiateRequest, reader: jspb.BinaryReader): BureauServiceProviderLinkInitiateRequest;
+}
+
+export namespace BureauServiceProviderLinkInitiateRequest {
+  export type AsObject = {
+    phone: string;
+  };
+}
+
+export class BureauServiceProviderLinkVerifyRequest extends jspb.Message {
+  getRequestId(): string;
+  setRequestId(value: string): BureauServiceProviderLinkVerifyRequest;
+
+  getOtp(): string;
+  setOtp(value: string): BureauServiceProviderLinkVerifyRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauServiceProviderLinkVerifyRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauServiceProviderLinkVerifyRequest): BureauServiceProviderLinkVerifyRequest.AsObject;
+  static serializeBinaryToWriter(message: BureauServiceProviderLinkVerifyRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauServiceProviderLinkVerifyRequest;
+  static deserializeBinaryFromReader(message: BureauServiceProviderLinkVerifyRequest, reader: jspb.BinaryReader): BureauServiceProviderLinkVerifyRequest;
+}
+
+export namespace BureauServiceProviderLinkVerifyRequest {
+  export type AsObject = {
+    requestId: string;
+    otp: string;
+  };
+}
+
+export class BureauServiceProviderLinkIdRequest extends jspb.Message {
+  getRequestId(): string;
+  setRequestId(value: string): BureauServiceProviderLinkIdRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauServiceProviderLinkIdRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauServiceProviderLinkIdRequest): BureauServiceProviderLinkIdRequest.AsObject;
+  static serializeBinaryToWriter(message: BureauServiceProviderLinkIdRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauServiceProviderLinkIdRequest;
+  static deserializeBinaryFromReader(message: BureauServiceProviderLinkIdRequest, reader: jspb.BinaryReader): BureauServiceProviderLinkIdRequest;
+}
+
+export namespace BureauServiceProviderLinkIdRequest {
+  export type AsObject = {
+    requestId: string;
+  };
+}
+
+export class BureauServiceProviderLinkResponse extends jspb.Message {
+  getMessage(): string;
+  setMessage(value: string): BureauServiceProviderLinkResponse;
+
+  getLinkRequest(): BureauServiceProviderLinkRequest | undefined;
+  setLinkRequest(value?: BureauServiceProviderLinkRequest): BureauServiceProviderLinkResponse;
+  hasLinkRequest(): boolean;
+  clearLinkRequest(): BureauServiceProviderLinkResponse;
+
+  getVerification(): VerificationInfo | undefined;
+  setVerification(value?: VerificationInfo): BureauServiceProviderLinkResponse;
+  hasVerification(): boolean;
+  clearVerification(): BureauServiceProviderLinkResponse;
+
+  getServiceProvider(): BureauServiceProvider | undefined;
+  setServiceProvider(value?: BureauServiceProvider): BureauServiceProviderLinkResponse;
+  hasServiceProvider(): boolean;
+  clearServiceProvider(): BureauServiceProviderLinkResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauServiceProviderLinkResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauServiceProviderLinkResponse): BureauServiceProviderLinkResponse.AsObject;
+  static serializeBinaryToWriter(message: BureauServiceProviderLinkResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauServiceProviderLinkResponse;
+  static deserializeBinaryFromReader(message: BureauServiceProviderLinkResponse, reader: jspb.BinaryReader): BureauServiceProviderLinkResponse;
+}
+
+export namespace BureauServiceProviderLinkResponse {
+  export type AsObject = {
+    message: string;
+    linkRequest?: BureauServiceProviderLinkRequest.AsObject;
+    verification?: VerificationInfo.AsObject;
+    serviceProvider?: BureauServiceProvider.AsObject;
+  };
+}
+
 export class CheckVerificationStatusRequest extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): CheckVerificationStatusRequest;
@@ -1955,6 +2213,40 @@ export namespace UpdateHousehelpFieldsRequest {
   };
 }
 
+export class UpdateServiceProviderFieldsRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): UpdateServiceProviderFieldsRequest;
+
+  getProfileType(): string;
+  setProfileType(value: string): UpdateServiceProviderFieldsRequest;
+
+  getUpdates(): google_protobuf_struct_pb.Struct | undefined;
+  setUpdates(value?: google_protobuf_struct_pb.Struct): UpdateServiceProviderFieldsRequest;
+  hasUpdates(): boolean;
+  clearUpdates(): UpdateServiceProviderFieldsRequest;
+
+  getStepMetadata(): google_protobuf_struct_pb.Struct | undefined;
+  setStepMetadata(value?: google_protobuf_struct_pb.Struct): UpdateServiceProviderFieldsRequest;
+  hasStepMetadata(): boolean;
+  clearStepMetadata(): UpdateServiceProviderFieldsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): UpdateServiceProviderFieldsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: UpdateServiceProviderFieldsRequest): UpdateServiceProviderFieldsRequest.AsObject;
+  static serializeBinaryToWriter(message: UpdateServiceProviderFieldsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): UpdateServiceProviderFieldsRequest;
+  static deserializeBinaryFromReader(message: UpdateServiceProviderFieldsRequest, reader: jspb.BinaryReader): UpdateServiceProviderFieldsRequest;
+}
+
+export namespace UpdateServiceProviderFieldsRequest {
+  export type AsObject = {
+    userId: string;
+    profileType: string;
+    updates?: google_protobuf_struct_pb.Struct.AsObject;
+    stepMetadata?: google_protobuf_struct_pb.Struct.AsObject;
+  };
+}
+
 export class SaveUserLocationRequest extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): SaveUserLocationRequest;
@@ -2230,6 +2522,9 @@ export class HireEmploymentReq extends jspb.Message {
   getNotes(): string;
   setNotes(value: string): HireEmploymentReq;
 
+  getServiceProviderUserId(): string;
+  setServiceProviderUserId(value: string): HireEmploymentReq;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): HireEmploymentReq.AsObject;
   static toObject(includeInstance: boolean, msg: HireEmploymentReq): HireEmploymentReq.AsObject;
@@ -2246,6 +2541,7 @@ export namespace HireEmploymentReq {
     endDate: string;
     salary: number;
     notes: string;
+    serviceProviderUserId: string;
   };
 }
 
@@ -2258,6 +2554,9 @@ export class TerminateEmploymentReq extends jspb.Message {
 
   getReason(): string;
   setReason(value: string): TerminateEmploymentReq;
+
+  getServiceProviderUserId(): string;
+  setServiceProviderUserId(value: string): TerminateEmploymentReq;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): TerminateEmploymentReq.AsObject;
@@ -2272,6 +2571,7 @@ export namespace TerminateEmploymentReq {
     userId: string;
     househelpUserId: string;
     reason: string;
+    serviceProviderUserId: string;
   };
 }
 
@@ -2348,13 +2648,28 @@ export namespace UpdateProfileStatusReq {
 }
 
 export class CreateJobReq extends jspb.Message {
-  getUserId(): string;
-  setUserId(value: string): CreateJobReq;
+  getUserProfileId(): string;
+  setUserProfileId(value: string): CreateJobReq;
 
-  getData(): google_protobuf_struct_pb.Struct | undefined;
-  setData(value?: google_protobuf_struct_pb.Struct): CreateJobReq;
-  hasData(): boolean;
-  clearData(): CreateJobReq;
+  getTitle(): string;
+  setTitle(value: string): CreateJobReq;
+
+  getDescription(): string;
+  setDescription(value: string): CreateJobReq;
+
+  getJobTypeId(): number;
+  setJobTypeId(value: number): CreateJobReq;
+
+  getFeaturesList(): Array<client_profile_client_profile_pb.FeaturePickInput>;
+  setFeaturesList(value: Array<client_profile_client_profile_pb.FeaturePickInput>): CreateJobReq;
+  clearFeaturesList(): CreateJobReq;
+  addFeatures(value?: client_profile_client_profile_pb.FeaturePickInput, index?: number): client_profile_client_profile_pb.FeaturePickInput;
+
+  getWardId(): number;
+  setWardId(value: number): CreateJobReq;
+
+  getMaxApplicants(): number;
+  setMaxApplicants(value: number): CreateJobReq;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateJobReq.AsObject;
@@ -2366,8 +2681,13 @@ export class CreateJobReq extends jspb.Message {
 
 export namespace CreateJobReq {
   export type AsObject = {
-    userId: string;
-    data?: google_protobuf_struct_pb.Struct.AsObject;
+    userProfileId: string;
+    title: string;
+    description: string;
+    jobTypeId: number;
+    featuresList: Array<client_profile_client_profile_pb.FeaturePickInput.AsObject>;
+    wardId: number;
+    maxApplicants: number;
   };
 }
 
@@ -2375,13 +2695,22 @@ export class UpdateJobReq extends jspb.Message {
   getId(): string;
   setId(value: string): UpdateJobReq;
 
-  getUserId(): string;
-  setUserId(value: string): UpdateJobReq;
+  getTitle(): string;
+  setTitle(value: string): UpdateJobReq;
 
-  getData(): google_protobuf_struct_pb.Struct | undefined;
-  setData(value?: google_protobuf_struct_pb.Struct): UpdateJobReq;
-  hasData(): boolean;
-  clearData(): UpdateJobReq;
+  getDescription(): string;
+  setDescription(value: string): UpdateJobReq;
+
+  getWardId(): number;
+  setWardId(value: number): UpdateJobReq;
+
+  getFeaturesList(): Array<client_profile_client_profile_pb.FeaturePickInput>;
+  setFeaturesList(value: Array<client_profile_client_profile_pb.FeaturePickInput>): UpdateJobReq;
+  clearFeaturesList(): UpdateJobReq;
+  addFeatures(value?: client_profile_client_profile_pb.FeaturePickInput, index?: number): client_profile_client_profile_pb.FeaturePickInput;
+
+  getReplaceFeatures(): boolean;
+  setReplaceFeatures(value: boolean): UpdateJobReq;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UpdateJobReq.AsObject;
@@ -2394,8 +2723,169 @@ export class UpdateJobReq extends jspb.Message {
 export namespace UpdateJobReq {
   export type AsObject = {
     id: string;
-    userId: string;
-    data?: google_protobuf_struct_pb.Struct.AsObject;
+    title: string;
+    description: string;
+    wardId: number;
+    featuresList: Array<client_profile_client_profile_pb.FeaturePickInput.AsObject>;
+    replaceFeatures: boolean;
+  };
+}
+
+export class CreateApplication extends jspb.Message {
+  getListingId(): string;
+  setListingId(value: string): CreateApplication;
+
+  getServiceProviderId(): string;
+  setServiceProviderId(value: string): CreateApplication;
+
+  getMessage(): string;
+  setMessage(value: string): CreateApplication;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CreateApplication.AsObject;
+  static toObject(includeInstance: boolean, msg: CreateApplication): CreateApplication.AsObject;
+  static serializeBinaryToWriter(message: CreateApplication, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CreateApplication;
+  static deserializeBinaryFromReader(message: CreateApplication, reader: jspb.BinaryReader): CreateApplication;
+}
+
+export namespace CreateApplication {
+  export type AsObject = {
+    listingId: string;
+    serviceProviderId: string;
+    message: string;
+  };
+}
+
+export class ApplicationActionRequest extends jspb.Message {
+  getApplicationId(): number;
+  setApplicationId(value: number): ApplicationActionRequest;
+
+  getActorProfileId(): string;
+  setActorProfileId(value: string): ApplicationActionRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ApplicationActionRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ApplicationActionRequest): ApplicationActionRequest.AsObject;
+  static serializeBinaryToWriter(message: ApplicationActionRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ApplicationActionRequest;
+  static deserializeBinaryFromReader(message: ApplicationActionRequest, reader: jspb.BinaryReader): ApplicationActionRequest;
+}
+
+export namespace ApplicationActionRequest {
+  export type AsObject = {
+    applicationId: number;
+    actorProfileId: string;
+  };
+}
+
+export class RespondApplicationRequest extends jspb.Message {
+  getApplicationId(): number;
+  setApplicationId(value: number): RespondApplicationRequest;
+
+  getActorProfileId(): string;
+  setActorProfileId(value: string): RespondApplicationRequest;
+
+  getResponse(): string;
+  setResponse(value: string): RespondApplicationRequest;
+
+  getNote(): string;
+  setNote(value: string): RespondApplicationRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RespondApplicationRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: RespondApplicationRequest): RespondApplicationRequest.AsObject;
+  static serializeBinaryToWriter(message: RespondApplicationRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RespondApplicationRequest;
+  static deserializeBinaryFromReader(message: RespondApplicationRequest, reader: jspb.BinaryReader): RespondApplicationRequest;
+}
+
+export namespace RespondApplicationRequest {
+  export type AsObject = {
+    applicationId: number;
+    actorProfileId: string;
+    response: string;
+    note: string;
+  };
+}
+
+export class OutcomeTokenRequest extends jspb.Message {
+  getToken(): string;
+  setToken(value: string): OutcomeTokenRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): OutcomeTokenRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: OutcomeTokenRequest): OutcomeTokenRequest.AsObject;
+  static serializeBinaryToWriter(message: OutcomeTokenRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): OutcomeTokenRequest;
+  static deserializeBinaryFromReader(message: OutcomeTokenRequest, reader: jspb.BinaryReader): OutcomeTokenRequest;
+}
+
+export namespace OutcomeTokenRequest {
+  export type AsObject = {
+    token: string;
+  };
+}
+
+export class RecordOutcomeRequest extends jspb.Message {
+  getToken(): string;
+  setToken(value: string): RecordOutcomeRequest;
+
+  getResponse(): string;
+  setResponse(value: string): RecordOutcomeRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RecordOutcomeRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: RecordOutcomeRequest): RecordOutcomeRequest.AsObject;
+  static serializeBinaryToWriter(message: RecordOutcomeRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RecordOutcomeRequest;
+  static deserializeBinaryFromReader(message: RecordOutcomeRequest, reader: jspb.BinaryReader): RecordOutcomeRequest;
+}
+
+export namespace RecordOutcomeRequest {
+  export type AsObject = {
+    token: string;
+    response: string;
+  };
+}
+
+export class ListApplicationsRequest extends jspb.Message {
+  getListingId(): string;
+  setListingId(value: string): ListApplicationsRequest;
+
+  getApplicantProfileId(): string;
+  setApplicantProfileId(value: string): ListApplicationsRequest;
+
+  getStatusesList(): Array<string>;
+  setStatusesList(value: Array<string>): ListApplicationsRequest;
+  clearStatusesList(): ListApplicationsRequest;
+  addStatuses(value: string, index?: number): ListApplicationsRequest;
+
+  getLimit(): number;
+  setLimit(value: number): ListApplicationsRequest;
+
+  getOffset(): number;
+  setOffset(value: number): ListApplicationsRequest;
+
+  getOwnerProfileId(): string;
+  setOwnerProfileId(value: string): ListApplicationsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListApplicationsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListApplicationsRequest): ListApplicationsRequest.AsObject;
+  static serializeBinaryToWriter(message: ListApplicationsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListApplicationsRequest;
+  static deserializeBinaryFromReader(message: ListApplicationsRequest, reader: jspb.BinaryReader): ListApplicationsRequest;
+}
+
+export namespace ListApplicationsRequest {
+  export type AsObject = {
+    listingId: string;
+    applicantProfileId: string;
+    statusesList: Array<string>;
+    limit: number;
+    offset: number;
+    ownerProfileId: string;
   };
 }
 
@@ -2638,6 +3128,28 @@ export namespace LocationQueryReq {
   export type AsObject = {
     query: string;
     userId: string;
+  };
+}
+
+export class LocationLevelReq extends jspb.Message {
+  getCountyId(): number;
+  setCountyId(value: number): LocationLevelReq;
+
+  getSubcountyId(): number;
+  setSubcountyId(value: number): LocationLevelReq;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): LocationLevelReq.AsObject;
+  static toObject(includeInstance: boolean, msg: LocationLevelReq): LocationLevelReq.AsObject;
+  static serializeBinaryToWriter(message: LocationLevelReq, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): LocationLevelReq;
+  static deserializeBinaryFromReader(message: LocationLevelReq, reader: jspb.BinaryReader): LocationLevelReq;
+}
+
+export namespace LocationLevelReq {
+  export type AsObject = {
+    countyId: number;
+    subcountyId: number;
   };
 }
 
@@ -3291,6 +3803,100 @@ export namespace MigratePrefsReq {
   };
 }
 
+export class TourProgressRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): TourProgressRequest;
+
+  getTourId(): string;
+  setTourId(value: string): TourProgressRequest;
+
+  getTourVersion(): number;
+  setTourVersion(value: number): TourProgressRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TourProgressRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: TourProgressRequest): TourProgressRequest.AsObject;
+  static serializeBinaryToWriter(message: TourProgressRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): TourProgressRequest;
+  static deserializeBinaryFromReader(message: TourProgressRequest, reader: jspb.BinaryReader): TourProgressRequest;
+}
+
+export namespace TourProgressRequest {
+  export type AsObject = {
+    userId: string;
+    tourId: string;
+    tourVersion: number;
+  };
+}
+
+export class RecordTourEventRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): RecordTourEventRequest;
+
+  getTourId(): string;
+  setTourId(value: string): RecordTourEventRequest;
+
+  getTourVersion(): number;
+  setTourVersion(value: number): RecordTourEventRequest;
+
+  getEventType(): string;
+  setEventType(value: string): RecordTourEventRequest;
+
+  getStepIndex(): number;
+  setStepIndex(value: number): RecordTourEventRequest;
+
+  getTotalSteps(): number;
+  setTotalSteps(value: number): RecordTourEventRequest;
+
+  getPagePath(): string;
+  setPagePath(value: string): RecordTourEventRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RecordTourEventRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: RecordTourEventRequest): RecordTourEventRequest.AsObject;
+  static serializeBinaryToWriter(message: RecordTourEventRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RecordTourEventRequest;
+  static deserializeBinaryFromReader(message: RecordTourEventRequest, reader: jspb.BinaryReader): RecordTourEventRequest;
+}
+
+export namespace RecordTourEventRequest {
+  export type AsObject = {
+    userId: string;
+    tourId: string;
+    tourVersion: number;
+    eventType: string;
+    stepIndex: number;
+    totalSteps: number;
+    pagePath: string;
+  };
+}
+
+export class TourAnalyticsRequest extends jspb.Message {
+  getTourId(): string;
+  setTourId(value: string): TourAnalyticsRequest;
+
+  getTourVersion(): number;
+  setTourVersion(value: number): TourAnalyticsRequest;
+
+  getDays(): number;
+  setDays(value: number): TourAnalyticsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): TourAnalyticsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: TourAnalyticsRequest): TourAnalyticsRequest.AsObject;
+  static serializeBinaryToWriter(message: TourAnalyticsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): TourAnalyticsRequest;
+  static deserializeBinaryFromReader(message: TourAnalyticsRequest, reader: jspb.BinaryReader): TourAnalyticsRequest;
+}
+
+export namespace TourAnalyticsRequest {
+  export type AsObject = {
+    tourId: string;
+    tourVersion: number;
+    days: number;
+  };
+}
+
 export class UpdateKYCStatusReq extends jspb.Message {
   getId(): string;
   setId(value: string): UpdateKYCStatusReq;
@@ -3764,6 +4370,9 @@ export class AdminUserStatsResponse extends jspb.Message {
   clearDailySignupsList(): AdminUserStatsResponse;
   addDailySignups(value?: DailyUserCount, index?: number): DailyUserCount;
 
+  getTotalServiceProviders(): number;
+  setTotalServiceProviders(value: number): AdminUserStatsResponse;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AdminUserStatsResponse.AsObject;
   static toObject(includeInstance: boolean, msg: AdminUserStatsResponse): AdminUserStatsResponse.AsObject;
@@ -3784,6 +4393,7 @@ export namespace AdminUserStatsResponse {
     newUsersThisWeek: number;
     newUsersThisMonth: number;
     dailySignupsList: Array<DailyUserCount.AsObject>;
+    totalServiceProviders: number;
   };
 }
 
@@ -3822,6 +4432,9 @@ export class AdminListKYCRequest extends jspb.Message {
   getProfileType(): string;
   setProfileType(value: string): AdminListKYCRequest;
 
+  getSearch(): string;
+  setSearch(value: string): AdminListKYCRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AdminListKYCRequest.AsObject;
   static toObject(includeInstance: boolean, msg: AdminListKYCRequest): AdminListKYCRequest.AsObject;
@@ -3836,6 +4449,7 @@ export namespace AdminListKYCRequest {
     pageSize: number;
     status: string;
     profileType: string;
+    search: string;
   };
 }
 
@@ -3967,6 +4581,32 @@ export namespace AdminDocument {
   };
 }
 
+export class AdminReviewKYCRequest extends jspb.Message {
+  getId(): string;
+  setId(value: string): AdminReviewKYCRequest;
+
+  getDecision(): string;
+  setDecision(value: string): AdminReviewKYCRequest;
+
+  getReason(): string;
+  setReason(value: string): AdminReviewKYCRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminReviewKYCRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminReviewKYCRequest): AdminReviewKYCRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminReviewKYCRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminReviewKYCRequest;
+  static deserializeBinaryFromReader(message: AdminReviewKYCRequest, reader: jspb.BinaryReader): AdminReviewKYCRequest;
+}
+
+export namespace AdminReviewKYCRequest {
+  export type AsObject = {
+    id: string;
+    decision: string;
+    reason: string;
+  };
+}
+
 export class AdminRejectKYCRequest extends jspb.Message {
   getId(): string;
   setId(value: string): AdminRejectKYCRequest;
@@ -4036,6 +4676,9 @@ export class AdminListReviewsRequest extends jspb.Message {
   getReviewType(): string;
   setReviewType(value: string): AdminListReviewsRequest;
 
+  getSearch(): string;
+  setSearch(value: string): AdminListReviewsRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AdminListReviewsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: AdminListReviewsRequest): AdminListReviewsRequest.AsObject;
@@ -4050,6 +4693,7 @@ export namespace AdminListReviewsRequest {
     pageSize: number;
     status: string;
     reviewType: string;
+    search: string;
   };
 }
 
@@ -5614,6 +6258,364 @@ export namespace UpdateRolePermissionsRequest {
   export type AsObject = {
     roleId: string;
     permissionIdsList: Array<string>;
+  };
+}
+
+export class AdminEngagement extends jspb.Message {
+  getId(): string;
+  setId(value: string): AdminEngagement;
+
+  getApplicationId(): string;
+  setApplicationId(value: string): AdminEngagement;
+
+  getListingTitle(): string;
+  setListingTitle(value: string): AdminEngagement;
+
+  getHouseholdUserId(): string;
+  setHouseholdUserId(value: string): AdminEngagement;
+
+  getHouseholdName(): string;
+  setHouseholdName(value: string): AdminEngagement;
+
+  getHousehelpUserId(): string;
+  setHousehelpUserId(value: string): AdminEngagement;
+
+  getHousehelpName(): string;
+  setHousehelpName(value: string): AdminEngagement;
+
+  getStatus(): string;
+  setStatus(value: string): AdminEngagement;
+
+  getEngagementType(): string;
+  setEngagementType(value: string): AdminEngagement;
+
+  getCreatedAt(): string;
+  setCreatedAt(value: string): AdminEngagement;
+
+  getOutcomeResponse(): string;
+  setOutcomeResponse(value: string): AdminEngagement;
+
+  getOutcomeAskedAt(): string;
+  setOutcomeAskedAt(value: string): AdminEngagement;
+
+  getOutcomeRespondedAt(): string;
+  setOutcomeRespondedAt(value: string): AdminEngagement;
+
+  getOutcomeRespondedBy(): string;
+  setOutcomeRespondedBy(value: string): AdminEngagement;
+
+  getServiceProviderUserId(): string;
+  setServiceProviderUserId(value: string): AdminEngagement;
+
+  getServiceProviderName(): string;
+  setServiceProviderName(value: string): AdminEngagement;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminEngagement.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminEngagement): AdminEngagement.AsObject;
+  static serializeBinaryToWriter(message: AdminEngagement, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminEngagement;
+  static deserializeBinaryFromReader(message: AdminEngagement, reader: jspb.BinaryReader): AdminEngagement;
+}
+
+export namespace AdminEngagement {
+  export type AsObject = {
+    id: string;
+    applicationId: string;
+    listingTitle: string;
+    householdUserId: string;
+    householdName: string;
+    househelpUserId: string;
+    househelpName: string;
+    status: string;
+    engagementType: string;
+    createdAt: string;
+    outcomeResponse: string;
+    outcomeAskedAt: string;
+    outcomeRespondedAt: string;
+    outcomeRespondedBy: string;
+    serviceProviderUserId: string;
+    serviceProviderName: string;
+  };
+}
+
+export class AdminListEngagementsRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): AdminListEngagementsRequest;
+
+  getOutcome(): string;
+  setOutcome(value: string): AdminListEngagementsRequest;
+
+  getLimit(): number;
+  setLimit(value: number): AdminListEngagementsRequest;
+
+  getOffset(): number;
+  setOffset(value: number): AdminListEngagementsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListEngagementsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListEngagementsRequest): AdminListEngagementsRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminListEngagementsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListEngagementsRequest;
+  static deserializeBinaryFromReader(message: AdminListEngagementsRequest, reader: jspb.BinaryReader): AdminListEngagementsRequest;
+}
+
+export namespace AdminListEngagementsRequest {
+  export type AsObject = {
+    userId: string;
+    outcome: string;
+    limit: number;
+    offset: number;
+  };
+}
+
+export class AdminListEngagementsResponse extends jspb.Message {
+  getEngagementsList(): Array<AdminEngagement>;
+  setEngagementsList(value: Array<AdminEngagement>): AdminListEngagementsResponse;
+  clearEngagementsList(): AdminListEngagementsResponse;
+  addEngagements(value?: AdminEngagement, index?: number): AdminEngagement;
+
+  getTotal(): number;
+  setTotal(value: number): AdminListEngagementsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListEngagementsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListEngagementsResponse): AdminListEngagementsResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminListEngagementsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListEngagementsResponse;
+  static deserializeBinaryFromReader(message: AdminListEngagementsResponse, reader: jspb.BinaryReader): AdminListEngagementsResponse;
+}
+
+export namespace AdminListEngagementsResponse {
+  export type AsObject = {
+    engagementsList: Array<AdminEngagement.AsObject>;
+    total: number;
+  };
+}
+
+export class AdminOutcomeStatsResponse extends jspb.Message {
+  getTotalEngagements(): number;
+  setTotalEngagements(value: number): AdminOutcomeStatsResponse;
+
+  getAsked(): number;
+  setAsked(value: number): AdminOutcomeStatsResponse;
+
+  getAnswered(): number;
+  setAnswered(value: number): AdminOutcomeStatsResponse;
+
+  getStarted(): number;
+  setStarted(value: number): AdminOutcomeStatsResponse;
+
+  getDidNotStart(): number;
+  setDidNotStart(value: number): AdminOutcomeStatsResponse;
+
+  getNotYet(): number;
+  setNotYet(value: number): AdminOutcomeStatsResponse;
+
+  getUnanswered(): number;
+  setUnanswered(value: number): AdminOutcomeStatsResponse;
+
+  getUnasked(): number;
+  setUnasked(value: number): AdminOutcomeStatsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminOutcomeStatsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminOutcomeStatsResponse): AdminOutcomeStatsResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminOutcomeStatsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminOutcomeStatsResponse;
+  static deserializeBinaryFromReader(message: AdminOutcomeStatsResponse, reader: jspb.BinaryReader): AdminOutcomeStatsResponse;
+}
+
+export namespace AdminOutcomeStatsResponse {
+  export type AsObject = {
+    totalEngagements: number;
+    asked: number;
+    answered: number;
+    started: number;
+    didNotStart: number;
+    notYet: number;
+    unanswered: number;
+    unasked: number;
+  };
+}
+
+export class AdminHiringFunnelRequest extends jspb.Message {
+  getWindowDays(): number;
+  setWindowDays(value: number): AdminHiringFunnelRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminHiringFunnelRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminHiringFunnelRequest): AdminHiringFunnelRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminHiringFunnelRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminHiringFunnelRequest;
+  static deserializeBinaryFromReader(message: AdminHiringFunnelRequest, reader: jspb.BinaryReader): AdminHiringFunnelRequest;
+}
+
+export namespace AdminHiringFunnelRequest {
+  export type AsObject = {
+    windowDays: number;
+  };
+}
+
+export class AdminHiringFunnelResponse extends jspb.Message {
+  getPosted(): number;
+  setPosted(value: number): AdminHiringFunnelResponse;
+
+  getReceivedAnApplication(): number;
+  setReceivedAnApplication(value: number): AdminHiringFunnelResponse;
+
+  getReachedInitiated(): number;
+  setReachedInitiated(value: number): AdminHiringFunnelResponse;
+
+  getProviderAccepted(): number;
+  setProviderAccepted(value: number): AdminHiringFunnelResponse;
+
+  getHouseholdApproved(): number;
+  setHouseholdApproved(value: number): AdminHiringFunnelResponse;
+
+  getBecameAnEngagement(): number;
+  setBecameAnEngagement(value: number): AdminHiringFunnelResponse;
+
+  getConfirmedStarted(): number;
+  setConfirmedStarted(value: number): AdminHiringFunnelResponse;
+
+  getTotalApplications(): number;
+  setTotalApplications(value: number): AdminHiringFunnelResponse;
+
+  getStillMaturing(): number;
+  setStillMaturing(value: number): AdminHiringFunnelResponse;
+
+  getMaturityDays(): number;
+  setMaturityDays(value: number): AdminHiringFunnelResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminHiringFunnelResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminHiringFunnelResponse): AdminHiringFunnelResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminHiringFunnelResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminHiringFunnelResponse;
+  static deserializeBinaryFromReader(message: AdminHiringFunnelResponse, reader: jspb.BinaryReader): AdminHiringFunnelResponse;
+}
+
+export namespace AdminHiringFunnelResponse {
+  export type AsObject = {
+    posted: number;
+    receivedAnApplication: number;
+    reachedInitiated: number;
+    providerAccepted: number;
+    householdApproved: number;
+    becameAnEngagement: number;
+    confirmedStarted: number;
+    totalApplications: number;
+    stillMaturing: number;
+    maturityDays: number;
+  };
+}
+
+export class AdminPlatformDay extends jspb.Message {
+  getDay(): string;
+  setDay(value: string): AdminPlatformDay;
+
+  getUsersJoined(): number;
+  setUsersJoined(value: number): AdminPlatformDay;
+
+  getListingsPosted(): number;
+  setListingsPosted(value: number): AdminPlatformDay;
+
+  getApplicationsMade(): number;
+  setApplicationsMade(value: number): AdminPlatformDay;
+
+  getEngagementsCreated(): number;
+  setEngagementsCreated(value: number): AdminPlatformDay;
+
+  getReviewsLeft(): number;
+  setReviewsLeft(value: number): AdminPlatformDay;
+
+  getKycSubmitted(): number;
+  setKycSubmitted(value: number): AdminPlatformDay;
+
+  getKycDecided(): number;
+  setKycDecided(value: number): AdminPlatformDay;
+
+  getOutcomesRecorded(): number;
+  setOutcomesRecorded(value: number): AdminPlatformDay;
+
+  getOutcomesStarted(): number;
+  setOutcomesStarted(value: number): AdminPlatformDay;
+
+  getTotalUsers(): number;
+  setTotalUsers(value: number): AdminPlatformDay;
+
+  getTotalListings(): number;
+  setTotalListings(value: number): AdminPlatformDay;
+
+  getBackfilled(): boolean;
+  setBackfilled(value: boolean): AdminPlatformDay;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminPlatformDay.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminPlatformDay): AdminPlatformDay.AsObject;
+  static serializeBinaryToWriter(message: AdminPlatformDay, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminPlatformDay;
+  static deserializeBinaryFromReader(message: AdminPlatformDay, reader: jspb.BinaryReader): AdminPlatformDay;
+}
+
+export namespace AdminPlatformDay {
+  export type AsObject = {
+    day: string;
+    usersJoined: number;
+    listingsPosted: number;
+    applicationsMade: number;
+    engagementsCreated: number;
+    reviewsLeft: number;
+    kycSubmitted: number;
+    kycDecided: number;
+    outcomesRecorded: number;
+    outcomesStarted: number;
+    totalUsers: number;
+    totalListings: number;
+    backfilled: boolean;
+  };
+}
+
+export class AdminPlatformTrendRequest extends jspb.Message {
+  getDays(): number;
+  setDays(value: number): AdminPlatformTrendRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminPlatformTrendRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminPlatformTrendRequest): AdminPlatformTrendRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminPlatformTrendRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminPlatformTrendRequest;
+  static deserializeBinaryFromReader(message: AdminPlatformTrendRequest, reader: jspb.BinaryReader): AdminPlatformTrendRequest;
+}
+
+export namespace AdminPlatformTrendRequest {
+  export type AsObject = {
+    days: number;
+  };
+}
+
+export class AdminPlatformTrendResponse extends jspb.Message {
+  getDaysList(): Array<AdminPlatformDay>;
+  setDaysList(value: Array<AdminPlatformDay>): AdminPlatformTrendResponse;
+  clearDaysList(): AdminPlatformTrendResponse;
+  addDays(value?: AdminPlatformDay, index?: number): AdminPlatformDay;
+
+  getMissingDays(): number;
+  setMissingDays(value: number): AdminPlatformTrendResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminPlatformTrendResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminPlatformTrendResponse): AdminPlatformTrendResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminPlatformTrendResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminPlatformTrendResponse;
+  static deserializeBinaryFromReader(message: AdminPlatformTrendResponse, reader: jspb.BinaryReader): AdminPlatformTrendResponse;
+}
+
+export namespace AdminPlatformTrendResponse {
+  export type AsObject = {
+    daysList: Array<AdminPlatformDay.AsObject>;
+    missingDays: number;
   };
 }
 

@@ -211,3 +211,40 @@ export const prepareDeviceRegistration = async () => {
     longitude: location?.longitude,
   };
 };
+
+/**
+ * Register the current browser after authentication. IP enrichment is left to
+ * the backend/proxy so sign-in never prompts for location permission or calls
+ * a third-party IP service.
+ */
+export const registerCurrentDevice = async (userId: string) => {
+  if (!userId || typeof window === 'undefined') return null;
+  const { deviceService } = await import('~/services/grpc/device.service');
+  const deviceId = await getDeviceId();
+  return deviceService.registerDevice(
+    userId,
+    deviceId,
+    getDeviceName(),
+    navigator.userAgent,
+    '',
+  );
+};
+
+/**
+ * The stored device id, or "" when this browser has never registered one.
+ *
+ * Synchronous on purpose. getDeviceId generates a fingerprint when none is
+ * stored, which is async and has side effects; callers that only want to say
+ * "I am this device, if you already know me" — request metadata, in
+ * particular — must not block or enrol a browser as a side effect of asking.
+ */
+export const storedDeviceId = (): string => {
+  if (typeof window === 'undefined') return '';
+  try {
+    return window.localStorage.getItem('device_id') || '';
+  } catch {
+    // Storage can be unavailable in a private window or under a strict policy.
+    // Saying nothing is correct here: the request proceeds unidentified.
+    return '';
+  }
+};

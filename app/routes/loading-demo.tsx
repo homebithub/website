@@ -14,7 +14,7 @@ export default function LoadingDemoPage() {
     <div className="min-h-screen bg-white dark:bg-slate-900">
       <Navigation />
       
-      <main className="container mx-auto px-4 py-8 border-2 border-purple-500 dark:border-purple-400 rounded-xl bg-white dark:bg-black text-slate-900 dark:text-white shadow-card">
+      <main className="container mx-auto rounded-2xl bg-white px-4 py-8 text-slate-900 dark:bg-black dark:text-white">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-xl font-bold text-primary-800 dark:text-primary-400 mb-8 text-center">
             Shimmer Loading Demo
@@ -22,7 +22,7 @@ export default function LoadingDemoPage() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Controls Panel */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+            <div className="rounded-2xl border border-gray-200/70 bg-white p-6 shadow-sm dark:border-purple-500/15 dark:bg-slate-800">
               <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-6">
                 Customization Options
               </h2>
@@ -36,7 +36,7 @@ export default function LoadingDemoPage() {
                     <button
                       key={item}
                       onClick={() => setVariant(item as DemoVariant)}
-                      className={`p-3 rounded-lg border-2 transition-all ${
+                      className={`rounded-xl border p-3 transition-all ${
                         variant === item
                           ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300"
                           : "border-gray-200 dark:border-slate-600 hover:border-primary-300 dark:hover:border-primary-600"
@@ -63,15 +63,15 @@ export default function LoadingDemoPage() {
             </div>
 
             {/* Preview Panel */}
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+            <div className="rounded-2xl border border-gray-200/70 bg-white p-6 shadow-sm dark:border-purple-500/15 dark:bg-slate-800">
               <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-6">
                 Preview
               </h2>
               
-              <div className="flex flex-col items-center justify-center min-h-[400px] bg-gray-50 dark:bg-slate-900 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600 overflow-hidden">
+              <div className="flex min-h-[360px] flex-col items-center justify-center overflow-hidden rounded-2xl border border-gray-200/70 bg-gray-50 dark:border-purple-500/15 dark:bg-slate-900">
                 {variant === "fullscreen" ? (
-                  <div className="w-full h-[380px] border border-slate-800 rounded-2xl overflow-hidden">
-                    <Loading text={customText} variant="fullscreen" />
+                  <div className="h-[360px] w-full overflow-hidden">
+                    <Loading text={customText} variant="fullscreen" className="!min-h-[360px]" />
                   </div>
                 ) : (
                   <div className="w-full px-6 py-10">
@@ -103,32 +103,32 @@ export default function LoadingDemoPage() {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="rounded-2xl border border-gray-200/70 bg-white p-6 shadow-sm dark:border-purple-500/15 dark:bg-slate-800">
                 <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Hero shimmer</h3>
                 <ShimmerHeroPanel />
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="rounded-2xl border border-gray-200/70 bg-white p-6 shadow-sm dark:border-purple-500/15 dark:bg-slate-800">
                 <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Tile row</h3>
                 <ShimmerTileRow items={3} />
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="rounded-2xl border border-gray-200/70 bg-white p-6 shadow-sm dark:border-purple-500/15 dark:bg-slate-800">
                 <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Content section</h3>
                 <ShimmerSection lines={5} showAction />
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="rounded-2xl border border-gray-200/70 bg-white p-6 shadow-sm dark:border-purple-500/15 dark:bg-slate-800">
                 <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Inline shimmer</h3>
                 <InlineShimmer text="Loading recent updates…" />
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="rounded-2xl border border-gray-200/70 bg-white p-6 shadow-sm dark:border-purple-500/15 dark:bg-slate-800">
                 <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">List placeholder</h3>
                 <ShimmerListPlaceholder items={2} />
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="rounded-2xl border border-gray-200/70 bg-white p-6 shadow-sm dark:border-purple-500/15 dark:bg-slate-800">
                 <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Section stack</h3>
                 <div className="space-y-3">
                   <ShimmerSection lines={3} />
@@ -143,4 +143,4 @@ export default function LoadingDemoPage() {
       <Footer />
     </div>
   );
-} 
+}

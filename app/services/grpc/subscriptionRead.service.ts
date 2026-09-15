@@ -1,0 +1,47 @@
+import * as subscriptionGrpcModule from '~/grpc/lite/subscription/subscription_grpc_web_pb';
+import * as subscriptionPbModule from '~/grpc/lite/subscription/subscription_pb';
+
+import { GRPC_WEB_BASE_URL, callWithAuthRetry } from './client';
+import { getStoredAccessToken, getStoredCanonicalProfileType, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
+
+const subscriptionPb = (subscriptionPbModule as any).default ?? subscriptionPbModule;
+const { PaymentsServiceClient } = subscriptionGrpcModule as any;
+const client = new PaymentsServiceClient(GRPC_WEB_BASE_URL, null, null);
+
+function metadata(): Record<string, string> {
+  const result: Record<string, string> = {};
+  const token = getStoredAccessToken();
+  if (token) result.authorization = `Bearer ${token}`;
+  const profileType = getStoredCanonicalProfileType();
+  if (profileType) result['x-profile-type'] = profileType;
+  return result;
+}
+
+function request(RequestClass: any, userId: string, profileId: string, profileType: string): any {
+  const value = new RequestClass();
+  value.setUserId(userId || getStoredUserId());
+  value.setProfileId(profileId || getStoredUserProfileId());
+  value.setProfileType(profileType || getStoredCanonicalProfileType());
+  return value;
+}
+
+function call(start: (callback: (error: any, response?: any) => void) => void): Promise<any> {
+  return callWithAuthRetry(start);
+}
+
+export const subscriptionReadService = {
+  getMySubscription(userId = '', profileId = '', profileType = '') {
+    return call(callback => client.getMySubscription(
+      request(subscriptionPb.GetMySubscriptionRequest, userId, profileId, profileType),
+      metadata(),
+      callback,
+    ));
+  },
+  checkSubscriptionAccess(userId = '', profileId = '', profileType = '') {
+    return call(callback => client.checkSubscriptionAccess(
+      request(subscriptionPb.CheckSubscriptionAccessRequest, userId, profileId, profileType),
+      metadata(),
+      callback,
+    ));
+  },
+};

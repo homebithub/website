@@ -258,7 +258,7 @@ const Pets: React.FC = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowModal(false)} />
           <div className="relative bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
             <div className="flex justify-between items-center mb-4">
@@ -390,7 +390,7 @@ const Pets: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && petToDelete && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={cancelDelete} />
           <div className="relative bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md sm:mx-4 animate-slide-up">
             <div className="flex items-center mb-4">

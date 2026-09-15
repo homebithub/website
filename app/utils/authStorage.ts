@@ -4,6 +4,9 @@ import {
   getAuthFromCookies,
   setAuthCookies,
 } from "~/utils/cookie";
+import { normalizeProfileType } from "~/utils/profileType";
+
+export { isServiceProviderProfileType, normalizeProfileType, profileTypesMatch } from "~/utils/profileType";
 
 type StoredUser = Record<string, any> | null;
 
@@ -67,6 +70,15 @@ export const getStoredUserId = (): string => {
   return safeGet("user_id") || "";
 };
 
+export const getStoredUserProfileId = (): string => {
+  const user = getStoredUser();
+  if (user?.user_profile_id || user?.userProfileId) {
+    return user.user_profile_id || user.userProfileId;
+  }
+
+  return safeGet("user_profile_id") || "";
+};
+
 export const getStoredProfileType = (): string => {
   const user = getStoredUser();
   if (typeof user?.profile_type === "string" && user.profile_type) {
@@ -75,6 +87,8 @@ export const getStoredProfileType = (): string => {
 
   return safeGet("profile_type") || safeGet("userType") || "";
 };
+
+export const getStoredCanonicalProfileType = (): string => normalizeProfileType(getStoredProfileType());
 
 export const setStoredProfileType = (profileType: string | null | undefined) => {
   if (profileType) {
@@ -85,6 +99,29 @@ export const setStoredProfileType = (profileType: string | null | undefined) => 
 
   safeRemove("profile_type");
   safeRemove("userType");
+};
+
+export const setStoredActiveUserProfileId = (userProfileId: string) => {
+  const normalized = String(userProfileId || "").trim();
+  if (!normalized) return;
+
+  safeSet("user_profile_id", normalized);
+  safeSet("household_id", normalized);
+
+  const { token, refreshToken, user } = getAuthFromCookies();
+  const storedUser = user ?? getStoredUser();
+  if (!storedUser) return;
+
+  const nextUser = {
+    ...storedUser,
+    user_profile_id: normalized,
+    userProfileId: normalized,
+    household_id: normalized,
+  };
+  safeSet("user_object", JSON.stringify(nextUser));
+  if (token) {
+    setAuthCookies(token, refreshToken ?? null, nextUser);
+  }
 };
 
 export const cacheAuthSession = ({
@@ -98,18 +135,22 @@ export const cacheAuthSession = ({
   user?: Record<string, any> | null;
   provider?: string | null;
 }) => {
-  const cookieUser = user ?? getStoredUser() ?? {};
+  const sourceUser = user ?? getStoredUser() ?? {};
+  const canonicalProfileType = normalizeProfileType(sourceUser.profile_type || sourceUser.profileType || "");
+  const cookieUser = canonicalProfileType
+    ? { ...sourceUser, profile_type: canonicalProfileType }
+    : sourceUser;
 
   setAuthCookies(token, refreshToken ?? null, cookieUser);
   safeSet("token", token);
 
   if (user) {
-    safeSet("user_object", JSON.stringify(user));
-    const userId = user.user_id || user.id;
+    safeSet("user_object", JSON.stringify(cookieUser));
+    const userId = cookieUser.user_id || cookieUser.id;
     if (userId) {
       safeSet("user_id", userId);
     }
-    setStoredProfileType(user.profile_type || null);
+    setStoredProfileType(canonicalProfileType || null);
   }
 
   if (provider) {

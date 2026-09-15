@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 
 interface OnboardingTipsBannerProps {
   onDismiss?: () => void;
-  role?: 'household' | 'househelp';
+  role?: 'household' | 'service_provider';
 }
 
 /**
@@ -13,9 +13,9 @@ interface OnboardingTipsBannerProps {
 export default function OnboardingTipsBanner({ onDismiss, role = 'household' }: OnboardingTipsBannerProps) {
   const navigate = useNavigate();
 
-  const profilePath = role === 'househelp' ? '/househelp/profile' : '/household/profile';
-  const shortlistPath = role === 'househelp' ? '/shortlist' : '/household/shortlist';
-  const titleText = role === 'househelp' ? 'Get started as a househelp' : 'Get started with Homebit';
+  const profilePath = role === 'service_provider' ? '/service-provider/profile' : '/household/profile';
+  const shortlistPath = role === 'service_provider' ? '/shortlist' : '/household/shortlist';
+  const titleText = role === 'service_provider' ? 'Get started as a service provider' : 'Get started with Homebit';
 
   return (
     <div className="mb-4 rounded-2xl border border-purple-200 dark:border-purple-500/40 bg-gradient-to-r from-purple-50 via-white to-pink-50 dark:from-purple-950/40 dark:via-[#13131a] dark:to-pink-950/30 p-4 sm:p-5 shadow-md dark:shadow-glow-sm text-left">
@@ -29,7 +29,7 @@ export default function OnboardingTipsBanner({ onDismiss, role = 'household' }: 
             Here are a few quick tips to help you find the right match faster:
           </p>
           <ul className="list-disc pl-5 text-gray-700 dark:text-gray-200 space-y-0.5 text-xs">
-            <li>Complete your household or househelp profile so searches can match you better.</li>
+            <li>Complete your household or service provider profile so searches can match you better.</li>
             <li>Use the shortlist to save favourites and compare options later.</li>
             <li>Start a conversation from profiles to discuss details and expectations.</li>
           </ul>

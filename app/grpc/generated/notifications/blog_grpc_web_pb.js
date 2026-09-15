@@ -28,9 +28,8 @@ const google_protobuf_struct_pb = _google_protobuf_struct_pb.default || _google_
 
 import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js';
 const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb
-const proto = {};
-proto.notifications = {};
-proto.notifications = require('./blog_pb.js');
+import * as notifications_pb from './blog_pb.js';
+const proto = { notifications: notifications_pb.default || notifications_pb };
 
 /**
  * @param {string} hostname
@@ -1856,5 +1855,6 @@ proto.notifications.BlogServicePromiseClient.prototype.getBlogSubscriberCount =
 export default proto.notifications;
 export const {
   BlogServiceClient,
+  BlogServicePromiseClient,
 } = proto.notifications;
 

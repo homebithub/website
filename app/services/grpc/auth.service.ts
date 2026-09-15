@@ -5,20 +5,73 @@
  */
 
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
+import { storedDeviceId } from '~/utils/deviceFingerprint';
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import * as shared_pb_module from '~/grpc/generated/shared/shared_pb';
+import * as grpcWeb from 'grpc-web';
+import { AUTH_GRPC_WEB_BASE_URL, handleGrpcError, retryOnExpiry } from './client';
 import {
   getStoredAccessToken,
-  getStoredProfileType,
+  getStoredCanonicalProfileType,
+  getStoredUser,
   getStoredUserId,
 } from '~/utils/authStorage';
+import { normalizeProfileType } from '~/utils/profileType';
 
 // Extract proto.auth from the default export
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
+const shared_pb = (shared_pb_module as any).default ?? shared_pb_module;
 const { AuthServiceClient, AdminAuthServiceClient } = auth_grpc_web_module as any;
 
-const authClient = new AuthServiceClient(GRPC_WEB_BASE_URL, null, null);
-const adminAuthClient = new AdminAuthServiceClient(GRPC_WEB_BASE_URL, null, null);
+const authClient = new AuthServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
+const adminAuthClient = new AdminAuthServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
+const authBinaryClient = new (grpcWeb as any).GrpcWebClientBase({ format: 'binary' });
+const authHostname = AUTH_GRPC_WEB_BASE_URL.replace(/\/+$/, '');
+
+const methodDescriptorAuthSignup = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/Signup',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.SignupRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
+
+const methodDescriptorAuthLogin = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/Login',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.LoginRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
+
+const methodDescriptorAuthCompleteGoogleSignup = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/CompleteGoogleSignup',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.CompleteGoogleSignupRequest,
+  auth_pb.SignupResponse,
+  (request: any) => request.serializeBinary(),
+  auth_pb.SignupResponse.deserializeBinary
+);
+
+const methodDescriptorAuthVerifyOTP = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/VerifyOTP',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.VerifyOTPRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
+
+const methodDescriptorAuthResendOTP = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/ResendOTP',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.ResendOTPRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
 
 function resolveUserId(userId: string): string {
   if (userId) return userId;
@@ -30,6 +83,49 @@ function isValidUUID(uuid: string): boolean {
   return uuidRegex.test(uuid);
 }
 
+const SIGNUP_PROFILE_ID_ENV_KEYS: Record<string, string[]> = {
+  household: ['HOUSEHOLD_PROFILE_ID', 'VITE_HOUSEHOLD_PROFILE_ID', 'PUBLIC_HOUSEHOLD_PROFILE_ID'],
+  service_provider: [
+    'SERVICE_PROVIDER_PROFILE_ID',
+    'VITE_SERVICE_PROVIDER_PROFILE_ID',
+    'PUBLIC_SERVICE_PROVIDER_PROFILE_ID',
+    // Deployment compatibility while environments move to the canonical key.
+    'HOUSEHELP_PROFILE_ID',
+    'VITE_HOUSEHELP_PROFILE_ID',
+    'PUBLIC_HOUSEHELP_PROFILE_ID',
+  ],
+};
+
+const FALLBACK_SIGNUP_PROFILE_IDS: Record<string, string> = {
+  household: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1',
+  service_provider: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
+};
+
+function getRuntimeEnvValue(key: string): string {
+  const windowEnv = typeof window !== 'undefined' ? (window as any).ENV?.[key] : undefined;
+  const processEnv = typeof process !== 'undefined' ? (process as any).env?.[key] : undefined;
+  return String(windowEnv || processEnv || '').trim();
+}
+
+function resolveSignupProfileId(profileTypeOrId: string): string {
+  const value = profileTypeOrId.trim();
+  if (isValidUUID(value)) {
+    return value;
+  }
+
+  const profileType = normalizeProfileType(value);
+  const envKeys = SIGNUP_PROFILE_ID_ENV_KEYS[profileType];
+  const profileId = envKeys?.map(getRuntimeEnvValue).find(Boolean) || FALLBACK_SIGNUP_PROFILE_IDS[profileType] || '';
+
+  if (isValidUUID(profileId)) {
+    return profileId;
+  }
+
+  throw new Error(
+    `Signup profile ID is not configured for "${value}". Set ${envKeys?.[0] || 'HOUSEHOLD_PROFILE_ID'} to the matching homebit-auth profile.id.`
+  );
+}
+
 /**
  * Get metadata with auth token and profile type
  */
@@ -37,8 +133,15 @@ function getMetadata(extra?: { [key: string]: string }): { [key: string]: string
   const md: { [key: string]: string } = {};
   const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = normalizeProfileType(getStoredCanonicalProfileType());
   if (profileType) md['x-profile-type'] = profileType;
+  // Says which device is asking, so auth can refuse one that has been revoked
+  // or banned. Read rather than generated: generating a fingerprint is async
+  // and this is not, and a device that has registered already has its id
+  // stored. A browser that has never registered simply sends nothing and is
+  // treated as before.
+  const deviceId = storedDeviceId();
+  if (deviceId) md['x-device-id'] = deviceId;
   if (extra) {
     Object.entries(extra).forEach(([key, value]) => {
       if (value) md[key] = value;
@@ -60,6 +163,44 @@ function buildReferralMetadata(referralCode?: string): { [key: string]: string }
  */
 export const authService = {
   /**
+   * Exchange a refresh token for a new access token.
+   *
+   * The RPC has always existed and nothing called it, so a session simply ended
+   * when its access token did. This is the wire; the session keeper decides
+   * when to pull it.
+   */
+  /**
+   * Deliberately not wrapped in retryOnExpiry, unlike the authenticated calls
+   * below it. This *is* the renewal: retrying it on UNAUTHENTICATED would have
+   * it call itself, and a refused refresh token would produce a loop rather
+   * than the sign-out it is supposed to produce.
+   *
+   * The same applies to login, signup, the OTP and password-reset calls and
+   * logout — none of them needs a live session, and renewing one in order to
+   * end it is nonsense.
+   */
+  async refreshSession(refreshToken: string): Promise<{ token: string; refreshToken: string }> {
+    return new Promise((resolve, reject) => {
+      const request = new auth_pb.RefreshTokenRequest();
+      request.setRefreshToken(refreshToken);
+
+      authClient.refreshToken(request, getMetadata(), (err: any, response: any) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve({
+          token: response?.getToken?.() ?? "",
+          // Some issuers rotate the refresh token and some return the same one.
+          // Falling back to what we sent keeps a non-rotating server working
+          // rather than blanking a token that is still perfectly good.
+          refreshToken: response?.getRefreshToken?.() || refreshToken,
+        });
+      });
+    });
+  },
+
+  /**
    * Sign up a new user
    */
   async signup(
@@ -67,31 +208,42 @@ export const authService = {
     password: string,
     firstName: string,
     lastName: string,
-    profileType: string,
+    profileTypeOrId: string,
     bureauId?: string,
     referralCode?: string
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       try {
+        const profileId = resolveSignupProfileId(profileTypeOrId);
         const request = new auth_pb.SignupRequest();
         request.setPhone(phone);
         request.setPassword(password);
         request.setFirstName(firstName);
         request.setLastName(lastName);
-        request.setProfileType(profileType);
+        if (typeof request.setProfileId === 'function') {
+          request.setProfileId(profileId);
+        } else {
+          request.setProfileType(profileId);
+        }
         
         if (bureauId) {
           request.setBureauId(bureauId);
         }
 
-        authClient.signup(request, getMetadata(buildReferralMetadata(referralCode)), (err: any, response: any) => {
-          if (err) {
-            console.error('[gRPC-Web] signup error:', err);
-            reject(handleGrpcError(err));
-          } else {
-            resolve(response);
+        authBinaryClient.rpcCall(
+          authHostname + '/auth.AuthService/Signup',
+          request,
+          getMetadata(buildReferralMetadata(referralCode)),
+          methodDescriptorAuthSignup,
+          (err: any, response: any) => {
+            if (err) {
+              console.error('[gRPC-Web] signup error:', err);
+              reject(handleGrpcError(err));
+            } else {
+              resolve(response);
+            }
           }
-        });
+        );
       } catch (error) {
         console.error('[gRPC-Web] signup exception:', error);
         reject(error);
@@ -108,13 +260,19 @@ export const authService = {
       request.setPhone(phone);
       request.setPassword(password);
 
-      authClient.login(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/Login',
+        request,
+        getMetadata(),
+        methodDescriptorAuthLogin,
+        (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve(response);
+          }
         }
-      });
+      );
     });
   },
 
@@ -148,13 +306,19 @@ export const authService = {
       request.setVerificationType(verificationType);
       request.setOtp(otp);
 
-      authClient.verifyOTP(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/VerifyOTP',
+        request,
+        getMetadata(),
+        methodDescriptorAuthVerifyOTP,
+        (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve(response);
+          }
         }
-      });
+      );
     });
   },
 
@@ -162,21 +326,17 @@ export const authService = {
    * Get current user
    */
   async getCurrentUser(userId?: string): Promise<any> {
+    const cachedUser = getStoredUser();
+    const resolvedUserId = userId || cachedUser?.user_id || cachedUser?.id || getStoredUserId();
+    if (!resolvedUserId) {
+      throw new Error('User ID is required to load the current account.');
+    }
+    const request = new auth_pb.GetCurrentUserRequest();
+    request.setUserId(resolvedUserId);
     return new Promise((resolve, reject) => {
-      const resolvedUserId = resolveUserId(userId || '');
-      if (!isValidUUID(resolvedUserId)) {
-        reject(new Error('Invalid user_id: must be a valid UUID'));
-        return;
-      }
-      const request = new auth_pb.GetCurrentUserRequest();
-      request.setUserId(resolvedUserId);
-
-      authClient.getCurrentUser(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
-        }
+      retryOnExpiry((cb) => authClient.getCurrentUser(request, getMetadata(), cb), (err: any, response: any) => {
+        if (err) reject(handleGrpcError(err));
+        else resolve(response);
       });
     });
   },
@@ -190,7 +350,7 @@ export const authService = {
       request.setUserId(resolveUserId(userId));
       request.setPhone(phone);
 
-      authClient.updatePhone(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => authClient.updatePhone(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -227,7 +387,7 @@ export const authService = {
       request.setUserId(resolveUserId(userId));
       request.setEmail(email);
 
-      authClient.updateEmail(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => authClient.updateEmail(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -246,13 +406,19 @@ export const authService = {
       request.setUserId(resolveUserId(userId));
       request.setVerificationType(verificationType);
 
-      authClient.resendOTP(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/ResendOTP',
+        request,
+        getMetadata(),
+        methodDescriptorAuthResendOTP,
+        (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve(response);
+          }
         }
-      });
+      );
     });
   },
 
@@ -266,7 +432,7 @@ export const authService = {
       request.setCurrentPassword(currentPassword);
       request.setNewPassword(newPassword);
 
-      authClient.changePassword(request, getMetadata(), (err: any) => {
+      retryOnExpiry((cb) => authClient.changePassword(request, getMetadata(), cb), (err: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve();
       });
@@ -301,7 +467,7 @@ export const authService = {
       if (fields.lastName) request.setLastName(fields.lastName);
       if (fields.phone) request.setPhone(fields.phone);
 
-      authClient.updateUser(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => authClient.updateUser(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -338,10 +504,16 @@ export const authService = {
       request.setProfileType(profileType);
       if (bureauId) request.setBureauId(bureauId);
 
-      authClient.completeGoogleSignup(request, getMetadata(buildReferralMetadata(referralCode)), (err: any, response: any) => {
-        if (err) reject(handleGrpcError(err));
-        else resolve(response);
-      });
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/CompleteGoogleSignup',
+        request,
+        getMetadata(buildReferralMetadata(referralCode)),
+        methodDescriptorAuthCompleteGoogleSignup,
+        (err: any, response: any) => {
+          if (err) reject(handleGrpcError(err));
+          else resolve(response);
+        }
+      );
     });
   },
 

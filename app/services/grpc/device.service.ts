@@ -7,10 +7,10 @@
 
 import { DeviceServiceClient } from '~/grpc/generated/auth/device_grpc_web_pb';
 import device_pb_module from '~/grpc/generated/auth/device_pb';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import { GRPC_WEB_BASE_URL, handleGrpcError, retryOnExpiry } from './client';
 import {
   getStoredAccessToken,
-  getStoredProfileType,
+  getStoredCanonicalProfileType,
   getStoredUserId,
 } from '~/utils/authStorage';
 
@@ -27,7 +27,7 @@ function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
   const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = getStoredCanonicalProfileType();
   if (profileType) md['x-profile-type'] = profileType;
   return md;
 }
@@ -57,7 +57,7 @@ export const deviceService = {
         if (latitude) request.setLatitude(latitude);
         if (longitude) request.setLongitude(longitude);
 
-        deviceClient.registerDevice(request, getMetadata(), (err: any, response: any) => {
+        retryOnExpiry((cb) => deviceClient.registerDevice(request, getMetadata(), cb), (err: any, response: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
@@ -83,7 +83,7 @@ export const deviceService = {
         const request = new device_pb.ConfirmDeviceRequest();
         request.setToken(token);
 
-        deviceClient.confirmDevice(request, getMetadata(), (err: any, response: any) => {
+        retryOnExpiry((cb) => deviceClient.confirmDevice(request, getMetadata(), cb), (err: any, response: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
@@ -102,6 +102,41 @@ export const deviceService = {
   /**
    * Get all devices for the authenticated user.
    */
+  /**
+   * Answers a device waiting for approval.
+   *
+   * reject and ban both refuse it; the difference is whether it may ask again.
+   */
+  async decideDevice(
+    deviceId: string,
+    userId: string,
+    decision: 'approve' | 'reject' | 'ban',
+    reason = ''
+  ): Promise<{ message: string; device?: any }> {
+    return new Promise((resolve, reject) => {
+      try {
+        const request = new device_pb.DecideDeviceRequest();
+        request.setUserId(resolveUserId(userId));
+        request.setDeviceId(deviceId);
+        request.setDecision(decision);
+        if (reason) request.setReason(reason);
+
+        retryOnExpiry((cb) => deviceClient.decideDevice(request, getMetadata(), cb), (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve({
+              message: response?.getMessage?.() || '',
+              device: response?.getDevice?.()?.toObject(),
+            });
+          }
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  },
+
   async getUserDevices(
     userId: string,
     currentDeviceId?: string
@@ -112,12 +147,12 @@ export const deviceService = {
         request.setUserId(resolveUserId(userId));
         if (currentDeviceId) request.setCurrentDeviceId(currentDeviceId);
 
-        deviceClient.getUserDevices(request, getMetadata(), (err: any, response: any) => {
+        retryOnExpiry((cb) => deviceClient.getUserDevices(request, getMetadata(), cb), (err: any, response: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
             resolve({
-              devices: response.getDevicesList().map((d: any) => d.toObject()),
+              devices: response.getDevicesList().map((device: any) => device.toObject()),
               totalCount: response.getTotalCount(),
               activeCount: response.getActiveCount(),
               pendingCount: response.getPendingCount(),
@@ -141,7 +176,7 @@ export const deviceService = {
         request.setUserId(resolveUserId(userId));
         if (reason) request.setReason(reason);
 
-        deviceClient.revokeDevice(request, getMetadata(), (err: any) => {
+        retryOnExpiry((cb) => deviceClient.revokeDevice(request, getMetadata(), cb), (err: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
@@ -165,7 +200,7 @@ export const deviceService = {
         if (exceptDeviceId) request.setExceptDeviceId(exceptDeviceId);
         if (reason) request.setReason(reason);
 
-        deviceClient.revokeAllDevices(request, getMetadata(), (err: any) => {
+        retryOnExpiry((cb) => deviceClient.revokeAllDevices(request, getMetadata(), cb), (err: any) => {
           if (err) {
             reject(handleGrpcError(err));
           } else {
@@ -193,14 +228,21 @@ export const deviceService = {
         request.setUserId(resolveUserId(userId));
         if (limit) request.setLimit(limit);
 
-        deviceClient.getDeviceActivity(request, getMetadata(), (err: any, response: any) => {
+        retryOnExpiry((cb) => deviceClient.getDeviceActivity(request, getMetadata(), cb), (err: any, response: any) => {
           if (err) {
             reject(handleGrpcError(err));
-          } else {
-            resolve({
-              activities: response.getActivitiesList().map((a: any) => a.toObject()),
-            });
+            return;
           }
+          // GetDeviceActivityResponse carries `logs`, so the generated getter
+          // is getLogsList. Guard the call rather than assume it exists: a
+          // client regenerated from a renamed field would otherwise throw a
+          // TypeError inside the callback, where no catch can reach it.
+          const logs = typeof response?.getLogsList === 'function' ? response.getLogsList() : [];
+          resolve({
+            activities: (logs || []).map((entry: any) =>
+              typeof entry?.toObject === 'function' ? entry.toObject() : entry
+            ),
+          });
         });
       } catch (error) {
         reject(error);

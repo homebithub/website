@@ -1,23 +1,22 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/routes/login";
 import { migratePreferences } from '~/utils/preferencesApi';
+import { registerCurrentDevice } from '~/utils/deviceFingerprint';
 import { extractErrorMessage, transformErrorMessage } from '~/utils/errorMessages';
 import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
-import { BaseModal } from "~/components/ui/BaseModal";
+import { authService } from "~/services/grpc/auth.service";
+import { getAuthFromCookies } from "~/utils/cookie";
+import { needsRenewal, msUntilRefresh, nextTimerDelay, sessionState } from "~/utils/session";
 import {
   cacheAuthSession,
   clearStoredAuthSession,
   getStoredAccessToken,
   getStoredUser,
+  normalizeProfileType,
 } from "~/utils/authStorage";
-import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
-import { shouldSilenceGatewayError } from "~/services/grpc/client";
-
-const DEVICE_AUTH_CHECK_INTERVAL_MS = 2 * 60 * 1000;
-const DEVICE_AUTH_ROUTE_CHECK_COOLDOWN_MS = 60 * 1000;
-const DEVICE_REVOKED_REDIRECT_DELAY_MS = 1800;
+import { clearRequestCache } from '~/utils/requestCache';
 
 interface User {
   id: string;
@@ -27,31 +26,58 @@ interface User {
   role: string;
 }
 
+function normalizeLoginUser(raw: any, fallbackPhone = '') {
+  const userId = raw?.getId?.() || raw?.id || raw?.user_id || raw?.userId || raw?.auth_id || raw?.authId || '';
+  return {
+    id: userId,
+    user_id: userId,
+    email: raw?.getEmail?.() || raw?.email || '',
+    phone: raw?.getPhone?.() || raw?.phone || raw?.phone_number || raw?.phoneNumber || fallbackPhone,
+    first_name: raw?.getFirstName?.() || raw?.first_name || raw?.firstName || '',
+    last_name: raw?.getLastName?.() || raw?.last_name || raw?.lastName || '',
+    profile_type: raw?.getProfileType?.() || raw?.profile_type || raw?.profileType || '',
+    profile_id: raw?.getProfileId?.() || raw?.profile_id || raw?.profileId || '',
+    user_profile_id: raw?.getUserProfileId?.() || raw?.user_profile_id || raw?.userProfileId || '',
+    is_verified: Boolean(raw?.getIsVerified?.() || raw?.is_verified || raw?.isVerified || false),
+    profile_image: raw?.getProfileImage?.() || raw?.profile_image || raw?.profileImage || '',
+  };
+}
+
+/**
+ * Renew a session whose access token has already expired, before anything uses
+ * it.
+ *
+ * Only acts on "expired". A token that is merely close to expiry is left to the
+ * renewal timer, and one whose expiry cannot be parsed is left alone entirely —
+ * signing someone out over a parsing failure would be worse than doing nothing.
+ *
+ * Failures are swallowed on purpose: this runs before we know whether the
+ * person is even signed in, and the normal unauthenticated path below handles
+ * the outcome. Throwing here would turn "your session lapsed" into a broken
+ * page.
+ */
+async function renewExpiredSessionBeforeUse(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (sessionState(getStoredAccessToken()) !== "expired") return;
+
+  try {
+    const { renewSessionOnce } = await import("~/services/grpc/client");
+    await renewSessionOnce();
+  } catch {
+    // Left to the unauthenticated path.
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [user, setUser] = useState<LoginResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showDeviceRevokedModal, setShowDeviceRevokedModal] = useState(false);
   const navigate = useNavigate();
-  const lastDeviceAuthCheckAtRef = useRef(0);
-  const deviceAuthCheckInFlightRef = useRef(false);
-  const deviceRevocationHandledRef = useRef(false);
-  const deviceRevocationTimerRef = useRef<number | null>(null);
-
-  const clearDeviceRevocationTimer = useCallback(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    if (deviceRevocationTimerRef.current !== null) {
-      window.clearTimeout(deviceRevocationTimerRef.current);
-      deviceRevocationTimerRef.current = null;
-    }
-  }, []);
 
   // Public routes that don't need auth check
   const isPublicRoute = () => {
-    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/household-choice', '/join-household', '/pending-approval', '/profile-setup', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies', '/debug'];
+    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/household-choice', '/join-household', '/pending-approval', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies', '/debug'];
     return publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === '/';
   };
 
@@ -59,19 +85,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, [location.pathname]);
 
-  useEffect(() => {
-    return () => {
-      clearDeviceRevocationTimer();
-    };
-  }, [clearDeviceRevocationTimer]);
-
   const performLogout = useCallback(async ({
-    revokeCurrentDevice = true,
-    clearDeviceId = true,
     redirectTo = "/",
   }: {
-    revokeCurrentDevice?: boolean;
-    clearDeviceId?: boolean;
     redirectTo?: string;
   } = {}) => {
     try {
@@ -84,24 +100,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {
       }
 
-      if (revokeCurrentDevice) {
-        try {
-          const { getDeviceId } = await import('~/utils/deviceFingerprint');
-          const { deviceService } = await import('~/services/grpc/device.service');
-          const deviceId = await getDeviceId();
-          const userObj = JSON.parse(localStorage.getItem('user_object') || '{}');
-          const userId = userObj.user_id || userObj.id || '';
-          if (deviceId && userId) {
-            await deviceService.revokeDevice(deviceId, userId, 'logout');
-          }
-        } catch {
-        }
-      }
-
       clearStoredAuthSession();
-      if (clearDeviceId) {
-        localStorage.removeItem("device_id");
-      }
+      clearRequestCache();
 
       setUser(null);
 
@@ -118,131 +118,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [navigate]);
 
-  const triggerRevokedDeviceLogout = useCallback((message?: string) => {
-    if (deviceRevocationHandledRef.current) {
-      return;
-    }
-
-    deviceRevocationHandledRef.current = true;
-    clearDeviceRevocationTimer();
-    setError(message || 'This device is no longer authorized for your account.');
-    setShowDeviceRevokedModal(true);
-
-    if (typeof window !== "undefined") {
-      deviceRevocationTimerRef.current = window.setTimeout(() => {
-        void performLogout({
-          revokeCurrentDevice: false,
-          clearDeviceId: false,
-          redirectTo: '/login?device_revoked=1',
-        });
-      }, DEVICE_REVOKED_REDIRECT_DELAY_MS);
-    }
-  }, [clearDeviceRevocationTimer, performLogout]);
-
-  const verifyCurrentDeviceAccess = useCallback(async (reason: 'startup' | 'route' | 'interval' | 'visibility') => {
-    if (typeof window === "undefined" || deviceAuthCheckInFlightRef.current || deviceRevocationHandledRef.current) {
-      return;
-    }
-
-    const token = getStoredAccessToken();
-    const cachedUser = getStoredUser() as any;
-    const currentUser = (user as any)?.user || user || cachedUser;
-    const userId = currentUser?.user_id || currentUser?.id || '';
-
-    if (!token || !userId) {
-      return;
-    }
-
-    if (reason === 'route') {
-      const elapsed = Date.now() - lastDeviceAuthCheckAtRef.current;
-      if (elapsed < DEVICE_AUTH_ROUTE_CHECK_COOLDOWN_MS) {
-        return;
-      }
-    }
-
-    deviceAuthCheckInFlightRef.current = true;
-    try {
-      const { getDeviceId } = await import('~/utils/deviceFingerprint');
-      const { default: deviceService } = await import('~/services/grpc/device.service');
-      const currentDeviceId = await getDeviceId();
-      const response = await deviceService.getUserDevices(userId, currentDeviceId);
-      const matchingDevice = response.devices.find((device: any) => {
-        const responseDeviceId = device.deviceId || device.device_id || '';
-        return responseDeviceId === currentDeviceId || Boolean(device.isCurrentDevice || device.is_current_device);
-      });
-
-      lastDeviceAuthCheckAtRef.current = Date.now();
-
-      if (!matchingDevice || matchingDevice.status !== 'active') {
-        triggerRevokedDeviceLogout('This device has been revoked or is no longer approved. You have been signed out for your security.');
-      }
-    } catch (deviceError) {
-      if (!shouldSilenceGatewayError(deviceError)) {
-        console.warn('[DeviceAuth] Failed to verify current device access:', deviceError);
-      }
-    } finally {
-      deviceAuthCheckInFlightRef.current = false;
-    }
-  }, [user, triggerRevokedDeviceLogout]);
-
-  useEffect(() => {
-    if (!user || typeof window === "undefined" || deviceRevocationHandledRef.current) {
-      return;
-    }
-
-    const runVisibilityCheck = () => {
-      if (document.visibilityState === 'visible') {
-        void verifyCurrentDeviceAccess('visibility');
-      }
-    };
-
-    const intervalId = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        void verifyCurrentDeviceAccess('interval');
-      }
-    }, DEVICE_AUTH_CHECK_INTERVAL_MS);
-
-    document.addEventListener('visibilitychange', runVisibilityCheck);
-    void verifyCurrentDeviceAccess('startup');
-
-    return () => {
-      window.clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', runVisibilityCheck);
-    };
-  }, [user, verifyCurrentDeviceAccess]);
-
-  useEffect(() => {
-    if (!user || typeof window === "undefined" || deviceRevocationHandledRef.current) {
-      return;
-    }
-
-    const runRouteCheck = () => {
-      void verifyCurrentDeviceAccess('route');
-    };
-
-    if (typeof requestIdleCallback === 'function') {
-      const idleId = requestIdleCallback(runRouteCheck, { timeout: 1500 });
-      return () => cancelIdleCallback(idleId);
-    }
-
-    const timeoutId = globalThis.setTimeout(runRouteCheck, 400);
-    return () => globalThis.clearTimeout(timeoutId);
-  }, [location.pathname, user, verifyCurrentDeviceAccess]);
-
-  useEffect(() => {
-    if (user) {
-      deviceRevocationHandledRef.current = false;
-      setShowDeviceRevokedModal(false);
-    }
-  }, [user]);
-
   const checkAuth = async () => {
     try {
+      // Renew before anything reads the token, when it has already expired.
+      //
+      // The renewal timer only runs while a page is open. A tab closed for
+      // longer than the token's life comes back holding an expired one, and
+      // every request made during bootstrap would race the renewal that the
+      // timer is about to schedule — some failing, some not, depending on
+      // timing. Settling it here, before `loading` clears and authenticated
+      // views render, removes the race rather than making it rarer.
+      //
+      // This is what allows the access token to be short. Without it, shortening
+      // the token only moves the race from unlikely to routine.
+      await renewExpiredSessionBeforeUse();
+
       const token = getStoredAccessToken() || null;
       const cachedUser = getStoredUser();
-
       if (cachedUser && token) {
         setUser({ token, user: cachedUser } as unknown as LoginResponse);
+        setLoading(false);
+        return;
       }
 
       if (isPublicRoute()) {
@@ -274,29 +170,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({ token: token || "", user } as unknown as LoginResponse);
       cacheAuthSession({ token: token || "", user });
 
-      // Check for pending household join requests on page load/refresh
-      const profileType = user.profile_type;
-      if (profileType === 'household' && !isPublicRoute()) {
-        try {
-          const destination = await resolveProfileSetupDestination({
-            userId: user.id,
-            profileType,
-            completedPath: '/',
-          });
-
-          if (destination === '/pending-approval' && location.pathname !== '/pending-approval') {
-            navigate('/pending-approval');
-            return;
-          }
-
-          if (destination === '/household/profile' && location.pathname !== '/household/profile') {
-            navigate('/household/profile');
-            return;
-          }
-        } catch (err: any) {
-          // Error checking profile setup, continue normally
-        }
-      }
     } catch (error: any) {
       console.error("Error checking auth:", error);
       // Only clear auth state on explicit UNAUTHENTICATED errors (gRPC code 16).
@@ -315,92 +188,110 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = async (phone: string, password: string) => {
+  const login = async (phone: string, password: string, redirectTo?: string) => {
     try {
       setLoading(true);
       setError(null);
 
       const normalizedPhone = normalizeKenyanPhoneNumber(phone);
-      
-      // Use gRPC-Web instead of REST
-      const { default: authService } = await import('~/services/grpc/auth.service');
-      const loginResponse = await authService.login(normalizedPhone, password);
 
-      // Extract data from gRPC response
-      const token = loginResponse.getToken();
-      const refreshToken = loginResponse.getRefreshToken();
-      const userProto = loginResponse.getUser();
-      
-      // Convert gRPC User to plain object
-      const userData = {
-        id: userProto?.getId() || "",
-        user_id: userProto?.getId() || "",
-        email: userProto?.getEmail() || "",
-        phone: userProto?.getPhone() || "",
-        first_name: userProto?.getFirstName() || "",
-        last_name: userProto?.getLastName() || "",
-        profile_type: userProto?.getProfileType() || "",
-        is_verified: userProto?.getIsVerified() || false,
-        profile_image: userProto?.getProfileImage() || "",
-      };
-      cacheAuthSession({
-        token,
-        refreshToken,
-        user: userData,
-        provider: "password",
+      // Through the server, not from here.
+      //
+      // Both auth cookies are HttpOnly in a deployed environment, and a browser
+      // refuses a document.cookie write when an HttpOnly cookie of that name
+      // already exists. Signing in from the browser therefore updated
+      // localStorage while the refresh cookie kept a token auth had already
+      // rotated away — and the next renewal presented it, was refused, and
+      // signed the person out. The server holds the only writes that are not
+      // silently discarded.
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: normalizedPhone.replace(/^\+/, ''),
+          password,
+        }),
       });
-      
-      const profileType = userData.profile_type || "";
-      
-      setUser({ token, user: userData } as unknown as LoginResponse);
-      
-      migratePreferences().catch(err => console.error("Failed to migrate preferences:", err));
-
-      // Register device after successful login (non-blocking, before navigate)
-      try {
-        const { getDeviceId, getDeviceName } = await import('~/utils/deviceFingerprint');
-        const { default: deviceService } = await import('~/services/grpc/device.service');
-        const deviceId = await getDeviceId();
-        const result = await deviceService.registerDevice(
-          userData.user_id, deviceId, getDeviceName(), navigator.userAgent, ''
-        );
-      } catch (deviceError) {
-        console.warn('[Device] Registration failed after login:', deviceError);
+      const responseBody = (await response.json().catch(() => ({}))) as Record<string, any>;
+      if (!response.ok) {
+        throw new Error(responseBody?.message || 'Invalid phone number or password.');
       }
 
-      // If user has no phone number, redirect to add-phone page
-      if (!userData.phone) {
-        navigate('/add-phone', {
-          replace: true,
-          state: {
-            user_id: userData.id,
-            profileType,
-            redirectTo: '/',
-          },
-        });
-        return;
+      const userData = normalizeLoginUser(
+        responseBody.user,
+        normalizedPhone.replace(/^\+/, ''),
+      );
+      const authId = responseBody.auth_id || responseBody.authId || responseBody.user_id || responseBody.userId || userData.user_id;
+
+      if (!authId) {
+        throw new Error('Login response is missing the signed-in user.');
       }
 
-      if (profileType === "bureau") {
-        navigate("/");
-        return;
+      // The password is the whole check.
+      //
+      // Login already returns an access token and a refresh token — it has
+      // verified the password and the account's standing before answering. This
+      // threw both away and sent the person to /verify-otp to be issued a
+      // second, identical pair, so every sign-in cost an SMS and a six-digit
+      // code to arrive at the session it had already been handed.
+      //
+      // A one-time code is worth asking for when it proves something the
+      // password does not: that the phone is reachable at signup, that somebody
+      // resetting a forgotten password holds the number. None of those is this.
+      // Those flows still go through /verify-otp and are untouched.
+      // Read through an envelope as well as off the top level: the body is the
+      // LoginResult marshalled directly today, and the neighbouring call sites
+      // in this file already defend against a `data` wrapper.
+      const token = String(responseBody.token || '');
+
+      if (!token) {
+        throw new Error('Login response is missing a session token.');
       }
 
-      if (profileType === "household" || profileType === "househelp") {
-        try {
-          const destination = await resolveProfileSetupDestination({
-            userId: userData.id,
-            profileType,
-            completedPath: '/',
-          });
-          navigate(destination);
-          return;
-        } catch (err: any) {
-          console.error('Failed to check profile setup status:', err);
+      const profileType = normalizeProfileType(userData.profile_type || "");
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('user_id', authId);
+        if (userData.profile_id) window.localStorage.setItem('profile_id', userData.profile_id);
+        if (userData.user_profile_id) {
+          window.localStorage.setItem('user_profile_id', userData.user_profile_id);
         }
       }
 
-      navigate("/");
+      const signedIn = { ...userData, user_id: authId, id: authId, profile_type: profileType };
+      // Cookies are already set by the response; this keeps localStorage, which
+      // is where the app reads the access token from for gRPC metadata.
+      clearRequestCache();
+      cacheAuthSession({ token, user: signedIn, provider: 'password' });
+      setUser({ token, user: signedIn } as unknown as LoginResponse);
+
+      // Registered before navigating, as the verify-otp path did: this is the
+      // moment a new device becomes known, and it is what a pending-approval
+      // decision is later taken about.
+      // Finish device registration before mounting the authenticated app. The
+      // revocation watcher runs as soon as that tree mounts; letting this call
+      // race it meant a returning browser could be compared with its previous
+      // revoked row and immediately sign out an otherwise valid new session.
+      // Registration failure remains non-fatal (auth has already accepted the
+      // password), but the ordering must be deterministic when it succeeds.
+      try {
+        await registerCurrentDevice(authId);
+      } catch (deviceError) {
+        console.warn('Device registration failed:', deviceError);
+      }
+      migratePreferences().catch((err) => console.error('Failed to migrate preferences:', err));
+
+      // Bureau accounts have their own landing page; everyone else goes home,
+      // unless they were sent to the login screen from somewhere in particular.
+      // That redirect was accepted on the login page and then dropped, because
+      // the OTP detour hardcoded '/' as its destination — so following a link
+      // into the site and signing in always landed on the homepage instead.
+      const destination = profileType === 'bureau'
+        ? '/bureau/service-providers'
+        : (redirectTo || '/');
+      navigate(destination, { replace: true });
+      return;
     } catch (error: any) {
       const errorMsg = error.message || "An error occurred during login";
       setError(transformErrorMessage(errorMsg));
@@ -423,6 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userProto = signupResponse?.getUser?.();
       const user = userProto?.toObject?.() || {};
 
+      clearRequestCache();
       cacheAuthSession({ token, refreshToken, user });
       setUser({ token, user } as unknown as LoginResponse);
       
@@ -441,6 +333,75 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await performLogout();
   };
 
+  // Renew the session rather than letting it end under the person using it.
+  //
+  // A timer covers ordinary use; a visibility check covers the tab that was
+  // left open while the device slept, which no timer would have fired through.
+  // A refusal from the refresh call is the only thing that ends the session,
+  // and that means the refresh token itself has expired — at which point asking
+  // for a login is correct rather than a failure.
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const renewIfNeeded = async () => {
+      if (cancelled) return;
+
+      const token = getStoredAccessToken();
+      // Only 'expiring' and 'expired' warrant action; a token whose expiry
+      // cannot be read is left alone, since it may be perfectly valid.
+      if (!needsRenewal(token)) return;
+
+      // Renewed through the shared, server-side path: the refresh cookie is
+      // HttpOnly, so reading it here returned nothing and this never renewed
+      // anything. Shared so the timer and a retrying request do not each spend
+      // a refresh token that auth rotates on use.
+      const { renewSessionOnce } = await import("~/services/grpc/client");
+      const renewed = await renewSessionOnce();
+      if (cancelled) return;
+
+      // Only an outright refusal ends the session.
+      //
+      // This used to sign out on anything that was not success, which meant a
+      // 502, a dropped connection or a pod restarting during a deploy logged
+      // people out of a session that was completely valid. The token now lasts
+      // four weeks, so a renewal that cannot be reached costs nothing: the timer
+      // re-arms and tries again long before the token itself runs out.
+      if (renewed === "refused") {
+        console.warn("[Auth] Session renewal refused; signing out");
+        await performLogout();
+      } else if (renewed === "unavailable") {
+        console.warn("[Auth] Session renewal unreachable; keeping the session and retrying later");
+      }
+    };
+
+    const arm = () => {
+      if (cancelled) return;
+      const untilRefresh = msUntilRefresh(getStoredAccessToken());
+      if (untilRefresh === null) return;
+      timer = setTimeout(async () => {
+        await renewIfNeeded();
+        arm();
+      }, nextTimerDelay(untilRefresh));
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void renewIfNeeded();
+    };
+
+    void renewIfNeeded();
+    arm();
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [user]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -453,25 +414,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
-      <BaseModal
-        isOpen={showDeviceRevokedModal}
-        onClose={() => {}}
-        title="Device Access Removed"
-        description="Your device is no longer approved for this account. We’re signing you out to keep your account secure."
-        showCloseButton={false}
-        closeOnOutsideClick={false}
-        size="sm"
-      >
-        <div className="space-y-4 px-2">
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-            This device was removed from your allowed devices list or is no longer active.
-          </div>
-          <div className="flex items-center gap-3 rounded-2xl border border-purple-200/70 bg-purple-50/70 px-4 py-3 text-sm text-purple-700 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-200">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            Logging you out automatically...
-          </div>
-        </div>
-      </BaseModal>
     </AuthContext.Provider>
   );
 }

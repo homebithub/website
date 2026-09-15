@@ -5,7 +5,7 @@ export const meta = () => [
   {
     name: "description",
     content:
-      "Join Homebit's new mothers help waitlist as a household or househelp and get early access.",
+      "Join Homebit's new mothers help waitlist as a household or service provider and get early access.",
   },
 ];
 
@@ -16,7 +16,7 @@ const config = {
     "New Mothers Help",
     "Baby Sitter",
     "Early Childhood Care",
-    "Househelp",
+    "Service provider",
     "Indoor Cleaning",
     "Home Deep Cleaning",
     "Laundry & Ironing",
@@ -36,7 +36,7 @@ const config = {
       servicePrompt: "Would you need additional services?",
       concernPrompt: "Biggest concern",
     },
-    househelp: {
+    service_provider: {
       heading: "You offer new mothers help?",
       paragraph:
         "Join the new mothers help waitlist to be among the first postpartum care professionals households discover on Homebit. We are creating a trusted marketplace where postpartum caregivers can present their skills with confidence and be matched to families who value gentle, experienced support during the postpartum period. If you have experience with postpartum care, infant support, household assistance for new mothers, newborn care, or family adjustment support, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the kind of postpartum care projects you specialize in. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for postpartum caregivers who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent postpartum care work with families who appreciate compassion and reliability, the waitlist is the first step.",

@@ -28,9 +28,12 @@ export default function BlogUnsubscribePage() {
   }, [token]);
 
   return (
-    <PurpleThemeWrapper>
+    // The wrapper is the page root here, so it needs the full-height constraint
+    // that other pages get from a min-h-screen parent — without it the footer
+    // stops wherever this short page ends.
+    <PurpleThemeWrapper className="min-h-screen">
       <Navigation />
-      <main className="min-h-[70vh] flex items-center justify-center px-4 py-20">
+      <main className="flex min-h-[70vh] flex-1 items-center justify-center px-4 py-20">
         <div className="max-w-md w-full text-center space-y-6">
           {status === "loading" && (
             <>

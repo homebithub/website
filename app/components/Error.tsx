@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router";
+import { transformErrorMessage } from "~/utils/errorMessages";
 
 interface ErrorProps {
   title?: string;
@@ -21,7 +22,7 @@ export function Error({
         <h1 className="text-lg font-bold text-slate-900">
           {title}
         </h1>
-        <p className="mt-2 text-slate-600">{message}</p>
+        <p className="mt-2 text-slate-600">{transformErrorMessage(message)}</p>
         {action && (
           <div className="mt-6">
             <Link
@@ -35,4 +36,4 @@ export function Error({
       </div>
     </div>
   );
-} 
+}

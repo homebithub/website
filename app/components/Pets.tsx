@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { handleApiError } from '../utils/errorMessages';
 import { petsService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import CustomSelect from '~/components/ui/CustomSelect';
 
 interface Pet {
@@ -46,7 +46,7 @@ const PET_TRAITS = [
 ];
 
 const Pets: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean } = useProfileEditor();
   const [hasPet, setHasPet] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [pets, setPets] = useState<Pet[]>([]);
@@ -203,11 +203,6 @@ const Pets: React.FC = () => {
       const { profileService: grpcProfileService } = await import('~/services/grpc/authServices');
       await grpcProfileService.updateHouseholdProfile('', 'household', {
         has_pets: false,
-        _step_metadata: {
-          step_id: 'pets',
-          step_number: 7,
-          is_completed: true
-        }
       });
       markClean();
     } catch (err) {
@@ -323,7 +318,7 @@ const Pets: React.FC = () => {
 
       {/* Modal */}
       {showModal && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowModal(false)} />
           <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 shadow-2xl border border-gray-200 dark:border-purple-500/30 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4">
             <button
@@ -478,7 +473,7 @@ const Pets: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && petToDelete && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => { setShowDeleteConfirm(false); setPetToDelete(null); }} />
           <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md shadow-2xl border border-gray-200 dark:border-purple-500/30 animate-slide-up sm:mx-4">
             <div className="flex items-center mb-4">

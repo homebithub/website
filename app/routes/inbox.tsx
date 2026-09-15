@@ -1,14 +1,17 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import React, { Suspense, lazy, useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate, useLocation } from "react-router";
 import { useAuth } from "~/contexts/useAuth";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { profileService as grpcProfileService, hireRequestService } from '~/services/grpc/authServices';
-import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
-import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
-import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
+import { profileReadService as grpcProfileService } from '~/services/grpc/profileRead.service';
+import { marketplaceHireRequestService as hireRequestService, marketplaceJobService as jobService } from '~/services/grpc/marketplace.service';
+import { ArrowLeftIcon, ArrowUturnLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
+import type { EmojiClickData } from 'emoji-picker-react';
+import ConversationHire from '~/components/hiring/ConversationHire';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
+import ChatHireRequestDetailsModal, { type ChatHireRequest } from '~/components/hiring/ChatHireRequestDetailsModal';
+import { ListingDetails } from '~/components/listing/ListingDetails';
 import { useWebSocketContext } from '~/contexts/WebSocketContext';
 import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved, WSEventTyping } from '~/types/websocket';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
@@ -22,21 +25,28 @@ import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/au
 import { resolveHouseholdProfile } from '~/utils/householdProfiles';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 import { InboxPageSkeleton, ShimmerLine, ShimmerSection } from "~/components/ShimmerLoader";
+import { CHAT_MESSAGE_LIMIT } from "~/config/chat";
+import { formatDisplayName } from '~/utils/displayName';
+import { normalizeProfileType } from '~/utils/profileType';
+
+const EmojiPicker = lazy(() => import('~/components/chat/LazyEmojiPicker'));
 
 type Conversation = {
   id: string;
   household_id: string;
-  househelp_id: string;
+  service_provider_id: string;
   household_profile_id?: string | null;
-  househelp_profile_id?: string | null;
+  service_provider_profile_id?: string | null;
   household_profile_type?: string | null;
-  househelp_profile_type?: string | null;
+  service_provider_profile_type?: string | null;
+  listing_id?: string | number | null;
   last_message_at: string | null;
   last_message_body?: string | null;
   last_message_sender_id?: string | null;
   unread_count?: number;
   participant_name?: string;
   participant_avatar?: string;
+  participant_online?: boolean;
 };
 
 type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
@@ -59,17 +69,21 @@ type Message = {
 const normalizeConversationData = (c: any): Conversation => ({
   id: c?.id || c?.conversation_id || '',
   household_id: c?.household_user_id || c?.household_id || '',
-  househelp_id: c?.househelp_user_id || c?.househelp_id || '',
+  service_provider_id: c?.service_provider_user_id || c?.househelp_user_id || c?.househelp_id || '',
   household_profile_id: c?.household_profile_id || null,
-  househelp_profile_id: c?.househelp_profile_id || null,
+  service_provider_profile_id: c?.service_provider_profile_id || c?.househelp_profile_id || null,
   household_profile_type: c?.household_profile_type || 'household',
-  househelp_profile_type: c?.househelp_profile_type || 'househelp',
+  service_provider_profile_type: normalizeProfileType(c?.service_provider_profile_type || c?.househelp_profile_type || 'service_provider'),
+  listing_id: c?.listing_id ?? c?.listingId ?? null,
   last_message_at: c?.last_message_at || null,
   last_message_body: c?.last_message_body || null,
   last_message_sender_id: c?.last_message_sender_id || null,
   unread_count: c?.unread_count ?? 0,
   participant_name: c?.participant_name || undefined,
   participant_avatar: c?.participant_avatar || undefined,
+  participant_online: typeof (c?.participant_online ?? c?.participantOnline) === 'boolean'
+    ? Boolean(c?.participant_online ?? c?.participantOnline)
+    : undefined,
 });
 
 const resolveConversationId = (payload: any): string | undefined => {
@@ -90,15 +104,20 @@ type ToastItem = {
   type: 'success' | 'error';
 };
 
-type HireRequestSummary = {
+type HireRequestSummary = ChatHireRequest & {
   id: string;
   household_id?: string;
+  service_provider_id?: string;
   househelp_id?: string;
   household_user_id?: string;
+  service_provider_user_id?: string;
   househelp_user_id?: string;
   household?: { user_id?: string; id?: string };
+  service_provider?: { user_id?: string; id?: string };
   househelp?: { user_id?: string; id?: string };
   status: string;
+  application_status?: string;
+  initiated_by_applicant?: boolean;
 };
 
 function normalizeId(value: unknown): string | undefined {
@@ -133,9 +152,10 @@ function extractEnvelopeObject<T = any>(response: any): T {
 
 function getNameFromUser(user: any): string {
   if (!user || typeof user !== 'object') return '';
-  const firstName = String(user.first_name || user.firstName || user.FirstName || '').trim();
-  const lastName = String(user.last_name || user.lastName || user.LastName || '').trim();
-  return `${firstName} ${lastName}`.trim();
+  return formatDisplayName({
+    first_name: user.first_name || user.firstName || user.FirstName,
+    last_name: user.last_name || user.lastName || user.LastName,
+  }, undefined, '');
 }
 
 function getNameFromProfile(profile: any, fallback: string): string {
@@ -149,13 +169,12 @@ function getNameFromProfile(profile: any, fallback: string): string {
     profile.householdName ||
     ''
   ).trim();
-  if (directName) return directName;
+  if (directName) return formatDisplayName(directName, undefined, fallback);
 
   const nestedName = getNameFromUser(profile.user) || getNameFromUser(profile.owner);
   if (nestedName) return nestedName;
 
-  const fallbackName = `${String(profile.first_name || profile.firstName || '').trim()} ${String(profile.last_name || profile.lastName || '').trim()}`.trim();
-  return fallbackName || fallback;
+  return formatDisplayName(profile, undefined, fallback);
 }
 
 function normalizeMessage(raw: any): Message | null {
@@ -277,6 +296,7 @@ export default function InboxPage() {
   const reactionPickerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
+  const skipNextAutomaticMessageScrollRef = useRef(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -296,11 +316,12 @@ export default function InboxPage() {
   const [profileModalTimedOut, setProfileModalTimedOut] = useState(false);
   const [profileModalReloadKey, setProfileModalReloadKey] = useState(0);
   const [openMsgMenuId, setOpenMsgMenuId] = useState<string | null>(null);
-  const longPressTimerRef = useRef<number | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState<string>("");
   const [editingSaving, setEditingSaving] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const swipeGestureRef = useRef<{ id: string; startX: number; startY: number; horizontal: boolean; offset: number } | null>(null);
+  const [swipePreview, setSwipePreview] = useState<{ id: string; offset: number } | null>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null);
   const [openReactPickerMsgId, setOpenReactPickerMsgId] = useState<string | null>(null);
@@ -344,7 +365,11 @@ export default function InboxPage() {
           return [normalized, ...prev];
         }
         const next = [...prev];
-        next[idx] = { ...next[idx], ...normalized };
+        next[idx] = {
+          ...next[idx],
+          ...normalized,
+          participant_online: normalized.participant_online ?? next[idx].participant_online,
+        };
         return next;
       });
     } catch (err) {
@@ -382,10 +407,14 @@ export default function InboxPage() {
   
   // Hire wizard state
   const [showHireWizard, setShowHireWizard] = useState(false);
-  const [househelpProfileIdForHire, setHousehelpProfileIdForHire] = useState<string | null>(null);
+  const [serviceProviderProfileIdForHire, setServiceProviderProfileIdForHire] = useState<string | null>(null);
   const [hireRequestStatus, setHireRequestStatus] = useState<string | undefined>();
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
-  const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
+  const [hireRequestDetails, setHireRequestDetails] = useState<HireRequestSummary | null>(null);
+  const [showHireRequestDetails, setShowHireRequestDetails] = useState(false);
+  const [hireRequestJob, setHireRequestJob] = useState<Record<string, any> | null>(null);
+  const [hireRequestJobLoading, setHireRequestJobLoading] = useState(false);
+  const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | 'confirm' | null>(null);
   const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
 
   const [lastActiveByUserId, setLastActiveByUserId] = useState<Record<string, number>>({});
@@ -500,7 +529,11 @@ export default function InboxPage() {
       if (convId) {
         requestConversationHydration(convId);
       }
-    }, [requestConversationHydration]),
+      // Navigation stays mounted independently of this route. Tell it to
+      // refresh as soon as a new thread is announced, including when the user
+      // is currently reading another conversation.
+      notifyInboxUpdated();
+    }, [notifyInboxUpdated, requestConversationHydration]),
     // onConversationArchived
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       const convId = resolveConversationId(event?.data) || event?.data?.conversation_id;
@@ -524,7 +557,7 @@ export default function InboxPage() {
     }, [pushToast])
   );
   
-  const currentUserProfileType = currentUser?.profile_type || getStoredProfileType() || null;
+  const currentUserProfileType = normalizeProfileType(currentUser?.profile_type || getStoredProfileType()) || null;
   const isHouseholdUser = currentUserProfileType?.toLowerCase() === 'household';
   const shouldRestrictMessaging = !subscriptionLoading && !hasActiveSubscription && isHouseholdUser;
 
@@ -536,8 +569,8 @@ export default function InboxPage() {
       // Prefer stable profile ids when available so older/newer conversation
       // records for the same pair do not render as duplicates.
       const householdRef = conv.household_profile_id || conv.household_id;
-      const househelpRef = conv.househelp_profile_id || conv.househelp_id;
-      const key = `household-${householdRef}-househelp-${househelpRef}`;
+      const serviceProviderRef = conv.service_provider_profile_id || conv.service_provider_id;
+      const key = `household-${householdRef}-service-provider-${serviceProviderRef}`;
       
       const existing = seen.get(key);
       if (!existing) {
@@ -604,12 +637,21 @@ export default function InboxPage() {
   }, [activeConversationId, deduplicatedItems, isDesktopLayout, selectedConversationId, setSearchParams]);
 
   const selectedConversation = items.find(c => c.id === activeConversationId);
+
+  // A thread whose job has ended.
+  //
+  // The service refuses the message either way; this is so somebody is told
+  // before they type one rather than after. Compared to a present value rather
+  // than a truthy one, because "locked_at" absent and "locked_at" null both
+  // mean open and only a real timestamp means closed.
+  const conversationLocked = Boolean((selectedConversation as any)?.locked_at);
+  const conversationLockedReason = String((selectedConversation as any)?.locked_reason || '');
   const lockMessages = shouldRestrictMessaging && !!selectedConversation;
 
   const otherUserId = useMemo(() => {
     if (!selectedConversation) return null;
     const role = currentUserProfileType?.toLowerCase();
-    return role === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id;
+    return role === 'household' ? selectedConversation.service_provider_id : selectedConversation.household_id;
   }, [selectedConversation, currentUserProfileType]);
 
   const lastSeenAt = useMemo(() => {
@@ -630,7 +672,7 @@ export default function InboxPage() {
   }, [lastActiveByUserId, messages, otherUserId, selectedConversation]);
 
   const isTyping = !!otherUserId && typingUserIds.has(otherUserId);
-  const isOnline = !!lastSeenAt && presenceNow - lastSeenAt < 120000;
+  const isOnline = Boolean(selectedConversation?.participant_online) || (!!lastSeenAt && presenceNow - lastSeenAt < 120000);
   const presenceLabel = useMemo(() => {
     if (isTyping) return 'typing...';
     if (isOnline) return 'online';
@@ -644,7 +686,7 @@ export default function InboxPage() {
   // Fetch profile photos for conversation participants
   const participantUserIds = useMemo(() => {
     const role = currentUserProfileType?.toLowerCase();
-    return items.map(c => role === 'household' ? c.househelp_id : c.household_id).filter(Boolean);
+    return items.map(c => role === 'household' ? c.service_provider_id : c.household_id).filter(Boolean);
   }, [items, currentUserProfileType]);
   const participantPhotos = useProfilePhotos(participantUserIds);
 
@@ -668,38 +710,38 @@ export default function InboxPage() {
       for (const conv of missing) {
         try {
           if (role === "household") {
-            // Household user: other participant is a househelp
-            // Use househelp_id (which is the user_id) to fetch the profile
-            const househelpUserId = conv.househelp_id;
+            // Household user: the other participant is a service provider.
+            const serviceProviderUserId = conv.service_provider_id;
             let profileResponse: any;
 
-            if (househelpUserId) {
+            if (serviceProviderUserId) {
               try {
-                profileResponse = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+                profileResponse = await grpcProfileService.getServiceProviderByUserID(serviceProviderUserId);
               } catch {
                 // fallback below
               }
             }
 
             if (!profileResponse) {
-              const fallbackProfileId = conv.househelp_profile_id;
+              const fallbackProfileId = conv.service_provider_profile_id;
               if (!fallbackProfileId) {
-                console.error('[Inbox] Missing househelp user/profile id for conversation:', conv.id);
+                console.error('[Inbox] Missing service provider user/profile id for conversation:', conv.id);
                 continue;
               }
               try {
-                profileResponse = await grpcProfileService.getHousehelpByID(fallbackProfileId);
+                profileResponse = await grpcProfileService.getServiceProviderByID(fallbackProfileId);
               } catch {
-                console.error('[Inbox] Failed to fetch househelp profile fallback');
+                console.error('[Inbox] Failed to fetch service provider profile fallback');
                 continue;
               }
             }
 
             const profileData = extractEnvelopeObject<any>(profileResponse);
             
-            // Extract househelp name from the preloaded user object
+            // Older auth deployments may still nest the provider under the
+            // legacy response key, so keep that fallback at this boundary.
             const user = profileData?.user || profileData?.househelp?.user;
-            const fullName = getNameFromUser(user) || getNameFromProfile(profileData, "Househelp");
+            const fullName = getNameFromUser(user) || getNameFromProfile(profileData, "Service provider");
             
             const avatar =
               profileData?.avatar_url ||
@@ -707,8 +749,8 @@ export default function InboxPage() {
               (Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined) ||
               (Array.isArray(profileData?.househelp?.photos) && profileData.househelp.photos.length > 0 ? profileData.househelp.photos[0] : undefined);
             updates.push({ id: conv.id, participant_name: fullName, participant_avatar: avatar });
-          } else if (role === "househelp") {
-            // Househelp user: other participant is a household. Older conversation
+          } else if (role === "service_provider") {
+            // Service-provider user: the other participant is a household. Older conversation
             // rows may only carry a household profile id, so resolve both shapes.
             const householdIdentifier = conv.household_profile_id || conv.household_id;
             if (!householdIdentifier) continue;
@@ -761,6 +803,7 @@ export default function InboxPage() {
     if (!conversation) {
       setHireRequestStatus(undefined);
       setHireRequestId(undefined);
+      setHireRequestDetails(null);
       return;
     }
     try {
@@ -772,12 +815,18 @@ export default function InboxPage() {
         normalizeId(conversation.household_id),
       ].filter((v): v is string => Boolean(v));
 
-      const conversationHousehelpCandidates = [
-        normalizeId(conversation.househelp_profile_id),
-        normalizeId(conversation.househelp_id),
+      const conversationServiceProviderCandidates = [
+        normalizeId(conversation.service_provider_profile_id),
+        normalizeId(conversation.service_provider_id),
       ].filter((v): v is string => Boolean(v));
 
+      const conversationListingId = String(conversation.listing_id || '').trim();
+
       const match = requests.find((req) => {
+        const requestListingId = String(req.listing_id || '').trim();
+        if (conversationListingId && requestListingId !== conversationListingId) {
+          return false;
+        }
         const requestHouseholdCandidates = [
           normalizeId(req.household_id),
           normalizeId(req.household_user_id),
@@ -785,7 +834,11 @@ export default function InboxPage() {
           normalizeId(req.household?.user_id),
         ].filter((v): v is string => Boolean(v));
 
-        const requestHousehelpCandidates = [
+        const requestServiceProviderCandidates = [
+          normalizeId(req.service_provider_id),
+          normalizeId(req.service_provider_user_id),
+          normalizeId(req.service_provider?.id),
+          normalizeId(req.service_provider?.user_id),
           normalizeId(req.househelp_id),
           normalizeId(req.househelp_user_id),
           normalizeId(req.househelp?.id),
@@ -794,22 +847,47 @@ export default function InboxPage() {
 
         return (
           intersects(conversationHouseholdCandidates, requestHouseholdCandidates) &&
-          intersects(conversationHousehelpCandidates, requestHousehelpCandidates)
+          intersects(conversationServiceProviderCandidates, requestServiceProviderCandidates)
         );
       });
       if (match) {
         setHireRequestStatus(match.status);
         setHireRequestId(match.id);
+        setHireRequestDetails(match);
       } else {
         setHireRequestStatus(undefined);
         setHireRequestId(undefined);
+        setHireRequestDetails(null);
       }
     } catch (err) {
       console.error('Failed to fetch hire request context', err);
       setHireRequestStatus(undefined);
       setHireRequestId(undefined);
+      setHireRequestDetails(null);
     }
   }, []);
+
+  const handleViewHireRequestJob = useCallback(async () => {
+    const listingId = String(hireRequestDetails?.listing_id || '').trim();
+    if (!listingId) {
+      pushToast('This hire request is not linked to a job listing.', 'error');
+      return;
+    }
+
+    setHireRequestJobLoading(true);
+    try {
+      const response = await jobService.getJob(listingId);
+      const listing = extractEnvelopeObject<Record<string, any>>(response);
+      if (!listing?.id) throw new Error('Job listing not found');
+      setShowHireRequestDetails(false);
+      setHireRequestJob(listing);
+    } catch (err) {
+      console.error('Failed to load hire request job listing', err);
+      pushToast('Failed to load the job listing.', 'error');
+    } finally {
+      setHireRequestJobLoading(false);
+    }
+  }, [hireRequestDetails, pushToast]);
 
   useEffect(() => {
     fetchHireContext(selectedConversation);
@@ -880,6 +958,7 @@ export default function InboxPage() {
     if (authLoading || !user) return;
 
     let cancelled = false;
+    let initialScrollFrame: number | null = null;
     const conversationId = activeConversationId; // Capture non-null value
     
     async function loadMessages() {
@@ -909,9 +988,25 @@ export default function InboxPage() {
         const data: Message[] = items.map(normalizeMsg);
         
         if (cancelled) return;
+        // The initial message render is positioned separately below. Prevent the
+        // generic new-message effect from starting a competing smooth scroll.
+        skipNextAutomaticMessageScrollRef.current = data.length > 0;
         setMessages(data);
         setMessagesOffset(data.length);
         setMessagesHasMore(data.length === messagesLimit);
+
+        // Position only the chat viewport, immediately after React paints the
+        // messages. scrollIntoView can also move ancestor/page scrollers and the
+        // old implementation ran after the read API completed, which temporarily
+        // fought touch scrolling on slower mobile connections.
+        initialScrollFrame = window.requestAnimationFrame(() => {
+          if (cancelled || activeConversationId !== conversationId) return;
+          const container = messagesContainerRef.current;
+          if (!container) return;
+          container.scrollTop = container.scrollHeight;
+          setIsAtBottom(true);
+          setNewMessageCount(0);
+        });
         
         // Mark conversation as read
         try {
@@ -924,14 +1019,6 @@ export default function InboxPage() {
           console.error('[Inbox] Failed to mark conversation as read:', err);
         }
         
-        // Scroll to bottom
-        setTimeout(() => {
-          if (bottomRef.current) {
-            bottomRef.current.scrollIntoView({ behavior: 'auto' });
-            setIsAtBottom(true);
-            setNewMessageCount(0);
-          }
-        }, 100);
       } catch (e: any) {
         console.error('[Inbox] Error loading messages:', e);
         if (!cancelled) {
@@ -944,12 +1031,19 @@ export default function InboxPage() {
     loadMessages();
     return () => {
       cancelled = true;
+      if (initialScrollFrame !== null) {
+        window.cancelAnimationFrame(initialScrollFrame);
+      }
     };
   }, [activeConversationId, messagesLimit, authLoading, user, notifyInboxUpdated]);
 
   // Scroll to bottom on conversation load or new message
   useEffect(() => {
     if (messages.length > 0 && activeConversationId) {
+      if (skipNextAutomaticMessageScrollRef.current) {
+        skipNextAutomaticMessageScrollRef.current = false;
+        return;
+      }
       const container = messagesContainerRef.current;
       if (!container) return;
 
@@ -985,30 +1079,30 @@ export default function InboxPage() {
     if (!selectedConversation) return;
     const role = currentUserProfileType?.toLowerCase();
     if (role === 'household') {
-      // Household viewing househelp profile: use profile ID
-      let househelpProfileId = selectedConversation.househelp_profile_id;
+      // Household viewing a service-provider profile: use the profile ID.
+      let serviceProviderProfileId = selectedConversation.service_provider_profile_id;
       
       // If profile ID is not available, fetch it from the API using user ID
-      if (!househelpProfileId) {
-        const househelpUserId = selectedConversation.househelp_id;
-        if (!househelpUserId) return;
+      if (!serviceProviderProfileId) {
+        const serviceProviderUserId = selectedConversation.service_provider_id;
+        if (!serviceProviderUserId) return;
         
         try {
-          const profileResponse: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+          const profileResponse: any = await grpcProfileService.getServiceProviderByUserID(serviceProviderUserId);
           const profileData = extractEnvelopeObject<any>(profileResponse);
-          househelpProfileId = profileData?.id || profileData?.profile_id;
+          serviceProviderProfileId = profileData?.id || profileData?.profile_id;
         } catch (err) {
-          console.error('Failed to fetch househelp profile:', err);
+          console.error('Failed to fetch service provider profile:', err);
           pushToast('Failed to load profile information', 'error');
           return;
         }
       }
       
-      if (!househelpProfileId) {
+      if (!serviceProviderProfileId) {
         pushToast('Failed to load profile information', 'error');
         return;
       }
-      const url = `/househelp/public-profile?profileId=${encodeURIComponent(househelpProfileId)}&embed=1`;
+      const url = `/service-provider/public-profile?profileId=${encodeURIComponent(serviceProviderProfileId)}&embed=1`;
       setProfileModalLoading(true);
       setProfileModalTimedOut(false);
       if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
@@ -1017,7 +1111,7 @@ export default function InboxPage() {
       setProfileModalUrl(url);
       setShowProfileModal(true);
     } else {
-      // Househelp viewing household public profile: prefer profile id when available,
+      // Service provider viewing a household profile: prefer profile id when available,
       // because some older conversation records do not reliably distinguish the ids.
       const householdProfileRef = selectedConversation.household_profile_id || selectedConversation.household_id;
       if (!householdProfileRef) {
@@ -1111,6 +1205,9 @@ export default function InboxPage() {
   const handleMessagesScroll = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
+
+    setOpenMsgMenuId(null);
+    setOpenReactPickerMsgId(null);
     
     // Check if user is at bottom (with 50px threshold)
     const threshold = 50;
@@ -1182,24 +1279,25 @@ export default function InboxPage() {
     }
   }, []);
 
-  const startLongPress = useCallback((id: string) => {
-    if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
-    longPressTimerRef.current = window.setTimeout(() => {
-      // On mobile long-press, open the action menu instead of selecting
-      if (window.innerWidth < 1024) {
-        setOpenMsgMenuId(id);
-      } else {
-        setSelectedIds((prev) => new Set(prev).add(id));
-      }
-    }, 400);
-  }, []);
+  useEffect(() => {
+    if (!openMsgMenuId) return;
 
-  const cancelLongPress = useCallback(() => {
-    if (longPressTimerRef.current) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  }, []);
+    const dismissMessageMenu = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest(`[data-message-actions="${openMsgMenuId}"]`)) return;
+      setOpenMsgMenuId(null);
+    };
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenMsgMenuId(null);
+    };
+
+    document.addEventListener('pointerdown', dismissMessageMenu, true);
+    document.addEventListener('keydown', dismissOnEscape);
+    return () => {
+      document.removeEventListener('pointerdown', dismissMessageMenu, true);
+      document.removeEventListener('keydown', dismissOnEscape);
+    };
+  }, [openMsgMenuId]);
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -1241,7 +1339,42 @@ export default function InboxPage() {
 
   const handleReplyMessage = useCallback((m: Message) => {
     setReplyTo(m);
+    window.setTimeout(() => textareaRef.current?.focus(), 0);
   }, []);
+
+  const beginReplySwipe = useCallback((event: React.TouchEvent, message: Message) => {
+    if (lockMessages || selectedIds.size > 0 || event.touches.length !== 1) return;
+    swipeGestureRef.current = {
+      id: message.id,
+      startX: event.touches[0].clientX,
+      startY: event.touches[0].clientY,
+      horizontal: false,
+      offset: 0,
+    };
+  }, [lockMessages, selectedIds.size]);
+
+  const moveReplySwipe = useCallback((event: React.TouchEvent) => {
+    const gesture = swipeGestureRef.current;
+    if (!gesture || event.touches.length !== 1) return;
+    const dx = event.touches[0].clientX - gesture.startX;
+    const dy = event.touches[0].clientY - gesture.startY;
+    if (!gesture.horizontal) {
+      if (Math.abs(dy) > Math.abs(dx) || Math.abs(dx) < 10) return;
+      gesture.horizontal = true;
+    }
+    // Resistance after the reply threshold keeps the bubble attached to the
+    // conversation while still making the gesture obvious in either direction.
+    const offset = Math.sign(dx) * Math.min(78, Math.abs(dx) * 0.72);
+    gesture.offset = offset;
+    setSwipePreview({ id: gesture.id, offset });
+  }, []);
+
+  const finishReplySwipe = useCallback((message: Message) => {
+    const gesture = swipeGestureRef.current;
+    swipeGestureRef.current = null;
+    setSwipePreview(null);
+    if (gesture?.id === message.id && gesture.horizontal && Math.abs(gesture.offset) >= 48) handleReplyMessage(message);
+  }, [handleReplyMessage]);
 
   const cancelEditMessage = useCallback(() => {
     setEditingMessageId(null);
@@ -1329,7 +1462,7 @@ export default function InboxPage() {
       } catch {}
     }
     if (!emoji) return;
-    setInput((prev) => prev + emoji);
+    setInput((prev) => (prev + emoji).slice(0, CHAT_MESSAGE_LIMIT));
     setShowEmojiPicker(false);
   }, []);
 
@@ -1343,6 +1476,10 @@ export default function InboxPage() {
     }
     const body = input.trim();
     if (!body) return;
+    if (body.length > CHAT_MESSAGE_LIMIT) {
+      pushToast(`Messages are limited to ${CHAT_MESSAGE_LIMIT.toLocaleString()} characters`, 'error');
+      return;
+    }
     try {
       const tempId = `temp-${Date.now()}`;
       const optimistic: Message = {
@@ -1392,6 +1529,7 @@ export default function InboxPage() {
       setHireActionLoading('accept');
       await hireRequestService.acceptHireRequest(hireRequestId);
       setHireRequestStatus('accepted');
+      setHireRequestDetails((current) => current ? { ...current, status: 'accepted' } : current);
     } catch (err) {
       console.error(err);
       pushToast('Failed to accept hire request', 'error');
@@ -1406,9 +1544,31 @@ export default function InboxPage() {
       setHireActionLoading('decline');
       await hireRequestService.declineHireRequest(hireRequestId);
       setHireRequestStatus('declined');
+      setHireRequestDetails((current) => current ? { ...current, status: 'declined' } : current);
     } catch (err) {
       console.error(err);
       pushToast('Failed to decline hire request', 'error');
+    } finally {
+      setHireActionLoading(null);
+    }
+  }, [hireRequestId, pushToast]);
+
+  const handleConfirmHire = useCallback(async () => {
+    if (!hireRequestId) return;
+    try {
+      setHireActionLoading('confirm');
+      await hireRequestService.finalizeHireRequest(hireRequestId);
+      setHireRequestStatus('finalized');
+      setHireRequestDetails((current) => current ? {
+        ...current,
+        status: 'finalized',
+        application_status: 'approved',
+      } : current);
+      window.dispatchEvent(new Event('hiring-updated'));
+      pushToast('Hire confirmed. A formal contract is optional.', 'success');
+    } catch (err) {
+      console.error(err);
+      pushToast('We could not confirm this hire. Please try again.', 'error');
     } finally {
       setHireActionLoading(null);
     }
@@ -1607,7 +1767,7 @@ export default function InboxPage() {
 
   // Conversations list JSX (left sidebar)
   const conversationsList = (
-    <div className="flex flex-col h-full bg-white dark:bg-[#13131a]">
+    <div data-tour="inbox-conversations" className="flex flex-col h-full bg-white dark:bg-[#13131a]">
       <div className="px-4 py-3 border-b border-purple-200 dark:border-purple-500/30 flex items-center justify-between">
         <h2 className="text-xs font-semibold text-gray-800 dark:text-gray-100">Conversations</h2>
         {loading && (
@@ -1644,7 +1804,7 @@ export default function InboxPage() {
                 >
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
                     {(() => {
-                      const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? c.househelp_id : c.household_id;
+                      const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? c.service_provider_id : c.household_id;
                       const photoUrl = c.participant_avatar || (otherUserId && participantPhotos[otherUserId]);
                       if (photoUrl) {
                         return <img src={photoUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />;
@@ -1655,7 +1815,7 @@ export default function InboxPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="truncate text-xs font-medium text-gray-900 dark:text-gray-100">
-                        {c.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
+                        {c.participant_name || (currentUserProfileType === 'service_provider' ? 'Household' : 'Service provider')}
                       </p>
                       <div className="flex items-center gap-2">
                         {subtitle && (
@@ -1712,9 +1872,9 @@ export default function InboxPage() {
           </div>
         </div>
       ) : (
-          <div className="h-full bg-white dark:bg-[#13131a] grid grid-rows-[auto,1fr,auto] relative overflow-hidden">
+          <div className="relative grid h-full min-w-0 w-full max-w-full grid-rows-[auto,minmax(0,1fr),auto] overflow-hidden bg-white dark:bg-[#13131a]">
             {/* Header */}
-            <div className="p-4 border-b border-purple-200 dark:border-purple-500/30 flex items-center gap-3">
+            <div className="sticky top-0 z-30 flex shrink-0 items-center gap-3 border-b border-purple-200 bg-white/95 p-4 backdrop-blur dark:border-purple-500/30 dark:bg-[#13131a]/95">
               <button
                 onClick={handleBackToList}
                 className="lg:hidden p-2 hover:bg-purple-100 dark:hover:bg-slate-800 rounded-full transition"
@@ -1729,13 +1889,13 @@ export default function InboxPage() {
               >
                 <div className="w-10 h-10 rounded-full relative overflow-hidden border-2 border-purple-300 dark:border-purple-500 flex-shrink-0">
                   {(() => {
-                    const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id;
+                    const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? selectedConversation.service_provider_id : selectedConversation.household_id;
                     const headerPhoto = selectedConversation.participant_avatar || (otherUserId && participantPhotos[otherUserId]);
                     if (headerPhoto) {
                       return (
                         <>
                           {imageLoadingStates[`header-${selectedConversation.id}`] !== false && (
-                            <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                            <div className="hb-shimmer-piece absolute inset-0" />
                           )}
                           <img
                             src={headerPhoto}
@@ -1765,7 +1925,7 @@ export default function InboxPage() {
                 <div className="text-left">
                   <div className="flex items-center gap-2">
                     <h2 className="font-semibold text-gray-900 dark:text-white">
-                      {selectedConversation.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
+                      {selectedConversation.participant_name || (currentUserProfileType === 'service_provider' ? 'Household' : 'Service provider')}
                     </h2>
                     {isTyping && (
                       <span className="inline-flex items-center gap-1" aria-hidden="true">
@@ -1783,7 +1943,7 @@ export default function InboxPage() {
             </div>
 
             {/* Messages - Scrollable */}
-            <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="homebit-scrollbar relative min-h-0 space-y-2 overflow-y-auto p-4">
+            <div data-tour="inbox-messages" ref={messagesContainerRef} onScroll={handleMessagesScroll} className="homebit-scrollbar relative min-h-0 min-w-0 space-y-2 overflow-x-hidden overflow-y-auto p-2 sm:p-4">
               <div className={lockMessages ? 'pointer-events-none select-none blur-sm transition duration-150' : ''}>
                 <div ref={messagesSentinelRef} className="h-4" />
                 
@@ -1795,22 +1955,12 @@ export default function InboxPage() {
 
                 {/* Hire Context Banner */}
                 {selectedConversation && (
-                  <HireContextBanner
+                  <div data-tour="inbox-job-context">
+                    <HireContextBanner
                     hireRequestStatus={hireRequestStatus}
                     hireRequestId={hireRequestId}
                     onViewDetails={() => {
-                      if (hireRequestId) {
-                        if (currentUserProfileType?.toLowerCase() === 'household') {
-                          const backTo = `${location.pathname}${location.search || ''}`;
-                          const params = new URLSearchParams({
-                            backTo,
-                            backLabel: 'Back to Inbox',
-                          });
-                          navigate(`/household/hire-request/${hireRequestId}?${params.toString()}`);
-                        } else {
-                          navigate(`/househelp/hiring`);
-                        }
-                      }
+                      if (hireRequestDetails) setShowHireRequestDetails(true);
                     }}
                     onSendHireRequest={async () => {
                       if (!hasActiveSubscription && !subscriptionLoading) {
@@ -1818,17 +1968,17 @@ export default function InboxPage() {
                         return;
                       }
                       if (currentUserProfileType?.toLowerCase() === 'household' && selectedConversation) {
-                        const househelpUserId = selectedConversation.househelp_id;
-                        if (selectedConversation.househelp_profile_id) {
-                          setHousehelpProfileIdForHire(selectedConversation.househelp_profile_id);
+                        const serviceProviderUserId = selectedConversation.service_provider_id;
+                        if (selectedConversation.service_provider_profile_id) {
+                          setServiceProviderProfileIdForHire(selectedConversation.service_provider_profile_id);
                           setShowHireWizard(true);
                         } else {
                           try {
-                            const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
-                            setHousehelpProfileIdForHire(profileData?.id || profileData?.profile_id);
+                            const profileData: any = await grpcProfileService.getServiceProviderByUserID(serviceProviderUserId);
+                            setServiceProviderProfileIdForHire(profileData?.id || profileData?.profile_id);
                             setShowHireWizard(true);
                           } catch (err) {
-                            console.error('Failed to fetch househelp profile:', err);
+                            console.error('Failed to fetch service provider profile:', err);
                             pushToast('Failed to load profile information', 'error');
                           }
                         }
@@ -1836,11 +1986,14 @@ export default function InboxPage() {
                         setShowHireWizard(true);
                       }
                     }}
-                    onAccept={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
-                    onDecline={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
+                    onAccept={currentUserProfileType === 'service_provider' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
+                    onDecline={currentUserProfileType === 'service_provider' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
+                    onConfirmHire={currentUserProfileType === 'household' ? handleConfirmHire : undefined}
+                    initiatedByApplicant={Boolean(hireRequestDetails?.initiated_by_applicant)}
                     actionLoading={hireActionLoading}
-                    userRole={currentUserProfileType?.toLowerCase() as 'household' | 'househelp'}
-                  />
+                    userRole={currentUserProfileType as 'household' | 'service_provider'}
+                    />
+                  </div>
                 )}
 
             {messagesLoading && messages.length === 0 && (
@@ -1866,7 +2019,13 @@ export default function InboxPage() {
                 </div>
                 {group.items.map((m) => {
                 const mine = currentUserId && m.sender_id === currentUserId;
-                const status = m._status || (m.read_at ? 'read' : 'delivered');
+                const status: MessageStatus = m.read_at
+                  ? 'read'
+                  : m._status === 'sending'
+                    ? 'sending'
+                    : isOnline
+                      ? 'delivered'
+                      : 'sent';
                 const replyMsg = m.reply_to_id ? messageById.get(m.reply_to_id) : undefined;
                 const replyFromName = replyMsg ? (replyMsg.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')) : '';
                 const interactionsDisabled = lockMessages;
@@ -1877,22 +2036,27 @@ export default function InboxPage() {
                 return (
                   <div
                     key={m.id}
-                    className={`group relative flex ${mine ? 'justify-end' : 'justify-start'} ${
+                    className={`group relative flex touch-pan-y ${mine ? 'justify-end' : 'justify-start'} ${
                       highlightMsgId === m.id 
                         ? 'animate-[highlight-blink_1.5s_ease-in-out] rounded-xl ring-2 ring-purple-400/60' 
                         : selectedIds.has(m.id) 
                         ? 'ring-2 ring-purple-400 rounded-xl' 
                         : ''
                     }`}
-                    onTouchStart={() => {
-                      if (selectedIds.size === 0) {
-                        // Long press to open action menu on mobile
-                        startLongPress(m.id);
-                      }
-                    }}
-                    onTouchEnd={cancelLongPress}
+                    onTouchStart={(event) => beginReplySwipe(event, m)}
+                    onTouchMove={moveReplySwipe}
+                    onTouchEnd={() => finishReplySwipe(m)}
+                    onTouchCancel={() => finishReplySwipe(m)}
                     ref={(el) => { messageRefs.current[m.id] = el; }}
                   >
+                    {swipePreview?.id === m.id && (
+                      <span
+                        className={`pointer-events-none absolute top-1/2 z-0 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-purple-100 text-purple-600 shadow-sm dark:bg-purple-900/50 dark:text-purple-200 ${swipePreview.offset > 0 ? 'left-1' : 'right-1'}`}
+                        aria-hidden="true"
+                      >
+                        <ArrowUturnLeftIcon className={`h-5 w-5 ${swipePreview.offset < 0 ? '-scale-x-100' : ''}`} />
+                      </span>
+                    )}
                     {selectedIds.size > 0 && (
                       <button
                         type="button"
@@ -1909,17 +2073,23 @@ export default function InboxPage() {
                       </button>
                     )}
                     {/* Message bubble */}
-                    <div className={`relative max-w-[75%] rounded-2xl px-4 py-2 shadow ${
+                    <div style={swipePreview?.id === m.id ? { transform: `translateX(${swipePreview.offset}px)` } : undefined} className={`relative z-[1] min-w-0 max-w-[85%] rounded-2xl px-3 py-2 shadow sm:max-w-[75%] sm:px-4 ${swipePreview?.id === m.id ? '' : 'transition-transform duration-150'} ${
                       mine 
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100'
-                    } ${status === 'sending' ? 'opacity-70' : ''} ${m.deleted_at ? 'opacity-60 italic' : ''}`}>
+                    } ${!interactionsDisabled ? (mine ? 'mr-9 lg:mr-0' : 'ml-9 lg:ml-0') : ''} ${status === 'sending' ? 'opacity-70' : ''} ${m.deleted_at ? 'opacity-60 italic' : ''}`}>
                       {/* Bubble controls: 3-dots (always visible on mobile, hover on desktop) and quick reactions */}
                       {!interactionsDisabled && (
                         <button
                           type="button"
-                          className={`absolute -top-2 ${mine ? '-right-2' : '-left-2'} inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow lg:opacity-0 lg:group-hover:opacity-100 transition`}
-                          onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
+                          data-message-actions={m.id}
+                          className={`absolute top-0 ${mine ? '-right-9 lg:-right-2' : '-left-9 lg:-left-2'} inline-flex h-7 w-7 items-center justify-center rounded-full border border-purple-200 bg-white/80 shadow transition dark:border-purple-500/30 dark:bg-[#0f0f16]/80 lg:-top-2 lg:opacity-0 lg:group-hover:opacity-100`}
+                          onTouchStart={(event) => event.stopPropagation()}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setOpenReactPickerMsgId(null);
+                            setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id);
+                          }}
                           aria-label="Message options"
                         >
                           <EllipsisVerticalIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
@@ -1936,6 +2106,7 @@ export default function InboxPage() {
                       )}
                       {!interactionsDisabled && openReactPickerMsgId === m.id && (
                         <div ref={reactionPickerRef} className={`absolute ${mine ? 'right-0' : 'left-0'} bottom-full mb-2 z-50`}>
+                          <Suspense fallback={<div className="h-[380px] w-[320px] animate-pulse rounded-lg bg-purple-100 dark:bg-purple-950/40" />}>
                           <EmojiPicker
                             onEmojiClick={(emojiData) => {
                               // Extract emoji with fallback to unified code points
@@ -1958,11 +2129,11 @@ export default function InboxPage() {
                               toggleReaction(m, emoji);
                               setOpenReactPickerMsgId(null);
                             }}
-                            theme={Theme.AUTO}
                             width={320}
                             height={380}
                             lazyLoadEmojis
                           />
+                          </Suspense>
                         </div>
                       )}
                       {/* Reply snippet inside bubble */}
@@ -2046,30 +2217,24 @@ export default function InboxPage() {
                             <span>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             {mine && !m.deleted_at && (
                               <span className="inline-flex items-center ml-1">
-                                {status === 'sending' && (
-                                  /* Single grey tick - sending */
-                                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                {(status === 'sending' || status === 'sent') && (
+                                  /* One neutral tick: sending or accepted by the server. */
+                                  <svg className={`w-4 h-4 ${status === 'sending' ? 'text-white/45' : 'text-white/80'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-label={status === 'sending' ? 'Sending' : 'Sent'}>
                                     <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                                   </svg>
                                 )}
                                 {status === 'delivered' && (
-                                  /* Double grey ticks - saved in DB */
-                                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  /* Two neutral ticks: the recipient is connected. */
+                                  <svg className="w-4 h-4 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-label="Delivered">
                                     <path d="M2 13l4 4L16 7" strokeLinecap="round" strokeLinejoin="round" />
                                     <path d="M8 13l4 4L22 7" strokeLinecap="round" strokeLinejoin="round" />
                                   </svg>
                                 )}
                                 {status === 'read' && (
-                                  /* Double gradient ticks - read (WhatsApp-style) */
-                                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" strokeWidth="2">
-                                    <defs>
-                                      <linearGradient id="readGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                        <stop offset="0%" stopColor="#9333ea" />
-                                        <stop offset="100%" stopColor="#ec4899" />
-                                      </linearGradient>
-                                    </defs>
-                                    <path d="M2 13l4 4L16 7" stroke="url(#readGradient)" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M8 13l4 4L22 7" stroke="url(#readGradient)" strokeLinecap="round" strokeLinejoin="round" />
+                                  /* Bright blue read receipt with strong contrast on the message gradient. */
+                                  <svg className="w-4 h-4 text-sky-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-label="Read">
+                                    <path d="M2 13l4 4L16 7" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M8 13l4 4L22 7" strokeLinecap="round" strokeLinejoin="round" />
                                   </svg>
                                 )}
                               </span>
@@ -2148,7 +2313,9 @@ export default function InboxPage() {
                         return (
                           <div
                             ref={msgMenuRef}
+                            data-message-actions={m.id}
                             tabIndex={0}
+                            onTouchStart={(event) => event.stopPropagation()}
                             onKeyDown={(e) => {
                               if (e.key === 'ArrowDown') { e.preventDefault(); setMsgMenuFocusIndex((i) => Math.min(i + 1, options.length - 1)); }
                               else if (e.key === 'ArrowUp') { e.preventDefault(); setMsgMenuFocusIndex((i) => Math.max(i - 1, 0)); }
@@ -2230,9 +2397,9 @@ export default function InboxPage() {
               messages.length < 10 ? 'top-20' : 'bottom-24'
             }`}
           >
+            <Suspense fallback={<div className="h-[400px] w-[320px] animate-pulse rounded-lg bg-purple-100 dark:bg-purple-950/40" />}>
             <EmojiPicker
               onEmojiClick={addEmoji}
-              theme={Theme.AUTO}
               searchPlaceHolder="Search emojis..."
               width={320}
               height={400}
@@ -2240,6 +2407,7 @@ export default function InboxPage() {
               skinTonesDisabled={false}
               lazyLoadEmojis={true}
             />
+            </Suspense>
           </div>
         )}
 
@@ -2260,7 +2428,7 @@ export default function InboxPage() {
         )}
 
         {/* Input - At bottom (grid row) */}
-        <div className="p-4 border-t border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a]">
+        <div className="sticky bottom-0 z-20 min-w-0 shrink-0 border-t border-purple-200 bg-white p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] dark:border-purple-500/30 dark:bg-[#13131a] sm:p-4">
           {selectedIds.size > 0 && (
             <div className="mb-2 flex flex-col gap-2 rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-slate-800 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-xs font-semibold">{selectedIds.size} selected</div>
@@ -2329,8 +2497,24 @@ export default function InboxPage() {
                 Accept terms of use to start messaging
               </button>
             </div>
+          ) : conversationLocked ? (
+            /* Closed, not broken. The history stays exactly where it was — it
+               is theirs, and it is the record of what was agreed — and the only
+               thing removed is the ability to add to it. */
+            <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-700 dark:bg-gray-800/50">
+              <svg className="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <p className="text-xs text-gray-600 dark:text-gray-300">
+                {conversationLockedReason === 'job_expired'
+                  ? 'This job has expired, so the conversation is closed. You can still read it.'
+                  : 'This job has closed, so the conversation is closed. You can still read it.'}
+                {' '}
+                A new hire between you will open a fresh conversation.
+              </p>
+            </div>
           ) : (
-          <form onSubmit={handleSend} className="flex items-end gap-2">
+          <form data-tour="inbox-compose" onSubmit={handleSend} className="flex min-w-0 items-end gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={(e) => {
@@ -2338,16 +2522,17 @@ export default function InboxPage() {
                 e.stopPropagation();
                 setShowEmojiPicker(!showEmojiPicker);
               }}
-              className="p-2 hover:bg-purple-100 dark:hover:bg-slate-800 rounded-full transition flex-shrink-0"
+              className="flex-shrink-0 rounded-full p-1.5 transition hover:bg-purple-100 dark:hover:bg-slate-800 sm:p-2"
             >
-              <FaceSmileIcon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+              <FaceSmileIcon className="h-5 w-5 text-gray-600 dark:text-gray-400 sm:h-6 sm:w-6" />
             </button>
             
             <textarea
               ref={textareaRef}
               value={input}
+              maxLength={CHAT_MESSAGE_LIMIT}
               onChange={(e) => {
-                setInput(e.target.value);
+                setInput(e.target.value.slice(0, CHAT_MESSAGE_LIMIT));
                 sendTypingUpdate(e.target.value.trim().length > 0);
                 // Auto-resize textarea
                 e.target.style.height = 'auto';
@@ -2355,7 +2540,8 @@ export default function InboxPage() {
               }}
               onBlur={() => sendTypingUpdate(false)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                const coarsePointer = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+                if (!coarsePointer && e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   if (input.trim()) {
                     handleSend(e as any);
@@ -2367,7 +2553,7 @@ export default function InboxPage() {
                 }
               }}
               placeholder="Type a message..."
-              className="flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-4 py-2 text-xs text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:text-sm min-h-[40px] max-h-[150px]"
+              className="hb-chat-composer min-h-[36px] min-w-0 max-h-[150px] flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-2.5 py-1.5 leading-5 text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:min-h-[40px] sm:px-4 sm:py-2"
               autoComplete="off"
               rows={1}
             />
@@ -2375,9 +2561,9 @@ export default function InboxPage() {
             <button
               type="submit"
               disabled={!input.trim()}
-              className="p-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex-shrink-0"
+              className="flex-shrink-0 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 p-1.5 text-white transition hover:from-purple-700 hover:to-pink-700 disabled:cursor-not-allowed disabled:opacity-50 sm:p-2"
             >
-              <PaperAirplaneIcon className="w-6 h-6" />
+              <PaperAirplaneIcon className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
           </form>
           )}
@@ -2388,7 +2574,7 @@ export default function InboxPage() {
   // Show loading state while checking authentication
   if (authLoading) {
     return (
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="hb-inbox-viewport flex min-h-0 flex-col overflow-hidden">
         <Navigation />
         <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
           <main className="flex-1 py-6">
@@ -2402,10 +2588,10 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="hb-inbox-viewport flex min-h-0 w-full max-w-full flex-col overflow-hidden">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
-        <main className="flex-1 flex flex-col relative pt-6 pb-4 overflow-hidden min-h-0">
+        <main className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-0 pt-0 sm:pb-4 sm:pt-6">
           {/* Desktop: Split view */}
           <div className="hidden lg:flex flex-1 max-w-7xl mx-auto w-full mt-2 overflow-hidden min-h-0">
             <div className="w-1/3 border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] rounded-l-2xl overflow-hidden flex flex-col">
@@ -2417,7 +2603,7 @@ export default function InboxPage() {
           </div>
 
           {/* Mobile: Single view */}
-          <div className="lg:hidden flex-1 overflow-hidden">
+          <div className="lg:hidden min-h-0 min-w-0 w-full max-w-full flex-1 overflow-hidden">
             {activeConversationId ? (
               <div className="h-full border-l border-r border-b border-purple-200 dark:border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] rounded-b-2xl overflow-hidden flex flex-col">
                 {messagesView}
@@ -2461,7 +2647,7 @@ export default function InboxPage() {
 
       {/* Chat Terms of Use Modal */}
       {showChatTerms && !chatTermsAccepted && (
-        <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={() => setShowChatTerms(false)}>
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={() => setShowChatTerms(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <div
             className="relative w-full sm:max-w-md bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4"
@@ -2511,7 +2697,7 @@ export default function InboxPage() {
                 <span className="text-base mt-0.5">⚖️</span>
                 <div>
                   <p className="text-xs font-semibold text-gray-900 dark:text-white">Homebit is a platform</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">We connect households and househelps but are not a party to any employment agreement. All arrangements are between you and the other party.</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">We connect households and service providers but are not a party to any employment agreement. All arrangements are between you and the other party.</p>
                 </div>
               </div>
             </div>
@@ -2530,7 +2716,7 @@ export default function InboxPage() {
       {/* Profile Modal */}
       {showProfileModal && profileModalUrl && (
         <div
-          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center"
+          className="hb-mobile-modal-viewport fixed inset-0 z-[70] flex items-end justify-center sm:items-center"
           onClick={() => {
             setShowProfileModal(false);
             setProfileModalUrl(null);
@@ -2543,7 +2729,7 @@ export default function InboxPage() {
           }}
         >
           <div
-            className="relative w-full sm:max-w-6xl h-[85vh] rounded-t-2xl sm:rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-slide-up"
+            className="relative flex h-full min-h-0 w-full flex-col overflow-hidden rounded-t-2xl border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-slide-up sm:h-[85vh] sm:max-w-6xl sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -2574,7 +2760,7 @@ export default function InboxPage() {
             <iframe
               key={profileModalReloadKey}
               src={profileModalUrl}
-              className="w-full h-full border-0 bg-white"
+              className="min-h-0 w-full flex-1 border-0 bg-white"
               onLoad={() => {
                 setProfileModalLoading(false);
                 if (profileModalTimeoutId.current) {
@@ -2589,26 +2775,30 @@ export default function InboxPage() {
       )}
 
       {showHireWizard && selectedConversation && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <div className="relative z-10 w-full px-4 sm:px-0 flex justify-center">
-            <ConversationHireWizard
-              househelpId={
+            <ConversationHire
+              serviceProviderProfileId={
                 currentUserProfileType?.toLowerCase() === 'household'
-                  ? (househelpProfileIdForHire || selectedConversation!.househelp_profile_id || selectedConversation!.househelp_id)
+                  ? (serviceProviderProfileIdForHire || selectedConversation!.service_provider_profile_id || selectedConversation!.service_provider_id)
                   : (selectedConversation!.household_profile_id || selectedConversation!.household_id)
               }
-              househelpName={selectedConversation!.participant_name || 'User'}
+              serviceProviderName={selectedConversation!.participant_name || 'User'}
+              /* The job this thread belongs to. Present, the household is
+                 confirming rather than choosing; absent, they picked this person
+                 first and are asked which of their jobs it is for. */
+              listingId={selectedConversation.listing_id || undefined}
               onClose={() => {
                 setShowHireWizard(false);
-                setHousehelpProfileIdForHire(null);
+                setServiceProviderProfileIdForHire(null);
               }}
-              onSuccess={(newHireRequestId) => {
+              onHired={(requestId) => {
                 setShowHireWizard(false);
-                setHousehelpProfileIdForHire(null);
+                setServiceProviderProfileIdForHire(null);
                 setHireRequestStatus('pending');
-                setHireRequestId(newHireRequestId);
-                const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
+                setHireRequestId(requestId);
+                const body = `I've sent you a hire request with the job details. Have a look and let me know if you'd like to proceed.`;
                 notificationsService.sendMessage(activeConversationId!, body)
                   .then((data) => {
                     const msg = normalizeMessage(data || {});
@@ -2624,6 +2814,38 @@ export default function InboxPage() {
               }}
             />
           </div>
+        </div>
+      )}
+
+      {showHireRequestDetails && hireRequestDetails && (
+        <ChatHireRequestDetailsModal
+          request={hireRequestDetails}
+          participantName={selectedConversation?.participant_name}
+          onClose={() => setShowHireRequestDetails(false)}
+          onViewJob={handleViewHireRequestJob}
+          jobLoading={hireRequestJobLoading}
+        />
+      )}
+
+      {hireRequestJob && (
+        <div className="hb-mobile-modal-viewport fixed inset-0 z-[170] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setHireRequestJob(null)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="chat-job-listing-title" className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-500/40 bg-white shadow-2xl dark:bg-[#171122] sm:max-w-3xl sm:rounded-3xl" onClick={(event) => event.stopPropagation()}>
+            <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-purple-200 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-700/50 dark:bg-[#171122]/95 sm:px-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-purple-600 dark:text-purple-300">Job listing</p>
+                <h2 id="chat-job-listing-title" className="mt-1 text-lg font-bold text-gray-950 dark:text-white">{hireRequestJob.title || 'Job listing details'}</h2>
+              </div>
+              <button type="button" onClick={() => setHireRequestJob(null)} className="rounded-full border border-purple-300 p-2 text-purple-700 dark:border-purple-600 dark:text-purple-200" aria-label="Close job listing">
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </header>
+            <div className="p-5 sm:p-6">
+              <ListingDetails listing={hireRequestJob} emptyMessage="This job listing has no additional details." />
+            </div>
+            <footer className="sticky bottom-0 flex justify-end border-t border-purple-200 bg-white/95 p-4 backdrop-blur dark:border-purple-700/50 dark:bg-[#171122]/95">
+              <button type="button" onClick={() => { setHireRequestJob(null); setShowHireRequestDetails(true); }} className="rounded-xl border border-purple-300 px-5 py-2 text-sm font-semibold text-purple-700 dark:border-purple-600 dark:text-purple-200">Back to hire request</button>
+            </footer>
+          </section>
         </div>
       )}
 

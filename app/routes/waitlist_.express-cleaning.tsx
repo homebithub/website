@@ -5,7 +5,7 @@ export const meta = () => [
   {
     name: "description",
     content:
-      "Join Homebit's express cleaning waitlist as a household or househelp and get early access.",
+      "Join Homebit's express cleaning waitlist as a household or service provider and get early access.",
   },
 ];
 
@@ -16,7 +16,7 @@ const config = {
     "Express Cleaning",
     "Indoor Cleaning",
     "Home Deep Cleaning",
-    "Househelp",
+    "Service provider",
     "Laundry & Ironing",
     "Meal Preps",
     "Pet Care",
@@ -36,7 +36,7 @@ const config = {
       servicePrompt: "Would you need additional services?",
       concernPrompt: "Biggest concern",
     },
-    househelp: {
+    service_provider: {
       heading: "You offer express cleaning services?",
       paragraph:
         "Join the express cleaning waitlist to be among the first express cleaning professionals households discover on Homebit. We are creating a trusted marketplace where express cleaners can present their skills with confidence and be matched to families who value fast, reliable cleaning when they need it most. If you have experience with same-day cleaning, urgent cleanup, quick refresh services, time-sensitive cleaning projects, or emergency cleaning support, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your availability for urgent requests, and the kind of express cleaning projects you specialize in. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for express cleaners who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent express cleaning work with families who appreciate speed and reliability, the waitlist is the first step.",

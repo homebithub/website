@@ -5,6 +5,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import type { Subscription, CancelReason, SubscriptionPlan } from '~/types/payments';
 import { validateFeedback } from '~/utils/validation/payments';
 import { formatDate } from '~/utils/formatting/currency';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface CancelSubscriptionFlowProps {
   isOpen: boolean;
@@ -12,7 +13,6 @@ interface CancelSubscriptionFlowProps {
   subscription: Subscription;
   availablePlans: SubscriptionPlan[];
   onCancel: (reason: CancelReason, feedback?: string) => Promise<void>;
-  onPauseInstead: () => void;
   onDowngrade: (planId: string) => void;
 }
 
@@ -30,7 +30,6 @@ export function CancelSubscriptionFlow({
   subscription,
   availablePlans,
   onCancel,
-  onPauseInstead,
   onDowngrade,
 }: CancelSubscriptionFlowProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -97,7 +96,7 @@ export function CancelSubscriptionFlow({
           <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
         </Transition.Child>
 
-        <div className="fixed inset-0 overflow-y-auto">
+        <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
           <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
             <Transition.Child
               as={Fragment}
@@ -129,22 +128,6 @@ export function CancelSubscriptionFlow({
                     </p>
 
                     <div className="space-y-4">
-                      {/* Pause Option */}
-                      <button
-                        onClick={() => {
-                          handleClose();
-                          onPauseInstead();
-                        }}
-                        className="w-full p-4 text-left bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-700 hover:border-purple-400 dark:hover:border-purple-500 transition-all"
-                      >
-                        <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                          Pause Your Subscription Instead
-                        </h4>
-                        <p className="text-xs text-gray-600 dark:text-gray-300">
-                          Take a break for 7-90 days. Your subscription will resume automatically.
-                        </p>
-                      </button>
-
                       {/* Downgrade Options */}
                       {cheaperPlans.length > 0 && (
                         <div className="space-y-2">
@@ -227,18 +210,16 @@ export function CancelSubscriptionFlow({
                         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Reason for Cancellation
                         </label>
-                        <select
+                        <CustomSelect
                           value={reason}
-                          onChange={(e) => setReason(e.target.value as CancelReason)}
+                          onChange={(next) => setReason(next as CancelReason)}
                           disabled={processing}
-                          className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
-                        >
-                          {CANCEL_REASONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
+                          ariaLabel="Reason for cancellation"
+                          options={CANCEL_REASONS.map((option) => ({
+                            value: String(option.value),
+                            label: option.label,
+                          }))}
+                        />
                       </div>
 
                       {/* Feedback Textarea */}

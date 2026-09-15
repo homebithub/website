@@ -197,7 +197,7 @@ export default function ImageGallery({
       {/* Image modal */}
       {selectedImage && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center"
           onClick={() => setSelectedImage(null)}
         >
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" />

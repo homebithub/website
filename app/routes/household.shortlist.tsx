@@ -1,7 +1,6 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Heart } from 'lucide-react';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -16,6 +15,10 @@ import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { formatTimeAgo } from '~/utils/timeAgo';
 import { normalizeOnboardingAmountFromStorage } from '~/utils/onboardingCompensation';
+import { formatPlaceOrFallback } from '~/utils/place';
+import { ServiceProviderCardDetails } from '~/components/listing/ServiceProviderCardDetails';
+import { ListingViewToggle, useListingViewPreference } from '~/components/listing/ListingViewToggle';
+import { ShimmerListPlaceholder } from '~/components/ShimmerLoader';
 
 const formatDate = (value?: string) => {
   if (!value) return 'Flexible';
@@ -96,11 +99,6 @@ const isOpenForWorkListingActive = (listing: { status?: string }) => {
   return ['active', 'open', 'available'].includes(status);
 };
 
-const formatListingStatus = (status?: string) => {
-  if (!status) return 'Open';
-  return status.replace(/_/g, ' ');
-};
-
 // Types
 type ShortlistItem = {
   id: string;
@@ -115,7 +113,7 @@ export default function HouseholdShortlistPage() {
   const navigate = useNavigate();
 
   const [items, setItems] = useState<ShortlistItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -134,6 +132,9 @@ export default function HouseholdShortlistPage() {
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useListingViewPreference('homebit:saved-view');
+  const isGridView = viewMode === 'grid';
 
   // Load UI preferences (compact view, accessibility)
   useEffect(() => {
@@ -218,7 +219,25 @@ export default function HouseholdShortlistPage() {
     };
   }, [offset]);
 
-  // Load open-for-work records for shortlisted househelp listings.
+  // The rows this page can actually draw a card for.
+  //
+  // The empty state keys off this rather than off `items`, because saved rows
+  // that are not open-for-work posts render nothing: the list came back
+  // non-empty, every row was filtered out, and the page showed a heading over
+  // blank space with no indication anything was wrong.
+  const savedServiceProviders = useMemo(
+    () => (items || []).filter((s) => s.profile_type === 'open_for_work'),
+    [items],
+  );
+  const visibleSavedServiceProviders = useMemo(
+    () => savedServiceProviders.filter((item) => {
+      const listing = profilesById[item.profile_id];
+      return !listing || isOpenForWorkListingActive(listing);
+    }),
+    [profilesById, savedServiceProviders],
+  );
+
+  // Load open-for-work records for shortlisted service-provider listings.
   useEffect(() => {
     const missingIds = (items || [])
       .filter((s) => s.profile_type === "open_for_work")
@@ -241,8 +260,11 @@ export default function HouseholdShortlistPage() {
         );
         if (cancelled) return;
         const next: Record<string, any> = { ...profilesById };
+        // Remember failed lookups as well. Otherwise the same unavailable
+        // profile is requested after every render and the Saved page never
+        // settles into a stable state.
         missingIds.forEach((id, index) => {
-          if (profiles[index]) next[id] = profiles[index];
+          next[id] = profiles[index] || null;
         });
         setProfilesById(next);
       } catch {
@@ -257,22 +279,31 @@ export default function HouseholdShortlistPage() {
     };
   }, [items, profilesById]);
 
+  const waitingForProfiles = savedServiceProviders.some((item) => !(item.profile_id in profilesById));
+  const initialLoading = (loading && items.length === 0) || waitingForProfiles;
+
   async function handleRemove(profileId: string) {
+    setRemovingId(profileId);
+    setError(null);
     try {
       await shortlistService.deleteShortlist(profileId);
       setItems((prev) => (prev || []).filter((s) => s.profile_id !== profileId));
       // Trigger event to update badge count in navigation
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
-    } catch {}
+    } catch (e: any) {
+      setError(e?.message || "We couldn't remove this saved service provider. Please try again.");
+    } finally {
+      setRemovingId(null);
+    }
   }
 
-  async function handleChatWithHousehelp(profileId?: string, househelpUserId?: string) {
-    if (!profileId || !househelpUserId || !currentUserId) return;
+  async function handleChatWithServiceProvider(profileId?: string, serviceProviderUserId?: string) {
+    if (!profileId || !serviceProviderUserId || !currentUserId) return;
     try {
       const payload: StartConversationPayload = {
         household_user_id: currentUserId,
-        househelp_user_id: househelpUserId,
-        househelp_profile_id: profileId,
+        service_provider_user_id: serviceProviderUserId,
+        service_provider_profile_id: profileId,
       };
       
       // Include household_profile_id
@@ -283,7 +314,7 @@ export default function HouseholdShortlistPage() {
       const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
       navigate(getInboxRoute(convId));
     } catch (e) {
-      console.error('Failed to start chat from shortlist (househelp)', e);
+      console.error('Failed to start chat from shortlist (service provider)', e);
       setChatError('Could not open conversation. Please try again.');
       setTimeout(() => setChatError(null), 5000);
     }
@@ -310,45 +341,81 @@ export default function HouseholdShortlistPage() {
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className={`flex-1 py-8 ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <h1 className="text-lg font-extrabold text-gray-900 dark:text-white">Saved</h1>
+              <ListingViewToggle value={viewMode} onChange={setViewMode} />
+            </div>
 
-            {(items || []).length === 0 && !loading && !error && (
-              <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
+            {initialLoading && <ShimmerListPlaceholder items={4} />}
+
+            {visibleSavedServiceProviders.length === 0 && !initialLoading && !error && (
+              <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-300 text-base">No shortlisted househelps yet.</p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  Nothing saved yet
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                  Use Save on a service provider you like and they will be kept here, so you can
+                  compare them later without searching again.
+                </p>
+                <button
+                  onClick={() => navigate('/')}
+                  className="mt-6 px-5 py-2 text-sm font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                >
+                  Browse service providers
+                </button>
               </div>
             )}
 
             {chatError && <ErrorAlert message={chatError} className="mb-4" />}
             {error && <ErrorAlert message={error} className="mb-4" />}
 	
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {(items || [])
-                .filter((s) => s.profile_type === "open_for_work")
+            <div className={`${initialLoading ? 'hidden' : 'hb-data-panel-enter'} ${isGridView ? 'grid gap-4 md:grid-cols-2 lg:grid-cols-3' : 'flex flex-col gap-4'}`}>
+              {visibleSavedServiceProviders
                 .map((s) => {
                   const listing = profilesById[s.profile_id] || {};
-                  const househelp = listing?.househelp || {};
-                  const user = househelp?.user || {};
-                  const targetProfileId = househelp?.id || househelp?.profile_id || '';
-                  const targetUserId = househelp?.user_id || user?.id || s.user_id;
-                  const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || 'Househelp';
-                  const initials = name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'HW';
-                  const userId = firstString(househelp.user_id, user.id, s.user_id);
-                  const photos = toStringArray(househelp.photos);
-                  const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
+                  // Prefer the canonical response shape while an older auth
+                  // deployment may still return the legacy nested alias.
+                  const serviceProvider = listing?.service_provider || listing?.househelp || {};
+                  const user = serviceProvider?.user || {};
+                  const targetProfileId = firstString(
+                    serviceProvider?.id,
+                    serviceProvider?.profile_id,
+                    listing?.service_provider_profile_id,
+                    listing?.househelp_profile_id,
+                    listing?.user_profile_id,
+                  );
+                  const targetUserId = firstString(
+                    serviceProvider?.user_id,
+                    user?.id,
+                    listing?.service_provider_user_id,
+                    listing?.househelp_user_id,
+                    listing?.owner_user_id,
+                    s.user_id,
+                  );
+                  const name = `${firstString(user.first_name, serviceProvider.first_name, listing?.first_name)} ${firstString(user.last_name, serviceProvider.last_name, listing?.last_name)}`.trim() || 'Service provider';
+                  const initials = name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'SP';
+                  const userId = firstString(serviceProvider.user_id, user.id, listing?.service_provider_user_id, listing?.househelp_user_id, s.user_id);
+                  const photos = toStringArray(serviceProvider.photos);
+                  const avatar = firstString(serviceProvider.avatar_url, photos[0], profilePhotos[userId]);
                   const scheduleLabel = summarizeSchedule(listing?.work_schedule);
                   const jobTypes = toStringArray(listing?.job_types);
-                  const location = firstString(househelp.town, househelp.location) || 'Location not specified';
-                  const experienceYears = toFiniteNumber(househelp.years_of_experience);
-                  const isOpen = isOpenForWorkListingActive(listing);
+                  const location = formatPlaceOrFallback(serviceProvider.location, { town: serviceProvider.town || listing?.town });
+                  const experienceYears = toFiniteNumber(serviceProvider.years_of_experience ?? listing?.years_of_experience);
                   const updatedAt = listing?.created_at || s.created_at;
+                  const salaryLabel = formatSalary(
+                    listing?.salary_min ?? serviceProvider.salary_expectation,
+                    listing?.salary_max,
+                    listing?.salary_frequency || serviceProvider.salary_frequency
+                  );
+                  const worksWith = [listing?.can_work_with_kids ? 'children' : '', listing?.can_work_with_pets ? 'pets' : ''].filter(Boolean);
                   return (
                     <div
                       key={s.id}
-                      className="bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all"
+                      className={`bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all ${isGridView ? 'flex h-full flex-col' : ''}`}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-lg font-bold overflow-hidden">
+                      <div className={`flex items-start ${isGridView ? 'gap-3' : 'gap-4'}`}>
+                        <div className={`${isGridView ? 'h-12 w-12 text-sm' : 'h-16 w-16 text-lg'} flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-purple-500 to-pink-500 font-bold text-white`}>
                           {avatar ? (
                             <OptimizedImage
                               path={avatar}
@@ -360,35 +427,32 @@ export default function HouseholdShortlistPage() {
                             initials
                           )}
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{name}</h3>
+                        <div className="min-w-0 flex-1">
+                          <div className={isGridView ? 'min-w-0' : 'grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(260px,0.85fr)_minmax(360px,1.4fr)] lg:gap-10'}>
+                            <div className="min-w-0">
+                              <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{name}</h3>
                               <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleRemove(s.profile_id)}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-pink-400 bg-pink-500 text-white transition"
-                                aria-label="Remove open-for-work listing from shortlist"
-                              >
-                                <Heart className="h-4 w-4 fill-current" />
-                              </button>
-                              <span
-                                className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                                  isOpen
-                                    ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'
-                                    : 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
-                                }`}
-                              >
-                                {formatListingStatus(listing?.status)}
-                              </span>
-                            </div>
+                            {!isGridView && (
+                              <ServiceProviderCardDetails
+                                description={firstString(listing?.description)}
+                                workTypes={jobTypes.map((type) => type.replace(/_/g, ' '))}
+                                availability={formatDate(listing?.available_from)}
+                                schedule={scheduleLabel}
+                                experience={experienceYears ? `${experienceYears} yrs` : 'Not specified'}
+                                salary={salaryLabel}
+                                worksWith={worksWith}
+                              />
+                            )}
                           </div>
+
+                          {isGridView && firstString(listing?.description) && (
+                            <p className="mt-3 line-clamp-2 text-sm leading-5 text-gray-600 dark:text-gray-300">{firstString(listing?.description)}</p>
+                          )}
 
                           <div className="mt-3 flex flex-wrap gap-2">
                             {jobTypes.length > 0 ? (
-                              jobTypes.map((type) => (
+                              jobTypes.slice(0, isGridView ? 2 : jobTypes.length).map((type) => (
                                 <span
                                   key={type}
                                   className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
@@ -414,11 +478,7 @@ export default function HouseholdShortlistPage() {
                           <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
                             <p>Experience: {experienceYears ? `${experienceYears} yrs` : 'Not specified'}</p>
                             <p>
-                              Salary: {formatSalary(
-                                listing?.salary_min ?? househelp.salary_expectation,
-                                listing?.salary_max,
-                                listing?.salary_frequency || househelp.salary_frequency
-                              )}
+                              Salary: {salaryLabel}
                             </p>
                             <div className="flex flex-wrap gap-2">
                               {listing?.can_work_with_kids && (
@@ -432,13 +492,21 @@ export default function HouseholdShortlistPage() {
                         </div>
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between">
+                      <div className={`mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${isGridView ? 'mt-auto pt-4' : ''}`}>
                         <span className="text-xs text-gray-400">Updated {formatTimeAgo(updatedAt)}</span>
-                        <div className="flex gap-2">
+                        <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:justify-end">
+                          <button
+                            onClick={() => handleRemove(s.profile_id)}
+                            disabled={removingId === s.profile_id}
+                            className="inline-flex items-center justify-center rounded-xl border border-pink-400 bg-pink-500 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-60"
+                            aria-label="Unsave service provider"
+                          >
+                            {removingId === s.profile_id ? 'Removing...' : 'Saved'}
+                          </button>
                           <button
                             onClick={() => {
                               if (!targetProfileId) return;
-                              navigate(`/househelp/public-profile?profileId=${encodeURIComponent(targetProfileId)}&openForWorkId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
+                              navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(targetProfileId)}&openForWorkId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
                                 state: { profileId: targetProfileId, fromShortlist: true },
                               });
                             }}
@@ -447,7 +515,7 @@ export default function HouseholdShortlistPage() {
                             View Profile
                           </button>
                           <button
-                            onClick={() => handleChatWithHousehelp(targetProfileId, targetUserId)}
+                            onClick={() => handleChatWithServiceProvider(targetProfileId, targetUserId)}
                             className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                             disabled={!targetProfileId || !targetUserId}
                           >
@@ -461,8 +529,8 @@ export default function HouseholdShortlistPage() {
             </div>
 
             <div ref={sentinelRef} className="h-8" />
-            {(loading || loadingProfiles) && (
-              <div className="mt-4 text-center text-gray-600 dark:text-gray-300">Loading...</div>
+            {(loading || loadingProfiles) && items.length > 0 && !waitingForProfiles && (
+              <ShimmerListPlaceholder items={1} className="mt-4" />
             )}
           </div>
         </main>

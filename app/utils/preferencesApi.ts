@@ -1,11 +1,11 @@
-/**
- * Preferences API Client
- * 
- * Handles all interactions with the user preferences backend API
- */
-
 import { preferencesService } from '~/services/grpc/authServices';
-import { getOrCreateSessionId, isAuthenticated, getAuthenticatedUserId } from './userTracking';
+import { getStoredUserId } from '~/utils/authStorage';
+
+/**
+ * Application preferences use auth.PreferencesService for signed-in users.
+ * The local copy remains an immediate cache and anonymous fallback.
+ * Delivery-channel preferences live separately in Notifications.
+ */
 
 export interface UserPreferences {
   theme?: 'light' | 'dark' | 'system';
@@ -30,73 +30,97 @@ export interface PreferencesResponse {
   updated_at: string;
 }
 
-/**
- * Fetch user preferences
- */
-export const fetchPreferences = async (): Promise<PreferencesResponse | null> => {
-  try {
-    const authenticated = isAuthenticated();
-    const userId = authenticated ? (getAuthenticatedUserId() || '') : '';
-    const sessionId = authenticated ? undefined : getOrCreateSessionId();
+const STORAGE_KEY = 'homebit_preferences';
 
-    const data = await preferencesService.getPreferences(userId, sessionId);
-    return data;
-  } catch (error) {
-    console.error('Error fetching preferences:', error);
-    return null;
+const isBrowser = () => typeof window !== 'undefined';
+
+const defaultPreferences = (): UserPreferences => ({
+  theme: 'system',
+  email_notifs: false,
+  show_onboarding: false,
+  compact_view: false,
+  accessibility_mode: false,
+});
+
+const readStoredPreferences = (): UserPreferences => {
+  if (!isBrowser()) return defaultPreferences();
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultPreferences();
+    const parsed = JSON.parse(raw);
+    return { ...defaultPreferences(), ...(parsed && typeof parsed === 'object' ? parsed : {}) };
+  } catch {
+    return defaultPreferences();
   }
 };
 
-/**
- * Update user preferences
- */
+const writeStoredPreferences = (settings: UserPreferences) => {
+  if (!isBrowser()) return;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+};
+
+const toResponse = (settings: UserPreferences): PreferencesResponse => {
+  const now = new Date().toISOString();
+  return {
+    id: 'local-preferences',
+    settings,
+    created_at: now,
+    updated_at: now,
+  };
+};
+
+export const fetchPreferences = async (): Promise<PreferencesResponse | null> => {
+  const cached = readStoredPreferences();
+  const userId = getStoredUserId();
+  if (!userId) return toResponse(cached);
+
+  const remote = await preferencesService.getPreferences(userId);
+  const settings = {
+    ...cached,
+    ...(remote?.preferences || remote?.data || {}),
+  };
+  writeStoredPreferences(settings);
+  return {
+    ...toResponse(settings),
+    id: remote?.id || 'user-preferences',
+    user_id: userId,
+  };
+};
+
 export const updatePreferences = async (
   settings: Partial<UserPreferences>
 ): Promise<PreferencesResponse | null> => {
-  try {
-    const authenticated = isAuthenticated();
-    const userId = authenticated ? (getAuthenticatedUserId() || '') : '';
-    const sessionId = authenticated ? undefined : getOrCreateSessionId();
+  const next = { ...readStoredPreferences(), ...settings };
+  writeStoredPreferences(next);
+  const userId = getStoredUserId();
+  if (!userId) return toResponse(next);
 
-    const data = await preferencesService.updatePreferences(userId, {
-      settings,
-      ...(sessionId ? { session_id: sessionId } : {}),
-    });
-    return data;
-  } catch (error) {
-    console.error('Error updating preferences:', error);
-    return null;
-  }
+  const remote = await preferencesService.updatePreferences(userId, settings);
+  const saved = {
+    ...next,
+    ...(remote?.preferences || remote?.data || {}),
+  };
+  writeStoredPreferences(saved);
+  return {
+    ...toResponse(saved),
+    id: remote?.id || 'user-preferences',
+    user_id: userId,
+  };
 };
 
-/**
- * Migrate anonymous preferences to authenticated user
- * Call this after successful login/signup
- */
 export const migratePreferences = async (): Promise<boolean> => {
-  try {
-    const sessionId = getOrCreateSessionId();
-    const userId = getAuthenticatedUserId() || '';
-    await preferencesService.migrateAnonymousToUser(userId, sessionId);
-    return true;
-  } catch (error) {
-    console.error('Error migrating preferences:', error);
-    return false;
-  }
+  const userId = getStoredUserId();
+  if (!userId || !isBrowser()) return false;
+  const sessionId = window.localStorage.getItem('homebit_session_id');
+  if (!sessionId) return true;
+  await preferencesService.migrateAnonymousToUser(userId, sessionId);
+  return true;
 };
 
-/**
- * Delete user preferences
- */
 export const deletePreferences = async (): Promise<boolean> => {
-  try {
-    const authenticated = isAuthenticated();
-    const userId = authenticated ? (getAuthenticatedUserId() || '') : '';
-    const sessionId = authenticated ? undefined : getOrCreateSessionId();
-    await preferencesService.deletePreferences(userId, sessionId);
-    return true;
-  } catch (error) {
-    console.error('Error deleting preferences:', error);
-    return false;
-  }
+  const userId = getStoredUserId();
+  if (userId) await preferencesService.deletePreferences(userId);
+  if (isBrowser()) window.localStorage.removeItem(STORAGE_KEY);
+  return true;
 };

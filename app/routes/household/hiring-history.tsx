@@ -1,22 +1,31 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { hireRequestService, hireContractService, employmentContractService, interestService, shortlistService, jobService, profileService as grpcProfileService } from '~/services/grpc/authServices';
-import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart } from 'lucide-react';
+import { formatListingPlace } from '~/utils/place';
+import { listingHighlights } from '~/utils/listingFeatures';
+import { ListingCardFacts } from '~/components/listing/ListingCardFacts';
+import { hireRequestService, hireContractService, employmentContractService, shortlistService, jobService, listingApplicationService, employmentService, profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart, Star } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import JobPostModal from '~/components/modals/JobPostModal';
 import { useSSEContextSafe } from '~/contexts/SSEContext';
-import { buildIdentifierMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
+import { buildApplicationContractMap, buildIdentifierMap, buildListingServiceProviderContractMap, findByAnyIdentifier, getServiceProviderCandidateIds } from '~/utils/hiringIdentifiers';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
-import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
+import { ApplicationHistory } from '~/components/hiring/ApplicationHistory';
+import { ListingDetails } from '~/components/listing/ListingDetails';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
+import { hiringAttentionScope, hydrateHiringAttention, isHiringRecordUnattended, markHiringRecordAttended } from '~/utils/hiringAttention';
+import { HiringCardModal, isHiringCardAction } from '~/components/hiring/HiringCardModal';
+import { useProfilePhotos } from '~/hooks/useProfilePhotos';
+import { formatDisplayName } from '~/utils/displayName';
 
 interface HireRequest {
   id: string;
-  househelp_id: string;
+  service_provider_id: string;
   job_type: string;
   start_date?: string;
   salary_offered: number;
@@ -29,7 +38,7 @@ interface HireRequest {
   decline_reason?: string;
   cancel_reason?: string;
   cancellation_message?: string;
-  househelp?: {
+  service_provider?: {
     id: string;
     first_name?: string;
     last_name?: string;
@@ -58,25 +67,131 @@ interface JobPosting {
   title?: string;
   description?: string;
   location?: string | JobLocation;
+  /** Resolved from the listing's ward by the auth service, alongside location. */
+  ward?: string;
+  subcounty?: string;
+  county?: string;
   job_types?: string[];
   start_date?: string;
   max_applicants?: number;
   status?: string;
   created_at?: string;
+  /** When the listing lapses unless the household keeps it open. */
+  expires_at?: string;
   salary_range?: { min?: number; max?: number; currency?: string };
+  listing_feature_groups?: Array<{
+    feature_id?: number | string;
+    feature_name?: string;
+    name?: string;
+    properties?: string[];
+  }>;
+  listing_features?: Array<Record<string, any>>;
 }
 
-const formatJobLocation = (location?: string | JobLocation): string => {
-  if (!location) return 'Location not specified';
-  if (typeof location === 'string') return location;
-  return location.name || location.place || 'Location not specified';
+// Tabs are application statuses, because that is what the hiring process
+// actually is. "awaiting" is the bucket that needs the household to act, kept
+// separate so it cannot get lost among candidates they have already dealt with.
+type TabType = 'jobs' | 'applicants' | 'shortlisted' | 'awaiting' | 'hired' | 'closed';
+
+// Which application statuses belong under each tab.
+//
+// From the household's side: someone applying is an applicant; someone they saved
+// is shortlisted; a provider accepting hands the decision back to them; approved
+// means hired; declined is closed.
+/**
+ * Presents an application in the shape this page already renders.
+ *
+ * The list markup and the profile resolver were both written against the older
+ * interest record, and they key off a provider profile id. Adapting here rather than
+ * rewriting several hundred lines of JSX keeps the change reviewable, and means
+ * the switch to applications is one function rather than a rewrite.
+ */
+function toApplicantRow(application: Record<string, any>): Interest {
+  const [applicantProfileId = ''] = getServiceProviderCandidateIds(application);
+  return {
+    id: String(application.id ?? ''),
+    // The applicant's user_profile id, which is what the profile lookup needs.
+    service_provider_id: applicantProfileId,
+    household_id: '',
+    salary_expectation: Number(application.salary_expectation ?? 0),
+    salary_frequency: String(application.salary_frequency ?? 'monthly'),
+    job_type: application.job_type ? String(application.job_type) : undefined,
+    // The pitch the applicant attached, now stored on the application itself.
+    comments: application.message ? String(application.message) : undefined,
+    status: String(application.status ?? 'initiated'),
+    initiated_by_applicant: Boolean(application.initiated_by_applicant ?? application.initiatedByApplicant),
+    created_at: String(application.created_at ?? application.createdAt ?? ''),
+    listing_id: application.listing_id ?? application.listingId,
+    service_provider: application.service_provider ?? application.applicant ?? application.househelp,
+  } as Interest;
+}
+
+// One empty state per tab. A single message would be wrong on five of six tabs —
+// "no interested service providers" tells someone looking at Hired nothing at all — and
+// an empty tab is the moment a person most needs to know what would fill it.
+/** Whole days until a moment, floored, never negative. */
+function daysUntil(value: string): number {
+  const target = new Date(value).getTime();
+  if (Number.isNaN(target)) return 0;
+  return Math.max(0, Math.floor((target - Date.now()) / (1000 * 60 * 60 * 24)));
+}
+
+/**
+ * Says when a job lapses, in the words a person would use.
+ *
+ * Phrased as a closure rather than an expiry date, because that is the thing the
+ * household needs to act on — and it is what makes the "Keep open" button beside
+ * it mean something.
+ */
+function describeExpiry(value: string): string {
+  const target = new Date(value).getTime();
+  if (Number.isNaN(target)) return '';
+  if (target <= Date.now()) return 'Closing now';
+
+  const days = daysUntil(value);
+  if (days === 0) return 'Closes today';
+  if (days === 1) return 'Closes tomorrow';
+  return `Closes in ${days} days`;
+}
+
+const EMPTY_TAB_COPY: Record<Exclude<TabType, 'jobs'>, { title: string; body: string }> = {
+  applicants: {
+    title: 'No applicants yet',
+    body: 'When someone applies to one of your jobs, they will appear here with their message.',
+  },
+  shortlisted: {
+    title: 'Nobody shortlisted yet',
+    // The visibility claim is true again. Shortlisting now answers the
+    // application rather than writing a private bookmark, which records an
+    // application event with the household as the actor — which is exactly what
+    // the household_advanced check in auth's relationshipTo looks for.
+    body: 'Shortlist an applicant to set them aside while you decide. They will be able to see your household once you do.',
+  },
+  awaiting: {
+    title: 'Nothing waiting on you',
+    body: 'When an applicant accepts, they will appear here for your final approval.',
+  },
+  hired: {
+    title: 'Nobody hired yet',
+    body: 'Once you approve an applicant, they will show here and you will be able to review them after the work.',
+  },
+  closed: {
+    title: 'Nothing closed',
+    body: 'Applications that were declined or withdrawn end up here.',
+  },
 };
 
-type TabType = 'applicants' | 'jobs' | 'all' | 'pending' | 'accepted' | 'declined' | 'cancelled';
+const TAB_STATUSES: Record<Exclude<TabType, 'jobs'>, string[]> = {
+  applicants:  ['initiated'],
+  shortlisted: ['shortlisted'],
+  awaiting:    ['accepted'],
+  hired:       ['approved'],
+  closed:      ['declined'],
+};
 
 interface Interest {
   id: string;
-  househelp_id: string;
+  service_provider_id: string;
   household_id: string;
   salary_expectation: number;
   salary_frequency: string;
@@ -84,9 +199,10 @@ interface Interest {
   job_type?: string;
   comments?: string;
   status: string;
+  initiated_by_applicant?: boolean;
   viewed_at?: string;
   created_at: string;
-  househelp?: {
+  service_provider?: {
     id: string;
     first_name?: string;
     last_name?: string;
@@ -121,18 +237,25 @@ const extractTotal = (raw: any, fallbackLength: number): number => {
   return typeof total === 'number' ? total : fallbackLength;
 };
 
+const normalizeHireRequest = (raw: any): HireRequest => ({
+  ...(raw || {}),
+  service_provider_id:
+    raw?.service_provider_id || raw?.service_provider_profile_id || raw?.househelp_id || raw?.househelp_profile_id || '',
+  service_provider: raw?.service_provider || raw?.househelp,
+});
+
 const CANCEL_REASONS = [
   { value: 'schedule_change', label: 'My schedule changed' },
-  { value: 'found_alternative', label: 'Found another househelp' },
+  { value: 'found_alternative', label: 'Found another service provider' },
   { value: 'budget', label: 'Budget or salary mismatch' },
   { value: 'no_longer_needed', label: 'No longer need assistance' },
   { value: 'communication', label: 'Communication issues' },
   { value: 'other', label: 'Other (please specify)' },
 ] as const;
 
-const getHousehelpInitials = (househelp?: HireRequest['househelp']) => {
-  const first = (househelp?.first_name || househelp?.user?.first_name)?.trim();
-  const last = (househelp?.last_name || househelp?.user?.last_name)?.trim();
+const getServiceProviderInitials = (serviceProvider?: HireRequest['service_provider']) => {
+  const first = (serviceProvider?.first_name || serviceProvider?.user?.first_name)?.trim();
+  const last = (serviceProvider?.last_name || serviceProvider?.user?.last_name)?.trim();
   if (first && last) return `${first[0]}${last[0]}`.toUpperCase();
   if (first) {
     const parts = first.split(/\s+/);
@@ -140,14 +263,13 @@ const getHousehelpInitials = (househelp?: HireRequest['househelp']) => {
     return first.slice(0, 2).toUpperCase();
   }
   if (last) return last.slice(0, 2).toUpperCase();
-  return 'HH';
+  return 'SP';
 };
 
-const getHousehelpName = (househelp?: HireRequest['househelp']) => {
-  const first = househelp?.user?.first_name || househelp?.first_name || '';
-  const last = househelp?.user?.last_name || househelp?.last_name || '';
-  const full = `${first} ${last}`.trim();
-  return full || 'Househelp';
+const getServiceProviderName = (serviceProvider?: HireRequest['service_provider']) => {
+  const first = serviceProvider?.user?.first_name || serviceProvider?.first_name || '';
+  const last = serviceProvider?.user?.last_name || serviceProvider?.last_name || '';
+  return formatDisplayName(first, last, 'Service provider');
 };
 
 export default function HiringHistory() {
@@ -157,21 +279,24 @@ export default function HiringHistory() {
   const sseContext = useSSEContextSafe();
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['jobs', 'applicants'];
+    const validTabs: TabType[] = ['jobs', 'applicants', 'shortlisted', 'awaiting', 'hired', 'closed'];
     return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'jobs';
   });
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
   const [applicants, setApplicants] = useState<Interest[]>([]);
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [applicantsCount, setApplicantsCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [hasLoadedApplicants, setHasLoadedApplicants] = useState(false);
+  const [hasLoadedJobs, setHasLoadedJobs] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState<HireRequest | null>(null);
+  const [selectedHiringCard, setSelectedHiringCard] = useState<{ kind: 'job' | 'application'; record: any } | null>(null);
   const [cancelRequest, setCancelRequest] = useState<HireRequest | null>(null);
   const [showJobModal, setShowJobModal] = useState(false);
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
+  const [viewingJob, setViewingJob] = useState<JobPosting | null>(null);
   const [jobToDelete, setJobToDelete] = useState<JobPosting | null>(null);
   const [jobActionLoading, setJobActionLoading] = useState<string | null>(null);
   const [jobsSuccess, setJobsSuccess] = useState<string | null>(null);
@@ -192,10 +317,35 @@ export default function HiringHistory() {
   const [chatLoadingInterestId, setChatLoadingInterestId] = useState<string | null>(null);
   const [shortlistLoadingInterestId, setShortlistLoadingInterestId] = useState<string | null>(null);
   const [shortlistedProfileIds, setShortlistedProfileIds] = useState<Set<string>>(() => new Set());
-  // Map all known househelp identifiers to the matching employment contract.
+  const [rejecting, setRejecting] = useState<Interest | null>(null);
+  const [terminating, setTerminating] = useState<Interest | null>(null);
+  // Which applicant's history is open. One at a time: the card is already dense,
+  // and the history is something you go looking for rather than scan.
+  const [historyFor, setHistoryFor] = useState<string | null>(null);
+  // Service provider user ids whose engagement with this household has ended.
+  const [endedEngagements, setEndedEngagements] = useState<Set<string>>(() => new Set());
+  const [terminateReason, setTerminateReason] = useState('');
+  const [rejectReason, setRejectReason] = useState('');
+  // Map all known service-provider identifiers to the matching employment contract.
   const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, any>>({});
+  const [attentionRevision, setAttentionRevision] = useState(0);
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
+  const attentionScope = hiringAttentionScope(
+    currentHouseholdProfileId || getStoredUserProfileId(),
+    'household',
+  );
+
+  useEffect(() => {
+    void hydrateHiringAttention(attentionScope);
+    const refreshAttention = () => setAttentionRevision((value) => value + 1);
+    window.addEventListener('hiring-attention-updated', refreshAttention);
+    window.addEventListener('storage', refreshAttention);
+    return () => {
+      window.removeEventListener('hiring-attention-updated', refreshAttention);
+      window.removeEventListener('storage', refreshAttention);
+    };
+  }, [attentionScope]);
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -206,13 +356,93 @@ export default function HiringHistory() {
     setSearchParams(nextSearchParams, { replace: true });
   };
 
-  const removeHousehelpFromShortlist = async (profileId?: string | null) => {
+  useEffect(() => {
+    const requestedJobId = searchParams.get('job');
+    if (!requestedJobId || jobs.length === 0) return;
+    if (selectedHiringCard?.kind === 'job' && String(selectedHiringCard.record?.id) === requestedJobId) return;
+    const requestedJob = jobs.find((job) => String(job.id) === requestedJobId);
+    if (requestedJob) setSelectedHiringCard({ kind: 'job', record: requestedJob });
+  }, [jobs, searchParams, selectedHiringCard]);
+
+  const closeHiringCard = () => {
+    setSelectedHiringCard(null);
+    if (!searchParams.has('job')) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('job');
+    setSearchParams(next, { replace: true });
+  };
+
+  // Ids arrive as strings from the shortlist service and are read off records
+  // that have carried them as numbers, so both sides are keyed the same way
+  // before being compared.
+  // The applicant's user id, which is not on the application.
+  //
+  // toApplicantRow builds rows out of what ListApplications returns, and that
+  // carries applicant_profile_id — a profile id, not a user id — and no nested
+  // service provider at all. Several older response shapes only carried a nested user id,
+  // were therefore reading undefined every time: ending an engagement, opening a
+  // review, and deciding whether a hire had finished. Each failed quietly or did
+  // nothing. The profiles this page already resolves are where the user id
+  // actually lives.
+  const serviceProviderUserIdFor = useCallback(
+    (interest: Interest): string => {
+      const profileId = interest.service_provider_id || interest.service_provider?.id;
+      const profile = profileId ? profilesById[profileId] : undefined;
+      return String(
+        profile?.user_id ??
+          profile?.userId ??
+          (profile?.user && typeof profile.user === 'object' ? (profile.user as any).id : '') ??
+          interest.service_provider?.user_id ??
+          '',
+      );
+    },
+    [profilesById],
+  );
+  const applicantUserIds = useMemo(
+    () => Array.from(new Set(applicants.map(serviceProviderUserIdFor).filter(Boolean))),
+    [applicants, serviceProviderUserIdFor],
+  );
+  const applicantProfilePhotos = useProfilePhotos(applicantUserIds);
+
+  const refreshEngagements = useCallback(async () => {
+    const userId = getStoredUserId();
+    if (!userId) return;
+    try {
+      const raw = await employmentService.listByHousehold(userId, 100, 0);
+      const rows = raw?.data?.data ?? raw?.data ?? raw ?? [];
+      const ended = new Set<string>();
+      for (const row of Array.isArray(rows) ? rows : []) {
+        const status = String(row?.status ?? '').toLowerCase();
+        const serviceProvider = row?.service_provider_user_id || row?.househelp_user_id;
+        if (serviceProvider && ['terminated', 'completed', 'ended'].includes(status)) {
+          ended.add(String(serviceProvider));
+        }
+      }
+      setEndedEngagements(ended);
+    } catch {
+      // Not fatal. Without it the tabs fall back to application status alone,
+      // which is where they were before: a hire that has ended still reads as
+      // current, and nothing else breaks.
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshEngagements();
+  }, [refreshEngagements]);
+
+  const isShortlistedProfile = useCallback(
+    (profileId?: string | null) =>
+      Boolean(profileId) && shortlistedProfileIds.has(String(profileId)),
+    [shortlistedProfileIds],
+  );
+
+  const removeServiceProviderFromShortlist = async (profileId?: string | null) => {
     if (!profileId) return;
     try {
       await shortlistService.deleteShortlist(profileId);
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (err) {
-      console.warn('Failed to remove househelp from shortlist:', err);
+      console.warn('Failed to remove service provider from shortlist:', err);
     }
   };
 
@@ -248,6 +478,25 @@ export default function HiringHistory() {
     }
   };
 
+  // Keeps a job open for another three weeks. Listings lapse by default, so this
+  // is how a household says it is still hiring — the action the renewal reminder
+  // asks for.
+  const handleRenewJob = async (job: JobPosting) => {
+    if (!job?.id) return;
+    setJobActionLoading(job.id);
+    setError(null);
+    setJobsSuccess(null);
+    try {
+      await jobService.renewListing(job.id);
+      setJobsSuccess('Job kept open for another three weeks.');
+      await fetchJobs();
+    } catch (err: any) {
+      setError(err.message || 'Could not keep this job open. Please try again.');
+    } finally {
+      setJobActionLoading(null);
+    }
+  };
+
   const handleDeleteJob = async () => {
     if (!jobToDelete?.id) return;
     setJobActionLoading(jobToDelete.id);
@@ -271,7 +520,10 @@ export default function HiringHistory() {
       try {
         const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
         const items = extractEnvelopeArray<any>(raw);
-        setEmploymentContractMap(buildIdentifierMap(items, getHousehelpCandidateIds));
+        const next = buildIdentifierMap(items, getServiceProviderCandidateIds);
+        Object.assign(next, buildApplicationContractMap(items));
+        Object.assign(next, buildListingServiceProviderContractMap(items));
+        setEmploymentContractMap(next);
       } catch (err) {
         // Non-critical
       }
@@ -305,7 +557,7 @@ export default function HiringHistory() {
     try {
       const raw = await shortlistService.listByHousehold('');
       const shortlistItems = extractEnvelopeArray<{ profile_id?: string }>(raw);
-      setShortlistedProfileIds(new Set(shortlistItems.map((item) => item.profile_id).filter((id): id is string => Boolean(id))));
+      setShortlistedProfileIds(new Set(shortlistItems.map((item) => (item.profile_id ? String(item.profile_id) : '')).filter(Boolean)));
     } catch (err) {
       console.error('Failed to fetch shortlist for applicants view:', err);
     }
@@ -315,10 +567,8 @@ export default function HiringHistory() {
     let cancelled = false;
 
     const loadShortlistedProfiles = async () => {
-      try {
+      if (!cancelled) {
         await refreshShortlistedProfiles();
-      } finally {
-        if (cancelled) return;
       }
     };
 
@@ -359,7 +609,7 @@ export default function HiringHistory() {
 
   useEffect(() => {
     const missingIds = applicants.reduce<string[]>((acc, interest) => {
-      const potentialId = interest.househelp_id || interest.househelp?.id;
+      const potentialId = interest.service_provider_id || interest.service_provider?.id;
       if (typeof potentialId === 'string' && !(potentialId in profilesById)) {
         acc.push(potentialId);
       }
@@ -375,7 +625,7 @@ export default function HiringHistory() {
     const loadProfiles = async () => {
       try {
         setLoadingProfiles(true);
-        const raw = await grpcProfileService.searchMultipleWithUser('', 'househelp', { profile_ids: missingIds });
+        const raw = await grpcProfileService.searchMultipleWithUser('', 'service_provider', { profile_ids: missingIds });
         if (cancelled) return;
         const profileList = extractEnvelopeArray<any>(raw);
         if (!Array.isArray(profileList) || profileList.length === 0) return;
@@ -414,94 +664,170 @@ export default function HiringHistory() {
     return diffDays;
   };
 
+  // Applications drive the badges on every tab, including while Jobs is the
+  // active default. Previously they were not loaded on Jobs, so the page showed
+  // no tab badges while the global Hiring badge correctly reported attention.
   useEffect(() => {
-    if (activeTab === 'applicants') {
-      fetchApplicants();
-    } else if (activeTab === 'jobs') {
-      fetchJobs();
-    } else {
-      fetchHireRequests();
-    }
-  }, [activeTab, offset]);
+    void fetchApplicants();
+  }, []);
+
+  // The jobs are needed on every tab, not only the Jobs one.
+  //
+  // Applicant cards read what the job pays off its advert, and drawing up a
+  // contract fills the form from it. Both were written against this list while
+  // it was only ever loaded on the Jobs tab — so on "Needs your reply" it was
+  // empty, the salary read "Not specified", and the contract form opened blank
+  // beside a listing that had every one of those answers in it.
+  useEffect(() => {
+    void fetchJobs();
+  }, [offset]);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['jobs', 'applicants'];
+    const validTabs: TabType[] = ['jobs', 'applicants', 'shortlisted', 'awaiting', 'hired', 'closed'];
     if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
       setActiveTab(tabParam as TabType);
       setOffset(0);
     }
   }, [activeTab, searchParams]);
 
-  // Fetch interest count for badge
-  useEffect(() => {
-    const fetchApplicantCount = async () => {
-      try {
-        const raw = await interestService.listByHousehold('');
-        const items = raw?.data || raw || [];
-        setApplicantsCount(Array.isArray(items) ? items.length : 0);
-      } catch (err) {
-        console.error('Failed to fetch interest count:', err);
-      }
-    };
 
-    fetchApplicantCount();
-  }, []);
-
-  // SSE: auto-refetch applicants when a new application is received
+  // Keep every tab badge in sync with the full hiring event stream.
   useEffect(() => {
     if (!sseContext) return;
-    const unsub = sseContext.subscribe('auth.household.updated', (event: any) => {
+    const unsubscribers = ['hiring.application.submitted', 'hiring.application.shortlisted',
+      'hiring.application.accepted', 'hiring.application.declined', 'hiring.application.approved',
+      'hiring.application.closed', 'hiring.contract.signed', 'hiring.contract.terminated',
+      'hiring.employment_contract.fully_signed'].map((eventType) =>
+      sseContext.subscribe(eventType, () => void fetchApplicants()),
+    );
+    unsubscribers.push(sseContext.subscribe('auth.household.updated', (event: any) => {
       const action = event?.data?.action;
       if (action === 'interest_received') {
-        fetchApplicants();
+        void fetchApplicants();
       }
-    });
-    return unsub;
+    }));
+    return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
   }, [sseContext]);
 
+  // Every application across this household's listings, in one request.
+  //
+  // Applications rather than interests: interests hold one row per household and
+  // provider pair, so a candidate applying to a second job was rejected by that
+  // unique constraint and never appeared here at all. Applications are per job,
+  // and they carry the status these tabs are built from.
+  //
+  // Fetched unfiltered and grouped in the browser, so every tab count is accurate
+  // from one round trip and switching tabs is instant. A household's own
+  // applications are a bounded set, so this stays small.
   const fetchApplicants = async () => {
-    setLoading(true);
     setError(null);
     try {
-      const raw = await interestService.listByHousehold('');
-      const items = extractEnvelopeArray<Interest>(raw);
-      setApplicants(items);
+      const ownerProfileId = getStoredUserProfileId();
+      if (!ownerProfileId) {
+        setApplicants([]);
+        return;
+      }
+      const raw = await listingApplicationService.listApplications({ ownerProfileId, limit: 200 });
+      const rows = extractEnvelopeArray<any>(raw);
+      setApplicants(rows.map(toApplicantRow));
     } catch (err: any) {
       setError(err.message || 'Failed to load applicants');
     } finally {
-      setLoading(false);
+      setHasLoadedApplicants(true);
     }
   };
 
   const fetchJobs = async () => {
-    setLoading(true);
     setError(null);
     try {
-      const raw = await jobService.getJobsByUserId('');
+      const raw = await jobService.listJobs(limit, offset, getStoredUserProfileId());
       const payload = raw?.data || raw || [];
       const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
       setJobs(items as JobPosting[]);
     } catch (err: any) {
       setError(err.message || 'Failed to load job postings');
     } finally {
-      setLoading(false);
+      setHasLoadedJobs(true);
     }
   };
 
   const fetchHireRequests = async () => {
-    setLoading(true);
     setError(null);
     try {
-      const status = activeTab !== 'all' ? activeTab : undefined;
-      const raw = await hireRequestService.listHireRequests('', 'household', status);
+      // No status filter: the tab names are application statuses now, and hire
+      // requests are a separate legacy concept that does not share them.
+      const raw = await hireRequestService.listHireRequests('', 'household');
       const items = extractEnvelopeArray<HireRequest>(raw);
-      setHireRequests(items);
+      setHireRequests(items.map(normalizeHireRequest));
       setTotal(extractTotal(raw, items.length));
     } catch (err: any) {
       setError(err.message || 'Failed to load hiring history');
+    }
+  };
+
+  // Drawing up the contract once somebody has accepted.
+  //
+  // The helper below builds one from a hire request, a record the newer flow no
+  // longer creates. An accepted application is the same agreement in the tables
+  // that are actually written now, so it gets its own way through.
+  const createContractFromApplication = async (interest: Interest) => {
+    setContractCreating(interest.id);
+    setError(null);
+    try {
+      const contract = await hireContractService.createFromHireRequest('', {
+        application_id: interest.id,
+      });
+      const contractId = contract?.id || contract?.data?.id || '';
+
+      // The contract form opens knowing who it is for and what the job is.
+      //
+      // It was opened with the contract id alone, so the form had no service provider
+      // and refused to save with "job title, salary, and service provider are
+      // required" — on a form the household had just filled in by hand. The
+      // legacy path passed these; the application path was written without
+      // them.
+      //
+      // The rest comes off the advert, which the household already wrote. Asking
+      // for it again is not only retyping: a second description of the same job
+      // can disagree with the one the service provider answered, and it is the contract
+      // that binds.
+      const listing = jobs.find(
+        (job) => String(job.id) === String((interest as any).listing_id ?? ''),
+      );
+      const params = new URLSearchParams({
+        backTo: backToPath,
+        backLabel: 'Back to Hiring',
+      });
+      if (contractId) params.set('hire_contract_id', String(contractId));
+      const serviceProviderId = getServiceProviderCandidateIds(interest)[0];
+      if (serviceProviderId) params.set('service_provider_id', serviceProviderId);
+      params.set('application_id', interest.id);
+      if ((interest as any).listing_id) params.set('listing_id', String((interest as any).listing_id));
+
+      if (listing) {
+        const posted = listingHighlights(listing).salary;
+        if (listing.title) params.set('job_type', String(listing.title));
+        if (listing.description) params.set('job_description', String(listing.description));
+        const place = formatListingPlace(listing);
+        if (place) params.set('work_location', place);
+        // Frequency reads straight off the advert's "monthly: …" prefix. The
+        // figure does not: a posted band is a band, and choosing an end of it
+        // for somebody is not a default to set quietly, so it is shown beside
+        // the field for the household to settle.
+        const frequency = posted.split(':')[0]?.trim().toLowerCase();
+        if (['hourly', 'daily', 'weekly', 'monthly'].includes(frequency)) {
+          params.set('salary_frequency', frequency);
+        }
+        if (posted) params.set('posted_salary', posted);
+        if (listing.start_date) params.set('start_date', String(listing.start_date).split('T')[0]);
+      }
+
+      navigate(`/household/employment-contract?${params.toString()}`);
+    } catch (err: any) {
+      setError(err?.message || 'We could not draw up a contract. Please try again.');
     } finally {
-      setLoading(false);
+      setContractCreating(null);
     }
   };
 
@@ -511,7 +837,7 @@ export default function HiringHistory() {
       const contract = await hireContractService.createFromHireRequest('', { hire_request_id: request.id });
       // Navigate to employment contract page pre-filled with hire request data
       const params = new URLSearchParams({
-        househelp_id: request.househelp_id,
+        service_provider_id: getServiceProviderCandidateIds(request)[0] || '',
         hire_contract_id: contract.id || contract.data?.id || '',
         job_type: request.job_type || '',
         salary: String(request.salary_offered || ''),
@@ -531,7 +857,7 @@ export default function HiringHistory() {
   const navigateToEmploymentContract = (request: HireRequest) => {
     const existingEmploymentContract = findByAnyIdentifier(
       employmentContractMap,
-      getHousehelpCandidateIds(request),
+      getServiceProviderCandidateIds(request),
     );
     const existingECId = existingEmploymentContract?.id;
     if (existingECId) {
@@ -543,7 +869,7 @@ export default function HiringHistory() {
       navigate(`/household/employment-contract?${params.toString()}`);
     } else {
       const params = new URLSearchParams({
-        househelp_id: request.househelp_id,
+        service_provider_id: getServiceProviderCandidateIds(request)[0] || '',
         job_type: request.job_type || '',
         salary: String(request.salary_offered || ''),
         salary_frequency: request.salary_frequency || '',
@@ -553,6 +879,16 @@ export default function HiringHistory() {
       if (request.start_date) params.set('start_date', request.start_date.split('T')[0]);
       navigate(`/household/employment-contract?${params.toString()}`);
     }
+  };
+
+  const viewEmploymentContract = (contract: { id?: string } | null | undefined) => {
+    if (!contract?.id) return;
+    const params = new URLSearchParams({
+      id: String(contract.id),
+      backTo: backToPath,
+      backLabel: 'Back to Hiring',
+    });
+    navigate(`/household/employment-contract?${params.toString()}`);
   };
 
   const openCancelModal = (request: HireRequest) => {
@@ -589,9 +925,13 @@ export default function HiringHistory() {
     setCancelError(null);
 
     try {
+      await hireRequestService.updateHireRequest(cancelRequest.id, {
+        closure_reason: resolvedReason,
+        closure_feedback: cancelMessage.trim(),
+      });
       await hireRequestService.cancelHireRequest(cancelRequest.id);
 
-      await removeHousehelpFromShortlist(cancelRequest.househelp?.id || cancelRequest.househelp_id);
+      await removeServiceProviderFromShortlist(cancelRequest.service_provider?.id || cancelRequest.service_provider_id);
       setCancelRequest(null);
       fetchHireRequests();
     } catch (err: any) {
@@ -653,66 +993,148 @@ export default function HiringHistory() {
     return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const formatJobSalary = (range?: JobPosting['salary_range']) => {
-    if (!range) return 'Not specified';
-    const min = range.min ? `KES ${range.min.toLocaleString()}` : '';
-    const max = range.max ? `KES ${range.max.toLocaleString()}` : '';
-    if (min && max) return `${min} - ${max}`;
-    return min || max || 'Not specified';
-  };
+  // One grouping drives both the counts and the list, so a tab can never show a
+  // number that disagrees with what it contains.
+  const applicantsByTab = useMemo(() => {
+    const groups: Record<string, Interest[]> = {
+      applicants: [], shortlisted: [], awaiting: [], hired: [], closed: [],
+    };
+    for (const row of applicants) {
+      const listingId = String((row as any).listing_id || '');
+      const serviceProviderUserId = serviceProviderUserIdFor(row);
+      const linkedContract = employmentContractMap[`application:${row.id}`] ||
+        employmentContractMap[`listing-service-provider:${listingId}:${serviceProviderUserId}`];
+      const linkedStatus = String(linkedContract?.storage_status || linkedContract?.status || '').toLowerCase();
+      if (['active', 'signed_by_both', 'fully_signed'].includes(linkedStatus)) {
+        groups.hired.push(row);
+        continue;
+      }
+      if (['completed', 'terminated', 'ended', 'expired', 'cancelled'].includes(linkedStatus)) {
+        groups.closed.push(row);
+        continue;
+      }
+      // A hire that has ended belongs with the finished work, not with the
+      // current work, whatever the application still says.
+      //
+      // "approved" records that the hire happened, not that it is still
+      // happening — that lives on the engagement. Read from the application
+      // alone, a finished job sits under Hired for good.
+      const serviceProviderUserID = serviceProviderUserIdFor(row);
+      if (
+        row.status === 'approved' &&
+        serviceProviderUserID &&
+        endedEngagements.has(String(serviceProviderUserID))
+      ) {
+        groups.closed.push(row);
+        continue;
+      }
+
+      for (const [tab, statuses] of Object.entries(TAB_STATUSES)) {
+        if (statuses.includes(row.status)) {
+          groups[tab].push(row);
+          break;
+        }
+      }
+    }
+    return groups;
+  }, [applicants, employmentContractMap, endedEngagements, serviceProviderUserIdFor]);
+
+  // Any status change is a fresh item until a card-level action acknowledges it.
+  useEffect(() => {
+    setApplicantsCount(applicants.filter((record) =>
+      isHiringRecordUnattended(attentionScope, 'application', record),
+    ).length);
+  }, [applicants, applicantsByTab, attentionRevision, attentionScope]);
+
+  // What the active tab shows. 'jobs' renders its own list, so anything else
+  // falls back to an empty group rather than the whole set.
+  const visibleApplicants = useMemo(
+    () => (activeTab === 'jobs' ? [] : applicantsByTab[activeTab] ?? []),
+    [activeTab, applicantsByTab],
+  );
+  // Jobs and applications load concurrently. A shared boolean let whichever
+  // request finished first hide the skeleton for the other one, briefly
+  // rendering an incorrect empty state. Only the data needed by the selected
+  // tab now controls its first paint; later realtime refreshes retain the
+  // existing rows instead of blanking the panel again.
+  const loading = activeTab === 'jobs'
+    ? !hasLoadedJobs
+    : !hasLoadedApplicants || !hasLoadedJobs;
 
   const tabs: { key: TabType; label: string; count?: number }[] = useMemo(
     () => [
       { key: 'jobs', label: 'Jobs' },
-      { key: 'applicants', label: 'Applicants', count: applicantsCount },
+      // Counts only where a number tells the household something. "Applicants"
+      // and "Needs your reply" are queues to work through; hired and closed are
+      // history, and a badge on history reads as something to action.
+      ...(['applicants', 'shortlisted', 'awaiting', 'hired', 'closed'] as const).map((key) => ({
+        key,
+        label: key === 'applicants' ? 'Applicants' : key === 'shortlisted' ? 'Shortlisted' : key === 'awaiting' ? 'Needs your reply' : key === 'hired' ? 'Contracts' : 'Closed',
+        count: applicantsByTab[key].filter((record) =>
+          isHiringRecordUnattended(attentionScope, 'application', record),
+        ).length,
+      })),
     ],
-    [applicantsCount],
+    [applicantsByTab, attentionRevision, attentionScope],
   );
 
-  const handleViewInterest = async (interest: Interest) => {
-    // Mark as viewed if not already
-    if (!interest.viewed_at) {
-      try {
-        await interestService.markViewed(interest.id);
-        setApplicantsCount((prev) => Math.max(0, prev - 1));
-      } catch (err) {
-        console.error('Failed to mark interest as viewed:', err);
-      }
+  const handleViewInterest = (interest: Interest | HireRequest) => {
+    // No "mark as viewed": applications have no such flag, and the tabs already
+    // say what needs attention by status. Nothing is lost — a read receipt was
+    // never shown to the applicant.
+    // Navigate to the service-provider profile using its profile id.
+    const profileId = getServiceProviderCandidateIds(interest)[0];
+    if (!profileId) {
+      setError("We couldn't identify this service provider's profile. Refresh the page and try again.");
+      return;
     }
-    // Navigate to househelp profile using profileId
-    const profileId = interest.househelp_id;
-    navigate(`/househelp/public-profile?profileId=${profileId}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
-      state: { backTo: backToPath, backLabel: 'Back to Hiring' },
+    navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
+      state: { profileId, backTo: backToPath, backLabel: 'Back to Hiring' },
     });
   };
 
+  // Advancing an applicant. Which transition depends on where they are: a
+  // shortlisted candidate is promoted into a live application, and one who has
+  // already accepted is given final approval.
+  //
+  // Both record the household as the actor, which is what lets the applicant see
+  // the household's profile from that point — the signal that the interest is
+  // real rather than someone merely having applied.
   const handleAcceptInterest = async (interest: Interest) => {
-    try {
-      await interestService.acceptInterest(interest.id);
-      fetchApplicants();
-      setApplicantsCount((prev) => Math.max(0, prev - 1));
-      window.dispatchEvent(new Event('hiring-updated'));
-    } catch (err) {
-      console.error('Failed to accept interest:', err);
+    const actorProfileId = getStoredUserProfileId();
+    if (!actorProfileId) {
+      setError('We could not identify your household profile. Please sign in again.');
+      return;
     }
-  };
-
-  const handleDeclineInterest = async (interest: Interest) => {
+    setShortlistLoadingInterestId(interest.id);
+    setError(null);
+    setShortlistSuccess(null);
     try {
-      await interestService.declineInterest(interest.id);
-      fetchApplicants();
-      setApplicantsCount((prev) => Math.max(0, prev - 1));
+      if (interest.status === 'shortlisted') {
+        await listingApplicationService.promoteApplication(interest.id, actorProfileId);
+      } else {
+        await listingApplicationService.approveApplication(interest.id, actorProfileId);
+      }
+      await fetchApplicants();
       window.dispatchEvent(new Event('hiring-updated'));
-    } catch (err) {
-      console.error('Failed to decline interest:', err);
+      setShortlistSuccess(
+        interest.status === 'shortlisted'
+          ? 'Offer sent. They can confirm or decline it from Hiring or Inbox.'
+          : 'Hire confirmed. HomeBit has recorded this work relationship; a formal contract is optional.',
+      );
+    } catch (err: any) {
+      console.error('Failed to advance application:', err);
+      setError(err?.message || 'We could not update this application. Please try again.');
+    } finally {
+      setShortlistLoadingInterestId(null);
     }
   };
 
   const handleChatWithApplicant = async (interest: Interest) => {
-    const profileId = interest.househelp_id || interest.househelp?.id;
+    const profileId = interest.service_provider_id || interest.service_provider?.id;
     const profile = profileId ? profilesById[profileId] : undefined;
-    const househelpUserId = profile?.user_id || profile?.user?.id || (profile?.user && 'id' in profile.user ? profile.user.id : undefined) || profile?.userId || (typeof interest.househelp?.user === 'object' ? (interest.househelp.user as any)?.id : undefined);
-    if (!currentUserId || !profileId || !househelpUserId) {
+    const serviceProviderUserId = profile?.user_id || profile?.user?.id || (profile?.user && 'id' in profile.user ? profile.user.id : undefined) || profile?.userId || (typeof interest.service_provider?.user === 'object' ? (interest.service_provider.user as any)?.id : undefined);
+    if (!currentUserId || !profileId || !serviceProviderUserId) {
       setChatError('Missing information to start a chat.');
       return;
     }
@@ -722,8 +1144,8 @@ export default function HiringHistory() {
     try {
       const payload: StartConversationPayload = {
         household_user_id: currentUserId,
-        househelp_user_id: househelpUserId,
-        househelp_profile_id: profileId,
+        service_provider_user_id: serviceProviderUserId,
+        service_provider_profile_id: profileId,
       };
 
       if (currentHouseholdProfileId) {
@@ -740,15 +1162,22 @@ export default function HiringHistory() {
     }
   };
 
-  const handleShortlistApplicant = async (interest: Interest) => {
-    const profileId = interest.househelp_id || interest.househelp?.id;
-    if (!profileId) {
-      setShortlistError('Missing househelp profile information.');
-      return;
-    }
-
-    if (shortlistedProfileIds.has(profileId)) {
-      setShortlistSuccess('Already in your shortlist.');
+  // Shortlisting and rejecting are the two answers a household can give an
+  // application, and both go through the same call.
+  //
+  // Shortlist used to write a personal bookmark into the saved list — the same
+  // store the service provider's saved jobs live in. It reported "Added to shortlist"
+  // truthfully and filed the applicant under the navbar's Saved page, which is
+  // not where the household went looking, while the application itself stayed
+  // at "initiated" and the Shortlisted tab beside it stayed empty.
+  const answerApplication = async (
+    interest: Interest,
+    response: 'shortlisted' | 'declined',
+    note = '',
+  ) => {
+    const actorProfileId = getStoredUserProfileId();
+    if (!actorProfileId) {
+      setShortlistError('We could not tell which household you are. Please sign in again.');
       return;
     }
 
@@ -756,29 +1185,105 @@ export default function HiringHistory() {
     setShortlistError(null);
     setShortlistSuccess(null);
     try {
-      await shortlistService.createShortlist('', 'household', {
-        profile_id: profileId,
-        profile_type: 'househelp',
-      });
-      setShortlistedProfileIds((prev) => {
-        const next = new Set(prev);
-        next.add(profileId);
-        return next;
-      });
-      window.dispatchEvent(new CustomEvent('shortlist-updated'));
-      await refreshShortlistedProfiles();
-      setShortlistSuccess('Added to shortlist.');
+      await listingApplicationService.respondToApplication(
+        interest.id,
+        actorProfileId,
+        response,
+        note,
+      );
+      // Re-read rather than patched in place. Which tab an applicant belongs to
+      // is decided by their status, and guessing the new one here is how a list
+      // and the tabs above it drift apart.
+      await fetchApplicants();
+      setShortlistSuccess(
+        response === 'shortlisted'
+          ? 'Shortlisted. They are in the Shortlisted tab, and we have told them.'
+          : 'Application closed. We have told them.',
+      );
     } catch (err: any) {
-      console.error('Failed to shortlist applicant:', err);
-      setShortlistError(err?.message || 'Failed to add to shortlist.');
+      console.error('Failed to answer application:', err);
+      setShortlistError(
+        err?.message ||
+          (response === 'shortlisted'
+            ? 'We could not shortlist this applicant. Please try again.'
+            : 'We could not close this application. Please try again.'),
+      );
     } finally {
       setShortlistLoadingInterestId(null);
     }
   };
 
+  // Ending a job that is under way.
+  //
+  // The reason is required here, unlike a rejection. Somebody is losing work
+  // they had, and "no reason given" is not something to make easy — it also has
+  // to hold up if either of them ever needs to say what happened.
+  const confirmTermination = async () => {
+    if (!terminating) return;
+    const interest = terminating;
+    const reason = terminateReason.trim();
+    if (!reason) return;
+
+    const serviceProviderUserId = serviceProviderUserIdFor(interest);
+    if (!serviceProviderUserId) {
+      setError('We could not tell whose engagement this is. Please reload and try again.');
+      return;
+    }
+
+    setTerminating(null);
+    setTerminateReason('');
+    setShortlistLoadingInterestId(interest.id);
+    setError(null);
+    try {
+      await employmentService.terminate(serviceProviderUserId, reason);
+      await Promise.all([fetchApplicants(), refreshEngagements()]);
+      window.dispatchEvent(new Event('hiring-updated'));
+      setShortlistSuccess('The engagement has ended, and we have told them why. You can now leave a review.');
+      openReview(interest);
+    } catch (err: any) {
+      setError(err?.message || 'We could not end this engagement. Please try again.');
+    } finally {
+      setShortlistLoadingInterestId(null);
+    }
+  };
+
+  // Reviewing is done on the person's profile, where the reviews live and where
+  // the eligibility rule is enforced. Sending them there beats a second copy of
+  // the form that could disagree with it.
+  const openReview = (interest: Interest) => {
+    const profileId = interest.service_provider_id || interest.service_provider?.id;
+    if (!profileId) {
+      setError('We could not open a review for this person.');
+      return;
+    }
+    navigate(
+      `/service-provider/public-profile?profileId=${encodeURIComponent(profileId)}&review=1&from=hiring` +
+        `&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`,
+      { state: { profileId, backTo: backToPath, backLabel: 'Back to Hiring' } },
+    );
+  };
+
+  const handleShortlistApplicant = (interest: Interest) =>
+    answerApplication(interest, 'shortlisted');
+
+  // Rejecting asks why. The reason is optional, because a household that does
+  // not want to give one should not be stuck — but it is asked for, because
+  // "we went with someone else" is worth far more to somebody looking for work
+  // than silence, and it is the only thing they will get.
+  const handleRejectApplicant = (interest: Interest) => setRejecting(interest);
+
+  const confirmRejection = async () => {
+    if (!rejecting) return;
+    const interest = rejecting;
+    const note = rejectReason.trim();
+    setRejecting(null);
+    setRejectReason('');
+    await answerApplication(interest, 'declined', note);
+  };
+
   return (
-    <div className="w-full">
-      <div className="rounded-3xl bg-white shadow-xl border border-purple-100 px-4 sm:px-8 py-8 dark:bg-gradient-to-b dark:from-[#1a102b] dark:via-[#0e0a1a] dark:to-[#07050d] dark:border-purple-800/40 dark:shadow-2xl dark:shadow-purple-900/50 transition-colors">
+    <div className="w-full min-w-0 max-w-full overflow-hidden">
+      <div className="rounded-2xl bg-white shadow-xl border border-purple-100 px-3 py-4 sm:rounded-3xl sm:px-8 sm:py-8 dark:bg-gradient-to-b dark:from-[#1a102b] dark:via-[#0e0a1a] dark:to-[#07050d] dark:border-purple-800/40 dark:shadow-2xl dark:shadow-purple-900/50 transition-colors">
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div>
@@ -803,12 +1308,20 @@ export default function HiringHistory() {
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-sm border border-purple-100 mb-6 dark:bg-purple-900/30 dark:shadow-inner dark:shadow-purple-900/40 dark:border-purple-700/50 transition-colors">
           <div className="border-b border-gray-200 dark:border-purple-800/50">
-            <nav className="flex space-x-6 px-6 text-gray-600 dark:text-purple-200 overflow-x-auto no-scrollbar" aria-label="Tabs">
+            {/* Scrolls when it has to, but sized so it usually does not have
+                to: at phone widths the old px-6/space-x-6 pushed the last tab
+                past the edge, and no-scrollbar meant nothing showed that there
+                was more to reach. */}
+            <nav
+              data-tour="hiring-tabs"
+              className="flex max-w-full snap-x snap-mandatory gap-4 overflow-x-auto px-3 text-gray-600 no-scrollbar dark:text-purple-200 sm:gap-6 sm:px-6"
+              aria-label="Tabs"
+            >
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  className={`py-4 px-1 border-b-2 font-medium text-xs transition-colors flex items-center gap-2 ${
+                  className={`shrink-0 snap-start whitespace-nowrap py-4 px-1 border-b-2 font-medium text-xs transition-colors flex items-center gap-1.5 sm:gap-2 ${
                     activeTab === tab.key
                       ? 'border-purple-500 text-purple-700 dark:text-white'
                       : 'border-transparent text-gray-400 hover:text-purple-700 dark:hover:text-white hover:border-purple-300'
@@ -818,7 +1331,7 @@ export default function HiringHistory() {
                   {tab.key === 'jobs' && <Briefcase className="w-4 h-4" />}
                   {tab.label}
                   {tab.count !== undefined && tab.count > 0 && (
-                    <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-green-500 text-white">
+                    <span data-tour="hiring-attention" className="ml-1 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-0.5 text-xs font-bold text-white shadow-sm shadow-purple-500/20">
                       {tab.count}
                     </span>
                   )}
@@ -837,14 +1350,14 @@ export default function HiringHistory() {
 
         {/* Loading State */}
         {loading && (
-          <div className="py-6">
+          <div key={`loading-${activeTab}`} className="hb-data-panel-enter py-6">
             <ListPageSkeleton items={4} />
           </div>
         )}
 
         {/* Empty State for Jobs */}
         {!loading && activeTab === 'jobs' && jobs.length === 0 && (
-          <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+          <div key="jobs-empty" className="hb-data-panel-enter bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <Briefcase className="w-16 h-16 text-purple-400 dark:text-purple-300 mx-auto mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
               No job postings yet
@@ -863,106 +1376,158 @@ export default function HiringHistory() {
 
         {/* Jobs List */}
         {!loading && activeTab === 'jobs' && jobs.length > 0 && (
-          <div className="space-y-4">
-            {jobs.map((job) => (
-              <div
-                key={job.id}
-                className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border dark:bg-purple-950/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl dark:border-purple-800/40"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
-                      {job.title || 'Untitled role'}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatJobLocation(job.location)}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
-                    ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
-                    : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'}`}>
-                    {job.status || 'open'}
-                  </span>
-                </div>
+          <div key="jobs-ready" className="hb-data-panel-enter space-y-4">
+            {jobs.map((job) => {
+              const highlights = listingHighlights(job);
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {(job.job_types || []).length > 0 ? (
-                    job.job_types?.map((type) => (
-                      <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
+              return (
+                <div
+                  key={job.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={(event) => { if (!isHiringCardAction(event.target)) setSelectedHiringCard({ kind: 'job', record: job }); }}
+                  onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedHiringCard({ kind: 'job', record: job }); } }}
+                  className="cursor-pointer rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6"
+                >
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8">
+                    <div className="min-w-0">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
+                        {job.title || 'Untitled role'}
+                      </h3>
+                      {/* Where the job is. This is now the only place a
+                          household sees its own listings, so the location has to
+                          be here rather than only on the profile page it used
+                          to share the job with. */}
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        📍 {formatListingPlace(job)}
+                      </p>
+                    </div>
+                    <ListingCardFacts listing={job} />
+                    <span className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold sm:px-3 sm:text-xs ${job.status === 'closed'
+                      ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
+                      : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'}`}>
+                      {job.status || 'open'}
+                    </span>
+                  </div>
+
+                  {job.description ? (
+                    <p className="mt-3 line-clamp-3 text-sm text-gray-600 dark:text-gray-300">
+                      {job.description}
+                    </p>
+                  ) : null}
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {(job.job_types || []).map((type) => (
+                      <span
+                        key={type}
+                        className="rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
+                      >
                         {type.replace(/_/g, ' ')}
                       </span>
-                    ))
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                      Flexible role
-                    </span>
-                  )}
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                    Start {formatJobDate(job.start_date)}
-                  </span>
-                  {job.max_applicants ? (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
-                      Max {job.max_applicants} applicants
-                    </span>
-                  ) : null}
-                </div>
+                    ))}
+                    {highlights.salary ? (
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                        {highlights.salary}
+                      </span>
+                    ) : null}
+                    {highlights.startTiming ? (
+                      <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                        Start {highlights.startTiming}
+                      </span>
+                    ) : null}
+                      {job.max_applicants ? (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                          Max {job.max_applicants} applicants
+                        </span>
+                      ) : null}
+                      {job.status === 'active' && job.expires_at ? (
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                            daysUntil(job.expires_at) <= 2
+                              ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-200'
+                              : 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
+                          }`}
+                        >
+                          {describeExpiry(job.expires_at)}
+                        </span>
+                      ) : null}
+                  </div>
 
-                <p className="mt-3 text-xs text-gray-600 dark:text-gray-300">
-                  Salary: {formatJobSalary(job.salary_range)}
-                </p>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => { setEditingJob(job); setShowJobModal(true); }}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleToggleJobStatus(job)}
-                    disabled={jobActionLoading === job.id}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50"
-                  >
-                    {job.status === 'closed' ? 'Reopen' : 'Close'}
-                  </button>
-                  <button
-                    onClick={() => setJobToDelete(job)}
-                    disabled={jobActionLoading === job.id}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-red-300 text-red-600 dark:text-red-300 dark:border-red-500/40 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
+                  <div className="mt-4 flex flex-col gap-3 border-t border-gray-100 pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-xs text-gray-400">
+                      {job.created_at ? `Posted ${formatDate(job.created_at)}` : 'Posted recently'}
+                    </span>
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+                    <button
+                      onClick={() => { setEditingJob(job); setShowJobModal(true); }}
+                      className="w-full rounded-xl border border-purple-300 px-4 py-2 text-center text-xs font-semibold text-purple-700 transition hover:bg-purple-50 sm:w-auto dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleToggleJobStatus(job)}
+                      disabled={jobActionLoading === job.id}
+                      className="w-full rounded-xl border border-gray-300 px-4 py-2 text-center text-xs font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 sm:w-auto dark:border-gray-600 dark:text-gray-300 dark:hover:bg-white/5"
+                    >
+                      {job.status === 'closed' ? 'Reopen' : 'Close'}
+                    </button>
+                    {/* Only on live jobs: a closed or filled one has no expiry to
+                        extend, and offering it there would suggest otherwise. */}
+                    {job.status === 'active' && (
+                      <button
+                        onClick={() => handleRenewJob(job)}
+                        disabled={jobActionLoading === job.id}
+                        className="w-full rounded-xl border border-purple-300 px-4 py-2 text-center text-xs font-semibold text-purple-700 transition hover:bg-purple-50 disabled:opacity-50 sm:w-auto dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                      >
+                        {jobActionLoading === job.id ? 'Keeping open…' : 'Keep open'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setJobToDelete(job)}
+                      disabled={jobActionLoading === job.id}
+                      className="w-full rounded-xl border border-red-300 px-4 py-2 text-center text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 sm:w-auto dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10"
+                    >
+                      Delete
+                    </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         {/* Empty State for Applicants */}
-        {!loading && activeTab === 'applicants' && applicants.length === 0 && (
-          <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+        {!loading && activeTab !== 'jobs' && visibleApplicants.length === 0 && (
+          <div key={`${activeTab}-empty`} className="hb-data-panel-enter bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <HandHeart className="w-16 h-16 text-green-400 dark:text-green-300 mx-auto mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
-              No interested househelps yet
+              {EMPTY_TAB_COPY[activeTab as Exclude<TabType, 'jobs'>]?.title ?? 'Nothing here yet'}
             </h3>
             <p className="text-gray-600 dark:text-purple-200 mb-6 sm:mb-8 text-xs sm:text-sm">
-              When househelps express interest in working for you, they'll appear here
+              {EMPTY_TAB_COPY[activeTab as Exclude<TabType, 'jobs'>]?.body ?? ''}
             </p>
           </div>
         )}
 
         {/* Applicants List */}
-        {!loading && activeTab === 'applicants' && applicants.length > 0 && (
-          <div className="space-y-5">
-            {applicants.map((interest) => {
-              const profileId = interest.househelp_id || interest.househelp?.id;
+        {!loading && activeTab !== 'jobs' && visibleApplicants.length > 0 && (
+          <div key={`${activeTab}-ready`} className="hb-data-panel-enter space-y-5">
+            {visibleApplicants.map((interest) => {
+              const listing = jobs.find(
+                (job) => String(job.id) === String((interest as any).listing_id ?? ''),
+              );
+              const profileId = interest.service_provider_id || interest.service_provider?.id;
               const profile = profileId ? profilesById[profileId] : undefined;
-              const firstName = profile?.first_name || interest.househelp?.first_name || interest.househelp?.user?.first_name;
-              const lastName = profile?.last_name || interest.househelp?.last_name || interest.househelp?.user?.last_name;
-              const displayName = `${firstName || ''} ${lastName || ''}`.trim() || getHousehelpName(interest.househelp as any);
-              const avatarUrl = profile?.avatar_url || profile?.profile_picture || (Array.isArray(profile?.photos) ? profile?.photos?.[0] : undefined) || interest.househelp?.avatar_url || interest.househelp?.photos?.[0];
+              const firstName = profile?.first_name || interest.service_provider?.first_name || interest.service_provider?.user?.first_name;
+              const lastName = profile?.last_name || interest.service_provider?.last_name || interest.service_provider?.user?.last_name;
+              const displayName = formatDisplayName(firstName, lastName, getServiceProviderName(interest.service_provider as any));
+              const applicantUserId = serviceProviderUserIdFor(interest);
+              const avatarUrl = profile?.avatar_url || profile?.profile_picture || (Array.isArray(profile?.photos) ? profile?.photos?.[0] : undefined) || interest.service_provider?.avatar_url || interest.service_provider?.photos?.[0] || applicantProfilePhotos[applicantUserId];
               const locationCandidate = [profile?.county_of_residence, profile?.location, (profile as any)?.neighborhood, (profile as any)?.region, (profile as any)?.city].find((value) => typeof value === 'string' && value.length > 0);
               const experienceValue = profile?.years_of_experience ?? profile?.experience;
               const experienceYears = typeof experienceValue === 'number' && experienceValue > 0 ? experienceValue : undefined;
-              const primaryRole = interest.job_type || profile?.househelp_type || (profile as any)?.primary_role;
+              const primaryRole = interest.job_type || profile?.service_provider_type || profile?.househelp_type || (profile as any)?.primary_role;
               const rawSkills = Array.isArray(profile?.skills)
                 ? profile.skills
                 : Array.isArray((profile as any)?.top_skills)
@@ -976,11 +1541,61 @@ export default function HiringHistory() {
                 : profile?.availability_date
                   ? formatDate(profile.availability_date)
                   : 'Flexible';
-              const isNew = !interest.viewed_at;
-              const isShortlisted = Boolean(profileId && shortlistedProfileIds.has(profileId));
+              const isNew = isHiringRecordUnattended(attentionScope, 'application', interest);
+              // The application's own status, not a bookmark somewhere else.
+              const isShortlisted = interest.status === 'shortlisted';
+              const isClosed = ['declined', 'approved'].includes(interest.status);
+              // Approved means the work is on. Ending it and reviewing them are
+              // the two things left to do about this person.
+              // Shortlisting is a decision about somebody you have not answered
+              // yet. Once an offer is out, accepted, or the job is theirs, the
+              // question has been settled and offering it again is offering to
+              // go backwards — which the state machine will not do anyway.
+              const canShortlist = interest.status === 'initiated';
+              // A direct application is the service provider's consent. The household
+              // can accept it here and move straight to a hire. An initiated
+              // offer, on the other hand, still belongs to the service provider to
+              // accept or decline.
+              const canAcceptApplicant = interest.status === 'initiated' && Boolean(interest.initiated_by_applicant);
+              // Applications are per listing. Matching on the service provider alone
+              // incorrectly lets a contract for another advert control this
+              // card, and also fails to enforce the one-contract-per-application
+              // rule. The API exposes this relationship directly.
+              const listingId = String((interest as any).listing_id || '');
+              const serviceProviderUserId = serviceProviderUserIdFor(interest);
+              const existingContract = employmentContractMap[`application:${interest.id}`] ||
+                employmentContractMap[`listing-service-provider:${listingId}:${serviceProviderUserId}`];
+              const contractStatus = String(
+                existingContract?.storage_status || existingContract?.status || '',
+              ).toLowerCase();
+              // A contract is unique to this application/relationship for its
+              // entire lifecycle. Ending or completing it must not resurrect
+              // "Send contract" on the same application; a new engagement
+              // starts from a new listing/request, just as a new order would.
+              const hasExistingContract = Boolean(existingContract);
+              const isHired =
+                (interest.status === 'approved' || ['active', 'signed_by_both', 'fully_signed'].includes(contractStatus)) &&
+                !endedEngagements.has(serviceProviderUserId);
               const chatLoading = chatLoadingInterestId === interest.id;
               const shortlistLoading = shortlistLoadingInterestId === interest.id;
-              const canActOnInterest = interest.status === 'pending' || interest.status === 'viewed';
+              // Where the household has a next step of its own.
+              //
+              // This read `status === 'pending' || 'viewed'` — two statuses an
+              // application never holds. Applications are shortlisted,
+              // initiated, accepted, declined or approved, so the condition was
+              // false for every row ever rendered and the buttons under it had
+              // never once appeared.
+              const canActOnInterest =
+                (canAcceptApplicant || interest.status === 'shortlisted' || interest.status === 'accepted' || interest.status === 'approved') && !hasExistingContract;
+              // Confirming the hire is deliberately separate from drawing up a
+              // contract. An application is one side's intent; the matching
+              // confirmation records the work relationship and makes a formal
+              // contract optional rather than a gate to reviews.
+              const advanceLabel = interest.status === 'approved'
+                ? 'Create optional contract'
+                : interest.status === 'accepted' || canAcceptApplicant
+                  ? 'Confirm hire'
+                  : 'Send offer';
               const statusLabel = interest.status
                 ? interest.status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
                 : 'Pending';
@@ -991,58 +1606,32 @@ export default function HiringHistory() {
               return (
                 <div
                   key={interest.id}
-                  className={`relative overflow-hidden rounded-2xl border bg-white p-5 sm:p-7 transition-shadow hover:shadow-xl dark:bg-purple-950/40 ${
+                  onClickCapture={() => markHiringRecordAttended(attentionScope, 'application', interest)}
+                  onClick={(event) => { if (!isHiringCardAction(event.target)) setSelectedHiringCard({ kind: 'application', record: interest }); }}
+                  onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && !isHiringCardAction(event.target)) { event.preventDefault(); markHiringRecordAttended(attentionScope, 'application', interest); setSelectedHiringCard({ kind: 'application', record: interest }); } }}
+                  role="button"
+                  tabIndex={0}
+                  className={`relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border bg-white p-3 transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 sm:p-7 dark:bg-purple-950/40 ${
                     isNew
-                      ? 'border-green-300 dark:border-green-600/40 ring-2 ring-green-100 dark:ring-green-900/30'
+                      ? 'border-purple-500 ring-2 ring-purple-200/80 dark:border-fuchsia-500/70 dark:ring-fuchsia-900/40'
                       : 'border-purple-100 dark:border-purple-800/40'
                   }`}
                 >
-                  <div className="absolute top-4 right-4 flex flex-col gap-2 sm:flex-row">
-                    <button
-                      onClick={() => handleChatWithApplicant(interest)}
-                      disabled={chatLoading}
-                      className="inline-flex items-center gap-2 rounded-full border border-purple-200/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
-                    >
-                      {chatLoading ? (
-                        <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
-                      ) : (
-                        <MessageCircle className="h-4 w-4" />
-                      )}
-                      <span>Chat</span>
-                    </button>
-                    <button
-                      onClick={() => handleShortlistApplicant(interest)}
-                      disabled={shortlistLoading || isShortlisted}
-                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors ${
-                        isShortlisted
-                          ? 'border-green-500 bg-green-500/90 text-white dark:bg-green-500/70'
-                          : 'border-purple-300 bg-white text-purple-700 hover:bg-purple-50 disabled:hover:bg-white dark:border-purple-700/40 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60'
-                      } disabled:opacity-60`}
-                    >
-                      {shortlistLoading ? (
-                        <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
-                      ) : (
-                        <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-current' : ''}`} />
-                      )}
-                      <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
-                    </button>
-                  </div>
-
                   <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8">
-                    <div className="flex flex-1 items-start gap-4">
-                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg">
+                    <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg sm:h-16 sm:w-16">
                         {avatarUrl ? (
                           <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-lg font-bold">
-                            {getHousehelpInitials(interest.househelp as any)}
+                            {displayName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || getServiceProviderInitials(interest.service_provider as any)}
                           </div>
                         )}
                       </div>
 
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-base font-semibold text-gray-900 dark:text-white">{displayName}</h3>
+                          <h3 className="min-w-0 break-words text-sm font-semibold text-gray-900 dark:text-white sm:text-base">{displayName}</h3>
                           {isNew && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-200">
                               <HandHeart className="h-3 w-3" />
@@ -1082,8 +1671,18 @@ export default function HiringHistory() {
                             </div>
                           )}
                           <div>
-                            <span className="text-gray-500 dark:text-purple-300">Salary Expectation</span>
-                            <p className="font-medium text-gray-900 dark:text-white">{formatSalary(interest.salary_expectation, interest.salary_frequency)}</p>
+                            {/* What the job pays, off the advert.
+                                This read salary_expectation, which described an
+                                interest's asking rate, is always zero on an
+                                application, and so always said "Not specified"
+                                — beside a listing that states a figure. The
+                                same fault the service provider's side had. */}
+                            <span className="text-gray-500 dark:text-purple-300">Salary</span>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {listingHighlights(
+                                jobs.find((job) => String(job.id) === String((interest as any).listing_id ?? '')),
+                              ).salary || 'Not specified'}
+                            </p>
                           </div>
                           <div>
                             <span className="text-gray-500 dark:text-purple-300">Available From</span>
@@ -1140,37 +1739,155 @@ export default function HiringHistory() {
                     </div>
                   </div>
 
-                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-wrap items-center gap-2">
+                  {historyFor === interest.id && (
+                    <div className="mt-4 rounded-2xl border border-purple-200 bg-purple-50/50 p-4 dark:border-purple-500/20 dark:bg-purple-950/20">
+                      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-purple-700 dark:text-purple-200">
+                        History
+                      </p>
+                      <ApplicationHistory
+                        applicationId={interest.id}
+                        actorProfileId={getStoredUserProfileId() || ''}
+                        viewer="household"
+                      />
+                    </div>
+                  )}
+
+                  {/* Everything you can do about this applicant, in one place.
+                      Chat and Shortlist used to be pinned to the card's top
+                      right corner, which cleared the text only while the card
+                      was wide: on a phone they landed on top of the applicant's
+                      own name and the status beside it, covering both and
+                      taking the taps meant for them. */}
+                  <div className="mt-6 grid gap-3 lg:flex lg:items-center">
+                    <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                      <button
+                        data-tour="hiring-chat"
+                        onClick={() => handleChatWithApplicant(interest)}
+                        disabled={chatLoading}
+                        className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-purple-200/70 bg-purple-50 px-2 py-2 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 sm:w-auto sm:px-3 sm:py-1.5 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
+                      >
+                        {chatLoading ? (
+                          <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
+                        ) : (
+                          <MessageCircle className="h-4 w-4" />
+                        )}
+                        <span>Chat</span>
+                      </button>
+                      {(canShortlist || isShortlisted) && (
+                      <button
+                        onClick={() => handleShortlistApplicant(interest)}
+                        disabled={shortlistLoading || isShortlisted}
+                        title={
+                          isShortlisted
+                            ? 'Already shortlisted'
+                            : 'Keep them aside while you decide. They will be told.'
+                        }
+                        className={`inline-flex w-full items-center justify-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold shadow-sm transition-colors sm:w-auto sm:py-1.5 ${
+                          isShortlisted
+                            ? 'border-green-500 bg-green-500/90 text-white dark:bg-green-500/70'
+                            : 'border-purple-300 bg-white text-purple-700 hover:bg-purple-50 disabled:hover:bg-white dark:border-purple-700/40 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60'
+                        } disabled:opacity-60`}
+                      >
+                        {shortlistLoading ? (
+                          <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
+                        ) : (
+                          <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-current' : ''}`} />
+                        )}
+                        <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
+                      </button>
+                      )}
+                      <button
+                        onClick={() =>
+                          setHistoryFor((current) => (current === interest.id ? null : interest.id))
+                        }
+                        className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-purple-200/60 bg-white px-2 py-2 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-50 sm:w-auto sm:px-3 sm:py-1.5 dark:border-purple-500/30 dark:bg-white/5 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                      >
+                        <Clock className="h-4 w-4" />
+                        <span>{historyFor === interest.id ? 'Hide history' : 'History'}</span>
+                      </button>
+                      {isHired && (
+                        <>
+                          <button
+                            onClick={() => openReview(interest)}
+                            title="Leave a review for this person"
+                            className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-700 shadow-sm transition-colors hover:bg-amber-50 sm:w-auto sm:py-1.5 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200 dark:hover:bg-amber-500/20"
+                          >
+                            <Star className="h-4 w-4" />
+                            <span>Leave a review</span>
+                          </button>
+                          <button
+                            onClick={() => setTerminating(interest)}
+                            disabled={shortlistLoading}
+                            title="End this engagement"
+                            className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full border border-red-300 bg-white px-3 py-2 text-xs font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-60 sm:w-auto sm:py-1.5 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                          >
+                            <Ban className="h-4 w-4" />
+                            <span>End engagement</span>
+                          </button>
+                        </>
+                      )}
+                      {!isClosed && (
+                        <button
+                          onClick={() => handleRejectApplicant(interest)}
+                          disabled={shortlistLoading}
+                          title="Let them know you are not going ahead"
+                          className="inline-flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-red-300 bg-white px-2 py-2 text-xs font-semibold text-red-700 shadow-sm transition-colors hover:bg-red-50 disabled:opacity-60 sm:px-3 sm:py-1.5 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20"
+                        >
+                          <UserX className="h-4 w-4" />
+                          <span>Reject</span>
+                        </button>
+                      )}
                       {canActOnInterest ? (
                         <>
                           <button
-                            onClick={() => handleAcceptInterest(interest)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-green-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-green-600"
+                            onClick={() =>
+                              interest.status === 'approved'
+                                ? createContractFromApplication(interest)
+                                : handleAcceptInterest(interest)
+                            }
+                            disabled={contractCreating === interest.id || shortlistLoading}
+                          className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-green-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-green-600 sm:w-auto sm:py-1.5"
                           >
                             <UserCheck className="h-4 w-4" />
-                            Accept
-                          </button>
-                          <button
-                            onClick={() => handleDeclineInterest(interest)}
-                            className="inline-flex items-center gap-2 rounded-xl bg-red-100 px-4 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-200 dark:bg-red-900/40 dark:text-red-200 dark:hover:bg-red-800/60"
-                          >
-                            <UserX className="h-4 w-4" />
-                            Decline
+                            {contractCreating === interest.id || shortlistLoading ? 'Working…' : advanceLabel}
                           </button>
                         </>
-                      ) : (
-                        <p className="text-xs font-medium text-gray-500 dark:text-gray-300">Status: {statusLabel}</p>
-                      )}
+                      ) : null}
                     </div>
 
-                    <button
-                      onClick={() => handleViewInterest(interest)}
-                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-1.5 text-xs font-semibold text-white shadow-lg transition-colors hover:from-purple-700 hover:via-pink-700 hover:to-rose-500"
-                    >
-                      <Eye className="h-4 w-4" />
-                      View More
-                    </button>
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end lg:ml-auto">
+                      {existingContract?.id && (
+                        <button
+                          type="button"
+                          onClick={() => viewEmploymentContract(existingContract)}
+                          className="col-span-2 inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-2.5 text-xs font-semibold text-white shadow-lg transition hover:from-purple-700 hover:via-pink-700 hover:to-rose-600 sm:col-auto sm:w-auto sm:py-1.5"
+                        >
+                          <FileText className="h-4 w-4" />
+                          View contract
+                        </button>
+                      )}
+                      {listing && (
+                        <button
+                          type="button"
+                          onClick={() => setViewingJob(listing)}
+                          className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 transition-colors hover:bg-purple-50 sm:w-auto sm:px-4 sm:py-1.5 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30"
+                        >
+                          <Briefcase className="h-4 w-4" />
+                          View job listing
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleViewInterest(interest)}
+                        className={`inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold transition-colors sm:w-auto sm:px-5 sm:py-1.5 ${
+                          existingContract?.id
+                            ? 'border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30'
+                            : 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white shadow-lg hover:from-purple-700 hover:via-pink-700 hover:to-rose-500'
+                        }`}
+                      >
+                        <Eye className="h-4 w-4" />
+                        View profile
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -1180,9 +1897,77 @@ export default function HiringHistory() {
 
       </div>
 
+      {selectedHiringCard && (() => {
+        const { kind, record } = selectedHiringCard;
+        const isJob = kind === 'job';
+        const profileId = !isJob ? record.service_provider_id || record.service_provider?.id : '';
+        const profile = profileId ? profilesById[profileId] : undefined;
+        const personName = formatDisplayName(
+          profile?.first_name || record.service_provider?.first_name || record.service_provider?.user?.first_name,
+          profile?.last_name || record.service_provider?.last_name || record.service_provider?.user?.last_name,
+          'Service provider',
+        );
+        const applicantUserId = !isJob ? serviceProviderUserIdFor(record) : '';
+        const imageUrl = !isJob ? profile?.avatar_url || profile?.profile_picture || profile?.photos?.[0] || record.service_provider?.avatar_url || record.service_provider?.photos?.[0] || applicantProfilePhotos[applicantUserId] : undefined;
+        const listing = !isJob ? jobs.find((job) => String(job.id) === String(record.listing_id || '')) : record;
+        const employmentContract = !isJob
+          ? employmentContractMap[`application:${record.id}`] ||
+            employmentContractMap[`listing-service-provider:${String(record.listing_id || '')}:${applicantUserId}`]
+          : undefined;
+        return (
+          <HiringCardModal
+            open
+            onClose={closeHiringCard}
+            eyebrow={isJob ? 'Job listing details' : `${activeTab} details`}
+            title={isJob ? record.title || 'Untitled role' : personName}
+            imageUrl={imageUrl}
+            initials={!isJob ? personName.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase() : undefined}
+            status={record.status}
+            summary={isJob ? record.description : record.comments}
+            fields={isJob ? [
+              { label: 'Location', value: formatListingPlace(record) },
+              { label: 'Salary', value: listingHighlights(record).salary || 'Not specified' },
+              { label: 'Start', value: listingHighlights(record).startTiming || 'Flexible' },
+              { label: 'Posted', value: record.created_at ? formatDate(record.created_at) : 'Recently' },
+            ] : [
+              { label: 'Job', value: listing?.title || record.job_type || 'Not specified' },
+              { label: 'Salary', value: listingHighlights(listing).salary || 'Not specified' },
+              { label: 'Available', value: record.available_from ? formatDate(record.available_from) : 'Flexible' },
+              { label: 'Applied', value: formatDate(record.created_at) },
+              { label: 'Closure reason', value: record.closure_reason || record.decline_reason || record.cancel_reason || undefined },
+            ]}
+            details={isJob ? <ListingDetails listing={record} /> : undefined}
+            actions={isJob ? <>
+              <button type="button" onClick={() => { closeHiringCard(); setEditingJob(record); setShowJobModal(true); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Edit</button>
+              <button type="button" onClick={() => handleToggleJobStatus(record)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:from-purple-700 hover:to-pink-700">{record.status === 'closed' ? 'Reopen' : 'Close job'}</button>
+            </> : <>
+              {employmentContract?.id && (
+                <button type="button" onClick={() => viewEmploymentContract(employmentContract)} className="rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-md">
+                  View contract
+                </button>
+              )}
+              {!isJob && ['accepted', 'initiated'].includes(String(record.status).toLowerCase()) && (record.status !== 'initiated' || record.initiated_by_applicant) && (
+                <button type="button" onClick={() => void handleAcceptInterest(record)} disabled={shortlistLoadingInterestId === record.id} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-50">
+                  {shortlistLoadingInterestId === record.id ? 'Confirming…' : 'Confirm hire'}
+                </button>
+              )}
+              {!isJob && !employmentContract?.id && String(record.status).toLowerCase() === 'approved' && (
+                <button type="button" onClick={() => void createContractFromApplication(record)} disabled={contractCreating === record.id} className="rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-50">
+                  {contractCreating === record.id ? 'Creating…' : 'Create optional contract'}
+                </button>
+              )}
+              <button type="button" onClick={() => { setSelectedHiringCard(null); setHistoryFor(record.id); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">History</button>
+              <button data-tour="hiring-chat" type="button" onClick={() => handleChatWithApplicant(record)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Chat</button>
+              {listing && <button type="button" onClick={() => { setSelectedHiringCard(null); setViewingJob(listing); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
+              <button type="button" onClick={() => handleViewInterest(record)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white">View profile</button>
+            </>}
+          />
+        );
+      })()}
+
       {/* Details Modal */}
       {selectedRequest && (
-     <div className="fixed inset-0 z-50 grid place-items-center p-3 sm:p-4">
+     <div className="hb-mobile-modal-viewport fixed inset-0 z-50 grid place-items-center p-3 sm:p-4">
     {/* Overlay */}
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm"
@@ -1207,7 +1992,7 @@ export default function HiringHistory() {
             Hire Request
           </p>
           <h3 className="text-base sm:text-lg font-extrabold text-gray-900 dark:text-white leading-tight">
-            {getHousehelpName(selectedRequest.househelp)}
+            {getServiceProviderName(selectedRequest.service_provider)}
           </h3>
           <div className="text-xs sm:text-xs text-gray-500 dark:text-gray-400 flex flex-col sm:flex-row sm:items-center sm:gap-2">
             <span className="capitalize">
@@ -1302,7 +2087,7 @@ export default function HiringHistory() {
           {selectedRequest.cancellation_message && (
             <div className="mt-3">
               <span className="text-xs sm:text-xs font-medium text-gray-600 dark:text-gray-300">
-                Message sent to househelp:
+                Message sent to service provider:
               </span>
               <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/60 mt-1">
                 {selectedRequest.cancellation_message}
@@ -1334,7 +2119,7 @@ export default function HiringHistory() {
             "
           >
             <FileText className="w-4 h-4" />
-            {findByAnyIdentifier(employmentContractMap, getHousehelpCandidateIds(selectedRequest)) ? 'View Employment Contract' : 'Create Employment Contract'}
+            {findByAnyIdentifier(employmentContractMap, getServiceProviderCandidateIds(selectedRequest)) ? 'View Employment Contract' : 'Create Employment Contract'}
           </button>
         )}
 
@@ -1367,18 +2152,8 @@ export default function HiringHistory() {
 
         <button
           onClick={() => {
-            const profileId =
-              selectedRequest?.househelp?.id || selectedRequest?.househelp_id;
-            if (profileId) {
-              navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
-                state: {
-                  profileId,
-                  backTo: backToPath,
-                  backLabel: "Back to Hiring",
-                },
-              });
-              setSelectedRequest(null);
-            }
+            handleViewInterest(selectedRequest);
+            setSelectedRequest(null);
           }}
           className="
             flex-1 inline-flex items-center justify-center
@@ -1394,9 +2169,9 @@ export default function HiringHistory() {
             focus-visible:ring-offset-2 focus-visible:ring-purple-500
             disabled:opacity-60 disabled:cursor-not-allowed
           "
-          disabled={!selectedRequest.househelp?.id && !selectedRequest.househelp_id}
+          disabled={!selectedRequest.service_provider?.id && !selectedRequest.service_provider_id}
         >
-          View Househelp Profile
+          View Service provider Profile
         </button>
 
         <button
@@ -1421,7 +2196,7 @@ export default function HiringHistory() {
 
 
 {cancelRequest && (
-  <div className="fixed inset-0 z-50 grid place-items-center p-3 sm:p-4">
+  <div className="hb-mobile-modal-viewport fixed inset-0 z-50 grid place-items-center p-3 sm:p-4">
     {/* Overlay */}
     <div
       className="fixed inset-0 bg-black/70 backdrop-blur-sm"
@@ -1448,10 +2223,10 @@ export default function HiringHistory() {
             Cancel Hire Request
           </p>
           <h3 className="text-base sm:text-xl font-extrabold text-gray-900 dark:text-white leading-tight">
-            {getHousehelpName(cancelRequest.househelp)}
+            {getServiceProviderName(cancelRequest.service_provider)}
           </h3>
           <p className="text-xs sm:text-xs text-gray-500 dark:text-gray-400">
-            Select a reason and optionally leave a message the househelp will see.
+            Select a reason and optionally leave private feedback to help Homebit improve hiring.
           </p>
         </div>
         <button
@@ -1514,13 +2289,13 @@ export default function HiringHistory() {
 
       <div className="mb-5 sm:mb-6">
         <label className="block text-xs sm:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
-          Additional message to the househelp (optional)
+          Feedback for Homebit (optional)
         </label>
         <textarea
           rows={4}
           value={cancelMessage}
           onChange={(e) => setCancelMessage(e.target.value)}
-          placeholder="Let them know anything specific about the cancellation..."
+          placeholder="What could Homebit improve about this hiring experience?"
           className="
             w-full px-3 sm:px-4 py-2.5 sm:py-3 text-xs
             rounded-xl sm:rounded-2xl
@@ -1584,6 +2359,17 @@ export default function HiringHistory() {
   job={editingJob}
   onSaved={handleJobSaved}
 />
+{viewingJob && (
+  <div className="hb-mobile-modal-viewport fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingJob(null)}>
+    <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h2 className="text-base font-semibold text-gray-900 dark:text-white">{viewingJob.title || 'Job listing'}</h2>
+        <button type="button" onClick={() => setViewingJob(null)} className="rounded-full border border-purple-300 p-2 text-purple-700 dark:border-purple-600 dark:text-purple-200" aria-label="Close job listing"><XCircle className="h-4 w-4" /></button>
+      </div>
+      <ListingDetails listing={viewingJob as any} emptyMessage="This job listing has no additional details." />
+    </div>
+  </div>
+)}
 <ConfirmDialog
   isOpen={!!jobToDelete}
   title="Delete Job Posting"
@@ -1594,6 +2380,109 @@ export default function HiringHistory() {
   onCancel={() => setJobToDelete(null)}
   variant="danger"
 />
+
+{/* Rejecting somebody, with the chance to say why.
+    The reason is optional so a household is never stuck, and asked for because
+    it is the only thing the applicant will get: "we went with someone else" is
+    worth more to a person looking for work than silence. */}
+{/* Ending a job that is under way.
+    The reason is required, unlike a rejection: somebody is losing work they
+    had, and it has to hold up if either of them ever needs to say what
+    happened. */}
+{terminating && (
+  <div className="hb-mobile-modal-viewport fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+    <div className="w-full max-w-md rounded-t-3xl border border-red-200 bg-white p-6 shadow-2xl dark:border-red-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+        End the engagement with {terminating.service_provider?.first_name || 'this person'}?
+      </h3>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        The contract ends today. They will be told, with the reason you give here.
+      </p>
+
+      <label className="mt-4 block">
+        <span className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+          Why is it ending? <span className="font-normal text-red-500">(required)</span>
+        </span>
+        <textarea
+          value={terminateReason}
+          onChange={(event) => setTerminateReason(event.target.value)}
+          rows={3}
+          maxLength={500}
+          placeholder="We are moving house and no longer need help."
+          className="mt-2 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 dark:border-purple-500/30 dark:bg-[#0d0d14] dark:text-white"
+        />
+      </label>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => { setTerminating(null); setTerminateReason(''); }}
+          className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={confirmTermination}
+          disabled={!terminateReason.trim()}
+          className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-semibold text-white shadow-lg hover:bg-red-700 disabled:opacity-50"
+        >
+          <Ban className="h-4 w-4" />
+          End engagement
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{rejecting && (
+  <div className="hb-mobile-modal-viewport fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+    <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
+      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+        Not going ahead with {rejecting.service_provider?.first_name || 'this applicant'}?
+      </h3>
+      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+        They will be told, and the application moves to Closed.
+      </p>
+
+      <label className="mt-4 block">
+        <span className="block text-xs font-semibold text-gray-700 dark:text-gray-300">
+          Anything you would like to tell them?{' '}
+          <span className="font-normal text-gray-400">(optional)</span>
+        </span>
+        <textarea
+          value={rejectReason}
+          onChange={(event) => setRejectReason(event.target.value)}
+          rows={3}
+          maxLength={500}
+          placeholder="We went with someone closer to us, but thank you for applying."
+          className="mt-2 w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-purple-500 dark:border-purple-500/30 dark:bg-[#0d0d14] dark:text-white"
+        />
+      </label>
+
+      <div className="mt-5 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setRejecting(null);
+            setRejectReason('');
+          }}
+          className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={confirmRejection}
+          className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2 text-xs font-semibold text-white shadow-lg hover:bg-red-700"
+        >
+          <UserX className="h-4 w-4" />
+          Reject application
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 </div>
   );
 }

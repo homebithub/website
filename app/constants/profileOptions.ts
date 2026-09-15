@@ -2,7 +2,7 @@
  * Centralized Profile Options
  * 
  * This file contains all the dropdown options, lists, and constants used across
- * the application for profile setup, search filters, and forms.
+ * the application for profile editing, search filters, and forms.
  * 
  * Update these arrays once and they will reflect throughout the entire website.
  */
@@ -30,7 +30,7 @@ export const TOWNS = [
 ] as const;
 
 // ============================================================================
-// SERVICE TYPE / HOUSEHELP TYPE OPTIONS
+// SERVICE-PROVIDER TYPE OPTIONS
 // ============================================================================
 
 export const SERVICE_TYPES = {

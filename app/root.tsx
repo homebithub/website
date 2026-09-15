@@ -1,21 +1,29 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "react-router";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useLocation, useRevalidator } from "react-router";
 import React from "react";
 import type { Route } from "./+types/root";
 
 import { AuthProvider } from "~/contexts/AuthContext";
 import { ThemeProvider } from "~/contexts/ThemeContext";
-import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
-import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
+import { ProfileEditorProvider } from "~/contexts/ProfileEditorContext";
 import { WebSocketProvider } from "~/contexts/WebSocketContext";
 import { SSEProvider } from "~/contexts/SSEContext";
-import { GlobalLoaderOverlay } from "~/components/ShimmerLoader";
-import { API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
-import "./tailwind.css";
+import { DeviceRevocationWatcher } from "~/components/DeviceRevocationWatcher";
+import { RouteProgress } from "~/components/RouteProgress";
+import { PersistentNavigation } from "~/components/Navigation";
+import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
+import SupportChat from "~/components/support/SupportChat";
+import { PWARegistration } from "~/components/PWARegistration";
+import { PWAInstallPrompt } from "~/components/PWAInstallPrompt";
+import { AppLaunchScreen } from "~/components/AppLaunchScreen";
+import { PullToRefresh } from "~/components/PullToRefresh";
+import GuidedRouteTour from '~/components/GuidedRouteTour';
+import { shouldRevalidateRootEnvironment } from '~/utils/routeTransitions';
+import stylesheet from "./tailwind.css?url";
 
 export const meta: Route.MetaFunction = () => [
     { title: "Homebit — Find Trusted Home Help in Kenya" },
     { name: "description", content: "Homebit connects Kenyan households with vetted, rated housekeepers, nannies, and home-service professionals. Browse profiles, compare prices, and hire with confidence." },
-    { name: "keywords", content: "househelp Kenya, home services Nairobi, nanny Kenya, housekeeper, domestic worker, cleaning services, Homebit" },
+    { name: "keywords", content: "service provider Kenya, home services Nairobi, nanny Kenya, housekeeper, domestic worker, cleaning services, Homebit" },
     { name: "author", content: "Homebit" },
     { property: "og:type", content: "website" },
     { property: "og:site_name", content: "Homebit" },
@@ -31,7 +39,26 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export const links: Route.LinksFunction = () => [
+    { rel: "stylesheet", href: stylesheet },
     { rel: "canonical", href: "https://homebit.co.ke" },
+    { rel: "manifest", href: "/manifest.webmanifest" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-640x1136.png", media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-750x1334.png", media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-828x1792.png", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1080x2340.png", media: "(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1125x2436.png", media: "(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1170x2532.png", media: "(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1179x2556.png", media: "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1206x2622.png", media: "(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1242x2688.png", media: "(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1260x2736.png", media: "(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1284x2778.png", media: "(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1290x2796.png", media: "(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1320x2868.png", media: "(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1536x2048.png", media: "(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1668x2224.png", media: "(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-1668x2388.png", media: "(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" },
+    { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-2048x2732.png", media: "(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" },
 ];
 
 export const headers: Route.HeadersFunction = () => ({
@@ -43,25 +70,39 @@ export function loader({ request }: Route.LoaderArgs) {
 	const requestHost = requestUrl.hostname.toLowerCase();
 	const isLocalRequest = requestHost === "localhost" || requestHost === "127.0.0.1";
 	const localGatewayBaseUrl = `${requestUrl.protocol}//${requestUrl.hostname}:3005`;
+	const localAuthBaseUrl = `${requestUrl.protocol}//${requestUrl.hostname}:5004`;
 
 	const gatewayBaseUrl = isLocalRequest ? localGatewayBaseUrl : API_BASE_URL;
+	const authBaseUrl = isLocalRequest
+		? localAuthBaseUrl
+		: process.env.AUTH_API_BASE_URL || gatewayBaseUrl;
 	const notificationsWsBaseUrl = isLocalRequest
 		? `${localGatewayBaseUrl}/ws`
 		: NOTIFICATIONS_WS_BASE_URL;
+	const notificationsBaseUrl = isLocalRequest
+		? localGatewayBaseUrl
+		: process.env.NOTIFICATIONS_API_BASE_URL || NOTIFICATIONS_API_BASE_URL;
 
 	return {
 		ENV: {
+			GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || "",
+			GOOGLE_MAPS_MAP_ID: process.env.GOOGLE_MAPS_MAP_ID || "",
 			GOOGLE_CLIENT_ID:
 				process.env.GOOGLE_CLIENT_ID ||
 				"180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",
 			GATEWAY_API_BASE_URL: gatewayBaseUrl,
-			AUTH_API_BASE_URL: gatewayBaseUrl,
-			NOTIFICATIONS_API_BASE_URL: gatewayBaseUrl,
+			AUTH_API_BASE_URL: authBaseUrl,
+			NOTIFICATIONS_API_BASE_URL: notificationsBaseUrl,
 			NOTIFICATIONS_WS_BASE_URL: notificationsWsBaseUrl,
 			PAYMENTS_API_BASE_URL: gatewayBaseUrl,
+			HOUSEHOLD_PROFILE_ID: process.env.HOUSEHOLD_PROFILE_ID || "",
+			SERVICE_PROVIDER_PROFILE_ID:
+				process.env.SERVICE_PROVIDER_PROFILE_ID || process.env.HOUSEHELP_PROFILE_ID || "",
 		},
 	};
 }
+
+export const shouldRevalidate = shouldRevalidateRootEnvironment;
 
 // Add action handler to prevent "no action" errors from external POST requests
 export async function action() {
@@ -71,20 +112,52 @@ export async function action() {
 
 export default function App() {
     const { ENV } = useLoaderData<typeof loader>() || { ENV: { GOOGLE_CLIENT_ID: "", GATEWAY_API_BASE_URL: "" } };
+    const location = useLocation();
+    const revalidator = useRevalidator();
+    const isEmbeddedRoute = ['1', 'true'].includes(new URLSearchParams(location.search).get('embed') || '');
+
+    React.useEffect(() => {
+        const refresh = () => revalidator.revalidate();
+        window.addEventListener("homebit:refresh", refresh);
+        return () => window.removeEventListener("homebit:refresh", refresh);
+    }, [revalidator]);
+
+    const apiOrigins = Array.from(new Set([
+        ENV.GATEWAY_API_BASE_URL,
+        ENV.AUTH_API_BASE_URL,
+        ENV.NOTIFICATIONS_API_BASE_URL,
+    ].filter(Boolean).map((value) => {
+        try {
+            return new URL(value).origin;
+        } catch {
+            return '';
+        }
+    }).filter(Boolean)));
     return (
         <html lang="en" className="h-full" suppressHydrationWarning>
             <head>
                 <meta charSet="utf-8"/>
-                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+                <meta name="theme-color" content="#8b2be2" />
+                <meta name="mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+                <meta name="apple-mobile-web-app-title" content="Homebit" />
                 <Meta/>
                 <Links/>
-                {/* Google Identity Services */}
-                <script src="https://accounts.google.com/gsi/client" async defer></script>
+                {/* Open the API connection while the browser parses the page.
+                    Authenticated screens request it immediately after hydration,
+                    so DNS/TCP/TLS should not sit on their critical path. */}
+                {apiOrigins.map((origin) => (
+                    <React.Fragment key={origin}>
+                        <link rel="dns-prefetch" href={origin} />
+                        <link rel="preconnect" href={origin} crossOrigin="anonymous" />
+                    </React.Fragment>
+                ))}
                 <link rel="icon" type="image/x-icon" href="/favicon.ico" />
                 <link rel="icon" href="/logos/logo-dark.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" />
                 <link rel="icon" href="/logos/logo-light.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" />
-                <link rel="apple-touch-icon" href="/logos/logo-dark.png" />
-                <link rel="apple-touch-icon" href="/logos/logo-light.png" sizes="180x180" />
+                <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png" sizes="180x180" />
 
                 {/* Global font: Plus Jakarta Sans (thinner, modern sans) */}
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -137,6 +210,8 @@ export default function App() {
                 <title>Homebit</title>
             </head>
             <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300" suppressHydrationWarning>
+                <AppLaunchScreen />
+                <PullToRefresh />
                 {/* Blocking script to prevent theme flash - must be in body, not head (head scripts break React Router CSS injection) */}
                 <script
                     dangerouslySetInnerHTML={{
@@ -153,18 +228,22 @@ export default function App() {
                     <AuthProvider>
                         <SSEProvider>
                             <WebSocketProvider>
-                                <ProfileSetupProvider>
-                                    <ProfileSetupGuard>
-                                        <Outlet/>
-                                        <GlobalLoaderOverlay />
-                                    </ProfileSetupGuard>
-                                </ProfileSetupProvider>
+                                <ProfileEditorProvider>
+                                    <RouteProgress/>
+                                    <DeviceRevocationWatcher/>
+                                    <PersistentNavigation/>
+                                    {!isEmbeddedRoute && <GuidedRouteTour />}
+                                    <Outlet/>
+                                    {!isEmbeddedRoute && <SupportChat />}
+                                    <PWAInstallPrompt />
+                                </ProfileEditorProvider>
                             </WebSocketProvider>
                         </SSEProvider>
                     </AuthProvider>
                 </ThemeProvider>
                 <ScrollRestoration/>
                 <Scripts/>
+                <PWARegistration />
             </body>
         </html>
     );

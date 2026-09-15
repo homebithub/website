@@ -5,7 +5,7 @@ export interface AuthContextType {
   user: LoginResponse | null;
   loading: boolean;
   error: string | null;
-  login: (phone: string, password: string) => Promise<void>;
+  login: (phone: string, password: string, redirectTo?: string) => Promise<void>;
   signup: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => Promise<void>;
 }

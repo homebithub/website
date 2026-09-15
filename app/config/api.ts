@@ -8,7 +8,8 @@
 import { getStoredAccessToken } from '~/utils/authStorage';
 
 const LOCAL_GATEWAY_PORT = '3005';
-const PRODUCTION_GATEWAY = 'https://api.homebit.co.ke';
+const LOCAL_AUTH_GRPC_PORT = '5004';
+const PRODUCTION_GATEWAY = 'https://preprod-api.homebit.co.ke';
 
 /**
  * Resolve the gateway base URL. Hierarchy:
@@ -16,7 +17,7 @@ const PRODUCTION_GATEWAY = 'https://api.homebit.co.ke';
  *  2. window.ENV.GATEWAY_API_BASE_URL (injected by root.tsx)
  *  3. process.env.GATEWAY_API_BASE_URL (SSR)
  *  4. Non-production SSR → http://localhost:3005
- *  5. Fallback → https://api.homebit.co.ke
+ *  5. Fallback → https://preprod-api.homebit.co.ke
  */
 const getGatewayBaseUrl = (): string => {
   // Browser: force localhost when running locally
@@ -43,6 +44,48 @@ const getGatewayBaseUrl = (): string => {
   return PRODUCTION_GATEWAY;
 };
 
+const getAuthBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return `${window.location.protocol}//${window.location.hostname}:${LOCAL_AUTH_GRPC_PORT}`;
+    }
+
+    const envAuth = (window as any).ENV?.AUTH_API_BASE_URL;
+    if (envAuth) return normalizeUrl(envAuth);
+  }
+
+  if (typeof process !== 'undefined') {
+    const envUrl = process.env.AUTH_API_BASE_URL;
+    if (envUrl) return normalizeUrl(envUrl);
+
+    if (process.env.NODE_ENV !== 'production') {
+      return `http://localhost:${LOCAL_AUTH_GRPC_PORT}`;
+    }
+  }
+
+  return PRODUCTION_GATEWAY;
+};
+
+const getNotificationsBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return `${window.location.protocol}//${window.location.hostname}:${LOCAL_GATEWAY_PORT}`;
+    }
+
+    const envNotifications = (window as any).ENV?.NOTIFICATIONS_API_BASE_URL;
+    if (envNotifications) return normalizeUrl(envNotifications);
+  }
+
+  if (typeof process !== 'undefined') {
+    const envUrl = process.env.NOTIFICATIONS_API_BASE_URL;
+    if (envUrl) return normalizeUrl(envUrl);
+  }
+
+  return getGatewayBaseUrl();
+};
+
 export function normalizeGatewayBaseUrl(url: string): string {
   let out = url.replace(/\/+$/, '')
     .replace(/\/(auth|payments|notifications)$/i, '')
@@ -51,8 +94,15 @@ export function normalizeGatewayBaseUrl(url: string): string {
   try {
     const parsed = new URL(out);
     const host = parsed.hostname.toLowerCase();
-    if (host === 'homebit.co.ke' || host === 'www.homebit.co.ke') {
-      return `${parsed.protocol}//api.homebit.co.ke`;
+    const apiHostByFrontendHost: Record<string, string> = {
+      'homebit.co.ke': 'api.homebit.co.ke',
+      'www.homebit.co.ke': 'api.homebit.co.ke',
+      'preprod.homebit.co.ke': 'preprod-api.homebit.co.ke',
+      'hba.homebit.co.ke': 'hba-api.homebit.co.ke',
+    };
+    const apiHost = apiHostByFrontendHost[host];
+    if (apiHost) {
+      return `${parsed.protocol}//${apiHost}`;
     }
   } catch { /* ignore */ }
 
@@ -65,10 +115,15 @@ const normalizeUrl = normalizeGatewayBaseUrl;
 // All point to the same gateway; separate names kept for backward compat.
 export const API_BASE_URL = getGatewayBaseUrl();
 export const GATEWAY_API_BASE_URL = API_BASE_URL;
-export const AUTH_API_BASE_URL = API_BASE_URL;
-export const NOTIFICATIONS_API_BASE_URL = API_BASE_URL;
+export const AUTH_API_BASE_URL = getAuthBaseUrl();
+export const NOTIFICATIONS_API_BASE_URL = getNotificationsBaseUrl();
 export const PAYMENTS_API_BASE_URL = API_BASE_URL;
-export const NOTIFICATIONS_WS_BASE_URL = `${API_BASE_URL}/ws`;
+export const NOTIFICATIONS_WS_BASE_URL = `${NOTIFICATIONS_API_BASE_URL}/ws`;
+
+export const gatewayApiUrl = (path: string): string => {
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+};
 
 // ── REST endpoints still in use (file uploads, SSR loaders, etc.) ───────
 export const API_ENDPOINTS = {

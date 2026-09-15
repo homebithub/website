@@ -6,12 +6,14 @@
 
 import { PaymentsServiceClient } from '~/grpc/generated/payments/payments_grpc_web_pb';
 import payments_pb_module from '~/grpc/generated/payments/payments_pb';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import { GRPC_WEB_BASE_URL, handleGrpcError, retryOnExpiry } from './client';
 import {
   getStoredAccessToken,
-  getStoredProfileType,
+  getStoredCanonicalProfileType,
   getStoredUserId,
+  getStoredUserProfileId,
 } from '~/utils/authStorage';
+import { normalizeProfileType } from '~/utils/profileType';
 
 const payments_pb = payments_pb_module as any;
 
@@ -22,11 +24,19 @@ function resolveUserId(userId: string): string {
   return getStoredUserId();
 }
 
+function resolveProfileId(profileId: string): string {
+  return profileId || getStoredUserProfileId();
+}
+
+function resolveProfileType(profileType: string): string {
+  return normalizeProfileType(profileType || getStoredCanonicalProfileType());
+}
+
 function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
   const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  const profileType = getStoredProfileType();
+  const profileType = getStoredCanonicalProfileType();
   if (profileType) md['x-profile-type'] = profileType;
   return md;
 }
@@ -36,7 +46,7 @@ export const paymentsService = {
   async getPlans(): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetPlansRequest();
-      paymentsClient.getPlans(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.getPlans(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -47,7 +57,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetPlanRequest();
       request.setPlanId(planId);
-      paymentsClient.getPlan(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.getPlan(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -55,11 +65,13 @@ export const paymentsService = {
   },
 
   // ── Subscriptions ───────────────────────────────────
-  async getMySubscription(userId: string): Promise<any> {
+  async getMySubscription(userId: string, profileId = '', profileType = ''): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetMySubscriptionRequest();
       request.setUserId(resolveUserId(userId));
-      paymentsClient.getMySubscription(request, getMetadata(), (err: any, response: any) => {
+      request.setProfileId(resolveProfileId(profileId));
+      request.setProfileType(resolveProfileType(profileType));
+      retryOnExpiry((cb) => paymentsClient.getMySubscription(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -70,7 +82,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.ListMySubscriptionsRequest();
       request.setUserId(resolveUserId(userId));
-      paymentsClient.listMySubscriptions(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.listMySubscriptions(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -82,18 +94,20 @@ export const paymentsService = {
       const request = new payments_pb.CancelSubscriptionRequest();
       request.setSubscriptionId(subscriptionId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.cancelSubscription(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.cancelSubscription(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
     });
   },
 
-  async checkSubscriptionAccess(userId: string): Promise<any> {
+  async checkSubscriptionAccess(userId: string, profileId = '', profileType = ''): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.CheckSubscriptionAccessRequest();
       request.setUserId(resolveUserId(userId));
-      paymentsClient.checkSubscriptionAccess(request, getMetadata(), (err: any, response: any) => {
+      request.setProfileId(resolveProfileId(profileId));
+      request.setProfileType(resolveProfileType(profileType));
+      retryOnExpiry((cb) => paymentsClient.checkSubscriptionAccess(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -108,7 +122,7 @@ export const paymentsService = {
       request.setUserId(resolveUserId(userId));
       request.setReason(reason);
       request.setDurationDays(durationDays);
-      paymentsClient.pauseSubscription(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.pauseSubscription(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -120,7 +134,7 @@ export const paymentsService = {
       const request = new payments_pb.ResumeSubscriptionRequest();
       request.setSubscriptionId(subscriptionId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.resumeSubscription(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.resumeSubscription(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -132,7 +146,7 @@ export const paymentsService = {
       const request = new payments_pb.GetPauseStatusRequest();
       request.setSubscriptionId(subscriptionId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.getPauseStatus(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.getPauseStatus(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -148,7 +162,7 @@ export const paymentsService = {
       request.setReasonCategory(reasonCategory);
       request.setReasonText(reasonText);
       request.setFeedback(feedback);
-      paymentsClient.initiateCancellation(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.initiateCancellation(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -160,7 +174,7 @@ export const paymentsService = {
       const request = new payments_pb.ConfirmCancellationRequest();
       request.setCancellationRequestId(cancellationRequestId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.confirmCancellation(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.confirmCancellation(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -172,7 +186,7 @@ export const paymentsService = {
       const request = new payments_pb.UndoCancellationRequest();
       request.setCancellationRequestId(cancellationRequestId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.undoCancellation(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.undoCancellation(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -186,9 +200,9 @@ export const paymentsService = {
       request.setUserId(resolveUserId(userId));
       request.setPlanId(planId);
       request.setPhoneNumber(phoneNumber);
-      request.setProfileId(profileId);
-      request.setProfileType(profileType);
-      paymentsClient.createSubscriptionCheckout(request, getMetadata(), (err: any, response: any) => {
+      request.setProfileId(resolveProfileId(profileId));
+      request.setProfileType(resolveProfileType(profileType));
+      retryOnExpiry((cb) => paymentsClient.createSubscriptionCheckout(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -202,7 +216,7 @@ export const paymentsService = {
       request.setSubscriptionId(subscriptionId);
       request.setPhoneNumber(phoneNumber);
       request.setAmount(amount);
-      paymentsClient.initiatePayment(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.initiatePayment(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -214,7 +228,7 @@ export const paymentsService = {
       const request = new payments_pb.CheckPaymentStatusRequest();
       request.setPaymentId(paymentId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.checkPaymentStatus(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.checkPaymentStatus(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -227,7 +241,7 @@ export const paymentsService = {
       request.setUserId(resolveUserId(userId));
       request.setOffset(offset);
       request.setLimit(limit);
-      paymentsClient.listMyPayments(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.listMyPayments(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -241,7 +255,7 @@ export const paymentsService = {
       request.setSubscriptionId(subscriptionId);
       request.setNewPlanId(newPlanId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.previewProration(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.previewProration(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -254,7 +268,7 @@ export const paymentsService = {
       request.setSubscriptionId(subscriptionId);
       request.setNewPlanId(newPlanId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.changePlan(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.changePlan(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -265,7 +279,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetCreditBalanceRequest();
       request.setUserId(resolveUserId(userId));
-      paymentsClient.getCreditBalance(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.getCreditBalance(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -277,7 +291,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetPaymentMethodsRequest();
       request.setUserId(resolveUserId(userId));
-      paymentsClient.getPaymentMethods(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.getPaymentMethods(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -288,7 +302,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetDefaultPaymentMethodRequest();
       request.setUserId(resolveUserId(userId));
-      paymentsClient.getDefaultPaymentMethod(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.getDefaultPaymentMethod(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -303,7 +317,7 @@ export const paymentsService = {
       request.setPhoneNumber(phoneNumber);
       request.setNickname(nickname);
       request.setIsDefault(isDefault);
-      paymentsClient.addPaymentMethod(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.addPaymentMethod(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -315,7 +329,7 @@ export const paymentsService = {
       const request = new payments_pb.SetDefaultPaymentMethodRequest();
       request.setMethodId(methodId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.setDefaultPaymentMethod(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.setDefaultPaymentMethod(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -327,7 +341,7 @@ export const paymentsService = {
       const request = new payments_pb.RemovePaymentMethodRequest();
       request.setMethodId(methodId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.removePaymentMethod(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.removePaymentMethod(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -340,7 +354,7 @@ export const paymentsService = {
       request.setMethodId(methodId);
       request.setUserId(resolveUserId(userId));
       request.setNickname(nickname);
-      paymentsClient.updatePaymentMethodNickname(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.updatePaymentMethodNickname(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });
@@ -353,7 +367,7 @@ export const paymentsService = {
       const request = new payments_pb.DownloadReceiptRequest();
       request.setPaymentId(paymentId);
       request.setUserId(resolveUserId(userId));
-      paymentsClient.downloadReceipt(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.downloadReceipt(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else {
           const pdfData =
@@ -380,7 +394,7 @@ export const paymentsService = {
       request.setPaymentId(paymentId);
       request.setUserId(resolveUserId(userId));
       request.setEmail(email);
-      paymentsClient.emailReceipt(request, getMetadata(), (err: any, response: any) => {
+      retryOnExpiry((cb) => paymentsClient.emailReceipt(request, getMetadata(), cb), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });

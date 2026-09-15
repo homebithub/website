@@ -64,6 +64,13 @@ export class PaymentsServiceClient {
                response: payments_payments_pb.CheckSubscriptionAccessResponse) => void
   ): grpcWeb.ClientReadableStream<payments_payments_pb.CheckSubscriptionAccessResponse>;
 
+  getSubscriptionStatuses(
+    request: payments_payments_pb.GetSubscriptionStatusesRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: payments_payments_pb.GetSubscriptionStatusesResponse) => void
+  ): grpcWeb.ClientReadableStream<payments_payments_pb.GetSubscriptionStatusesResponse>;
+
   pauseSubscription(
     request: payments_payments_pb.PauseSubscriptionRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -460,6 +467,11 @@ export class PaymentsServicePromiseClient {
     request: payments_payments_pb.CheckSubscriptionAccessRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<payments_payments_pb.CheckSubscriptionAccessResponse>;
+
+  getSubscriptionStatuses(
+    request: payments_payments_pb.GetSubscriptionStatusesRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<payments_payments_pb.GetSubscriptionStatusesResponse>;
 
   pauseSubscription(
     request: payments_payments_pb.PauseSubscriptionRequest,

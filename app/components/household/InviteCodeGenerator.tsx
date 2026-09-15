@@ -7,6 +7,8 @@ interface InviteCodeGeneratorProps {
   onInviteCreated?: (invitation: HouseholdInvitation) => void;
 }
 
+import CustomSelect from '~/components/ui/CustomSelect';
+
 export function InviteCodeGenerator({
   householdId,
   onInviteCreated,
@@ -86,7 +88,7 @@ export function InviteCodeGenerator({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsOpen(false)} />
       <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl shadow-2xl dark:shadow-glow-lg w-full sm:max-w-2xl sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto border-2 border-purple-200 dark:border-purple-500/30 animate-slide-up">
         {/* Header */}
@@ -137,7 +139,7 @@ export function InviteCodeGenerator({
                     <div className="text-left">
                       <div className="font-bold text-gray-900 dark:text-white mb-1">Member</div>
                       <div className="text-xs text-gray-600 dark:text-gray-400">
-                        Can manage househelps
+                        Can manage service providers
                       </div>
                     </div>
                   </button>
@@ -165,17 +167,18 @@ export function InviteCodeGenerator({
                 <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">
                   Expires In
                 </label>
-                <select
-                  value={expiresInDays}
-                  onChange={(e) => setExpiresInDays(Number(e.target.value))}
-                  className="w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value={1}>1 day</option>
-                  <option value={3}>3 days</option>
-                  <option value={7}>7 days (recommended)</option>
-                  <option value={14}>14 days</option>
-                  <option value={30}>30 days</option>
-                </select>
+                <CustomSelect
+                  value={String(expiresInDays)}
+                  onChange={(next) => setExpiresInDays(Number(next))}
+                  ariaLabel="Expires in"
+                  options={[
+                    { value: '1', label: '1 day' },
+                    { value: '3', label: '3 days' },
+                    { value: '7', label: '7 days (recommended)' },
+                    { value: '14', label: '14 days' },
+                    { value: '30', label: '30 days' },
+                  ]}
+                />
               </div>
 
               {/* Max Uses */}
@@ -183,16 +186,17 @@ export function InviteCodeGenerator({
                 <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">
                   Maximum Uses
                 </label>
-                <select
-                  value={maxUses}
-                  onChange={(e) => setMaxUses(Number(e.target.value))}
-                  className="w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value={1}>1 person (recommended)</option>
-                  <option value={2}>2 people</option>
-                  <option value={3}>3 people</option>
-                  <option value={5}>5 people</option>
-                </select>
+                <CustomSelect
+                  value={String(maxUses)}
+                  onChange={(next) => setMaxUses(Number(next))}
+                  ariaLabel="Maximum uses"
+                  options={[
+                    { value: '1', label: '1 person (recommended)' },
+                    { value: '2', label: '2 people' },
+                    { value: '3', label: '3 people' },
+                    { value: '5', label: '5 people' },
+                  ]}
+                />
               </div>
 
               {/* Auto-Approve Toggle */}

@@ -11,8 +11,6 @@ import {
   ArrowPathIcon,
   BanknotesIcon,
   ExclamationTriangleIcon,
-  PauseIcon,
-  PlayIcon,
   XCircleIcon as CancelIcon,
   CheckIcon
 } from '@heroicons/react/24/outline';
@@ -24,18 +22,18 @@ import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { paymentsService } from '~/services/grpc/payments.service';
-import { PauseSubscriptionModal } from '~/components/subscriptions/PauseSubscriptionModal';
 import { CancelSubscriptionFlow } from '~/components/subscriptions/CancelSubscriptionFlow';
 import { ChangePlanModal } from '~/components/subscriptions/ChangePlanModal';
 import { CreditBalanceCard } from '~/components/subscriptions/CreditBalanceCard';
-import { PauseStatusCard } from '~/components/subscriptions/PauseStatusCard';
-import type { PauseStatusResponse, CreditBalanceResponse, PauseReason, CancelReason } from '~/types/payments';
-import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import type { CreditBalanceResponse, CancelReason } from '~/types/payments';
+import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
+import { notifySubscriptionChanged } from '~/utils/subscriptionEvents';
 import {
   extractPayments,
   extractPlans,
   extractSubscription,
   extractSubscriptionAccess,
+  resolvePaymentReference,
   type NormalizedPayment,
   type NormalizedSubscription,
   type NormalizedSubscriptionAccess,
@@ -56,6 +54,7 @@ export default function SubscriptionsPage() {
   const currentUserPhone = currentUser?.phone || '';
   const currentUserEmail = currentUser?.email || '';
   const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId();
+	const currentProfileId = currentUser?.user_profile_id || currentUser?.userProfileId || getStoredUserProfileId();
   const [dataLoading, setDataLoading] = useState(false);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -77,13 +76,10 @@ export default function SubscriptionsPage() {
   const [receiptMessage, setReceiptMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
   // Subscription management state
-  const [showPauseModal, setShowPauseModal] = useState(false);
   const [showCancelFlow, setShowCancelFlow] = useState(false);
   const [showChangePlanModal, setShowChangePlanModal] = useState(false);
   const [selectedNewPlan, setSelectedNewPlan] = useState<SubscriptionPlan | null>(null);
-  const [pauseStatus, setPauseStatus] = useState<PauseStatusResponse | null>(null);
   const [creditBalance, setCreditBalance] = useState<CreditBalanceResponse | null>(null);
-  const [loadingPauseStatus, setLoadingPauseStatus] = useState(false);
   const [loadingCreditBalance, setLoadingCreditBalance] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   
@@ -96,48 +92,11 @@ export default function SubscriptionsPage() {
   const [checkoutError, setCheckoutError] = useState('');
   const [checkoutPolling, setCheckoutPolling] = useState<NodeJS.Timeout | null>(null);
 
-  // Hardcoded pricing plans (same as pricing page)
-  const allPlans: SubscriptionPlan[] = [
-    {
-      id: 'household-monthly', name: 'Monthly',
-      description: 'Monthly subscription with 1-month free trial',
-      price_amount: 49900, billing_cycle: 'monthly', profile_type: 'household',
-      trial_days: 30, is_active: true,
-      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true },
-    },
-    {
-      id: 'household-quarterly', name: 'Quarterly',
-      description: '3-month subscription - Save 10%! (1-month free trial)',
-      price_amount: 134900, billing_cycle: 'quarterly', profile_type: 'household',
-      trial_days: 30, is_active: true,
-      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true, savings: 'Save KES 150' },
-    },
-    {
-      id: 'household-semi-annual', name: 'Semi-Annual',
-      description: '6-month subscription - Save 20%! (1-month free trial)',
-      price_amount: 239900, billing_cycle: 'semi-annual', profile_type: 'household',
-      trial_days: 30, is_active: true,
-      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true, savings: 'Save KES 600' },
-    },
-    {
-      id: 'household-annual', name: 'Annual',
-      description: '1-year subscription - Save 30%! (1-month free trial)',
-      price_amount: 419900, billing_cycle: 'yearly', profile_type: 'household',
-      trial_days: 30, is_active: true,
-      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true, savings: 'Save KES 1,800' },
-    },
-    {
-      id: 'househelp-annual', name: 'Annual Access',
-      description: 'One-time annual payment with 1-month free trial',
-      price_amount: 99900, billing_cycle: 'yearly', profile_type: 'househelp',
-      trial_days: 30, is_active: true,
-      features: { direct_messaging: true, profile_verification: true, job_applications: 'unlimited', profile_visibility: true, job_alerts: true, application_tracking: true },
-    },
-  ];
-
   // Filter plans by user's profile type
-  const profileType: string = currentUser?.profile_type || getStoredProfileType() || '';
-  const availablePlans = (plans.length > 0 ? plans : allPlans).filter(p => p.is_active && p.profile_type === profileType);
+  const profileType: string = getStoredCanonicalProfileType();
+  // The server's plan rows are the source of truth for price and trial wording.
+  // A hardcoded fallback can advertise a trial that an administrator disabled.
+  const availablePlans = plans.filter(p => p.is_active && p.profile_type === profileType);
   const relevantPlans = availablePlans;
   const changePlanOptions = subscription
     ? relevantPlans.filter((plan) => plan.is_active && plan.id !== subscription.plan_id)
@@ -200,12 +159,14 @@ export default function SubscriptionsPage() {
   };
 
   const initiateCheckout = async () => {
-    if (!selectedCheckoutPlan || !checkoutPhone) {
+    if (!selectedCheckoutPlan) return;
+    const expectsTrial = (selectedCheckoutPlan.trial_days ?? 0) > 0;
+    if (!expectsTrial && !checkoutPhone) {
       setCheckoutError('Please enter your phone number');
       return;
     }
     const formatted = formatPhoneNumber(checkoutPhone);
-    if (!isValidPhoneNumber(formatted)) {
+    if (formatted && !isValidPhoneNumber(formatted)) {
       setCheckoutError('Please enter a valid Kenyan phone number (e.g., 0712345678)');
       return;
     }
@@ -213,10 +174,23 @@ export default function SubscriptionsPage() {
     setCheckoutStatus('initiating');
     setCheckoutError('');
     try {
-      const data = await paymentsService.createSubscriptionCheckout('', selectedCheckoutPlan.id, formatted, '', '') as any;
+      const data = await paymentsService.createSubscriptionCheckout('', selectedCheckoutPlan.id, formatted, currentProfileId, profileType) as any;
       const result = data?.toObject?.() ?? data;
+      const paymentId = result.paymentId || result.payment_id;
+      if (!paymentId && (result.status === 'trial' || result.status === 'completed')) {
+        notifySubscriptionChanged(currentUserId);
+        setCheckoutStatus('success');
+        setCheckoutProcessing(false);
+        setSuccessMessage(result.message || 'Your subscription is active.');
+        setTimeout(() => {
+          setShowCheckoutModal(false);
+          void fetchSubscriptionData();
+        }, 1200);
+        return;
+      }
+      if (!paymentId) throw new Error('Checkout did not return a payment reference. Please try again.');
       setCheckoutStatus('processing');
-      startCheckoutPolling(result.paymentId || result.payment_id);
+      startCheckoutPolling(paymentId);
     } catch (error) {
       setCheckoutStatus('failed');
       setCheckoutError(error instanceof Error ? error.message : 'Failed to initiate payment.');
@@ -232,6 +206,7 @@ export default function SubscriptionsPage() {
         const response = await paymentsService.checkPaymentStatus(paymentId, '') as any;
         const data = response?.toObject?.() ?? response;
         if (data?.status === 'completed') {
+          notifySubscriptionChanged(currentUserId);
           setCheckoutStatus('success');
           clearInterval(interval);
           setCheckoutPolling(null);
@@ -278,7 +253,7 @@ export default function SubscriptionsPage() {
     setDataLoading(true);
     try {
       try {
-        const subData = await paymentsService.getMySubscription('') as any;
+        const subData = await paymentsService.getMySubscription('', currentProfileId, profileType) as any;
         setSubscription(extractSubscription(subData));
       } catch (err) {
         console.error('[Subscriptions] Failed to fetch subscription:', err);
@@ -286,7 +261,7 @@ export default function SubscriptionsPage() {
       }
 
       try {
-        const accessData = await paymentsService.checkSubscriptionAccess('') as any;
+        const accessData = await paymentsService.checkSubscriptionAccess('', currentProfileId, profileType) as any;
         setSubscriptionAccess(extractSubscriptionAccess(accessData));
       } catch (err) {
         console.error('[Subscriptions] Failed to fetch subscription access:', err);
@@ -311,7 +286,7 @@ export default function SubscriptionsPage() {
     } finally {
       setDataLoading(false);
     }
-  }, []);
+  }, [currentProfileId, profileType]);
 
   const currentPlan =
     subscription?.plan ||
@@ -321,21 +296,6 @@ export default function SubscriptionsPage() {
   const currentExpiresAt = subscriptionAccess?.expires_at || subscription?.trial_end || subscription?.current_period_end || '';
   const isTrialing = subscriptionAccess?.is_trial || subscription?.status === 'trial';
   const daysRemaining = subscriptionAccess?.days_remaining ?? 0;
-
-  // Fetch pause status
-  const fetchPauseStatus = React.useCallback(async () => {
-    if (!subscription?.id) return;
-    
-    setLoadingPauseStatus(true);
-    try {
-      const status = await paymentsService.getPauseStatus(subscription.id, '');
-      setPauseStatus(status);
-    } catch (error) {
-      console.error('[Subscriptions] Failed to fetch pause status:', error);
-    } finally {
-      setLoadingPauseStatus(false);
-    }
-  }, [subscription?.id]);
 
   // Fetch credit balance
   const fetchCreditBalance = React.useCallback(async () => {
@@ -379,38 +339,12 @@ export default function SubscriptionsPage() {
     }
   }, [user, fetchSubscriptionData, currentUserEmail, currentUserPhone]);
 
-  // Fetch pause status and credit balance when subscription is loaded
+  // Fetch the credit balance when subscription is loaded
   useEffect(() => {
     if (subscription?.id) {
-      fetchPauseStatus();
       fetchCreditBalance();
     }
-  }, [subscription?.id, fetchPauseStatus, fetchCreditBalance]);
-
-  // Handle pause subscription
-  const handlePauseSubscription = async (reason: PauseReason, durationDays: number) => {
-    if (!subscription?.id) return;
-    
-    await paymentsService.pauseSubscription(subscription.id, '', reason, durationDays);
-    await fetchSubscriptionData();
-    await fetchPauseStatus();
-  };
-
-  // Handle resume subscription
-  const handleResumeSubscription = async () => {
-    if (!subscription?.id) return;
-    
-    setErrorMessage('');
-    try {
-      await paymentsService.resumeSubscription(subscription.id, '');
-      setSuccessMessage('Subscription resumed successfully');
-      await fetchSubscriptionData();
-      await fetchPauseStatus();
-      setTimeout(() => setSuccessMessage(''), 5000);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to resume subscription');
-    }
-  };
+  }, [subscription?.id, fetchCreditBalance]);
 
   // Handle cancel subscription
   const handleCancelSubscription = async (reason: CancelReason, feedback?: string) => {
@@ -708,9 +642,9 @@ export default function SubscriptionsPage() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
-        <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        <main data-tour="subscription-management" className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
-              <h1 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-300 mb-1">
+              <h1 data-tour="subscription-heading" className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-300 mb-1">
                 Subscriptions & Wallet
               </h1>
               <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -726,7 +660,7 @@ export default function SubscriptionsPage() {
               <div className="space-y-8">
                 {subscription ? (
                   <>
-                    <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
+                    <div data-tour="subscription-status" className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
@@ -808,27 +742,7 @@ export default function SubscriptionsPage() {
 
                       {/* Subscription Management Actions */}
                       <div className="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-2">
-                        {subscription.status === 'active' && !pauseStatus?.is_paused && (
-                          <button
-                            onClick={() => setShowPauseModal(true)}
-                            className="w-full sm:flex-1 sm:min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-xl hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-all text-xs font-medium"
-                          >
-                            <PauseIcon className="w-4 h-4" />
-                            Pause
-                          </button>
-                        )}
-                        
-                        {pauseStatus?.is_paused && (
-                          <button
-                            onClick={handleResumeSubscription}
-                            className="w-full sm:flex-1 sm:min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-xl hover:bg-green-200 dark:hover:bg-green-900/50 transition-all text-xs font-medium"
-                          >
-                            <PlayIcon className="w-4 h-4" />
-                            Resume
-                          </button>
-                        )}
-                        
-                        {subscription.status === 'active' && (
+                        {subscription.status === 'active' && !subscription.cancel_at_period_end && (
                           <button
                             onClick={() => setShowCancelFlow(true)}
                             className="w-full sm:flex-1 sm:min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-all text-xs font-medium"
@@ -844,13 +758,10 @@ export default function SubscriptionsPage() {
                     {successMessage && <SuccessAlert message={successMessage} />}
                     {errorMessage && <ErrorAlert message={errorMessage} />}
 
-                    {/* Pause Status Card */}
-                    {pauseStatus?.is_paused && (
-                      <PauseStatusCard
-                        pauseStatus={pauseStatus}
-                        loading={loadingPauseStatus}
-                        onResume={handleResumeSubscription}
-                      />
+                    {subscription.cancel_at_period_end && (
+                      <div className="mt-4 rounded-xl border border-amber-300/50 bg-amber-50/70 dark:border-amber-400/30 dark:bg-amber-900/20 px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
+                        Your subscription is set to end on <strong>{formatDate(subscription.current_period_end)}</strong>. You’ll keep Pro access until then.
+                      </div>
                     )}
 
                     {/* Credit Balance Card */}
@@ -919,7 +830,7 @@ export default function SubscriptionsPage() {
                       Choose Your Plan
                     </h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                      All plans include a 30-day free trial. Cancel anytime.
+                      Trial availability and price come from the plan shown below.
                     </p>
 
                     {relevantPlans.length > 0 ? (
@@ -930,6 +841,7 @@ export default function SubscriptionsPage() {
                           return (
                             <div
                               key={plan.id}
+                              data-tour="subscription-plan"
                               className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5 hover:border-purple-400 dark:hover:border-purple-400 transition-colors flex flex-col"
                             >
                               <div className="flex-1">
@@ -953,6 +865,11 @@ export default function SubscriptionsPage() {
                                   <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
                                     / {getBillingCycleLabel(plan.billing_cycle)}
                                   </span>
+                                  {(plan.trial_days ?? 0) > 0 && (
+                                    <p data-tour="subscription-trial" className="mt-1 text-xs font-medium text-green-600 dark:text-green-400">
+                                      {plan.trial_days}-day trial for eligible new subscribers
+                                    </p>
+                                  )}
                                 </div>
 
                                 <div className="space-y-2 mb-4">
@@ -969,7 +886,7 @@ export default function SubscriptionsPage() {
                                 onClick={() => handleSelectCheckoutPlan(plan)}
                                 className="w-full px-4 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                               >
-                                Start Free Trial
+                                {(plan.trial_days ?? 0) > 0 ? 'Continue' : 'Choose plan'}
                               </button>
                             </div>
                           );
@@ -1008,9 +925,7 @@ export default function SubscriptionsPage() {
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
                               {formatDate(resolvePaymentTimestamp(payment))}
-                              {payment.mpesa_receipt_number && (
-                                <span className="ml-2">• Receipt: {payment.mpesa_receipt_number}</span>
-                              )}
+                              <span className="ml-2">• Ref: {resolvePaymentReference(payment)}</span>
                             </p>
                             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                               {payment.payment_method ? payment.payment_method.toUpperCase() : 'PAYMENT'}
@@ -1057,7 +972,7 @@ export default function SubscriptionsPage() {
             <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
               <Transition.Child
                 as={Fragment}
@@ -1221,7 +1136,7 @@ export default function SubscriptionsPage() {
             <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
               <Transition.Child
                 as={Fragment}
@@ -1266,6 +1181,13 @@ export default function SubscriptionsPage() {
                           <span className="text-xs text-gray-600 dark:text-gray-400">Transaction ID</span>
                           <span className="text-xs font-medium text-gray-900 dark:text-white font-mono text-right break-all">
                             {selectedPayment.id}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between gap-4">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Payment Reference</span>
+                          <span className="text-xs font-semibold text-gray-900 dark:text-white font-mono text-right break-all">
+                            {resolvePaymentReference(selectedPayment)}
                           </span>
                         </div>
 
@@ -1464,20 +1386,6 @@ export default function SubscriptionsPage() {
         </Dialog>
       </Transition>
 
-      {/* Pause Subscription Modal */}
-      {subscription && (
-        <PauseSubscriptionModal
-          isOpen={showPauseModal}
-          onClose={() => setShowPauseModal(false)}
-          subscription={subscription as any}
-          onSuccess={(resumeDate) => {
-            setSuccessMessage(`Subscription paused successfully. Will resume on ${formatDate(resumeDate)}`);
-            setTimeout(() => setSuccessMessage(''), 5000);
-          }}
-          onPause={handlePauseSubscription}
-        />
-      )}
-
       {/* Cancel Subscription Flow */}
       {subscription && (
         <CancelSubscriptionFlow
@@ -1486,10 +1394,6 @@ export default function SubscriptionsPage() {
           subscription={subscription as any}
           availablePlans={relevantPlans as any}
           onCancel={handleCancelSubscription}
-          onPauseInstead={() => {
-            setShowCancelFlow(false);
-            setShowPauseModal(true);
-          }}
           onDowngrade={(planId) => {
             const plan = relevantPlans.find(p => p.id === planId);
             if (plan) {
@@ -1526,7 +1430,7 @@ export default function SubscriptionsPage() {
             <div className="fixed inset-0 bg-black/50" />
           </Transition.Child>
 
-          <div className="fixed inset-0 overflow-y-auto">
+          <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
               <Transition.Child
                 as={Fragment}
@@ -1552,14 +1456,16 @@ export default function SubscriptionsPage() {
                               / {getBillingCycleLabel(selectedCheckoutPlan.billing_cycle)}
                             </span>
                           </p>
-                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                            Includes 30-day free trial
-                          </p>
+                          {(selectedCheckoutPlan.trial_days ?? 0) > 0 && (
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                              Eligible new subscribers start with a {selectedCheckoutPlan.trial_days}-day trial. No payment is taken today.
+                            </p>
+                          )}
                         </div>
 
                         <div>
                           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            M-Pesa Phone Number
+                            M-Pesa Phone Number{(selectedCheckoutPlan.trial_days ?? 0) > 0 ? ' (only needed if your trial was already used)' : ''}
                           </label>
                           <input
                             type="tel"
@@ -1584,10 +1490,10 @@ export default function SubscriptionsPage() {
                           </button>
                           <button
                             onClick={initiateCheckout}
-                            disabled={!checkoutPhone || checkoutProcessing}
+                            disabled={checkoutProcessing || ((selectedCheckoutPlan.trial_days ?? 0) <= 0 && !checkoutPhone)}
                             className="flex-1 px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Start Free Trial
+                            {(selectedCheckoutPlan.trial_days ?? 0) > 0 ? 'Continue' : 'Pay with M-Pesa'}
                           </button>
                         </div>
                       </div>
@@ -1617,7 +1523,7 @@ export default function SubscriptionsPage() {
                   {checkoutStatus === 'success' && (
                     <div className="text-center py-8">
                       <CheckCircleIcon className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">Payment Successful!</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">Subscription Active!</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Your subscription is now active.</p>
                     </div>
                   )}

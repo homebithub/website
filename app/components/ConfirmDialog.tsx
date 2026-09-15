@@ -1,5 +1,6 @@
 import React from 'react';
 import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { useBodyScrollLock } from '~/hooks/useBodyScrollLock';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export default function ConfirmDialog({
   onCancel,
   variant = 'danger',
 }: ConfirmDialogProps) {
+  useBodyScrollLock(isOpen);
   if (!isOpen) return null;
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -52,7 +54,7 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       onClick={handleBackdropClick}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />

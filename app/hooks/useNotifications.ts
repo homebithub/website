@@ -1,18 +1,22 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { NotificationItem } from "~/types/notifications";
 import { notificationsService } from "~/services/grpc/notifications.service";
-import { useSSESubscription } from "~/hooks/useSSESubscription";
+import { useSSESubscriptionSafe } from "~/hooks/useSSESubscription";
 import { shouldSilenceGatewayError } from "~/services/grpc/client";
 import {
   getStoredAccessToken,
   getStoredUser,
   getStoredUserId,
 } from "~/utils/authStorage";
+import { cachedRequest, invalidateCached } from "~/utils/requestCache";
+
+const NOTIFICATION_STALE_MS = 2 * 60_000;
 
 interface UseNotificationsOptions {
   pollingMs?: number;
   pageSize?: number;
   search?: string;
+  enabled?: boolean;
 }
 
 type NotificationsUpdatedDetail = {
@@ -36,72 +40,74 @@ function asString(value: unknown): string {
   return typeof value === "string" ? value : String(value);
 }
 
-function isHtmlLike(value: string): boolean {
-  const trimmed = value.trim();
-  if (!trimmed) return false;
-  return /^<!doctype\s+html/i.test(trimmed)
-    || /^<html[\s>]/i.test(trimmed)
-    || /<body[\s>]/i.test(trimmed)
-    || /<\/(?:div|p|table|section|article|main|h1|h2|h3)>/i.test(trimmed);
-}
-
-function isPushNotification(n: NotificationApiItem): boolean {
-  const channel = asString(n.channel).toLowerCase();
-  if (channel) return channel === "push";
-
-  const provider = asString(n.provider).toLowerCase();
-  if (provider) return provider === "firebase";
-
-  return !isHtmlLike(asString(n.message || n.rendered_content));
-}
-
-function mapToNotification(n: NotificationApiItem): NotificationItem {
+function mapToNotification(notification: NotificationApiItem): NotificationItem {
   return {
-    id: asString(n.id),
-    userId: asString(n.user_id),
-    channel: asString(n.channel),
-    title: asString(n.title || n.rendered_subject),
-    message: asString(n.message || n.rendered_content),
-    type: asString(n.type),
-    status: asString(n.status),
-    clicked: Boolean(n.clicked || n.clicked_at),
-    createdAt: asString(n.created_at),
-    updatedAt: asString(n.updated_at),
-    created_at: asString(n.created_at),
-    updated_at: asString(n.updated_at),
-    rendered_subject: asString(n.rendered_subject),
-    rendered_content: asString(n.rendered_content),
-    clicked_at: asString(n.clicked_at),
+    id: asString(notification.id),
+    userId: asString(notification.user_id),
+    channel: asString(notification.channel),
+    title: asString(notification.title || notification.rendered_subject),
+    message: asString(notification.message || notification.rendered_content),
+    type: asString(notification.type),
+    status: asString(notification.status),
+    clicked: Boolean(notification.clicked || notification.clicked_at),
+    createdAt: asString(notification.created_at),
+    updatedAt: asString(notification.updated_at),
+    created_at: asString(notification.created_at),
+    updated_at: asString(notification.updated_at),
+    rendered_subject: asString(notification.rendered_subject),
+    rendered_content: asString(notification.rendered_content),
+    clicked_at: asString(notification.clicked_at),
   };
 }
 
-export function useNotifications({ pollingMs = 15000, pageSize = 20, search = "" }: UseNotificationsOptions = {}) {
+function responsePayload(response: any): any {
+  return response?.data?.data ?? response?.data ?? response ?? {};
+}
+
+export function useNotifications({
+  pollingMs = 15_000,
+  pageSize = 20,
+  search = "",
+  enabled = true,
+}: UseNotificationsOptions = {}) {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [showingCount, setShowingCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const unavailableUntilRef = useRef(0);
   const sourceIdRef = useRef(`notifications-${Math.random().toString(36).slice(2)}`);
 
   const getCurrentUserId = useCallback((): string | null => {
     const user = getStoredUser();
-    if (user?.id) return user.id;
-
-    const userId = getStoredUserId();
+    const userId = user?.user_id || user?.id || getStoredUserId();
     return userId || null;
   }, []);
 
-  const computeUnread = (list: NotificationItem[]) => list.filter(n => !n.clicked && (n.status?.toLowerCase?.() !== "read")).length;
+  const filterSearch = useCallback((list: NotificationItem[]) => {
+    const query = search.trim().toLowerCase();
+    if (!query) return list;
+    return list.filter((item) =>
+      `${item.title || ""} ${item.message || ""} ${item.type || ""}`.toLowerCase().includes(query)
+    );
+  }, [search]);
 
-  const fetchLatest = useCallback(async () => {
+  const fetchLatest = useCallback(async (force = false) => {
+    if (!enabled) {
+      setItems([]);
+      setUnreadCount(0);
+      setTotalCount(0);
+      setShowingCount(0);
+      setHasMore(false);
+      return;
+    }
+    if (Date.now() < unavailableUntilRef.current) return;
+
     try {
-      if (Date.now() < unavailableUntilRef.current) return;
       setLoading(true);
-      const token = typeof window !== 'undefined' ? getStoredAccessToken() : undefined;
-      if (!token) {
+      if (!getStoredAccessToken()) {
         setItems([]);
         setUnreadCount(0);
         setTotalCount(0);
@@ -110,144 +116,166 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
         return;
       }
 
-      const userID = getCurrentUserId();
-      if (!userID) return;
+      const userId = getCurrentUserId();
+      if (!userId) return;
 
-      const data = await notificationsService.listNotificationsByUser(userID, pageSize, 0);
-      const notifications: NotificationApiItem[] = Array.isArray(data?.notifications) ? data.notifications : [];
-      
-      const list: NotificationItem[] = notifications.filter(isPushNotification).map((n) => mapToNotification(n));
+      const response = await cachedRequest(
+        `notifications:${userId}:${pageSize}:0`,
+        async () => responsePayload(
+          await notificationsService.listNotificationsByUser(userId, pageSize, 0)
+        ),
+        { maxAgeMs: NOTIFICATION_STALE_MS, force },
+      );
+      const rawItems: NotificationApiItem[] = Array.isArray(response?.notifications)
+        ? response.notifications
+        : [];
+      const mapped = rawItems.map(mapToNotification);
+      const visible = filterSearch(mapped);
 
-      setItems(list);
-      setHasMore(list.length >= pageSize);
-      
-      setTotalCount(data?.total_count ?? list.length);
-      setShowingCount(list.length);
-      setUnreadCount(data?.unread_count ?? computeUnread(list));
-    } catch (e) {
-      if (shouldSilenceGatewayError(e)) {
+      setItems(visible);
+      setTotalCount(Number(response?.total_count ?? mapped.length));
+      setShowingCount(visible.length);
+      setUnreadCount(Number(
+        response?.unread_count ??
+        mapped.filter((item) => !item.clicked && item.status?.toLowerCase() !== "read").length
+      ));
+      setHasMore(rawItems.length >= pageSize);
+    } catch (fetchError) {
+      if (shouldSilenceGatewayError(fetchError)) {
         unavailableUntilRef.current = Date.now() + 60_000;
         return;
       }
-      console.error('[useNotifications] Error:', e);
+      console.error("[useNotifications] Failed to load notifications", fetchError);
     } finally {
       setLoading(false);
     }
-  }, [getCurrentUserId, pageSize]);
+  }, [enabled, filterSearch, getCurrentUserId, pageSize]);
 
-  const loadMore = async () => {
-    if (loadingMore || !hasMore) return;
+  const loadMore = useCallback(async () => {
+    if (!enabled || loadingMore || !hasMore || Date.now() < unavailableUntilRef.current) return;
     try {
-      if (Date.now() < unavailableUntilRef.current) return;
       setLoadingMore(true);
-      const userID = getCurrentUserId();
-      if (!userID) return;
+      const userId = getCurrentUserId();
+      if (!userId) return;
 
-      const data = await notificationsService.listNotificationsByUser(userID, pageSize, items.length);
-      const notifications: NotificationApiItem[] = Array.isArray(data?.notifications) ? data.notifications : [];
-      
-      const list: NotificationItem[] = notifications.filter(isPushNotification).map((n) => mapToNotification(n));
+      const response = responsePayload(
+        await notificationsService.listNotificationsByUser(userId, pageSize, items.length)
+      );
+      const rawItems: NotificationApiItem[] = Array.isArray(response?.notifications)
+        ? response.notifications
+        : [];
+      const mapped = filterSearch(rawItems.map(mapToNotification));
 
-      if (list.length > 0) {
-        setItems(prev => {
-          const seen = new Set(prev.map(i => i.id));
-          const merged = [...prev];
-          for (const it of list) {
-            if (!seen.has(it.id)) merged.push(it);
-          }
-          return merged;
-        });
-        setHasMore(list.length >= pageSize);
-        setShowingCount(prev => prev + list.length);
-      } else {
-        setHasMore(false);
-      }
-    } catch (e) {
-      if (shouldSilenceGatewayError(e)) {
+      setItems((previous) => {
+        const seen = new Set(previous.map((item) => item.id));
+        return [...previous, ...mapped.filter((item) => item.id && !seen.has(item.id))];
+      });
+      setShowingCount((previous) => previous + mapped.length);
+      setTotalCount(Number(response?.total_count ?? totalCount));
+      setHasMore(rawItems.length >= pageSize);
+    } catch (loadError) {
+      if (shouldSilenceGatewayError(loadError)) {
         unavailableUntilRef.current = Date.now() + 60_000;
         return;
       }
-      console.error('[useNotifications] loadMore error:', e);
+      console.error("[useNotifications] Failed to load more notifications", loadError);
     } finally {
       setLoadingMore(false);
     }
-  };
+  }, [enabled, filterSearch, getCurrentUserId, hasMore, items.length, loadingMore, pageSize, totalCount]);
 
   useEffect(() => {
-    fetchLatest();
-    const id = setInterval(() => fetchLatest(), pollingMs);
-    return () => clearInterval(id);
-  }, [fetchLatest, pollingMs, search]);
+    void fetchLatest();
+    if (!enabled) return;
+    const interval = window.setInterval(() => void fetchLatest(), pollingMs);
+    return () => window.clearInterval(interval);
+  }, [enabled, fetchLatest, pollingMs]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    const handleNotificationsUpdated = (event: Event) => {
+    const handleUpdated = (event: Event) => {
       const detail = (event as CustomEvent<NotificationsUpdatedDetail>).detail;
       if (detail?.source === sourceIdRef.current) return;
-
       unavailableUntilRef.current = 0;
-
-      if (typeof detail?.unreadCount === "number") {
-        setUnreadCount(detail.unreadCount);
-      }
-
       if (detail?.action === "mark-all-read") {
-        setItems(prev => prev.map(item => ({ ...item, clicked: true, status: "read" })));
+        setItems((previous) => previous.map((item) => ({ ...item, clicked: true, status: "read" })));
+      } else if (detail?.action === "mark-one-read" && detail.notificationId) {
+        setItems((previous) => previous.map((item) =>
+          item.id === detail.notificationId ? { ...item, clicked: true, status: "read" } : item
+        ));
       }
-
-      if (detail?.action === "mark-one-read" && detail.notificationId) {
-        setItems(prev => prev.map(item => item.id === detail.notificationId ? { ...item, clicked: true, status: "read" } : item));
-      }
-
-      void fetchLatest();
+      if (typeof detail?.unreadCount === "number") setUnreadCount(detail.unreadCount);
+      void fetchLatest(true);
     };
-
-    window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
-    return () => window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
+    window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, handleUpdated);
+    return () => window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, handleUpdated);
   }, [fetchLatest]);
 
   const refreshFromRealtime = useCallback(() => {
+    if (!enabled) return;
     unavailableUntilRef.current = 0;
-    void fetchLatest();
-  }, [fetchLatest]);
+    void fetchLatest(true);
+  }, [enabled, fetchLatest]);
 
-  useSSESubscription('notifications.snapshot', refreshFromRealtime);
-  useSSESubscription('notifications.created', refreshFromRealtime);
-  useSSESubscription('notifications.blast', refreshFromRealtime);
-  useSSESubscription('notifications.system.alert', refreshFromRealtime);
+  useSSESubscriptionSafe("notifications.snapshot", refreshFromRealtime, enabled);
+  useSSESubscriptionSafe("notifications.created", refreshFromRealtime, enabled);
+  useSSESubscriptionSafe("notifications.blast", refreshFromRealtime, enabled);
+  useSSESubscriptionSafe("notifications.system.alert", refreshFromRealtime, enabled);
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
+    const userId = getCurrentUserId();
+    if (!userId) return;
     try {
-      const userID = getCurrentUserId();
-      if (!userID) return;
-      await notificationsService.markAllNotificationsAsClicked(userID);
+      await notificationsService.markAllNotificationsAsClicked(userId);
+      invalidateCached(`notifications:${userId}:`);
       unavailableUntilRef.current = 0;
       setUnreadCount(0);
-      setItems(prev => prev.map(item => ({ ...item, clicked: true, status: "read" })));
-      dispatchNotificationsUpdated({ action: "mark-all-read", unreadCount: 0, source: sourceIdRef.current });
-      await fetchLatest();
-    } catch (e) {
-      if (!shouldSilenceGatewayError(e)) {
-        console.error('[useNotifications] markAllAsRead error:', e);
+      setItems((previous) => previous.map((item) => ({ ...item, clicked: true, status: "read" })));
+      dispatchNotificationsUpdated({
+        action: "mark-all-read",
+        unreadCount: 0,
+        source: sourceIdRef.current,
+      });
+    } catch (markError) {
+      if (!shouldSilenceGatewayError(markError)) {
+        console.error("[useNotifications] Failed to mark all as read", markError);
       }
     }
-  };
+  }, [getCurrentUserId]);
 
-  const markOneAsRead = async (id: string) => {
+  const markOneAsRead = useCallback(async (id: string) => {
     try {
-      await notificationsService.markNotificationAsClicked(id, '');
+      await notificationsService.markNotificationAsClicked(id, "");
+      const userId = getCurrentUserId();
+      if (userId) invalidateCached(`notifications:${userId}:`);
       unavailableUntilRef.current = 0;
-      setUnreadCount(prev => Math.max(0, prev - 1));
-      setItems(prev => prev.map(item => item.id === id ? { ...item, clicked: true, status: "read" } : item));
-      dispatchNotificationsUpdated({ action: "mark-one-read", notificationId: id, source: sourceIdRef.current });
-      await fetchLatest();
-    } catch (e) {
-      if (!shouldSilenceGatewayError(e)) {
-        console.error('[useNotifications] markOneAsRead error:', e);
+      setUnreadCount((previous) => Math.max(0, previous - 1));
+      setItems((previous) => previous.map((item) =>
+        item.id === id ? { ...item, clicked: true, status: "read" } : item
+      ));
+      dispatchNotificationsUpdated({
+        action: "mark-one-read",
+        notificationId: id,
+        source: sourceIdRef.current,
+      });
+    } catch (markError) {
+      if (!shouldSilenceGatewayError(markError)) {
+        console.error("[useNotifications] Failed to mark notification as read", markError);
       }
     }
-  };
+  }, [getCurrentUserId]);
 
-  return { items, unreadCount, totalCount, showingCount, loading, loadingMore, hasMore, refresh: fetchLatest, loadMore, markAllAsRead, markOneAsRead };
+  return {
+    items,
+    unreadCount,
+    totalCount,
+    showingCount,
+    loading,
+    loadingMore,
+    hasMore,
+    refresh: () => fetchLatest(true),
+    loadMore,
+    markAllAsRead,
+    markOneAsRead,
+  };
 }

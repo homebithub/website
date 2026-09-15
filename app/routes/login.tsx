@@ -12,14 +12,12 @@ import { handleApiError } from '~/utils/errorMessages';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { getDeviceId, getDeviceName } from '~/utils/deviceFingerprint';
 import { cacheAuthSession, getStoredAccessToken } from '~/utils/authStorage';
-import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
-import { API_ENDPOINTS } from '~/config/api';
+import { registerCurrentDevice } from '~/utils/deviceFingerprint';
 
 export const meta = () => [
     { title: "Log In — Homebit" },
-    { name: "description", content: "Log in to your Homebit account to manage your home services, view your househelp shortlist, and more." },
+    { name: "description", content: "Log in to your Homebit account to manage your home services, view your service provider shortlist, and more." },
     { property: "og:title", content: "Log In — Homebit" },
     { property: "og:url", content: "https://homebit.co.ke/login" },
 ];
@@ -71,6 +69,13 @@ export default function LoginPage() {
   // Get redirect URL from query params
   const searchParams = new URLSearchParams(location.search);
   const redirectUrl = searchParams.get('redirect');
+  // Set when a password change signed them out. Without it, arriving at a login
+  // screen straight after a success message reads as the change having failed.
+  const passwordChanged = searchParams.get('passwordChanged') === '1';
+  // Set when this browser was revoked from the trusted-devices page, here or
+  // elsewhere. Without it, being signed out mid-session looks like a fault.
+  const deviceRevoked = searchParams.get('deviceRevoked') === '1';
+  const deviceRevokedReason = searchParams.get('reason') || '';
 
   // Handle return from Google OAuth callback
   useEffect(() => {
@@ -78,14 +83,9 @@ export default function LoginPage() {
     const googleLogin = params.get('google_login');
     const token = params.get('token') || getStoredAccessToken() || null;
     const errorParam = params.get('error');
-    const deviceRevoked = params.get('device_revoked');
 
     if (errorParam && !loginError) {
       setLoginError('Google login failed. Please try again or use phone and password.');
-    }
-
-    if (deviceRevoked === '1' && !loginError) {
-      setLoginError('This device is no longer approved for your account. Please sign in again on an authorized device.');
     }
 
     if (googleLogin === 'success' && token && !processingGoogleRef.current) {
@@ -123,21 +123,12 @@ export default function LoginPage() {
             user: userData,
             provider: "google",
           });
-          const profileType: string = userData.profile_type || '';
-
-          // Register device after successful Google login (non-blocking)
           try {
-            const { default: deviceService } = await import('~/services/grpc/device.service');
-            const deviceId = await getDeviceId();
-            if (userData.user_id) {
-              const result = await deviceService.registerDevice(
-                userData.user_id, deviceId, getDeviceName(), navigator.userAgent, ''
-              );
-              void result;
-            }
+            await registerCurrentDevice(userData.user_id);
           } catch (deviceError) {
-            console.error('[Device] Registration failed after Google login:', deviceError);
+            console.warn('Device registration failed:', deviceError);
           }
+          const profileType: string = userData.profile_type || '';
 
           // If user has no phone number, redirect to add-phone page
           if (!userData.phone) {
@@ -157,22 +148,6 @@ export default function LoginPage() {
             return;
           }
 
-          // Mirror the profile-setup redirect logic used in AuthContext.login
-          if (profileType === 'household' || profileType === 'househelp') {
-            try {
-              const destination = await resolveProfileSetupDestination({
-                userId: userData.user_id,
-                profileType,
-                completedPath: '/',
-              });
-              navigate(destination, { replace: true });
-              return;
-            } catch (err: any) {
-              console.error('Failed to check profile setup status after Google login:', err);
-            }
-          }
-
-          // If profile is complete or setup check failed, redirect
           if (redirectUrl) {
             navigate(redirectUrl, { replace: true });
           } else {
@@ -255,9 +230,9 @@ export default function LoginPage() {
     }
     
     try {
-      await login(formData.phone, formData.password);
-      // Device registration is handled inside AuthContext login() before navigate
-      // Login successful, redirect will be handled by useEffect
+      // Signed in and taken to the destination by login(); the device is
+      // registered there too, before it navigates.
+      await login(formData.phone, formData.password, redirectUrl || undefined);
     } catch (error) {
       // Capture login error and display it
       const errorMessage = error instanceof Error ? error.message : 'Invalid phone number or password. Please try again.';
@@ -267,22 +242,31 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const response = await fetch(`${API_ENDPOINTS.auth.googleUrl}?flow=auth`, {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-      if (!response.ok) {
-        throw new Error(`google_auth_url_failed:${response.status}`);
+      // Asked over gRPC, because the REST path this used does not exist.
+      //
+      // GET /api/v1/auth/google/url answers 404 in every environment: the
+      // gateway lists /api/v1/auth/google/ among its public prefixes but never
+      // registers a handler for it, so the button failed on its first line and
+      // reported "Google login failed" as though Google had refused. The
+      // GetGoogleAuthURL method behind it works and is what everything else
+      // here already speaks.
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const response = await authService.getGoogleAuthURL('auth');
+      const url = response?.getUrl?.() || response?.url || '';
+
+      if (!url) {
+        // Sign-in is not configured rather than broken — auth refuses when it
+        // holds no client id — and saying "try again" would have somebody
+        // retry something that cannot succeed.
+        setLoginError('Google sign-in is unavailable right now. Please use your phone number and password.');
+        return;
       }
-      const payload = await response.json();
-      const url = payload?.url;
-      if (url) {
-        window.location.href = url as string;
-      }
-    } catch (e) {
-      setLoginError('Google login failed. Please try again or use phone and password.');
+      window.location.href = url as string;
+    } catch (googleError: unknown) {
+      const message = googleError instanceof Error ? googleError.message : '';
+      setLoginError(
+        message || 'Google login failed. Please try again or use phone and password.',
+      );
     }
   };
 
@@ -307,6 +291,26 @@ export default function LoginPage() {
           <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
           <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 text-center">Welcome Back! 👋</h1>
           
+          {deviceRevoked && !loginError && (
+            <div
+              role="status"
+              className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+            >
+              {deviceRevokedReason ||
+                'This device was signed out from your trusted devices.'}{' '}
+              Sign in again to keep using it, or leave it signed out if you did not expect this.
+            </div>
+          )}
+
+          {passwordChanged && !loginError && (
+            <div
+              role="status"
+              className="mb-4 rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200"
+            >
+              Your password was changed. Please sign in with your new password.
+            </div>
+          )}
+
           {/* Login Error Alert */}
           {loginError && (
             <ErrorAlert title="Login Failed" message={loginError} />
@@ -417,11 +421,10 @@ export default function LoginPage() {
           </div>
           
           <div className="mt-6 text-center">
-            {/* TODO: Uncomment signup link when going live */}
-            {/* <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Don't have an account?</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Don't have an account?</span>
             <Link to="/signup" className="ml-1 text-sm font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline transition-colors">
               Sign up
-            </Link> */}
+            </Link>
           </div>
           </form>
           </PurpleCard>

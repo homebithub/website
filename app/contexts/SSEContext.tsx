@@ -7,12 +7,23 @@ import { getStoredUserId } from '~/utils/authStorage';
 
 export type SSEEventHandler = (event: any) => void;
 
+/** Event type the gateway uses to say a reconnect could not be resumed cleanly. */
+export const SSE_HISTORY_GAP_EVENT = 'stream.history_gap';
+
 interface SSEContextValue {
   isConnected: boolean;
   subscribe: (eventType: string, handler: SSEEventHandler) => () => void;
   reconnect: () => void;
   connectionUptime: number;
   hasActiveConnection: () => boolean;
+  /**
+   * Increments whenever the server could not resume the stream from where this
+   * client left off, so what it holds may be missing events.
+   *
+   * Watch it to refetch. Nothing else reveals the gap: the stream reconnects
+   * and resumes normally, and the events that were missed simply never arrive.
+   */
+  historyGapCount: number;
 }
 
 const SSEContext = createContext<SSEContextValue | null>(null);
@@ -37,6 +48,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [connectionUptime, setConnectionUptime] = useState(0);
+  const [historyGapCount, setHistoryGapCount] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
   const listenersRef = useRef<Map<string, Set<SSEEventHandler>>>(new Map());
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -44,11 +56,51 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const connectionStartTimeRef = useRef<number>(0);
   const uptimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasConnectedRef = useRef(false);
-  const consecutiveErrorCountRef = useRef(0);
-  const disabledDueToErrorsRef = useRef(false);
-  
-  const maxReconnectAttempts = 5;
+  // Lets scheduleReconnect reach the latest connect without the two callbacks
+  // depending on one another.
+  const connectRef = useRef<() => void>(() => {});
+  // So exhausting the budget is reported once, not on every subsequent error.
+  const exhaustedLoggedRef = useRef(false);
+  const lastEventIdRef = useRef('');
+
   const baseReconnectDelay = 1000;
+
+  const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+
+  const clearPendingReconnect = () => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  };
+
+  /**
+   * Schedule the next attempt.
+   *
+   * There is deliberately no terminal state. Previously three consecutive
+   * errors set a flag that made connect() return early forever — even the
+   * public reconnect() honoured it — so one bad tunnel left a signed-in user
+   * silently receiving nothing until they reloaded the page.
+   */
+  const scheduleReconnect = useCallback((suppress: boolean) => {
+    if (suppress) return;
+
+    // A retry cannot succeed with no network, and spending the budget during
+    // the outage leaves nothing for when connectivity returns. Stay dormant;
+    // the online listener resumes us.
+    if (isOffline()) return;
+
+    reconnectAttemptsRef.current++;
+    const backoff = Math.min(baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
+    // Jitter so many tabs recovering from one outage do not retry in lockstep.
+    const delay = Math.round(backoff * (0.5 + Math.random() * 0.5));
+
+    clearPendingReconnect();
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+      connectRef.current();
+    }, delay);
+  }, []);
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
@@ -84,9 +136,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
 
   const connect = useCallback(() => {
     if (typeof window === 'undefined') return;
-    if (disabledDueToErrorsRef.current) {
-      return;
-    }
 
     const authUser = (user as any)?.user ?? user;
     const currentUserId = authUser?.user_id || authUser?.id || getStoredUserId();
@@ -102,9 +151,13 @@ export function SSEProvider({ children }: SSEProviderProps) {
     }
 
     const token = getAccessTokenFromCookies() || localStorage.getItem('token') || null;
-    const url = token 
+    const baseUrl = token
       ? `${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`
       : `${API_BASE_URL}/api/v1/notifications/stream`;
+    const cursorSeparator = baseUrl.includes('?') ? '&' : '?';
+    const url = lastEventIdRef.current
+      ? `${baseUrl}${cursorSeparator}last_event_id=${encodeURIComponent(lastEventIdRef.current)}`
+      : baseUrl;
 
     const es = new EventSource(url, { withCredentials: true });
     eventSourceRef.current = es;
@@ -114,7 +167,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
       reconnectAttemptsRef.current = 0;
       connectionStartTimeRef.current = Date.now();
       hasConnectedRef.current = true;
-      consecutiveErrorCountRef.current = 0;
+      exhaustedLoggedRef.current = false;
       
       // Start uptime tracking
       if (uptimeIntervalRef.current) {
@@ -128,10 +181,30 @@ export function SSEProvider({ children }: SSEProviderProps) {
       }, 1000);
     };
 
+    // onmessage, not addEventListener per type. An EventSource only routes a
+    // frame to a named listener when the frame carries an "event:" field, so
+    // the gateway deliberately omits it and every event arrives here to be
+    // dispatched on the event_type inside the payload.
     es.onmessage = (ev) => {
       try {
+        if (ev.lastEventId) lastEventIdRef.current = ev.lastEventId;
         const payload = JSON.parse(ev.data);
         const eventType = payload.event_type;
+
+        if (eventType === SSE_HISTORY_GAP_EVENT) {
+          // The server could not resume from our cursor, so anything that
+          // happened while we were away is lost to this connection. Surface it
+          // rather than carrying on as if the state were complete.
+          console.warn('[SSE] Reconnected with a gap in history:', payload.data);
+          setHistoryGapCount((count) => count + 1);
+          // A gap means deltas are no longer sufficient. Existing consumers
+          // already use these events to force authoritative snapshots.
+          window.dispatchEvent(new Event('inbox-updated'));
+          window.dispatchEvent(new Event('hiring-updated'));
+          window.dispatchEvent(new Event('notifications-updated'));
+          window.dispatchEvent(new CustomEvent('homebit:subscription-changed'));
+        }
+
         dispatchMessage(eventType, payload);
       } catch (err) {
         console.error('[SSE] Failed to parse event:', err);
@@ -146,7 +219,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
       setIsConnected(false);
       es.close();
       eventSourceRef.current = null;
-      consecutiveErrorCountRef.current += 1;
 
       // Clear uptime tracking
       if (uptimeIntervalRef.current) {
@@ -156,33 +228,14 @@ export function SSEProvider({ children }: SSEProviderProps) {
       connectionStartTimeRef.current = 0;
       setConnectionUptime(0);
 
-      if (!suppressLocalRetry && consecutiveErrorCountRef.current >= 3) {
-        disabledDueToErrorsRef.current = true;
-        if (!suppressLocalRetry) {
-          console.warn('[SSE] Disabled SSE retries after repeated errors');
-        }
-        return;
-      }
-
-      // Attempt reconnection with exponential backoff
-      if (!suppressLocalRetry && reconnectAttemptsRef.current < maxReconnectAttempts) {
-        const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
-        
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnectAttemptsRef.current++;
-          connect();
-        }, delay);
-      } else if (!suppressLocalRetry) {
-        console.error('[SSE] Max reconnection attempts reached');
-      }
+      scheduleReconnect(suppressLocalRetry);
     };
-	  }, [disconnect, user]);
+  }, [disconnect, scheduleReconnect, user]);
 
   const reconnect = useCallback(() => {
-    if (disabledDueToErrorsRef.current) {
-      return;
-    }
     reconnectAttemptsRef.current = 0;
+    exhaustedLoggedRef.current = false;
+    clearPendingReconnect();
     connect();
   }, [connect]);
 
@@ -205,13 +258,53 @@ export function SSEProvider({ children }: SSEProviderProps) {
     };
   }, []);
 
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
+
+  /**
+   * Recover from an outage.
+   *
+   * Coming back online, or returning to a tab whose stream died while the
+   * machine slept, is fresh evidence that a retry may now succeed. Reset the
+   * budget and reconnect at once rather than waiting out a backoff — or, before
+   * this, never retrying again.
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const resume = () => {
+      if (eventSourceRef.current?.readyState === EventSource.OPEN) return;
+
+      const authUser = (user as any)?.user ?? user;
+      const currentUserId = authUser?.user_id || authUser?.id || getStoredUserId();
+      if (!currentUserId) return;
+
+      reconnectAttemptsRef.current = 0;
+      exhaustedLoggedRef.current = false;
+      clearPendingReconnect();
+      connectRef.current();
+    };
+
+    const handleOnline = () => resume();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') resume();
+    };
+
+    window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [user]);
+
   // Reconnect whenever auth state changes so login/logout updates the shared stream.
   useEffect(() => {
     const authUser = (user as any)?.user ?? user;
     const currentUserId = authUser?.user_id || authUser?.id || getStoredUserId();
     reconnectAttemptsRef.current = 0;
-    consecutiveErrorCountRef.current = 0;
-    disabledDueToErrorsRef.current = false;
+    exhaustedLoggedRef.current = false;
 
     if (currentUserId) {
       hasConnectedRef.current = false;
@@ -257,6 +350,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
     reconnect,
     connectionUptime,
     hasActiveConnection: () => isConnected && !!eventSourceRef.current,
+    historyGapCount,
   };
 
   return <SSEContext.Provider value={value}>{children}</SSEContext.Provider>;

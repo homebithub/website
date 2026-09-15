@@ -1,13 +1,13 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState } from "react";
 import { handleApiError } from '../../utils/errorMessages';
-import { househelpPreferencesService } from '~/services/grpc/authServices';
+import { serviceProviderPreferencesService } from '~/services/grpc/authServices';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const TIMES = ["morning", "afternoon", "evening"];
 
 interface NannyTypeProps {
-  userType?: 'househelp' | 'household';
+  userType?: 'service_provider' | 'household';
 }
 
 type TimeSlots = Record<string, boolean>;
@@ -18,7 +18,7 @@ const initialAvailability: AvailabilityType = DAYS.reduce((acc, day) => {
   return acc;
 }, {} as AvailabilityType);
 
-const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
+const NanyType: React.FC<NannyTypeProps> = ({ userType = 'service_provider' }) => {
   const [selected, setSelected] = useState<string>("");
   const [availableFrom, setAvailableFrom] = useState<string>("");
   const [availability, setAvailability] = useState<AvailabilityType>(initialAvailability);
@@ -31,7 +31,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
     setError("");
     setSuccess("");
     if (!selected) {
-      setError("Please select the type of househelp.");
+      setError("Please select the type of service provider.");
       return;
     }
     if (!availableFrom || isNaN(Date.parse(availableFrom))) {
@@ -46,13 +46,13 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       }
     }
     if (userType === 'household' && selected === 'sleep_in' && offDays.length === 0) {
-      setError("Please select at least one off day for your sleep-in househelp.");
+      setError("Please select at least one off day for your sleep-in service provider.");
       return;
     }
     setLoading(true);
     try {
       const token = getAccessTokenFromCookies();
-      await househelpPreferencesService.updateAvailability('', {
+      await serviceProviderPreferencesService.updateAvailability('', {
         availability,
         available_from: availableFrom,
         ...(userType === 'household' && selected === 'sleep_in' && { off_days: offDays }),
@@ -91,7 +91,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
     <div className="w-full max-w-xl mx-auto bg-white border border-gray-100 p-8 rounded-xl shadow-lg flex flex-col gap-8">
       
       
-      <h2 className="text-xl font-extrabold text-primary mb-4 text-center">Type of househelp</h2>
+      <h2 className="text-xl font-extrabold text-primary mb-4 text-center">Type of service provider</h2>
       <div className="flex flex-col gap-5">
         <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${selected === "sleep_in" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
           <input
@@ -124,7 +124,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
             Select Off Days <span className="text-xs text-gray-400">(Select up to 3 days)</span>
           </h3>
           <p className="text-xs text-gray-600">
-            Choose which days of the week your sleep-in househelp will have off.
+            Choose which days of the week your sleep-in service provider will have off.
           </p>
           <div className="grid grid-cols-2 gap-3">
             {DAYS.map((day) => (

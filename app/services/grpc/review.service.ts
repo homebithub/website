@@ -1,21 +1,24 @@
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
-import * as auth_pb from '~/grpc/generated/auth/auth_pb';
+import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import { GRPC_WEB_BASE_URL, handleGrpcError, retryOnExpiry } from './client';
 import {
   getStoredAccessToken,
   getStoredUserId,
 } from '~/utils/authStorage';
 
 const { ReviewServiceClient } = auth_grpc_web_module as any;
+const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const client = new ReviewServiceClient(GRPC_WEB_BASE_URL, null, null);
 
 export interface ReviewFormData {
-  hiring_id: string;
+  hiring_id?: string;
   reviewee_id: string;
   rating: number;
   title: string;
   content: string;
+  type: 'household' | 'service_provider';
+  service_type: string;
   images: Array<{
     image_url: string;
     s3_key: string;
@@ -102,7 +105,7 @@ export async function createReview(
   request.setData(reviewData);
 
   return new Promise((resolve, reject) => {
-    client.createReview(request, getMetadata(), (err: any, response: any) => {
+    retryOnExpiry((cb) => client.createReview(request, getMetadata(), cb), (err: any, response: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -125,7 +128,7 @@ export async function getReview(
   request.setUserId(resolveUserId(userId));
 
   return new Promise((resolve, reject) => {
-    client.getReview(request, getMetadata(), (err: any, response: any) => {
+    retryOnExpiry((cb) => client.getReview(request, getMetadata(), cb), (err: any, response: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -152,7 +155,7 @@ export async function getPublicReviews(
   request.setLimit(limit);
 
   return new Promise((resolve, reject) => {
-    client.getPublicReviews(request, getMetadata(), (err: any, response: any) => {
+    retryOnExpiry((cb) => client.getPublicReviews(request, getMetadata(), cb), (err: any, response: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -177,7 +180,7 @@ export async function getMyReviews(
   request.setLimit(limit);
 
   return new Promise((resolve, reject) => {
-    client.getMyReviews(request, getMetadata(), (err: any, response: any) => {
+    retryOnExpiry((cb) => client.getMyReviews(request, getMetadata(), cb), (err: any, response: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -199,7 +202,7 @@ export async function getReviewStats(
   request.setUserId(resolveUserId());
 
   return new Promise((resolve, reject) => {
-    client.getReviewStats(request, getMetadata(), (err: any, response: any) => {
+    retryOnExpiry((cb) => client.getReviewStats(request, getMetadata(), cb), (err: any, response: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -222,7 +225,7 @@ export async function markReviewHelpful(
   request.setUserId(resolveUserId(userId));
 
   return new Promise((resolve, reject) => {
-    client.markHelpful(request, getMetadata(), (err: any) => {
+    retryOnExpiry((cb) => client.markHelpful(request, getMetadata(), cb), (err: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -244,7 +247,7 @@ export async function unmarkReviewHelpful(
   request.setUserId(resolveUserId(userId));
 
   return new Promise((resolve, reject) => {
-    client.unmarkHelpful(request, getMetadata(), (err: any) => {
+    retryOnExpiry((cb) => client.unmarkHelpful(request, getMetadata(), cb), (err: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -272,7 +275,7 @@ export async function addReviewResponse(
   request.setData(data);
 
   return new Promise((resolve, reject) => {
-    client.addResponse(request, getMetadata(), (err: any) => {
+    retryOnExpiry((cb) => client.addResponse(request, getMetadata(), cb), (err: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;

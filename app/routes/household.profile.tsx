@@ -1,38 +1,38 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
-import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { profileService as grpcProfileService, householdKidsService, petsService, documentService, householdMemberService, jobService } from '~/services/grpc/authServices';
-import profileSetupService from '~/services/grpc/profileSetup.service';
+import { PHOTO_ACCEPT_ATTRIBUTE, selectPhotosForUpload, uploadDocuments } from '~/utils/documentUploads';
+import { profileService as grpcProfileService, documentService, householdMemberService, profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { Eye } from 'lucide-react';
+import { ClipboardCheck, Eye } from 'lucide-react';
+import { ReferralCodeCard } from '~/components/referrals/ReferralCodeCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import EditSectionModal from '~/components/ui/EditSectionModal';
-import Location from '~/components/Location';
-import Children from '~/components/Children';
-import NannyType from '~/components/NanyType';
-import Chores from '~/components/Chores';
-import Pets from '~/components/Pets';
-import Budget from '~/components/Budget';
-import HouseSize from '~/components/HouseSize';
-import Bio from '~/components/Bio';
-import Religion from '~/components/Religion';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
-import { formatOnboardingBudgetRange } from '~/utils/onboardingCompensation';
-import { getStoredUserId } from '~/utils/authStorage';
-import JobPostModal from '~/components/modals/JobPostModal';
-import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
+import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId, setStoredActiveUserProfileId } from '~/utils/authStorage';
+import { ProfilePageSkeleton, ShimmerLine, ShimmerListPlaceholder } from "~/components/ShimmerLoader";
+import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
+import { ProfileRequirementsChecklist } from '~/components/profile/ProfileRequirementsChecklist';
+import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
+import type { MissingRequirement } from '~/hooks/useOnboardingProgress';
+import { profileFeatureLabel } from '~/utils/profileFeatures';
+import { notifyProfileProgressChanged } from '~/utils/profileProgress';
+import { useProfileCompletionReminder } from '~/hooks/useProfileCompletionReminder';
+import { ProfileCompletionCelebrationModal } from '~/components/profile/ProfileCompletionCelebrationModal';
+import { rememberProfileCompletionBaseline, useProfileCompletionTransition } from '~/hooks/useProfileCompletionTransition';
+import { formatDisplayName } from '~/utils/displayName';
 
 interface HouseholdData {
   id?: string;
+  user_profile_id?: string;
   user_id?: string;
+	avatar_url?: string;
   house_size?: string;
   household_notes?: string;
   needs_live_in?: boolean;
@@ -53,50 +53,130 @@ interface HouseholdData {
   photos?: string[];
 }
 
-interface JobSalaryRange {
-  min?: number;
-  max?: number;
-  currency?: string;
-  frequency?: string;
-}
+type UnknownRecord = Record<string, any>;
 
-interface JobLocation {
-  place_type?: string;
-  latitude?: number;
-  longitude?: number;
-  mapbox_id?: string;
-  name?: string;
-  place?: string;
-}
-
-interface JobPosting {
-  id: string;
-  title?: string;
+interface FeaturePropertyChoice {
+  id: number;
+  name: string;
   description?: string;
-  location?: string | JobLocation;
-  job_types?: string[];
-  start_date?: string;
-  max_applicants?: number;
-  status?: string;
-  created_at?: string;
-  salary_range?: JobSalaryRange;
 }
 
-const formatJobLocation = (location?: string | JobLocation): string => {
-  if (!location) return 'Location not specified';
-  if (typeof location === 'string') return location;
-  return location.name || location.place || 'Location not specified';
+interface SelectedFeatureGroup {
+  featureId: number;
+  featureName: string;
+  properties: FeaturePropertyChoice[];
+}
+
+const HOUSEHOLD_PROFILE_ID = '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1';
+
+const getStoredValue = (key: string) => {
+  if (typeof window === 'undefined') return '';
+  return window.localStorage.getItem(key) || '';
+};
+
+const normalizeArray = (value: unknown): UnknownRecord[] => {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') {
+    const record = value as UnknownRecord;
+    if (Array.isArray(record.data)) return record.data;
+    if (Array.isArray(record.picks)) return record.picks;
+    if (Array.isArray(record.items)) return record.items;
+  }
+  return [];
+};
+
+const nestedRecord = (value: unknown): UnknownRecord =>
+  value && typeof value === 'object' ? value as UnknownRecord : {};
+
+const pickPropertyId = (pick: UnknownRecord): number => {
+  const featureProperty = nestedRecord(pick.feature_property || pick.featureProperty);
+  const property = nestedRecord(pick.property);
+  return Number(
+    pick.feature_property_id ||
+    pick.featurePropertyId ||
+    pick.property_id ||
+    pick.propertyId ||
+    featureProperty.id ||
+    property.id ||
+    0,
+  );
+};
+
+const buildSelectedFeatureGroups = (featuresPayload: unknown, picksPayload: unknown): SelectedFeatureGroup[] => {
+  const features = normalizeArray(featuresPayload);
+  const picks = normalizeArray(picksPayload);
+  const propertiesById = new Map<number, { featureId: number; featureName: string; property: FeaturePropertyChoice }>();
+  const groups = new Map<number, SelectedFeatureGroup>();
+
+  features.forEach((bundle) => {
+    const feature = nestedRecord(bundle.feature);
+    const featureId = Number(bundle.feature_id || bundle.featureId || feature.id || 0);
+    if (!featureId) return;
+
+    const featureName = profileFeatureLabel(String(feature.name || bundle.name || `Feature ${featureId}`));
+    normalizeArray(bundle.properties).forEach((propertyRecord) => {
+      const propertyId = Number(propertyRecord.id || propertyRecord.feature_property_id || propertyRecord.featurePropertyId || 0);
+      if (!propertyId) return;
+      propertiesById.set(propertyId, {
+        featureId,
+        featureName,
+        property: {
+          id: propertyId,
+          name: String(propertyRecord.name || propertyRecord.description || `Option ${propertyId}`),
+          description: propertyRecord.description ? String(propertyRecord.description) : undefined,
+        },
+      });
+    });
+  });
+
+  picks.forEach((pick) => {
+    const propertyId = pickPropertyId(pick);
+    if (!propertyId) return;
+
+    const feature = nestedRecord(pick.feature);
+    const featureProperty = nestedRecord(pick.feature_property || pick.featureProperty);
+    const property = nestedRecord(pick.property);
+    const mapped = propertiesById.get(propertyId);
+    const featureId = Number(
+      pick.feature_id ||
+      pick.featureId ||
+      feature.id ||
+      featureProperty.feature_id ||
+      featureProperty.featureId ||
+      property.feature_id ||
+      property.featureId ||
+      mapped?.featureId ||
+      0,
+    );
+    if (!featureId) return;
+
+    const featureName = profileFeatureLabel(String(feature.name || mapped?.featureName || `Feature ${featureId}`));
+    const selectedProperty: FeaturePropertyChoice = mapped?.property || {
+      id: propertyId,
+      name: String(featureProperty.name || property.name || pick.name || `Option ${propertyId}`),
+      description: String(featureProperty.description || property.description || pick.description || ''),
+    };
+
+    const group = groups.get(featureId) || {
+      featureId,
+      featureName,
+      properties: [],
+    };
+    if (!group.properties.some((item) => item.id === selectedProperty.id)) {
+      group.properties.push(selectedProperty);
+    }
+    groups.set(featureId, group);
+  });
+
+  return Array.from(groups.values()).sort((a, b) => a.featureName.localeCompare(b.featureName));
 };
 
 const MAX_PHOTOS = 5;
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export default function HouseholdProfile() {
   const navigate = useNavigate();
+  const userId = getStoredUserId() || '';
   const [profile, setProfile] = useState<HouseholdData | null>(null);
-  const [kids, setKids] = useState<any[]>([]);
-  const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
@@ -107,7 +187,7 @@ export default function HouseholdProfile() {
     profileId: profile?.id || '',
     profileType: 'household',
     viewerUserId: profile?.user_id,
-    enabled: !!profile?.id,
+    enabled: false,
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -117,15 +197,10 @@ export default function HouseholdProfile() {
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [setupRedirectLoading, setSetupRedirectLoading] = useState(false);
-  const [jobs, setJobs] = useState<JobPosting[]>([]);
-  const [jobsLoading, setJobsLoading] = useState(false);
-  const [jobsError, setJobsError] = useState<string | null>(null);
-  const [jobsSuccess, setJobsSuccess] = useState<string | null>(null);
-  const [showJobModal, setShowJobModal] = useState(false);
-  const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
-  const [jobToDelete, setJobToDelete] = useState<JobPosting | null>(null);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [selectedFeatureGroups, setSelectedFeatureGroups] = useState<SelectedFeatureGroup[]>([]);
+  const [selectedFeaturesLoading, setSelectedFeaturesLoading] = useState(false);
+  const [selectedFeaturesError, setSelectedFeaturesError] = useState<string | null>(null);
   
   // Household invitation code state
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
@@ -142,6 +217,13 @@ export default function HouseholdProfile() {
   const [membersLoading, setMembersLoading] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const [memberToRemove, setMemberToRemove] = useState<{ userId: string } | null>(null);
+
+  useEffect(() => {
+    const canonicalProfileType = getStoredCanonicalProfileType();
+    if (canonicalProfileType === 'service_provider') {
+      navigate('/service-provider/profile', { replace: true });
+    }
+  }, [navigate]);
 
   // Update countdown every minute
   useEffect(() => {
@@ -160,14 +242,31 @@ export default function HouseholdProfile() {
       setError(null);
       setHasError(false);
       try {
-        // Fetch household profile via gRPC
-        const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
+        const canonicalProfileType = getStoredCanonicalProfileType();
+        if (canonicalProfileType === 'service_provider') {
+          navigate('/service-provider/profile', { replace: true });
+          return;
+        }
+
+        // Fetch household profile via gRPC. If the legacy profile endpoint is
+        // unavailable, keep the account page usable with cached auth details.
+        let profileData: HouseholdData;
+        try {
+          profileData = await grpcProfileService.getCurrentHouseholdProfile('');
+        } catch (profileError) {
+          const storedUser = getStoredUser() || {};
+          profileData = {
+            id: String(storedUser.user_profile_id || storedUser.userProfileId || storedUser.profile_id || ''),
+            user_id: String(storedUser.user_id || storedUser.id || getStoredUserId() || ''),
+          };
+        }
+        if (profileData.id || profileData.user_profile_id) {
+          setStoredActiveUserProfileId(String(profileData.id || profileData.user_profile_id));
+        }
         setProfile(profileData);
 
-        const [inviteResult, kidsResult, petsResult, docsResult] = await Promise.allSettled([
-          householdMemberService.getOrCreateInvitationCode(profileData.id),
-          householdKidsService.listHouseholdKids(''),
-          petsService.listMyPets(''),
+        const [inviteResult, docsResult] = await Promise.allSettled([
+          householdMemberService.getOrCreateInvitationCode(profileData.id || ''),
           documentService.getUserDocuments('', 'profile_photo'),
         ]);
 
@@ -177,22 +276,6 @@ export default function HouseholdProfile() {
           setInvitationExpiresAt(extracted.expires_at);
         } else if (inviteResult.status === 'rejected') {
           console.error("No existing invitation code or error loading it:", inviteResult.reason);
-        }
-
-        if (kidsResult.status === 'fulfilled') {
-          const kidsData = kidsResult.value;
-          const kidsArray = Array.isArray(kidsData?.data || kidsData) ? (kidsData?.data || kidsData) : [];
-          setKids(Array.isArray(kidsArray) ? kidsArray : []);
-        } else if (kidsResult.status === 'rejected') {
-          console.error("Error loading kids:", kidsResult.reason);
-        }
-
-        if (petsResult.status === 'fulfilled') {
-          const petsData = petsResult.value;
-          const petsArray = Array.isArray(petsData?.data || petsData) ? (petsData?.data || petsData) : [];
-          setPets(Array.isArray(petsArray) ? petsArray : []);
-        } else if (petsResult.status === 'rejected') {
-          console.error("Error loading pets:", petsResult.reason);
         }
 
         if (docsResult.status === 'fulfilled') {
@@ -229,159 +312,87 @@ export default function HouseholdProfile() {
     }
   }, [profile]);
 
-  const fetchJobs = async (userId: string) => {
-    setJobsLoading(true);
-    setJobsError(null);
-    try {
-      const raw = await jobService.getJobsByUserId(userId);
-      const payload = raw?.data || raw || [];
-      const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
-      setJobs(items as JobPosting[]);
-    } catch (err: any) {
-      setJobsError(err.message || 'Failed to load job postings');
-    } finally {
-      setJobsLoading(false);
-    }
+  const handleCompleteFeaturePicks = () => {
+    rememberProfileCompletionBaseline(`${userId}:household`, progress?.completion_percentage);
+    const storedProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('profile_id') || '' : '';
+    const storedUserProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('user_profile_id') || '' : '';
+
+    navigate('/onboarding/features', {
+      state: {
+        profileId: storedProfileId || HOUSEHOLD_PROFILE_ID,
+        userProfileId: storedUserProfileId,
+        profileType: 'household',
+        returnTo: '/household/profile',
+      },
+    });
   };
 
   useEffect(() => {
-    const userId = profile?.user_id || getStoredUserId();
-    if (!userId) return;
-    fetchJobs(userId);
-  }, [profile?.user_id]);
+    let cancelled = false;
 
-  const handleJobSaved = () => {
-    const userId = profile?.user_id || getStoredUserId();
-    if (userId) {
-      fetchJobs(userId);
-    }
-    setJobsSuccess('Job posting updated.');
-  };
+    const loadSelectedFeatures = async () => {
+      const profileId = getStoredValue('profile_id') || HOUSEHOLD_PROFILE_ID;
+      const userProfileId = getStoredUserProfileId() || getStoredValue('user_profile_id');
 
-  const handleToggleJobStatus = async (job: JobPosting) => {
-    if (!job?.id) return;
-    setJobsError(null);
-    setJobsSuccess(null);
-    try {
-      if (job.status === 'closed') {
-        await jobService.reopenJob(job.id, '');
-        setJobsSuccess('Job reopened.');
-      } else {
-        await jobService.closeJob(job.id, '');
-        setJobsSuccess('Job closed.');
-      }
-      const userId = profile?.user_id || getStoredUserId();
-      if (userId) await fetchJobs(userId);
-    } catch (err: any) {
-      setJobsError(err.message || 'Failed to update job status');
-    }
-  };
-
-  const handleDeleteJob = async () => {
-    if (!jobToDelete?.id) return;
-    setJobsError(null);
-    setJobsSuccess(null);
-    try {
-      await jobService.deleteJob(jobToDelete.id, '');
-      setJobsSuccess('Job deleted.');
-      const userId = profile?.user_id || getStoredUserId();
-      if (userId) await fetchJobs(userId);
-    } catch (err: any) {
-      setJobsError(err.message || 'Failed to delete job');
-    } finally {
-      setJobToDelete(null);
-    }
-  };
-
-  const formatJobDate = (value?: string) => {
-    if (!value) return 'Flexible';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return 'Flexible';
-    return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const formatJobSalary = (range?: JobPosting['salary_range']) => {
-    if (!range) return 'Not specified';
-    const currencyCode = range.currency || 'KES';
-    const formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currencyCode,
-      maximumFractionDigits: 0,
-    });
-
-    const min = range.min != null ? formatter.format(range.min) : '';
-    const max = range.max != null ? formatter.format(range.max) : '';
-    const base = min && max ? `${min} - ${max}` : (min || max || 'Not specified');
-    const freqLabel = range.frequency ? ` / ${range.frequency}` : '';
-    return `${base}${freqLabel}`;
-  };
-
-  const handleContinueSetup = async () => {
-    if (setupRedirectLoading) return;
-    setSetupRedirectLoading(true);
-
-    try {
-      const progressData = await profileSetupService.getProgress('', 'household');
-      const totalSteps = progressData?.total_steps || 0;
-      const lastStep = progressData?.last_completed_step || 0;
-      const status = progressData?.status || '';
-      const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
-
-      if (isComplete) {
-        navigate('/household/profile', { replace: true });
+      if (!profileId || !userProfileId) {
+        setSelectedFeatureGroups([]);
+        setSelectedFeaturesLoading(false);
+        setSelectedFeaturesError(null);
         return;
       }
 
-      if (lastStep <= 0) {
-        navigate('/household-choice', { replace: true });
-        return;
-      }
+      setSelectedFeaturesLoading(true);
+      setSelectedFeaturesError(null);
 
-      navigate(`/profile-setup/household?step=${lastStep + 1}`, { replace: true });
-    } catch {
-      navigate('/household-choice', { replace: true });
-    } finally {
-      setSetupRedirectLoading(false);
-    }
-  };
-
-  const [editingSection, setEditingSection] = useState<string | null>(null);
-  const [showViewsModal, setShowViewsModal] = useState(false);
-
-  const EDIT_SECTIONS: Record<string, { title: string; component: React.FC }> = {
-    location: { title: '📍 Edit Location', component: Location },
-    housesize: { title: '🏠 Edit House Size', component: HouseSize },
-    nannytype: { title: '👥 Edit Service Type', component: NannyType },
-    children: { title: '👶 Edit Children', component: Children },
-    pets: { title: '🐾 Edit Pets', component: Pets },
-    chores: { title: '🧹 Edit Chores & Duties', component: Chores },
-    budget: { title: '💰 Edit Budget', component: Budget },
-    religion: { title: '🙏 Edit Religion & Beliefs', component: Religion },
-    bio: { title: '✍️ Edit About', component: Bio },
-  };
-
-  const handleEditSection = (section: string) => {
-    setEditingSection(section);
-  };
-
-  const handleCloseEditModal = () => {
-    setEditingSection(null);
-    // Refresh profile data after editing
-    const refresh = async () => {
       try {
-        const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
-        setProfile(profileData);
-        const kidsData = await householdKidsService.listHouseholdKids('');
-        const kidsArr = kidsData?.data?.data || kidsData?.data || kidsData;
-        setKids(Array.isArray(kidsArr) ? kidsArr : []);
-        const petsData = await petsService.listMyPets('');
-        const petsArr = petsData?.data?.data || petsData?.data || petsData;
-        setPets(Array.isArray(petsArr) ? petsArr : []);
-      } catch (err) {
-        console.error('Failed to refresh profile after edit:', err);
+        const [featuresPayload, picksPayload] = await Promise.all([
+          profileFeatureService.getProfileFeatures(profileId),
+          userProfilePicksService.listPicks(userProfileId),
+        ]);
+
+        const groups = buildSelectedFeatureGroups(featuresPayload.data, picksPayload.data);
+        if (!cancelled) setSelectedFeatureGroups(groups);
+      } catch (err: any) {
+        if (!cancelled) {
+          setSelectedFeatureGroups([]);
+          setSelectedFeaturesError(err.message || 'Unable to load selected profile choices');
+        }
+      } finally {
+        if (!cancelled) setSelectedFeaturesLoading(false);
       }
     };
-    refresh();
+
+    loadSelectedFeatures();
+    return () => {
+      cancelled = true;
+    };
+  }, [retryKey]);
+
+  const [showViewsModal, setShowViewsModal] = useState(false);
+  const { progress } = useOnboardingProgress(userId, 'household');
+  const profileCompletionReminder = useProfileCompletionReminder(userId, 'household');
+  const profileCompletion = useProfileCompletionTransition(
+    `${userId}:household`,
+    progress?.completion_percentage,
+  );
+
+  // Each outstanding requirement opens the editor that satisfies it.
+  //
+  // There is no location case. Nothing searches for households — service providers
+  // browse job listings, and each listing carries its own ward — so a household
+  // is never asked where it is, and the backend no longer reports location as
+  // outstanding for them.
+  const handleResolveRequirement = (requirement: MissingRequirement) => {
+    switch (requirement.action) {
+      case 'features':
+        handleCompleteFeaturePicks();
+        break;
+      case 'photo':
+        document.getElementById('profile-photos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        break;
+      default:
+        break;
+    }
   };
 
   const fetchInvitationCode = async () => {
@@ -449,10 +460,15 @@ export default function HouseholdProfile() {
       const token = getAccessTokenFromCookies();
       if (!token) return;
       
-      const membersData = await householdMemberService.listMembers(profile.id);
+      const [membersData, pendingData] = await Promise.all([
+        householdMemberService.listMembers(profile.id),
+        householdMemberService.listPendingRequests(profile.id).catch(() => ({ data: [] })),
+      ]);
       const extracted = membersData?.data || membersData?.members || membersData;
       const membersArray = Array.isArray(extracted) ? extracted : [];
       setMembers(membersArray);
+      const pending = pendingData?.data || pendingData?.requests || pendingData;
+      setPendingRequestsCount(Array.isArray(pending) ? pending.length : 0);
     } catch (err) {
       console.error("Error fetching members:", err);
     } finally {
@@ -484,81 +500,38 @@ export default function HouseholdProfile() {
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const currentPhotoCount = profile?.photos?.length || 0;
-    if (currentPhotoCount >= MAX_PHOTOS) {
-      setUploadError(`Maximum of ${MAX_PHOTOS} photos allowed`);
+    const { files: selectedFiles, error: selectionError } = selectPhotosForUpload(
+      e.target.files,
+      profile?.photos?.length || 0,
+      MAX_PHOTOS,
+    );
+    // Clear the input either way, so re-picking the same files fires onChange.
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (selectionError) {
+      setUploadError(selectionError);
       return;
     }
-
-    const file = files[0];
-    
-    // Validate file type
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      setUploadError('Only JPG, PNG, WEBP, and GIF files are allowed');
-      return;
-    }
-
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      setUploadError('File size must be less than 10MB');
-      return;
-    }
+    if (selectedFiles.length === 0) return;
 
     setUploading(true);
     setUploadError(null);
-    setUploadProgress(0);
+    setUploadProgress(1);
 
     try {
       const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
-      // Upload to documents service with progress tracking
-      const formData = new FormData();
-      formData.append('files', file);
-      formData.append('document_type', 'profile_photo');
-      formData.append('is_public', 'true');
-      formData.append('description', 'Household profile photo');
-
-      // Use XMLHttpRequest for upload progress tracking
-      const uploadData = await new Promise<any>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        
-        // Track upload progress
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(percentComplete);
-          }
-        });
-        
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              resolve(JSON.parse(xhr.responseText));
-            } catch (err) {
-              reject(new Error('Invalid response from server'));
-            }
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
-          }
-        });
-        
-        xhr.addEventListener('error', () => {
-          reject(new Error('Network error during upload'));
-        });
-        
-        xhr.open('POST', `${API_BASE_URL}/api/v1/documents/upload`);
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        xhr.send(formData);
+      const uploadData = await uploadDocuments({
+        files: selectedFiles,
+        documentType: 'profile_photo',
+        profileId: profile?.id,
+        description: 'Household profile photo',
+        onProgress: setUploadProgress,
       });
       const docs = uploadData.data || uploadData.documents || [];
-      const firstDoc = Array.isArray(docs) ? docs[0] : null;
-      const imageUrl = firstDoc?.public_url || firstDoc?.signed_url || firstDoc?.url;
-
-      if (!imageUrl) throw new Error('No image URL returned');
+      if (!Array.isArray(docs) || docs.length === 0) {
+        throw new Error('The upload completed, but no photos were returned.');
+      }
 
       // Refetch photos from documents table via gRPC
       try {
@@ -570,14 +543,10 @@ export default function HouseholdProfile() {
       } catch (err) {
         console.warn('Failed to refetch photos after upload:', err);
       }
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      notifyProfileProgressChanged();
     } catch (err: any) {
       console.error('Error uploading photo:', err);
-      setUploadError(err.message || 'Failed to upload photo');
+      setUploadError(err.message || 'We couldn’t upload your photo. Please try again.');
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -632,6 +601,7 @@ export default function HouseholdProfile() {
       } catch (err) {
         console.warn('Failed to refetch photos after delete:', err);
       }
+      notifyProfileProgressChanged();
     } catch (err: any) {
       console.error('Error deleting photo:', err);
       setUploadError(err.message || 'Failed to delete photo');
@@ -669,13 +639,6 @@ export default function HouseholdProfile() {
             >
               Try Again
             </button>
-            <button
-              onClick={handleContinueSetup}
-              disabled={setupRedirectLoading}
-              className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              {setupRedirectLoading ? 'Opening Setup...' : 'Continue Profile Setup'}
-            </button>
           </div>
         </div>
       </div>
@@ -692,11 +655,10 @@ export default function HouseholdProfile() {
           </div>
           <p className="text-gray-700 dark:text-gray-300 mb-4">You haven't completed your household profile yet.</p>
           <button
-            onClick={handleContinueSetup}
-            disabled={setupRedirectLoading}
+            onClick={() => setRetryKey((prev) => prev + 1)}
             className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 transition-all"
           >
-            {setupRedirectLoading ? 'Opening Setup...' : 'Continue Profile Setup'}
+            Reload Profile
           </button>
         </div>
       </div>
@@ -706,6 +668,16 @@ export default function HouseholdProfile() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
+      {profileCompletion.completedNow && (
+        <ProfileCompletionCelebrationModal
+          isOpen
+          profileType="household"
+          celebration={profileCompletionReminder.celebration}
+          onSeen={profileCompletionReminder.markCelebrationSeen}
+          onClose={profileCompletion.dismiss}
+          completionDestination="/"
+        />
+      )}
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
       <main className="flex-1 py-8">
     <div className="max-w-5xl mx-auto px-4">
@@ -718,6 +690,14 @@ export default function HouseholdProfile() {
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your household information</p>
           </div>
           <div className="flex items-center gap-2 self-start">
+            <button
+              onClick={handleCompleteFeaturePicks}
+              className="h-8 w-8 rounded-xl flex items-center justify-center border border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-500/10 hover:scale-105 transition-all"
+              aria-label="Complete Profile Choices"
+              title="Complete Profile Choices"
+            >
+              <ClipboardCheck className="w-4 h-4" />
+            </button>
             {profile?.id && (
               <button
                 onClick={() => setShowViewsModal(true)}
@@ -739,135 +719,41 @@ export default function HouseholdProfile() {
         </div>
       </div>
 
-      {/* Job Postings */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-          <div>
-            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📋 Job Postings</h2>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Manage the roles you are hiring for and keep them updated.
-            </p>
-          </div>
-          <button
-            onClick={() => { setEditingJob(null); setShowJobModal(true); }}
-            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
-          >
-            New Job
-          </button>
-        </div>
+      <ProfileAccountSummary
+        profile={profile as Record<string, unknown>}
+        fallbackProfileId="11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1"
+        fallbackProfileType="household"
+        avatarUrl={profile.avatar_url}
+      />
 
-        {jobsSuccess ? <SuccessAlert message={jobsSuccess ?? ""} className="mb-3" /> : null}
-        {jobsError ? <ErrorAlert message={jobsError ?? ""} className="mb-3" /> : null}
+      {progress && Number(progress.completion_percentage) < 100 && (
+        <ProfileRequirementsChecklist
+          missing={progress.missing || []}
+          completedItems={progress.completed_items}
+          totalItems={progress.total_items}
+          percentage={progress.completion_percentage}
+          onResolve={handleResolveRequirement}
+        />
+      )}
 
-        {jobsLoading ? (
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
-            Loading job postings...
-          </div>
-        ) : jobs.length > 0 ? (
-          <div className="space-y-3">
-            {jobs.map((job) => (
-              <div key={job.id} className="rounded-xl border border-gray-200 dark:border-purple-500/30 p-4">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{job.title || 'Untitled role'}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatJobLocation(job.location)}</p>
-                  </div>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
-                    ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
-                    : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'}`}>
-                    {job.status || 'open'}
-                  </span>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {(job.job_types || []).length > 0 ? (
-                    job.job_types?.map((type) => (
-                      <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
-                        {type.replace(/_/g, ' ')}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                      Flexible role
-                    </span>
-                  )}
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                    Start {formatJobDate(job.start_date)}
-                  </span>
-                  {job.max_applicants ? (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
-                      Max {job.max_applicants} applicants
-                    </span>
-                  ) : null}
-                </div>
-
-                <div className="mt-3 text-xs text-gray-600 dark:text-gray-300">
-                  Salary: {formatJobSalary(job.salary_range)}
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => { setEditingJob(job); setShowJobModal(true); }}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleToggleJobStatus(job)}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-white/5"
-                  >
-                    {job.status === 'closed' ? 'Reopen' : 'Close'}
-                  </button>
-                  <button
-                    onClick={() => setJobToDelete(job)}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-red-300 text-red-600 dark:text-red-300 dark:border-red-500/40 hover:bg-red-50 dark:hover:bg-red-500/10"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed border-purple-200 dark:border-purple-500/30 p-4 text-xs text-gray-600 dark:text-gray-400">
-            You have not published any job postings yet.
-          </div>
-        )}
-      </div>
-
-      {/* Location */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📍 Location</h2>
-          <button
-            onClick={() => handleEditSection('location')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
-          {typeof profile.location === 'string'
-            ? (profile.location || profile.town || 'Not specified')
-            : (profile.location?.place || profile.location?.name || profile.location_ref?.place || profile.town || 'Not specified')}
-        </p>
-      </div>
+      <ReferralCodeCard distinguishFrom="household code" />
 
       {/* Household Invitation Code */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-start mb-4">
-          <div>
+        <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:gap-6">
+          <div className="min-w-0 flex-1">
             <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🔑 Household Code</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Share this code with your partner to give them access to this household profile
+              Share this code with your partner or family member to give them access to this
+              household profile. It is not a referral code — it adds someone to this household
+              rather than inviting them to Homebit.
             </p>
           </div>
           <button
             onClick={() => navigate('/household/requests')}
-            className="relative px-4 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-semibold rounded-xl hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all flex items-center gap-2"
+            className="relative inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-purple-100 px-5 py-2 text-sm font-semibold text-purple-700 transition-all hover:bg-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:hover:bg-purple-900/50"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
             View Requests
@@ -959,9 +845,10 @@ export default function HouseholdProfile() {
         </div>
 
         {membersLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <span className="hb-shimmer-piece h-8 w-8 rounded-full" />
-          </div>
+          // Members arrive after the profile does, so this section shimmers on
+          // its own rather than holding the whole page back. Shaped like the
+          // rows it is standing in for, so nothing jumps when they land.
+          <ShimmerListPlaceholder items={2} />
         ) : members.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500 dark:text-gray-400">No members yet. Share your household code to invite members!</p>
@@ -980,7 +867,7 @@ export default function HouseholdProfile() {
                   <div>
                     <h3 className="font-semibold text-gray-900 dark:text-white">
                       {member.user?.first_name && member.user?.last_name
-                        ? `${member.user.first_name} ${member.user.last_name}`
+                        ? formatDisplayName(member.user.first_name, member.user.last_name)
                         : member.user?.email || "Unknown Member"}
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
@@ -1022,7 +909,7 @@ export default function HouseholdProfile() {
       </div>
 
       {/* Profile Photos */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+      <div id="profile-photos" className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <div>
             <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📸 Home Photos</h2>
@@ -1075,7 +962,8 @@ export default function HouseholdProfile() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
+              accept={PHOTO_ACCEPT_ATTRIBUTE}
+              multiple
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -1092,7 +980,7 @@ export default function HouseholdProfile() {
               ) : (
                 <>
                   <PlusIcon className="h-4 w-4" />
-                  Add Photo
+                  Add Photos
                 </>
               )}
             </button>
@@ -1107,10 +995,7 @@ export default function HouseholdProfile() {
                 {/* Blur placeholder */}
                 {!loadedImages.has(photo) && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-full h-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 animate-pulse" />
-                    <div className="absolute">
-                      <span className="hb-shimmer-piece h-8 w-8 rounded-full" />
-                    </div>
+                    <div className="hb-shimmer-piece absolute inset-0" />
                   </div>
                 )}
                 <img
@@ -1155,219 +1040,70 @@ export default function HouseholdProfile() {
         ) : (
           <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700">
             <p className="text-gray-500 dark:text-gray-400">No photos uploaded yet</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Add photos of your home to attract qualified househelps!</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Add photos of your home to attract qualified service providers!</p>
           </div>
         )}
       </div>
 
-      {/* House Size & Notes */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🏠 House Information</h2>
-          <button
-            onClick={() => handleEditSection('housesize')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">House Size</span>
-            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
-          </div>
-          {profile.household_notes && (
-            <div className="md:col-span-2">
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
-              <p className="text-xs text-gray-900 dark:text-gray-100 mt-1">{profile.household_notes}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Service Type */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">👥 Service Type Needed</h2>
-          <button
-            onClick={() => handleEditSection('nannytype')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        <div className="space-y-3">
-          {profile.needs_live_in && (
-            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">🌙 Live-in Help</p>
-              {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Off days: {profile.live_in_off_days.join(', ')}</p>
-              )}
-            </div>
-          )}
-          {profile.needs_day_worker && (
-            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">☀️ Day Worker</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Schedule configured</p>
-            </div>
-          )}
-          {!profile.needs_live_in && !profile.needs_day_worker && (
-            <p className="text-gray-500 dark:text-gray-400">No service type specified</p>
-          )}
-          {profile.available_from && (
-            <div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Available From</span>
-              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString()}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Children */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">👶 Children</h2>
-          <button
-            onClick={() => handleEditSection('children')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        {kids.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {kids.map((kid, idx) => (
-              <div key={kid.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <p className="font-semibold text-purple-900 dark:text-purple-100">
-                  {kid.is_expecting ? '🤰 Expecting' : `👶 Child ${idx + 1}`}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Gender: {kid.gender}</p>
-                {kid.date_of_birth && <p className="text-xs text-gray-600 dark:text-gray-400">DOB: {new Date(kid.date_of_birth).toLocaleDateString()}</p>}
-                {kid.expected_date && <p className="text-xs text-gray-600 dark:text-gray-400">Expected: {new Date(kid.expected_date).toLocaleDateString()}</p>}
-                {kid.traits && kid.traits.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {kid.traits.map((trait: string, i: number) => (
-                      <span key={i} className="text-xs px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full">{trait}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No children added</p>
-        )}
-      </div>
-
-      {/* Pets */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🐾 Pets</h2>
-          <button
-            onClick={() => handleEditSection('pets')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        {pets.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pets.map((pet, idx) => (
-              <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <p className="font-semibold text-purple-900 dark:text-purple-100 capitalize">🐾 {pet.pet_type}</p>
-                {pet.requires_care && <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">⚠️ Requires care</p>}
-                {pet.care_details && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{pet.care_details}</p>}
-                {pet.traits && pet.traits.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {pet.traits.map((trait: string, i: number) => (
-                      <span key={i} className="text-xs px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full capitalize">{trait}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No pets added</p>
-        )}
-      </div>
-
-      {/* Chores */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🧹 Chores & Duties</h2>
-          <button
-            onClick={() => handleEditSection('chores')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        {profile.chores && profile.chores.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {profile.chores.map((chore, idx) => (
-              <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-xl font-medium">
-                {chore}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No chores specified</p>
-        )}
-      </div>
-
-      {/* Budget */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">💰 Budget</h2>
-          <button
-            onClick={() => handleEditSection('budget')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        {profile.budget_min || profile.budget_max ? (
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-purple-900 dark:text-purple-100">
-              {formatOnboardingBudgetRange(profile.budget_min, profile.budget_max, profile.salary_frequency)}
-            </p>
-            {profile.salary_frequency && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">Per {profile.salary_frequency.replace('ly', '')}</p>
-            )}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No budget specified</p>
-        )}
-      </div>
-
-      {/* Religion */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🙏 Religion & Beliefs</h2>
-          <button
-            onClick={() => handleEditSection('religion')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
-      </div>
-
-      {/* Bio */}
+      {/* Selected Profile Choices */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">✍️ About Your Household</h2>
+        <div className="flex justify-between items-start gap-4 mb-5">
+          <div>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">✨ Profile Choices</h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              The features and options selected for this household profile.
+            </p>
+          </div>
           <button
-            onClick={() => handleEditSection('bio')}
+            onClick={handleCompleteFeaturePicks}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             Edit
           </button>
         </div>
-        <p className="text-xs text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
+
+        {selectedFeaturesLoading ? (
+          <div className="space-y-3 py-2">
+            <ShimmerLine width="42%" height={14} className="rounded-xl" />
+            <ShimmerLine width="68%" height={12} className="rounded-xl" />
+            <ShimmerLine width="55%" height={12} className="rounded-xl" />
+          </div>
+        ) : selectedFeaturesError ? (
+          <ErrorAlert message={selectedFeaturesError} />
+        ) : selectedFeatureGroups.length > 0 ? (
+          <div className="divide-y divide-purple-200/60 dark:divide-purple-500/30">
+            {selectedFeatureGroups.map((group) => (
+              <div key={group.featureId} className="py-5 first:pt-0 last:pb-0">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">{group.featureName}</h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {group.properties.map((property) => (
+                    <span
+                      key={property.id}
+                      className="inline-flex items-center gap-2 rounded-full border border-purple-300/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-100"
+                    >
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-600 text-[10px] font-bold text-white dark:bg-purple-500">
+                        {property.name.slice(0, 1).toUpperCase()}
+                      </span>
+                      {property.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-purple-200 dark:border-purple-500/30 p-4">
+            <p className="text-xs text-gray-600 dark:text-gray-400">No profile choices selected yet.</p>
+            <button
+              onClick={handleCompleteFeaturePicks}
+              className="mt-3 px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+            >
+              Complete Profile Choices
+            </button>
+          </div>
+        )}
       </div>
+
     </div>
       </main>
       </PurpleThemeWrapper>
@@ -1409,29 +1145,6 @@ export default function HouseholdProfile() {
         onCancel={() => setMemberToRemove(null)}
       />
 
-      <ConfirmDialog
-        isOpen={jobToDelete !== null}
-        title="Delete Job Posting"
-        message="Are you sure you want to delete this job posting?"
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-        onConfirm={handleDeleteJob}
-        onCancel={() => setJobToDelete(null)}
-      />
-
-      {/* Edit Section Modal */}
-      {editingSection && EDIT_SECTIONS[editingSection] && (
-        <EditSectionModal
-          isOpen={true}
-          onClose={handleCloseEditModal}
-          title={EDIT_SECTIONS[editingSection].title}
-          profileType="household"
-        >
-          {React.createElement(EDIT_SECTIONS[editingSection].component)}
-        </EditSectionModal>
-      )}
-
       {/* Profile Views Modal */}
       {profile?.id && (
         <ProfileViewsAnalytics
@@ -1441,16 +1154,6 @@ export default function HouseholdProfile() {
           onClose={() => setShowViewsModal(false)}
         />
       )}
-
-      <JobPostModal
-        isOpen={showJobModal}
-        onClose={() => {
-          setShowJobModal(false);
-          setEditingJob(null);
-        }}
-        job={editingJob}
-        onSaved={handleJobSaved}
-      />
     </div>
   );
 }

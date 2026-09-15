@@ -16,7 +16,9 @@
     "test:e2e:headed": "playwright test --headed --project=chromium",
     "dev:test": "react-router dev --port 4173",
     "start:test": "npm run build && cross-env PORT=4173 node server.mjs",
-    "clean": "rimraf build public/build .cache node_modules/.cache node_modules/.vite .react-router"
+    "clean": "rimraf build public/build .cache node_modules/.cache node_modules/.vite .react-router",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
@@ -92,7 +94,8 @@
     "tailwindcss": "^3.4.17",
     "ts-proto": "^2.11.5",
     "typescript": "^5.8.3",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.7"
   },
   "engines": {
     "node": ">=18.0.0"

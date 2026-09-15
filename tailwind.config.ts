@@ -88,10 +88,6 @@ export default {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '.8' },
         },
-        shimmer: {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
-        },
         'gradient-shift': {
           '0%, 100%': { backgroundPosition: '0% 50%' },
           '50%': { backgroundPosition: '100% 50%' },
@@ -121,13 +117,11 @@ export default {
         slideInLeft: 'slideInFromLeft 0.5s ease-out',
         glow: 'glow 2s ease-in-out infinite',
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        shimmer: 'shimmer 3s linear infinite',
         'gradient-shift': 'gradient-shift 3s ease infinite',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-        'shimmer-gradient': 'linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.3), transparent)',
       },
       backgroundSize: {
         '200%': '200% 200%',
@@ -139,4 +133,3 @@ export default {
     require('@tailwindcss/typography'),
   ],
 } satisfies Config
-
