@@ -1,9 +1,6 @@
 import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import type { JsonObject } from '@protobuf-ts/runtime';
-import {
-  AuthServiceClient,
-  WaitlistServiceClient,
-} from '~/proto/auth/auth.client';
+import { AuthService, WaitlistService } from '~/proto/auth/auth';
 import { Struct } from '~/proto/google/protobuf/struct';
 import { API_BASE_URL, normalizeGatewayBaseUrl } from '~/config/api';
 
@@ -49,8 +46,16 @@ export async function googleSignInOnServer(
   requestUrl: string,
   input: { code: string; flow: string },
 ) {
-  const client = new AuthServiceClient(createTransport(requestUrl));
-  const { response } = await client.googleSignIn(input);
+  // The generated service-client module is also used by several browser-only
+  // screens. Rollup elides its constructors from the SSR bundle, which left
+  // this callback attempting `new undefined(...)` after Google redirected a
+  // person back. Invoke the generated service descriptor directly instead.
+  const transport = createTransport(requestUrl);
+  const { response } = await transport.unary(
+    AuthService.methods[8],
+    input,
+    transport.mergeOptions({}),
+  );
   return response;
 }
 
@@ -58,12 +63,16 @@ export async function createWaitlistOnServer(
   requestUrl: string,
   data: Record<string, unknown>,
 ) {
-  const client = new WaitlistServiceClient(createTransport(requestUrl));
+  const transport = createTransport(requestUrl);
   const payload = {
     userId: '',
     profileType: '',
     data: Struct.fromJson(stripUndefined(data) as JsonObject),
   };
-  const { response } = await client.createWaitlist(payload);
+  const { response } = await transport.unary(
+    WaitlistService.methods[0],
+    payload,
+    transport.mergeOptions({}),
+  );
   return response;
 }
