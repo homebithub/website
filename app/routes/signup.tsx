@@ -447,7 +447,11 @@ export default function SignupPage() {
                 
                 // Redirect to OTP verification (same as regular signup)
                 if (data.verification) {
-                    navigate('/verify-otp', { 
+                    // The OAuth return and OTP screen may cross a full-page
+                    // navigation. Keep this in the URL as well as route state
+                    // so the phone verification page never mistakes a Google
+                    // signup for a phone-only signup and asks for email again.
+                    navigate('/verify-otp?isGoogleSignup=1', {
                         state: { 
                             verification: data.verification,
                             profileType: profileType,
@@ -456,7 +460,7 @@ export default function SignupPage() {
                         } 
                     });
                 } else {
-                    navigate('/verify-otp', {
+                    navigate('/verify-otp?isGoogleSignup=1', {
                         state: {
                             userId: userId,
                             profileType: profileType,
