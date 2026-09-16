@@ -7,6 +7,7 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { ListingDetails, listingSalary } from '~/components/listing/ListingDetails';
 import { listingHighlights } from '~/utils/listingFeatures';
 import { ApplicationHistory } from '~/components/hiring/ApplicationHistory';
+import { isIncomingApplicationOffer, splitProviderApplications } from '~/utils/applicationOffers';
 import { OpenForWorkButton } from '~/components/OpenForWorkButton';
 import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
@@ -118,7 +119,7 @@ const normalizeEmploymentContract = (raw: any): EmploymentContract => ({
   status: raw?.status === 'pending_househelp' ? 'pending_service_provider' : raw?.status,
 });
 
-type TabType = 'requests' | 'work-history' | 'employment-contracts' | 'interests';
+type TabType = 'offers' | 'requests' | 'work-history' | 'employment-contracts' | 'interests';
 type HiringProfileRole = 'service-provider' | 'client';
 
 function normalizeHiringProfileRole(profileType?: string | null): HiringProfileRole {
@@ -265,7 +266,7 @@ export default function ServiceProviderHiringHistory() {
   const defaultTab: TabType = isClientProfile ? 'requests' : 'interests';
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['requests', 'work-history', 'employment-contracts', 'interests'];
+    const validTabs: TabType[] = ['offers', 'requests', 'work-history', 'employment-contracts', 'interests'];
     return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : defaultTab;
   });
   
@@ -278,7 +279,6 @@ export default function ServiceProviderHiringHistory() {
   const [contractsLoading, setContractsLoading] = useState(true);
   
   const [interests, setInterests] = useState<Interest[]>([]);
-  const [interestsTotal, setInterestsTotal] = useState(0);
   const [interestsLoading, setInterestsLoading] = useState(true);
 
   const [employmentContracts, setEmploymentContracts] = useState<EmploymentContract[]>([]);
@@ -375,7 +375,7 @@ export default function ServiceProviderHiringHistory() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['requests', 'work-history', 'employment-contracts', 'interests'];
+    const validTabs: TabType[] = ['offers', 'requests', 'work-history', 'employment-contracts', 'interests'];
 
     if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
       setActiveTab(tabParam as TabType);
@@ -542,7 +542,6 @@ export default function ServiceProviderHiringHistory() {
       const applicantProfileId = getStoredUserProfileId();
       if (!applicantProfileId) {
         setInterests([]);
-        setInterestsTotal(0);
         return;
       }
       const raw = await listingApplicationService.listApplications({ applicantProfileId, limit: 200 });
@@ -627,7 +626,6 @@ export default function ServiceProviderHiringHistory() {
         } as Interest;
       });
       setInterests(items);
-      setInterestsTotal(items.length);
     } catch (err: any) {
       setError(err.message || 'Failed to load your applications');
     } finally {
@@ -690,11 +688,11 @@ export default function ServiceProviderHiringHistory() {
     interest: any,
     response: 'accepted' | 'declined',
     note = '',
-  ) => {
+  ): Promise<boolean> => {
     const actorProfileId = getStoredUserProfileId();
     if (!actorProfileId) {
       setError('We could not tell which profile you are. Please sign in again.');
-      return;
+      return false;
     }
     setActionLoading(interest.id);
     setError(null);
@@ -710,11 +708,13 @@ export default function ServiceProviderHiringHistory() {
       window.dispatchEvent(new Event('hiring-updated'));
       setSuccessMessage(
         response === 'accepted'
-          ? 'Interest confirmed. The household will make the final hire confirmation; a formal contract is optional.'
+          ? 'Offer accepted. The household will make the final hire confirmation; a formal contract is optional.'
           : 'Declined. The household has been told.',
       );
+      return true;
     } catch (err: any) {
       setError(err?.message || 'We could not send your answer. Please try again.');
+      return false;
     } finally {
       setActionLoading(null);
     }
@@ -726,7 +726,11 @@ export default function ServiceProviderHiringHistory() {
     const note = declineNote.trim();
     setAnsweringInterest(null);
     setDeclineNote('');
-    await answerInterest(interest, 'declined', note);
+    const answered = await answerInterest(interest, 'declined', note);
+    if (answered) {
+      setShowInterestModal(false);
+      setSelectedInterest(null);
+    }
   };
 
   const handleDeclineRequest = async () => {
@@ -827,8 +831,19 @@ export default function ServiceProviderHiringHistory() {
     records: T[],
   ) => records.filter((record) => isHiringRecordUnattended(attentionScope, kind, record)).length;
 
+  // The same application endpoint carries a provider's submitted applications
+  // and offers a household sent to them. They are different decisions: the
+  // former waits on the household, while the latter waits on the provider.
+  // Keeping offers in a dedicated queue makes a response impossible to miss.
+  const { offers: incomingOffers, applications: submittedApplications } = splitProviderApplications(interests);
+  const visibleApplications = activeTab === 'offers' ? incomingOffers : submittedApplications;
+  const isOffersTab = activeTab === 'offers';
+
   const tabs: { key: TabType; label: string; count?: number }[] = [
-    { key: 'interests', label: 'Applications', count: unattendedCount('application', interests) },
+    ...(!isClientProfile ? [
+      { key: 'offers' as const, label: 'Offers', count: unattendedCount('application', incomingOffers) },
+    ] : []),
+    { key: 'interests', label: 'Applications', count: unattendedCount('application', submittedApplications) },
     { key: 'requests', label: 'Requests', count: unattendedCount('request', hireRequests) },
     { key: 'employment-contracts', label: 'Contracts', count: unattendedCount('employment-contract', employmentContracts) },
     { key: 'work-history', label: 'Work History', count: unattendedCount('work', contracts) },
@@ -838,9 +853,17 @@ export default function ServiceProviderHiringHistory() {
   const pageEyebrow = isClientProfile ? 'Client • Hiring' : 'Service Provider • Hiring';
   const pageDescription = isClientProfile
     ? 'Manage your hiring activity and view its status'
-    : 'Manage your availability, requests, contracts, work history and applications';
+    : 'Review offers, applications, requests, contracts and work history';
 
   const loading = activeTab === 'requests' ? requestsLoading : activeTab === 'work-history' ? contractsLoading : activeTab === 'employment-contracts' ? employmentContractsLoading : interestsLoading;
+
+  // Notification emails already lead to this workspace. When a service
+  // provider opens the generic Hiring link, land them on an outstanding offer
+  // instead of asking them to discover it in their application history.
+  useEffect(() => {
+    if (isClientProfile || searchParams.get('tab') || activeTab !== 'interests' || incomingOffers.length === 0) return;
+    setActiveTab('offers');
+  }, [activeTab, incomingOffers.length, isClientProfile, searchParams]);
 
   return (
     <div>
@@ -876,6 +899,7 @@ export default function ServiceProviderHiringHistory() {
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
+                {tab.key === 'offers' && <CheckCircle className="w-4 h-4" />}
                 {tab.key === 'requests' && <MessageCircle className="w-4 h-4" />}
                 {tab.key === 'employment-contracts' && <FileText className="w-4 h-4" />}
                 {tab.key === 'work-history' && <Briefcase className="w-4 h-4" />}
@@ -1212,21 +1236,44 @@ export default function ServiceProviderHiringHistory() {
           </>
         )}
 
-        {/* Interests Tab Content */}
-        {activeTab === 'interests' && !loading && (
+        {/* Offers and application-history content. The card markup stays shared
+            so both views present the same job facts, while the offer queue gets
+            the answer controls and language it needs. */}
+        {(activeTab === 'offers' || activeTab === 'interests') && !loading && (
           <>
-            {interests.length === 0 ? (
+            {isOffersTab && incomingOffers.length > 0 && (
+              <div className="mx-6 mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-950/30 dark:text-emerald-100">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden />
+                  <div>
+                    <p className="text-sm font-semibold">You have {incomingOffers.length === 1 ? 'a job offer' : `${incomingOffers.length} job offers`} waiting for your answer</p>
+                    <p className="mt-1 text-xs text-emerald-800 dark:text-emerald-200">Review the job details, then accept or decline. Accepting lets the household confirm the hire; it does not require a contract.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {visibleApplications.length === 0 ? (
               <div className="p-12 text-center">
                 <HandHeart className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">You haven't applied to anything yet</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">Jobs you apply to will appear here, with where each one has got to.</p>
-                <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
-                  Browse jobs
-                </button>
+                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">
+                  {isOffersTab ? 'No offers waiting for you' : "You haven't applied to anything yet"}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  {isOffersTab
+                    ? 'When a household sends you an offer, it will appear here with a clear way to respond.'
+                    : 'Jobs you apply to will appear here, with where each one has got to.'}
+                </p>
+                {!isOffersTab && (
+                  <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
+                    Browse jobs
+                  </button>
+                )}
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-purple-800/40">
-                {interests.map((interest) => (
+                {visibleApplications.map((interest) => {
+                  const isIncomingOffer = isIncomingApplicationOffer(interest);
+                  return (
                   <div key={interest.id} role="button" tabIndex={0} onClickCapture={() => markHiringRecordAttended(attentionScope, 'application', interest)} onClick={(event) => { if (!isHiringCardAction(event.target)) { setSelectedInterest(interest); setShowInterestModal(true); } }} onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && !isHiringCardAction(event.target)) { event.preventDefault(); markHiringRecordAttended(attentionScope, 'application', interest); setSelectedInterest(interest); setShowInterestModal(true); } }} className={`cursor-pointer p-6 transition-colors hover:bg-purple-50/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-purple-500 dark:hover:bg-purple-900/20 ${isHiringRecordUnattended(attentionScope, 'application', interest) ? 'border-l-4 border-purple-500 bg-purple-50/70 dark:bg-fuchsia-950/20' : ''}`}>
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
@@ -1241,6 +1288,7 @@ export default function ServiceProviderHiringHistory() {
                           <div className="flex flex-wrap items-center gap-2 mb-2">
                             <h3 className="text-base font-semibold text-gray-900 dark:text-white">{getHouseholdName(interest.household)}</h3>
                             {isHiringRecordUnattended(attentionScope, 'application', interest) && <span className="rounded-full bg-purple-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">New</span>}
+                            {isIncomingOffer && <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Job offer</span>}
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(interest.status)}`}>
                               {getStatusIcon(interest.status)}
                               {formatStatus(interest.status)}
@@ -1268,7 +1316,7 @@ export default function ServiceProviderHiringHistory() {
                             <div><span className="text-gray-500 dark:text-purple-300">Sent</span><p className="font-medium text-gray-900 dark:text-white">{formatDate(interest.created_at)}</p></div>
                           </div>
                           {interest.comments && (
-                            <div className="mt-3"><span className="text-gray-500 dark:text-purple-300 text-xs">Your message:</span><p className="text-xs text-gray-700 dark:text-purple-200">{interest.comments}</p></div>
+                            <div className="mt-3"><span className="text-gray-500 dark:text-purple-300 text-xs">{isIncomingOffer ? 'Message with this offer:' : 'Your message:'}</span><p className="text-xs text-gray-700 dark:text-purple-200">{interest.comments}</p></div>
                           )}
                           {interest.household?.town && (
                             <div className="mt-2 flex items-center gap-1 text-xs text-gray-500 dark:text-purple-300">
@@ -1285,14 +1333,14 @@ export default function ServiceProviderHiringHistory() {
                             service provider's acceptance. A direct application is
                             already consented to and is answered by the
                             household instead. */}
-                        {interest.status === 'initiated' && !interest.initiated_by_applicant && (
+                        {isIncomingOffer && (
                           <>
                             <button
                               onClick={() => answerInterest(interest, 'accepted')}
                               disabled={actionLoading === interest.id}
                               className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 sm:w-auto sm:py-1"
                             >
-                              <CheckCircle className="w-4 h-4" /> Confirm interest
+                              <CheckCircle className="w-4 h-4" /> Accept offer
                             </button>
                             <button
                               onClick={() => setAnsweringInterest(interest)}
@@ -1334,7 +1382,8 @@ export default function ServiceProviderHiringHistory() {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
@@ -1345,13 +1394,13 @@ export default function ServiceProviderHiringHistory() {
           (activeTab === 'requests' && requestsTotal > limit) ||
           (activeTab === 'work-history' && contractsTotal > limit) ||
           (activeTab === 'employment-contracts' && employmentContractsTotal > limit) ||
-          (activeTab === 'interests' && interestsTotal > limit)
+          ((activeTab === 'interests' || activeTab === 'offers') && visibleApplications.length > limit)
         ) && (
           <div className="p-6 border-t border-gray-200 dark:border-purple-800/40 flex justify-center gap-2">
             <button onClick={() => setOffset(Math.max(0, offset - limit))} disabled={offset === 0} className="px-4 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
               Previous
             </button>
-            <button onClick={() => setOffset(offset + limit)} disabled={(activeTab === 'requests' && offset + limit >= requestsTotal) || (activeTab === 'work-history' && offset + limit >= contractsTotal) || (activeTab === 'employment-contracts' && offset + limit >= employmentContractsTotal) || (activeTab === 'interests' && offset + limit >= interestsTotal)} className="px-4 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={() => setOffset(offset + limit)} disabled={(activeTab === 'requests' && offset + limit >= requestsTotal) || (activeTab === 'work-history' && offset + limit >= contractsTotal) || (activeTab === 'employment-contracts' && offset + limit >= employmentContractsTotal) || ((activeTab === 'interests' || activeTab === 'offers') && offset + limit >= visibleApplications.length)} className="px-4 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
               Next
             </button>
           </div>
@@ -1454,6 +1503,9 @@ export default function ServiceProviderHiringHistory() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">{getHouseholdName(selectedInterest.household)}</h3>
+                    {isIncomingApplicationOffer(selectedInterest) && (
+                      <p className="mt-1 text-sm font-medium text-emerald-100">Sent you a job offer — review and respond below.</p>
+                    )}
                     {selectedInterest.household?.town && (
                       <p className="text-white/80 flex items-center gap-1 mt-1">
                         <MapPin className="w-4 h-4" /> {selectedInterest.household.town}
@@ -1505,9 +1557,11 @@ export default function ServiceProviderHiringHistory() {
                   />
                 </div>
 
-                {/* Interest Details */}
+                {/* Application or offer details */}
                 <div>
-                  <h4 className="text-xs font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">Your application</h4>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">
+                    {isIncomingApplicationOffer(selectedInterest) ? 'Their offer' : 'Your application'}
+                  </h4>
                   <div className="grid grid-cols-2 gap-4">
                     {selectedInterest.job_type && (
                       <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
@@ -1530,7 +1584,7 @@ export default function ServiceProviderHiringHistory() {
                     <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
                       <div className="flex items-center gap-2 text-gray-500 dark:text-purple-300 mb-1">
                         <Clock className="w-4 h-4" />
-                        <span className="text-xs font-medium">Sent On</span>
+                          <span className="text-xs font-medium">{isIncomingApplicationOffer(selectedInterest) ? 'Offer sent' : 'Sent on'}</span>
                       </div>
                       <p className="font-semibold text-gray-900 dark:text-white">{formatDate(selectedInterest.created_at)}</p>
                     </div>
@@ -1540,7 +1594,9 @@ export default function ServiceProviderHiringHistory() {
                 {/* Message */}
                 {selectedInterest.comments && (
                   <div>
-                    <h4 className="text-xs font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">Your Message</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">
+                      {isIncomingApplicationOffer(selectedInterest) ? 'Message with this offer' : 'Your message'}
+                    </h4>
                     <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
                       <p className="text-gray-700 dark:text-gray-300">{selectedInterest.comments}</p>
                     </div>
@@ -1555,6 +1611,33 @@ export default function ServiceProviderHiringHistory() {
                   >
                     <User className="w-4 h-4" /> View Household Profile
                   </button>
+                  {isIncomingApplicationOffer(selectedInterest) && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setAnsweringInterest(selectedInterest)}
+                        disabled={actionLoading === selectedInterest.id}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-300 px-5 py-2.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50 dark:border-red-600 dark:hover:bg-red-900/30"
+                      >
+                        <XCircle className="w-4 h-4" /> Decline offer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void answerInterest(selectedInterest, 'accepted').then((answered) => {
+                            if (answered) {
+                              setShowInterestModal(false);
+                              setSelectedInterest(null);
+                            }
+                          });
+                        }}
+                        disabled={actionLoading === selectedInterest.id}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        <CheckCircle className="w-4 h-4" /> Accept offer
+                      </button>
+                    </>
+                  )}
                   {selectedInterest.status === 'pending' && (
                     <button 
                       onClick={() => openWithdrawConfirm(selectedInterest.id)}
