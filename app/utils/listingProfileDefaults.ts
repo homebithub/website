@@ -37,8 +37,115 @@ const propertyId = (value: unknown): number | null => {
     record.propertyId,
     asRecord(record.feature_property ?? record.featureProperty).id,
     asRecord(record.property).id,
+    record.id,
   );
 };
+
+const featureId = (value: unknown): number | null => {
+  const record = asRecord(value);
+  const feature = asRecord(record.feature);
+  return firstNumber(record.feature_id, record.featureId, feature.id);
+};
+
+const featureProperties = (value: unknown): any[] => {
+  const record = asRecord(value);
+  return asArray(record.properties ?? record.feature_properties ?? record.options);
+};
+
+const selectedFeatureIds = (picksInput: unknown): Set<number> => new Set(
+  asArray(picksInput)
+    .map((pick) => {
+      const record = asRecord(pick);
+      return firstNumber(record.feature_id, record.featureId, asRecord(record.feature).id);
+    })
+    .filter((id): id is number => id !== null),
+);
+
+const selectedPropertyIds = (picksInput: unknown): Set<number> => new Set(
+  asArray(picksInput)
+    .map(propertyId)
+    .filter((id): id is number => id !== null),
+);
+
+function mergeFeatureProperties(...sources: unknown[]): any[] {
+  const seen = new Set<number>();
+  const merged: any[] = [];
+
+  sources.flatMap(featureProperties).forEach((property) => {
+    const id = propertyId(property);
+    // Catalogue properties always have ids. Keeping an id-less value is still
+    // safer than dropping a free-text prompt from an older catalogue row.
+    if (id !== null && seen.has(id)) return;
+    if (id !== null) seen.add(id);
+    merged.push(property);
+  });
+
+  return merged;
+}
+
+/**
+ * Builds the feature questions for a new household listing.
+ *
+ * Job types define the canonical questions when they have catalogue links.
+ * Older job types can have no links at all, though, even when the household
+ * has already completed profile choices. In that case — and for profile
+ * choices not included in a newer job type — carry only the household's
+ * selected feature groups into the listing. They remain optional and fully
+ * editable; no profile-only question becomes a new listing requirement.
+ */
+export function buildHouseholdListingFeatureBundles(
+  jobTypeBundlesInput: unknown = [],
+  profileBundlesInput: unknown = [],
+  picksInput: unknown = [],
+): UnknownRecord[] {
+  const selectedFeatures = selectedFeatureIds(picksInput);
+  const selectedProperties = selectedPropertyIds(picksInput);
+  const combined = new Map<number, UnknownRecord>();
+
+  asArray(jobTypeBundlesInput).forEach((bundleValue) => {
+    const bundle = asRecord(bundleValue);
+    const id = featureId(bundle);
+    if (id === null) return;
+    combined.set(id, {
+      ...bundle,
+      properties: mergeFeatureProperties(bundle),
+    });
+  });
+
+  asArray(profileBundlesInput).forEach((bundleValue) => {
+    const bundle = asRecord(bundleValue);
+    const id = featureId(bundle);
+    if (id === null) return;
+    const properties = featureProperties(bundle);
+    const householdChoseThisFeature = selectedFeatures.has(id) || properties.some((property) => {
+      const propertyID = propertyId(property);
+      return propertyID !== null && selectedProperties.has(propertyID);
+    });
+    if (!householdChoseThisFeature) return;
+
+    const existing = combined.get(id);
+    if (existing) {
+      // Preserve the job-type requirement and weight, but make every
+      // household-selected option available to edit in the form.
+      combined.set(id, {
+        ...existing,
+        properties: mergeFeatureProperties(existing, bundle),
+      });
+      return;
+    }
+
+    combined.set(id, {
+      ...bundle,
+      // A profile choice is a useful starting point, not an obligation to
+      // repeat it for every job the household posts.
+      is_required: false,
+      isRequired: false,
+      properties: mergeFeatureProperties(bundle),
+    });
+  });
+
+  return Array.from(combined.values());
+}
 
 function selectedProfileChoices(featuresInput: unknown, picksInput: unknown) {
   const selectedIds = new Set(asArray(picksInput).map(propertyId).filter((id): id is number => id !== null));

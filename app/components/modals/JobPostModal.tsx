@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
-import { clientProfileService, jobService, locationService, petsService, profileService, userProfilePicksService } from "~/services/grpc/authServices";
+import { clientProfileService, jobService, locationService, petsService, profileFeatureService, profileService, userProfilePicksService } from "~/services/grpc/authServices";
 import { getStoredUserProfileId } from "~/utils/authStorage";
 import { useModalDismiss } from "~/hooks/useModalDismiss";
 import {
@@ -20,7 +20,7 @@ import { FormError } from '~/components/FormError';
 import { FeatureOptionPicker } from '~/components/preferences/FeatureOptionPicker';
 import { PreferenceAccordion } from '~/components/preferences/PreferenceAccordion';
 import { allowedPropertyNames, featureKey, isSingleSelectFeature, propertyAllowed } from '~/utils/preferenceRules';
-import { buildHouseholdJobDefaults } from '~/utils/listingProfileDefaults';
+import { buildHouseholdJobDefaults, buildHouseholdListingFeatureBundles } from '~/utils/listingProfileDefaults';
 
 type JobPostModalProps = {
   isOpen: boolean;
@@ -163,7 +163,9 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
   const [maxApplicants, setMaxApplicants] = useState("15");
   const [jobTypes, setJobTypes] = useState<JobType[]>([]);
   const [selectedJobTypeId, setSelectedJobTypeId] = useState("");
-  const [featureBundles, setFeatureBundles] = useState<FeatureBundle[]>([]);
+  const [jobTypeFeatureBundles, setJobTypeFeatureBundles] = useState<FeatureBundle[]>([]);
+  const [householdFeatureBundles, setHouseholdFeatureBundles] = useState<FeatureBundle[]>([]);
+  const [profilePicks, setProfilePicks] = useState<any[]>([]);
   const [selectedProperties, setSelectedProperties] = useState<Record<number, number[]>>({});
   const [freeFormValues, setFreeFormValues] = useState<Record<string, string>>({});
   const [loadingJobTypes, setLoadingJobTypes] = useState(false);
@@ -176,6 +178,30 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
   const [defaultsAppliedFor, setDefaultsAppliedFor] = useState('');
   const [detailsOpen, setDetailsOpen] = useState(true);
   const { panelRef, onOverlayClick } = useModalDismiss(isOpen, onClose);
+
+  // Keep the canonical job-type questions, then extend them with only the
+  // household profile-choice groups that the household already selected. This
+  // also repairs older job types that predate job-type feature links: a new
+  // listing still carries the household's completed profile choices forward.
+  const featureBundles = useMemo<FeatureBundle[]>(() => (
+    editing
+      ? jobTypeFeatureBundles
+      : buildHouseholdListingFeatureBundles(
+          jobTypeFeatureBundles,
+          householdFeatureBundles,
+          profilePicks,
+        ) as FeatureBundle[]
+  ), [editing, householdFeatureBundles, jobTypeFeatureBundles, profilePicks]);
+
+  // The profile and job-type requests finish independently. Include the
+  // bundle contents in this key so a late household-catalogue response can
+  // apply its defaults too, rather than leaving newly visible choices blank.
+  const featureDefaultsKey = useMemo(() => [
+    selectedJobTypeId,
+    ...featureBundles
+      .map((bundle) => `${featureId(bundle)}:${featureProperties(bundle).map(propertyId).join(',')}`)
+      .sort(),
+  ].join('|'), [featureBundles, selectedJobTypeId]);
 
   useEffect(() => {
     setMounted(true);
@@ -201,6 +227,10 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
     setSelectedJobTypeId(String(job?.job_type_id || job?.jobTypeId || ""));
     setSelectedProperties({});
     setFreeFormValues({});
+    setJobTypeFeatureBundles([]);
+    setHouseholdFeatureBundles([]);
+    setProfilePicks([]);
+    setProfileDefaults(null);
     setDefaultsAppliedFor('');
     setError("");
     setSuccess("");
@@ -209,29 +239,49 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
   useEffect(() => {
     if (!isOpen || editing) return;
     let cancelled = false;
-    const userProfileId = getStoredUserProfileId();
-    Promise.allSettled([
-      profileService.getCurrentHouseholdProfile(''),
-      petsService.listMyPets(''),
-      userProfileId ? userProfilePicksService.listPicks(userProfileId) : Promise.resolve([]),
-    ]).then(([profileResult, petsResult, picksResult]) => {
+    const loadHouseholdDefaults = async () => {
+      const [profileResult, petsResult] = await Promise.allSettled([
+        profileService.getCurrentHouseholdProfile(''),
+        petsService.listMyPets(''),
+      ]);
       if (cancelled) return;
+
       const profile = profileResult.status === 'fulfilled'
         ? (profileResult.value?.data ?? profileResult.value ?? {})
         : {};
       const petsPayload = petsResult.status === 'fulfilled'
         ? (petsResult.value?.data ?? petsResult.value ?? [])
         : [];
+      const catalogueProfileId = String(
+        profile.profile_id || profile.profileId || profile.profile?.id || '',
+      );
+      const userProfileId = String(
+        getStoredUserProfileId() || profile.user_profile_id || profile.userProfileId || profile.id || '',
+      );
+      const [picksResult, featuresResult] = await Promise.allSettled([
+        userProfileId ? userProfilePicksService.listPicks(userProfileId) : Promise.resolve([]),
+        catalogueProfileId ? profileFeatureService.getProfileFeatures(catalogueProfileId) : Promise.resolve([]),
+      ]);
+      if (cancelled) return;
+
       const picksPayload = picksResult.status === 'fulfilled'
         ? (picksResult.value?.data ?? picksResult.value ?? [])
         : [];
+      const featurePayload = featuresResult.status === 'fulfilled'
+        ? (featuresResult.value?.data ?? featuresResult.value ?? [])
+        : [];
       const defaults = buildHouseholdJobDefaults(profile, petsPayload, picksPayload);
+
+      setProfilePicks(asArray(picksPayload));
+      setHouseholdFeatureBundles(asArray(featurePayload));
       setProfileDefaults(defaults);
       setDescription((current) => current.trim() ? current : defaults.description);
       if (defaults.jobTypeId) {
         setSelectedJobTypeId((current) => current || String(defaults.jobTypeId));
       }
-    });
+    };
+
+    void loadHouseholdDefaults();
     return () => { cancelled = true; };
   }, [editing, isOpen]);
 
@@ -266,7 +316,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
   // would clear everything the form had no field for.
   useEffect(() => {
     if (!isOpen || !selectedJobTypeId) {
-      setFeatureBundles([]);
+      setJobTypeFeatureBundles([]);
       return;
     }
 
@@ -276,7 +326,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
 
     clientProfileService.getJobTypeFeatureBundles(selectedJobTypeId)
       .then((payload) => {
-        if (!cancelled) setFeatureBundles(asArray(payload.data ?? payload));
+        if (!cancelled) setJobTypeFeatureBundles(asArray(payload.data ?? payload));
       })
       .catch((err: Error) => {
         if (!cancelled) setError(err.message || "Unable to load job type features");
@@ -305,7 +355,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
   // text does not correspond to a current option.
   useEffect(() => {
     if (!isOpen || editing || !profileDefaults || featureBundles.length === 0) return;
-    if (defaultsAppliedFor === selectedJobTypeId) return;
+    if (defaultsAppliedFor === featureDefaultsKey) return;
 
     const wantedByFeature: Record<string, string[]> = {
       chore: Array.isArray(profileDefaults.chores) ? profileDefaults.chores : [],
@@ -333,8 +383,8 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
       if (ids.length > 0) next[featureId(bundle)] = isSingleSelectFeature(catalogueFeatureName(bundle)) ? ids.slice(0, 1) : ids;
     });
     setSelectedProperties(next);
-    setDefaultsAppliedFor(selectedJobTypeId);
-  }, [defaultsAppliedFor, editing, featureBundles, isOpen, profileDefaults, selectedJobTypeId]);
+    setDefaultsAppliedFor(featureDefaultsKey);
+  }, [defaultsAppliedFor, editing, featureBundles, featureDefaultsKey, isOpen, profileDefaults]);
 
   // Restore what the household previously answered, so the form opens showing
   // the listing as it stands rather than blank. Without this an edit would read

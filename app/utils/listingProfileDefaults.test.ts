@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildServiceProviderListingDefaults,
   buildHouseholdJobDefaults,
+  buildHouseholdListingFeatureBundles,
   PROFILE_TO_LISTING_FIELD_CATALOGUE,
 } from "./listingProfileDefaults";
 
@@ -90,5 +91,58 @@ describe("profile-to-listing defaults", () => {
       location: { wardId: 31, subcountyId: 12, countyId: 1 },
       profilePropertyIds: [77],
     });
+  });
+
+  it("carries selected household profile choices into a listing when its job type has no feature links", () => {
+    const profileBundles = [
+      {
+        feature_id: 11,
+        feature: { name: "Chore" },
+        is_required: true,
+        properties: [{ id: 101, name: "General Cleaning" }, { id: 102, name: "Cooking" }],
+      },
+      {
+        feature_id: 12,
+        feature: { name: "Language" },
+        is_required: true,
+        properties: [{ id: 201, name: "English" }, { id: 202, name: "Swahili" }],
+      },
+      {
+        feature_id: 13,
+        feature: { name: "Religion" },
+        properties: [{ id: 301, name: "Christianity" }],
+      },
+    ];
+    const picks = [
+      { feature_id: 11, feature_property_id: 101 },
+      { feature_id: 12, feature_property_id: 201 },
+      { feature_id: 12, feature_property_id: 202 },
+    ];
+
+    expect(buildHouseholdListingFeatureBundles([], profileBundles, picks)).toEqual([
+      expect.objectContaining({ feature_id: 11, is_required: false, properties: profileBundles[0].properties }),
+      expect.objectContaining({ feature_id: 12, is_required: false, properties: profileBundles[1].properties }),
+    ]);
+  });
+
+  it("keeps job-type requirements while adding editable profile-only choices", () => {
+    const jobBundles = [{
+      feature_id: 11,
+      feature: { name: "Chore" },
+      is_required: true,
+      default_weight: 4,
+      properties: [{ id: 101, name: "General Cleaning" }, { id: 103, name: "Laundry" }],
+    }];
+    const profileBundles = [
+      { feature_id: 11, feature: { name: "Chore" }, properties: [{ id: 101, name: "General Cleaning" }, { id: 102, name: "Cooking" }] },
+      { feature_id: 12, feature: { name: "Language" }, properties: [{ id: 201, name: "English" }] },
+    ];
+    const picks = [{ feature_id: 11, feature_property_id: 102 }, { feature_id: 12, feature_property_id: 201 }];
+
+    const bundles = buildHouseholdListingFeatureBundles(jobBundles, profileBundles, picks);
+
+    expect(bundles[0]).toMatchObject({ feature_id: 11, is_required: true, default_weight: 4 });
+    expect(bundles[0].properties.map((property: { id: number }) => property.id)).toEqual([101, 103, 102]);
+    expect(bundles[1]).toMatchObject({ feature_id: 12, is_required: false });
   });
 });
