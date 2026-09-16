@@ -399,7 +399,14 @@ export default function SignupPage() {
                             profile_type: form.profile_type,
                         },
                         token: token,
-                        verification: verificationProto ? verificationProtoToState(verificationProto) : undefined,
+                        // Older Auth releases sent the SMS but omitted the
+                        // optional verification object from this response. The
+                        // verification screen only needs the durable user id,
+                        // destination, and type to verify or resend that code,
+                        // so retain a pending state while Auth rolls forward.
+                        verification: verificationProto
+                            ? verificationProtoToState(verificationProto)
+                            : createPhoneVerification(userId, signupPhone),
                     };
                 } catch (err: any) {
                     console.error('[SIGNUP] gRPC error:', err);
