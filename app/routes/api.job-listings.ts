@@ -299,6 +299,24 @@ async function getJobTypeBundles(baseUrl: string, jobTypeId: number, callUnaryGr
   return normalizeArray(body.data ?? body);
 }
 
+// Job types introduced before listing-feature links were added have no bundles
+// at all. A listing created from a household's completed profile therefore
+// still has its feature rows (including SalaryRange), but the old enrichment
+// path had no catalogue names with which to label those rows. The household
+// catalogue is stable and is the exact source the create/edit form uses. It
+// supplies names and options only; the values rendered below remain strictly
+// the values saved on the individual listing.
+const HOUSEHOLD_CATALOGUE_PROFILE_ID = '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1';
+
+async function getHouseholdFeatureBundles(baseUrl: string, callUnaryGrpc: any) {
+  const { body } = await callUnaryGrpc(
+    baseUrl,
+    '/profile.ProfileService/GetProfileFeatures',
+    encodeStringField(1, HOUSEHOLD_CATALOGUE_PROFILE_ID),
+  );
+  return normalizeArray(body.data ?? body);
+}
+
 async function getJobListing(baseUrl: string, id: number, callUnaryGrpc: any) {
   const { body } = await callUnaryGrpc(
     baseUrl,
@@ -404,6 +422,12 @@ function scoreMap(rows: Record<string, unknown>[], idKey: string) {
 }
 
 async function enrichListingsWithFeatures(baseUrl: string, listings: Record<string, unknown>[], callUnaryGrpc: any) {
+  // Fetch this once for a page of listings, rather than once for every card.
+  // It is a fallback label source for legacy job types; a catalogue outage
+  // leaves the established job-type enrichment intact.
+  const householdFeatureBundles = await getHouseholdFeatureBundles(baseUrl, callUnaryGrpc)
+    .catch(() => [] as Record<string, unknown>[]);
+
   return Promise.all(listings.map(async (listing) => {
     const listingId = extractListingId(listing);
     if (!listingId) return listing;
@@ -411,12 +435,14 @@ async function enrichListingsWithFeatures(baseUrl: string, listings: Record<stri
     try {
       const rows = await getListingFeatureRows(baseUrl, listingId, callUnaryGrpc);
       const jobTypeID = Number(listing.job_type_id || listing.jobTypeId || 0);
-      const bundles = await getJobTypeBundles(baseUrl, jobTypeID, callUnaryGrpc).catch(() => []);
+      const jobTypeBundles = await getJobTypeBundles(baseUrl, jobTypeID, callUnaryGrpc).catch(() => []);
 
       return {
         ...listing,
         listing_features: rows,
-        listing_feature_groups: groupListingFeatures(rows, bundles),
+        // The job type supplies its canonical fields; the household catalogue
+        // completes older job types that carry saved feature rows but no links.
+        listing_feature_groups: groupListingFeatures(rows, [...jobTypeBundles, ...householdFeatureBundles]),
       };
     } catch {
       return {

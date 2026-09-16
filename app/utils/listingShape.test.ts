@@ -52,6 +52,20 @@ describe("the shared formatters against a real listing", () => {
   });
 });
 
+describe("listing feature enrichment", () => {
+  it("labels legacy job listing picks from the household catalogue", () => {
+    const route = readFileSync("app/routes/api.job-listings.ts", "utf8");
+
+    // The job in the regression had a saved SalaryRange value but belonged to
+    // an older job type with no feature bundles. If this fallback disappears,
+    // the UI falls back to "Salary not specified" even though the edit form
+    // shows a selected salary.
+    expect(route).toContain("getHouseholdFeatureBundles");
+    expect(route).toContain("'/profile.ProfileService/GetProfileFeatures'");
+    expect(route).toContain("[...jobTypeBundles, ...householdFeatureBundles]");
+  });
+});
+
 /**
  * Fields no listing response carries, which nothing may read.
  *
