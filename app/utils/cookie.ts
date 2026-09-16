@@ -157,12 +157,18 @@ export const getAuthFromCookies = (cookieHeader?: string | null) => {
 };
 
 export const getAccessTokenFromCookies = (cookieHeader?: string | null): string | undefined => {
+  // The browser persists the token and its user record together during login.
+  // Prefer that atomic client session over a readable legacy cookie: an older
+  // cookie can otherwise authenticate a request as a different account from
+  // the profile currently on screen. Server callers pass cookieHeader, so SSR
+  // continues to trust the request's Cookie header exclusively.
+  if (!cookieHeader && typeof window !== "undefined") {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) return storedToken;
+  }
+
   const token = getAuthFromCookies(cookieHeader).token;
   if (token) return token;
   // In production the access-token cookie is httpOnly, so client JS can't read it.
-  // Fall back to localStorage where login / verify-otp / Google flows persist it.
-  if (!cookieHeader && typeof window !== "undefined") {
-    return localStorage.getItem("token") || undefined;
-  }
   return undefined;
 };
