@@ -40,25 +40,31 @@ const safeRemove = (key: string) => {
 };
 
 export const getStoredAccessToken = (): string | undefined => {
-  const token = getAccessTokenFromCookies();
-  if (token) return token;
+  // Browser-issued sessions write the token and user together to localStorage.
+  // Prefer that pair over a readable legacy cookie: otherwise an older cookie
+  // can authenticate one account while the page sends the ID of a newer one.
+  // Server rendering still has no localStorage and naturally falls back to
+  // cookies.
+  if (typeof window !== "undefined") {
+    const storedToken = safeGet("token");
+    if (storedToken) return storedToken;
+  }
 
-  const storedToken = safeGet("token");
-  return storedToken || undefined;
+  return getAccessTokenFromCookies();
 };
 
 export const getStoredUser = (): StoredUser => {
-  const { user } = getAuthFromCookies();
-  if (user) return user;
-
   const rawUser = safeGet("user_object");
-  if (!rawUser) return null;
-
-  try {
-    return JSON.parse(rawUser);
-  } catch {
-    return null;
+  if (rawUser) {
+    try {
+      return JSON.parse(rawUser);
+    } catch {
+      // A malformed local cache should not prevent the cookie fallback.
+    }
   }
+
+  const { user } = getAuthFromCookies();
+  return user || null;
 };
 
 export const getStoredUserId = (): string => {
@@ -163,6 +169,9 @@ export const clearStoredAuthSession = () => {
   safeRemove("token");
   safeRemove("user_object");
   safeRemove("user_id");
+  safeRemove("profile_id");
+  safeRemove("user_profile_id");
+  safeRemove("household_id");
   safeRemove("profile_type");
   safeRemove("userType");
   safeRemove("auth_provider");

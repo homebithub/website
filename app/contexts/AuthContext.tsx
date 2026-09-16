@@ -8,7 +8,7 @@ import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
 import { authService } from "~/services/grpc/auth.service";
 import { getAuthFromCookies } from "~/utils/cookie";
-import { needsRenewal, msUntilRefresh, nextTimerDelay, sessionState } from "~/utils/session";
+import { needsRenewal, msUntilRefresh, nextTimerDelay, sessionState, subjectOf } from "~/utils/session";
 import {
   cacheAuthSession,
   clearStoredAuthSession,
@@ -135,7 +135,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const token = getStoredAccessToken() || null;
       const cachedUser = getStoredUser();
-      if (cachedUser && token) {
+      const tokenUserId = subjectOf(token);
+      const cachedUserId = cachedUser?.user_id || cachedUser?.id || cachedUser?.userId || '';
+      // A token can be refreshed or replaced during Google/OTP completion
+      // while an older cookie is still readable by the browser. Never mount
+      // authenticated pages with that mixed identity; fetch the authoritative
+      // user for the token instead.
+      const cacheMatchesToken = !tokenUserId || cachedUserId === tokenUserId;
+      if (cachedUser && token && cacheMatchesToken) {
         setUser({ token, user: cachedUser } as unknown as LoginResponse);
         setLoading(false);
         return;

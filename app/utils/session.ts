@@ -70,6 +70,26 @@ export function expiryOf(token: string | null | undefined): number | null {
   }
 }
 
+/**
+ * Reads the account identifier from a JWT without treating the browser's
+ * decoding as authentication. It is only used to make sure cached display
+ * data belongs to the same session; Auth still validates every request.
+ */
+export function subjectOf(token: string | null | undefined): string | null {
+  if (!token) return null;
+
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const subject = payload.user_id || payload.sub;
+    return typeof subject === "string" && subject.trim() ? subject : null;
+  } catch {
+    return null;
+  }
+}
+
 export type SessionState = "fresh" | "expiring" | "expired" | "unknown";
 
 /**
