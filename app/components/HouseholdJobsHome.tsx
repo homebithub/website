@@ -972,7 +972,13 @@ export default function HouseholdJobsHome() {
         setListings((prev) => (offset === 0 ? normalizedItems : [...prev, ...normalizedItems]));
         setHasMore(normalizedItems.length === limit);
       } catch (err: any) {
-        if (!cancelled) setError(err.message || "Failed to load open-for-work listings");
+        if (!cancelled) {
+          setError(err.message || "Failed to load open-for-work listings");
+          // The observer's sentinel remains visible when a page fails. Without
+          // closing pagination here it increments offset on every render and
+          // turns one outage into hundreds of failed requests.
+          setHasMore(false);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }

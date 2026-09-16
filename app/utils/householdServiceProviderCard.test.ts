@@ -61,4 +61,15 @@ describe('household service-provider cards', () => {
     expect(discoveryFilter).toContain('contactedListingIds.has(String(listing.id))');
     expect(home).toContain('contactedLabel="Messaged or invited"');
   });
+
+  it('stops automatic pagination when the service-provider request fails', () => {
+    const home = readFileSync('app/components/HouseholdJobsHome.tsx', 'utf8');
+    const fetchListings = home.slice(
+      home.indexOf('const fetchListings = async'),
+      home.indexOf('const fetchListings = async') + 4_000,
+    );
+
+    expect(fetchListings).toContain('setError(err.message || "Failed to load open-for-work listings")');
+    expect(fetchListings).toContain('setHasMore(false)');
+  });
 });
