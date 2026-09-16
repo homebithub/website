@@ -264,6 +264,20 @@ describe('mobile layout guardrails', () => {
     expect(openForWork).toContain('useImperativeHandle(ref, () => ({ open: requestModal })');
   });
 
+  it('closes the active-listings sheet before opening its delete confirmation', () => {
+    const householdHome = source('app/components/HouseholdJobsHome.tsx');
+    const deleteButton = householdHome.slice(
+      householdHome.indexOf('setHouseholdJobToDelete(job)') - 700,
+      householdHome.indexOf('setHouseholdJobToDelete(job)') + 100,
+    );
+
+    expect(deleteButton).toContain('setShowActiveJobs(false)');
+    expect(deleteButton).toContain('setHouseholdJobToDelete(job)');
+    expect(deleteButton.indexOf('setShowActiveJobs(false)')).toBeLessThan(
+      deleteButton.indexOf('setHouseholdJobToDelete(job)'),
+    );
+  });
+
   it('preserves profile completion detection across the feature-editor round trip', () => {
     const househelpProfile = source('app/routes/service-provider.profile.tsx');
     const householdProfile = source('app/routes/household.profile.tsx');

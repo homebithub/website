@@ -2146,7 +2146,21 @@ export default function HouseholdJobsHome() {
                     <button type="button" onClick={() => setEditingHouseholdJob(job)} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">Edit</button>
                     <button type="button" onClick={() => setHouseholdJobToClose(job)} disabled={householdJobActionId === job.id} className="rounded-xl border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white/5">Close</button>
                     <button type="button" onClick={() => void updateHouseholdJob(job, "renew")} disabled={householdJobActionId === job.id} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 disabled:opacity-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">{householdJobActionId === job.id ? "Updating…" : "Keep open"}</button>
-                    <button type="button" onClick={() => setHouseholdJobToDelete(job)} disabled={householdJobActionId === job.id} className="rounded-xl border border-red-300 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10">Delete</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // The confirmation dialog belongs to the document
+                        // body and sits below this listings sheet. Close the
+                        // sheet before presenting it so the confirmation is
+                        // visible and there is only one active modal layer.
+                        setShowActiveJobs(false);
+                        setHouseholdJobToDelete(job);
+                      }}
+                      disabled={householdJobActionId === job.id}
+                      className="rounded-xl border border-red-300 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))}
