@@ -1,4 +1,4 @@
-import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { authMetadata } from '~/utils/grpcRaw.server';
 
 /**
  * Saved filters, through the same hand-rolled gRPC path the listing routes use.
@@ -60,15 +60,6 @@ function encodeSaveFilter(
 // SavedFilterRequest: user_profile_id = 1, name = 2
 function encodeSavedFilterRequest(userProfileId: string, name = ''): Uint8Array {
   return concatBytes([encodeStringField(1, userProfileId), encodeStringField(2, name)]);
-}
-
-/**
- * Auth travels with every call: the handlers refuse a profile that is not the
- * caller's. Omitting it is the mistake this file's neighbours made twice.
- */
-function authMetadata(request: Request): Record<string, string> {
-  const token = getAccessTokenFromCookies(request.headers.get('cookie'));
-  return token ? { authorization: `Bearer ${token}` } : {};
 }
 
 export async function loader({ request }: { request: Request }) {

@@ -382,6 +382,15 @@ export async function callUnaryGrpcMessage(
  * listings should still get listings.
  */
 export function authMetadata(request: Request): Record<string, string> {
+  // Browser BFF callers attach their current in-memory/local session token.
+  // Prefer it to cookies so a stale readable cookie cannot make this request
+  // act as another signed-in account. A token received here is still validated
+  // by Auth before any RPC applies a change.
+  const authorization = request.headers.get('authorization')?.trim();
+  if (authorization && /^Bearer\s+\S+$/i.test(authorization)) {
+    return { authorization };
+  }
+
   const token = getAccessTokenFromCookies(request.headers.get('cookie'));
   return token ? { authorization: `Bearer ${token}` } : {};
 }

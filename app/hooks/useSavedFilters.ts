@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getBrowserSessionHeaders } from '~/utils/authStorage';
 
 /**
  * Filters that survive leaving the page.
@@ -45,6 +46,7 @@ export function useSavedFilters<T extends Record<string, unknown>>(
       try {
         const response = await fetch(
           `/api/saved-filters?user_profile_id=${encodeURIComponent(userProfileId)}`,
+          { headers: getBrowserSessionHeaders() },
         );
         const data = await response.json();
         if (cancelled) return;
@@ -74,7 +76,7 @@ export function useSavedFilters<T extends Record<string, unknown>>(
     saveTimer.current = setTimeout(() => {
       void fetch('/api/saved-filters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...getBrowserSessionHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_profile_id: userProfileId, name: '', filters }),
       }).catch(() => {
         // The active set is a convenience; a failed write costs the person
@@ -96,7 +98,7 @@ export function useSavedFilters<T extends Record<string, unknown>>(
       }
       const response = await fetch('/api/saved-filters', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...getBrowserSessionHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_profile_id: userProfileId, name: trimmed, filters, notify }),
       });
       if (!response.ok) {
@@ -124,7 +126,7 @@ export function useSavedFilters<T extends Record<string, unknown>>(
       if (!userProfileId) return;
       await fetch('/api/saved-filters', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...getBrowserSessionHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_profile_id: userProfileId, name }),
       });
       setSaved((current) => current.filter((item) => item.name !== name));

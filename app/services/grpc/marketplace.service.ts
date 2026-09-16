@@ -3,7 +3,12 @@ import * as marketplacePbModule from '~/grpc/lite/marketplace/marketplace_pb';
 import structPb from 'google-protobuf/google/protobuf/struct_pb.js';
 
 import { GRPC_WEB_BASE_URL, callWithAuthRetry } from './client';
-import { getStoredAccessToken, getStoredCanonicalProfileType, getStoredUserId } from '~/utils/authStorage';
+import {
+  getBrowserSessionHeaders,
+  getStoredAccessToken,
+  getStoredCanonicalProfileType,
+  getStoredUserId,
+} from '~/utils/authStorage';
 import { cachedRequest, invalidateCached } from '~/utils/requestCache';
 import { normalizeProfileType } from '~/utils/profileType';
 
@@ -47,7 +52,11 @@ function userRequest(userId = '', profileType = ''): any {
 async function jobListingsApi(path = '', init?: RequestInit): Promise<any> {
   const response = await fetch(`/api/job-listings${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
+    headers: {
+      'Content-Type': 'application/json',
+      ...getBrowserSessionHeaders(),
+      ...(init?.headers || {}),
+    },
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.message || 'Unable to process job listing request');

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/20/solid';
 import {
   cacheAuthSession,
+  getBrowserSessionHeaders,
   getStoredCanonicalProfileType,
   getStoredUserProfileId,
 } from '~/utils/authStorage';
@@ -29,7 +30,11 @@ export default function AccountProfileSwitcher({ open, onClose }: { open: boolea
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/account-profiles', { credentials: 'include', cache: 'no-store' });
+      const response = await fetch('/api/account-profiles', {
+        credentials: 'include',
+        cache: 'no-store',
+        headers: getBrowserSessionHeaders(),
+      });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.message || 'Unable to load profiles');
       setProfiles(Array.isArray(payload.profiles) ? payload.profiles : []);
@@ -52,7 +57,7 @@ export default function AccountProfileSwitcher({ open, onClose }: { open: boolea
     setError('');
     try {
       const response = await fetch('/api/account-profiles', {
-        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', credentials: 'include', headers: { ...getBrowserSessionHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'switch', user_profile_id: userProfileID }),
       });
       const payload = await response.json().catch(() => ({}));
@@ -73,7 +78,7 @@ export default function AccountProfileSwitcher({ open, onClose }: { open: boolea
     setError('');
     try {
       const response = await fetch('/api/account-profiles', {
-        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', credentials: 'include', headers: { ...getBrowserSessionHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'add', profile_type: profileType }),
       });
       const payload = await response.json().catch(() => ({}));

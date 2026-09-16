@@ -53,6 +53,19 @@ export const getStoredAccessToken = (): string | undefined => {
   return getAccessTokenFromCookies();
 };
 
+/**
+ * Authentication to a same-origin website API route.
+ *
+ * Browser sessions maintain their current token in localStorage. Supplying it
+ * explicitly prevents a readable cookie left by an older account from becoming
+ * the identity that a BFF route forwards to Auth. The Auth service still
+ * validates the bearer token; this only selects the current browser session.
+ */
+export const getBrowserSessionHeaders = (): Record<string, string> => {
+  const token = getStoredAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const getStoredUser = (): StoredUser => {
   const rawUser = safeGet("user_object");
   if (rawUser) {

@@ -19,6 +19,7 @@ import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import * as grpcWeb from 'grpc-web';
 import { AUTH_GRPC_WEB_BASE_URL, GRPC_WEB_BASE_URL, handleGrpcError, callWithAuthRetry } from './client';
 import {
+  getBrowserSessionHeaders,
   getStoredAccessToken,
   getStoredCanonicalProfileType,
   getStoredUserId,
@@ -1606,6 +1607,7 @@ async function jobListingsApi(path = '', init?: RequestInit): Promise<any> {
     ...init,
     headers: {
       'Content-Type': 'application/json',
+      ...getBrowserSessionHeaders(),
       ...(init?.headers || {}),
     },
   });
