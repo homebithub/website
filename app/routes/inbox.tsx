@@ -49,7 +49,7 @@ type Conversation = {
   participant_online?: boolean;
 };
 
-type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
+type MessageStatus = 'sending' | 'failed' | 'sent' | 'read';
 
 type Message = {
   id: string;
@@ -59,6 +59,7 @@ type Message = {
   read_at?: string | null;
   created_at: string;
   _status?: MessageStatus; // Client-side status tracking
+  _error?: string;
   // New fields to support actions
   deleted_at?: string | null;
   edited_at?: string | null;
@@ -455,7 +456,9 @@ export default function InboxPage() {
           updateLastActive(msg.sender_id, msg.created_at || event.data?.created_at);
         }
         
-        setMessages((prev) => mergeIncomingMessage(prev, msg));
+        if (msg.conversation_id === activeConversationId) {
+          setMessages((prev) => mergeIncomingMessage(prev, msg));
+        }
         
         // Auto-scroll if at bottom
         if (isAtBottom) {
@@ -1008,17 +1011,6 @@ export default function InboxPage() {
           setNewMessageCount(0);
         });
         
-        // Mark conversation as read
-        try {
-          await notificationsService.markConversationAsRead(conversationId, '');
-          setItems((prev) => prev.map((conv) => 
-            conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
-          ));
-          notifyInboxUpdated();
-        } catch (err) {
-          console.error('[Inbox] Failed to mark conversation as read:', err);
-        }
-        
       } catch (e: any) {
         console.error('[Inbox] Error loading messages:', e);
         if (!cancelled) {
@@ -1036,6 +1028,32 @@ export default function InboxPage() {
       }
     };
   }, [activeConversationId, messagesLimit, authLoading, user, notifyInboxUpdated]);
+
+  // A newly arrived message needs a receipt too, not only messages loaded when
+  // the conversation first opens. A hidden tab must keep messages unread.
+  const newestIncomingMessageId = messages.filter((m) =>
+    m.conversation_id === activeConversationId && m.sender_id !== currentUserId).at(-1)?.id;
+  useEffect(() => {
+    if (!activeConversationId || !currentUserId || messagesLoading || !newestIncomingMessageId) return;
+    let cancelled = false;
+    const markVisibleConversationRead = async () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        await notificationsService.markConversationAsRead(activeConversationId, '');
+        if (cancelled) return;
+        setItems((prev) => prev.map((conv) => conv.id === activeConversationId ? { ...conv, unread_count: 0 } : conv));
+        notifyInboxUpdated();
+      } catch (err) {
+        console.error('[Inbox] Failed to mark conversation as read:', err);
+      }
+    };
+    void markVisibleConversationRead();
+    document.addEventListener('visibilitychange', markVisibleConversationRead);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', markVisibleConversationRead);
+    };
+  }, [activeConversationId, currentUserId, messagesLoading, newestIncomingMessageId, notifyInboxUpdated]);
 
   // Scroll to bottom on conversation load or new message
   useEffect(() => {
@@ -1466,7 +1484,7 @@ export default function InboxPage() {
     setShowEmojiPicker(false);
   }, []);
 
-  const handleSend = useCallback(async (e: React.FormEvent) => {
+  const handleSend = useCallback(async (e: React.FormEvent, retry?: Message) => {
     e.preventDefault();
     if (!activeConversationId) return;
     // Gate messaging behind active subscription
@@ -1474,14 +1492,14 @@ export default function InboxPage() {
       setShowSubscriptionModal(true);
       return;
     }
-    const body = input.trim();
+    const body = (retry?.body ?? input).trim();
     if (!body) return;
     if (body.length > CHAT_MESSAGE_LIMIT) {
       pushToast(`Messages are limited to ${CHAT_MESSAGE_LIMIT.toLocaleString()} characters`, 'error');
       return;
     }
+    const tempId = retry?.id || `temp-${crypto.randomUUID()}`;
     try {
-      const tempId = `temp-${Date.now()}`;
       const optimistic: Message = {
         id: tempId,
         conversation_id: activeConversationId,
@@ -1489,13 +1507,13 @@ export default function InboxPage() {
         body,
         created_at: new Date().toISOString(),
         _status: 'sending',
-        reply_to_id: replyTo?.id || null,
+        reply_to_id: retry?.reply_to_id || replyTo?.id || null,
       };
-      setMessages((prev) => [...prev, optimistic]);
-      setInput('');
+      setMessages((prev) => retry ? prev.map((m) => m.id === tempId ? optimistic : m) : [...prev, optimistic]);
+      if (!retry) setInput('');
       sendTypingUpdate(false);
-      const replyToId = replyTo?.id;
-      setReplyTo(null);
+      const replyToId = optimistic.reply_to_id;
+      if (!retry) setReplyTo(null);
       scrollToBottom();
       
       const data = await notificationsService.sendMessage(activeConversationId, body, replyToId || '');
@@ -1516,12 +1534,21 @@ export default function InboxPage() {
         }))
       };
 
-      setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...saved, _status: 'sent' } : m)));
+      setMessages((prev) => mergeIncomingMessage(prev.filter((m) => m.id !== tempId), { ...saved, _status: 'sent' }));
+      setItems((prev) => prev.map((conversation) => conversation.id === activeConversationId ? {
+        ...conversation,
+        last_message_body: saved.body,
+        last_message_at: saved.created_at,
+        last_message_sender_id: saved.sender_id,
+      } : conversation));
+      notifyInboxUpdated();
     } catch (err) {
       console.error(err);
-      pushToast('Failed to send message', 'error');
+      const reason = err instanceof Error ? err.message : 'Could not send this message. Please try again.';
+      setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, _status: 'failed', _error: reason } : m));
+      pushToast(reason, 'error');
     }
-  }, [activeConversationId, input, currentUserId, replyTo, scrollToBottom, pushToast, hasActiveSubscription, subscriptionLoading, sendTypingUpdate]);
+  }, [activeConversationId, input, currentUserId, replyTo, scrollToBottom, pushToast, hasActiveSubscription, subscriptionLoading, sendTypingUpdate, notifyInboxUpdated]);
 
   const handleAcceptHireRequest = useCallback(async () => {
     if (!hireRequestId) return;
@@ -1596,7 +1623,9 @@ export default function InboxPage() {
           msg.created_at || inboxEvent.timestamp || inboxEvent?.data?.timestamp
         );
 
-        setMessages((prev) => mergeIncomingMessage(prev, msg));
+        if (msg.conversation_id === activeConversationId) {
+          setMessages((prev) => mergeIncomingMessage(prev, msg));
+        }
         
         // Auto-scroll to bottom when new message arrives (only if user is already at bottom)
         if (isAtBottom) {
@@ -1635,6 +1664,19 @@ export default function InboxPage() {
       }
     });
     
+    const offMessageRead = addEventListener(WSEventMessageRead, (event: WSMessageEvent) => {
+      const payload = (event as any)?.data || event;
+      const conversationId = resolveConversationId(payload);
+      const readerId = payload.user_id || payload.reader_id;
+      const readAt = payload.timestamp || payload.read_at;
+      if (!conversationId || !readerId || readerId === currentUserId || !readAt) return;
+      setMessages((prev) => prev.map((m) =>
+        m.conversation_id === conversationId && m.sender_id === currentUserId &&
+        !m.id.startsWith('temp-') && new Date(m.created_at).getTime() <= new Date(readAt).getTime()
+          ? { ...m, read_at: readAt } : m));
+      notifyInboxUpdated();
+    });
+
     // Listen for other message events
     const offMessageEdited = addEventListener('message_edited', (event: WSMessageEvent) => {
       try {
@@ -1757,6 +1799,7 @@ export default function InboxPage() {
     
     return () => {
       offNewMessage?.();
+      offMessageRead?.();
       offMessageEdited?.();
       offMessageDeleted?.();
       offReactionAdded?.();
@@ -2019,13 +2062,8 @@ export default function InboxPage() {
                 </div>
                 {group.items.map((m) => {
                 const mine = currentUserId && m.sender_id === currentUserId;
-                const status: MessageStatus = m.read_at
-                  ? 'read'
-                  : m._status === 'sending'
-                    ? 'sending'
-                    : isOnline
-                      ? 'delivered'
-                      : 'sent';
+                const status: MessageStatus = m._status === 'failed' ? 'failed' : m.read_at
+                  ? 'read' : m._status === 'sending' ? 'sending' : 'sent';
                 const replyMsg = m.reply_to_id ? messageById.get(m.reply_to_id) : undefined;
                 const replyFromName = replyMsg ? (replyMsg.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')) : '';
                 const interactionsDisabled = lockMessages;
@@ -2217,17 +2255,15 @@ export default function InboxPage() {
                             <span>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             {mine && !m.deleted_at && (
                               <span className="inline-flex items-center ml-1">
-                                {(status === 'sending' || status === 'sent') && (
-                                  /* One neutral tick: sending or accepted by the server. */
-                                  <svg className={`w-4 h-4 ${status === 'sending' ? 'text-white/45' : 'text-white/80'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-label={status === 'sending' ? 'Sending' : 'Sent'}>
-                                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
+                                {status === 'failed' && (
+                                  <button type="button" onClick={(event) => { event.stopPropagation(); void handleSend(event, m); }} title={m._error} className="font-semibold text-white underline">
+                                    Not sent · Retry
+                                  </button>
                                 )}
-                                {status === 'delivered' && (
-                                  /* Two neutral ticks: the recipient is connected. */
-                                  <svg className="w-4 h-4 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-label="Delivered">
-                                    <path d="M2 13l4 4L16 7" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M8 13l4 4L22 7" strokeLinecap="round" strokeLinejoin="round" />
+                                {status === 'sending' && <span className="text-white/80" role="status">Sending…</span>}
+                                {status === 'sent' && (
+                                  <svg className="w-4 h-4 text-white/80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-label="Sent — waiting to be read">
+                                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                                   </svg>
                                 )}
                                 {status === 'read' && (

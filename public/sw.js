@@ -1,4 +1,4 @@
-const VERSION = 'homebit-pwa-v2';
+const VERSION = 'homebit-pwa-v3';
 const STATIC_CACHE = `${VERSION}-static`;
 const PUBLIC_ASSETS = ['/offline.html', '/manifest.webmanifest', '/pwa/icon-192.png', '/pwa/icon-512.png'];
 
@@ -24,7 +24,12 @@ self.addEventListener('fetch', (event) => {
 
   if (['script', 'style', 'image', 'font'].includes(request.destination)) {
     event.respondWith(caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-      if (response.ok && response.type === 'basic') caches.open(STATIC_CACHE).then((cache) => cache.put(request, response.clone()));
+      if (response.ok && response.type === 'basic') {
+        // Clone before returning the response: the browser may consume its
+        // body while opening the cache is still pending.
+        const copy = response.clone();
+        event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy)).catch(() => {}));
+      }
       return response;
     })));
   }

@@ -250,17 +250,14 @@ function NavigationContent() {
             if (!getAccessTokenFromCookies()) return;
             const userId = getStoredUserId() || '';
             if (!userId) return;
-            const unread = await cachedRequest(`nav:inbox:${userId}`, async () => {
+            const unreadRows = await cachedRequest(`nav:inbox:${userId}`, async () => {
                 const raw = await notificationsService.listConversations(userId, 0, 100);
-                const unreadRows = extractConversationRows(raw).filter(isConversationUnread);
-                unreadConversationIdsRef.current = new Set(
-                    unreadRows.map(conversationBadgeId).filter(Boolean),
-                );
-                return unreadRows.length;
+                return extractConversationRows(raw).filter(isConversationUnread);
             }, { maxAgeMs: NAV_COUNT_STALE_MS, force });
-            setInboxCount(unread);
+            unreadConversationIdsRef.current = new Set(unreadRows.map(conversationBadgeId).filter(Boolean));
+            setInboxCount(unreadRows.length);
         } catch (error) {
-            setInboxCount(0);
+            // A failed refresh says nothing about whether unread messages exist.
             if (!shouldSilenceGatewayError(error)) {
                 console.error("Failed to fetch inbox count:", error);
             }
@@ -319,12 +316,15 @@ function NavigationContent() {
 
         if (recipientId && currentUserId && recipientId !== currentUserId) return;
         if (senderId && currentUserId && senderId === currentUserId) return;
-        if (location.pathname !== '/inbox' && conversationId && !unreadConversationIdsRef.current.has(conversationId)) {
+        const isReadingConversation = location.pathname === '/inbox' &&
+            new URLSearchParams(location.search).get('conversation') === conversationId &&
+            document.visibilityState === 'visible';
+        if (!isReadingConversation && conversationId && !unreadConversationIdsRef.current.has(conversationId)) {
             unreadConversationIdsRef.current.add(conversationId);
             setInboxCount((count) => count + 1);
         }
         refreshInbox();
-    }, [location.pathname, refreshInbox]);
+    }, [location.pathname, location.search, refreshInbox]);
 
     // Parse user profile type and name from localStorage
     useEffect(() => {
@@ -468,6 +468,21 @@ function NavigationContent() {
     }, [isInSetupMode, profileType, refreshHiring, refreshInbox, refreshSaved]);
 
     const badgesAreLive = Boolean(user) && !isInSetupMode;
+
+    useEffect(() => {
+        if (!badgesAreLive) return;
+        const refreshVisibleInbox = () => {
+            if (document.visibilityState === 'visible') refreshInbox();
+        };
+        const timer = window.setInterval(refreshVisibleInbox, 30_000);
+        document.addEventListener('visibilitychange', refreshVisibleInbox);
+        window.addEventListener('focus', refreshVisibleInbox);
+        return () => {
+            window.clearInterval(timer);
+            document.removeEventListener('visibilitychange', refreshVisibleInbox);
+            window.removeEventListener('focus', refreshVisibleInbox);
+        };
+    }, [badgesAreLive, refreshInbox]);
 
     // Realtime updates invalidate only the count they can change. A hiring
     // event previously reloaded hiring, inbox and saved data, then the related

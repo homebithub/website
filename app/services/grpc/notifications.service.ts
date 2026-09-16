@@ -12,6 +12,7 @@ import {
   getStoredAccessToken,
   getStoredCanonicalProfileType,
   getStoredUserId,
+  getStoredUserProfileId,
 } from '~/utils/authStorage';
 import { normalizeProfileType } from '~/utils/profileType';
 
@@ -180,8 +181,8 @@ export const notificationsService = {
     request.setBody(body);
     request.setReplyToId(replyToId);
     request.setUserId(resolveUserId(userId));
-    request.setSenderProfileId(senderProfileId);
-    request.setSenderProfileType(normalizeProfileType(senderProfileType));
+    request.setSenderProfileId(senderProfileId || getStoredUserProfileId() || '');
+    request.setSenderProfileType(normalizeProfileType(senderProfileType || getStoredCanonicalProfileType()));
     const res = await grpcCall((cb) => notificationsClient.sendMessage(request, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
