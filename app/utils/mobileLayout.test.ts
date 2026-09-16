@@ -232,6 +232,14 @@ describe('mobile layout guardrails', () => {
     expect(jobModal).toContain('profileDefaults?.location?.wardId');
   });
 
+  it('renders saved listing feature choices as editable controls', () => {
+    const jobModal = source('app/components/modals/JobPostModal.tsx');
+    expect(jobModal).toContain('const featureSourcePicks = editing ? listingFeaturePicks : profilePicks;');
+    expect(jobModal).toContain('setListingFeaturePicks(rows);');
+    expect(jobModal).toContain('if (editing) return;');
+    expect(jobModal).toContain('loadingListingDetails');
+  });
+
   it('uses plain language for the open-for-work introduction', () => {
     const modal = source('app/components/modals/OpenForWorkModal.tsx');
     const jobsHome = source('app/components/ServiceProviderJobsHome.tsx');

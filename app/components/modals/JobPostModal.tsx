@@ -166,10 +166,12 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
   const [jobTypeFeatureBundles, setJobTypeFeatureBundles] = useState<FeatureBundle[]>([]);
   const [householdFeatureBundles, setHouseholdFeatureBundles] = useState<FeatureBundle[]>([]);
   const [profilePicks, setProfilePicks] = useState<any[]>([]);
+  const [listingFeaturePicks, setListingFeaturePicks] = useState<any[]>([]);
   const [selectedProperties, setSelectedProperties] = useState<Record<number, number[]>>({});
   const [freeFormValues, setFreeFormValues] = useState<Record<string, string>>({});
   const [loadingJobTypes, setLoadingJobTypes] = useState(false);
   const [loadingFeatures, setLoadingFeatures] = useState(false);
+  const [loadingHouseholdFeatures, setLoadingHouseholdFeatures] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -179,19 +181,19 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
   const [detailsOpen, setDetailsOpen] = useState(true);
   const { panelRef, onOverlayClick } = useModalDismiss(isOpen, onClose);
 
-  // Keep the canonical job-type questions, then extend them with only the
-  // household profile-choice groups that the household already selected. This
-  // also repairs older job types that predate job-type feature links: a new
-  // listing still carries the household's completed profile choices forward.
+  // Keep the canonical job-type questions, then extend them with the relevant
+  // household feature groups. A new listing uses profile choices; an existing
+  // one uses the choices actually saved on that listing. This lets older job
+  // types with no feature links render a full, editable details section in
+  // both flows instead of merely showing a count of hidden saved answers.
+  const featureSourcePicks = editing ? listingFeaturePicks : profilePicks;
   const featureBundles = useMemo<FeatureBundle[]>(() => (
-    editing
-      ? jobTypeFeatureBundles
-      : buildHouseholdListingFeatureBundles(
-          jobTypeFeatureBundles,
-          householdFeatureBundles,
-          profilePicks,
-        ) as FeatureBundle[]
-  ), [editing, householdFeatureBundles, jobTypeFeatureBundles, profilePicks]);
+    buildHouseholdListingFeatureBundles(
+      jobTypeFeatureBundles,
+      householdFeatureBundles,
+      featureSourcePicks,
+    ) as FeatureBundle[]
+  ), [featureSourcePicks, householdFeatureBundles, jobTypeFeatureBundles]);
 
   // The profile and job-type requests finish independently. Include the
   // bundle contents in this key so a late household-catalogue response can
@@ -202,6 +204,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
       .map((bundle) => `${featureId(bundle)}:${featureProperties(bundle).map(propertyId).join(',')}`)
       .sort(),
   ].join('|'), [featureBundles, selectedJobTypeId]);
+  const loadingListingDetails = loadingFeatures || loadingHouseholdFeatures;
 
   useEffect(() => {
     setMounted(true);
@@ -230,6 +233,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
     setJobTypeFeatureBundles([]);
     setHouseholdFeatureBundles([]);
     setProfilePicks([]);
+    setListingFeaturePicks([]);
     setProfileDefaults(null);
     setDefaultsAppliedFor('');
     setError("");
@@ -237,47 +241,55 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
   }, [isOpen, job]);
 
   useEffect(() => {
-    if (!isOpen || editing) return;
+    if (!isOpen) return;
     let cancelled = false;
     const loadHouseholdDefaults = async () => {
-      const [profileResult, petsResult] = await Promise.allSettled([
-        profileService.getCurrentHouseholdProfile(''),
-        petsService.listMyPets(''),
-      ]);
-      if (cancelled) return;
+      setLoadingHouseholdFeatures(true);
+      try {
+        const [profileResult, petsResult] = await Promise.allSettled([
+          profileService.getCurrentHouseholdProfile(''),
+          petsService.listMyPets(''),
+        ]);
+        if (cancelled) return;
 
-      const profile = profileResult.status === 'fulfilled'
-        ? (profileResult.value?.data ?? profileResult.value ?? {})
-        : {};
-      const petsPayload = petsResult.status === 'fulfilled'
-        ? (petsResult.value?.data ?? petsResult.value ?? [])
-        : [];
-      const catalogueProfileId = String(
-        profile.profile_id || profile.profileId || profile.profile?.id || '',
-      );
-      const userProfileId = String(
-        getStoredUserProfileId() || profile.user_profile_id || profile.userProfileId || profile.id || '',
-      );
-      const [picksResult, featuresResult] = await Promise.allSettled([
-        userProfileId ? userProfilePicksService.listPicks(userProfileId) : Promise.resolve([]),
-        catalogueProfileId ? profileFeatureService.getProfileFeatures(catalogueProfileId) : Promise.resolve([]),
-      ]);
-      if (cancelled) return;
+        const profile = profileResult.status === 'fulfilled'
+          ? (profileResult.value?.data ?? profileResult.value ?? {})
+          : {};
+        const petsPayload = petsResult.status === 'fulfilled'
+          ? (petsResult.value?.data ?? petsResult.value ?? [])
+          : [];
+        const catalogueProfileId = String(
+          profile.profile_id || profile.profileId || profile.profile?.id || '',
+        );
+        const userProfileId = String(
+          getStoredUserProfileId() || profile.user_profile_id || profile.userProfileId || profile.id || '',
+        );
+        const [picksResult, featuresResult] = await Promise.allSettled([
+          userProfileId ? userProfilePicksService.listPicks(userProfileId) : Promise.resolve([]),
+          catalogueProfileId ? profileFeatureService.getProfileFeatures(catalogueProfileId) : Promise.resolve([]),
+        ]);
+        if (cancelled) return;
 
-      const picksPayload = picksResult.status === 'fulfilled'
-        ? (picksResult.value?.data ?? picksResult.value ?? [])
-        : [];
-      const featurePayload = featuresResult.status === 'fulfilled'
-        ? (featuresResult.value?.data ?? featuresResult.value ?? [])
-        : [];
-      const defaults = buildHouseholdJobDefaults(profile, petsPayload, picksPayload);
+        const picksPayload = picksResult.status === 'fulfilled'
+          ? (picksResult.value?.data ?? picksResult.value ?? [])
+          : [];
+        const featurePayload = featuresResult.status === 'fulfilled'
+          ? (featuresResult.value?.data ?? featuresResult.value ?? [])
+          : [];
+        const defaults = buildHouseholdJobDefaults(profile, petsPayload, picksPayload);
 
-      setProfilePicks(asArray(picksPayload));
-      setHouseholdFeatureBundles(asArray(featurePayload));
-      setProfileDefaults(defaults);
-      setDescription((current) => current.trim() ? current : defaults.description);
-      if (defaults.jobTypeId) {
-        setSelectedJobTypeId((current) => current || String(defaults.jobTypeId));
+        setProfilePicks(asArray(picksPayload));
+        setHouseholdFeatureBundles(asArray(featurePayload));
+        setProfileDefaults(defaults);
+        // An edit must fetch the same catalogue too: it supplies the labels and
+        // all available options needed to render saved listing picks as controls.
+        if (editing) return;
+        setDescription((current) => current.trim() ? current : defaults.description);
+        if (defaults.jobTypeId) {
+          setSelectedJobTypeId((current) => current || String(defaults.jobTypeId));
+        }
+      } finally {
+        if (!cancelled) setLoadingHouseholdFeatures(false);
       }
     };
 
@@ -398,10 +410,11 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
       .then((payload) => {
         if (cancelled) return;
 
+        const rows = asArray(payload.data ?? payload);
         const picks: Record<number, number[]> = {};
         const values: Record<string, string> = {};
 
-        for (const row of asArray(payload.data ?? payload)) {
+        for (const row of rows) {
           const fId = numericId(row?.feature_id ?? row?.featureId);
           const pId = numericId(row?.feature_property_id ?? row?.featurePropertyId ?? row?.property_id);
           if (!fId) continue;
@@ -415,6 +428,9 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
 
         setSelectedProperties(picks);
         setFreeFormValues(values);
+        // These rows identify exactly which feature groups this listing holds.
+        // The household catalogue loader then provides their editable options.
+        setListingFeaturePicks(rows);
       })
       .catch(() => {
         // Leaving the form blank here would invite the household to save it and
@@ -788,7 +804,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
             {selectedJobTypeId && (
               <PreferenceAccordion
                 title="Listing details"
-                summary={loadingFeatures ? "Loading options..." : `${selectedFeatureCount} feature${selectedFeatureCount === 1 ? "" : "s"} filled`}
+                summary={loadingListingDetails ? "Loading options..." : `${selectedFeatureCount} feature${selectedFeatureCount === 1 ? "" : "s"} filled`}
                 complete={selectedFeatureCount > 0}
                 open={detailsOpen}
                 onToggle={() => setDetailsOpen((current) => !current)}
@@ -799,7 +815,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved, titleOverr
                   </p>
                 ) : null}
 
-                {!loadingFeatures && featureBundles.length === 0 && (
+                {!loadingListingDetails && featureBundles.length === 0 && (
                   <p className="text-sm text-gray-500 dark:text-gray-400">No additional details are required for this job type.</p>
                 )}
 
