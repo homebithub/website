@@ -381,7 +381,11 @@ export default function SignupPage() {
                         form.first_name,
                         form.last_name,
                         signupPhone,
-                        form.profile_id || form.profile_type,
+                        // CompleteGoogleSignup's protobuf field is profile_type,
+                        // not profile_id. Sending the catalogue UUID here made a
+                        // valid Household/Service provider selection look invalid
+                        // to Auth after the person had completed Google OAuth.
+                        form.profile_type,
                         form.profile_type === SERVICE_PROVIDER_PROFILE_TYPE && bureauId ? bureauId : undefined,
                     );
 

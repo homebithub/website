@@ -53,6 +53,7 @@ const ERROR_MAPPINGS: { [key: string]: string } = {
   'Login not implemented': 'Password login is not available right now. Please use OTP verification or contact support.',
   'password must be at least 4 characters': 'Password must be at least 4 characters',
   'first_name, last_name, phone, password, and profile_type are required': 'Please fill in all required fields',
+  'valid profile_type is required': 'Please select an account type and try again.',
   
   // Context-specific mappings for various forms
   'gender is not allowed to be empty': 'Please select your gender',
