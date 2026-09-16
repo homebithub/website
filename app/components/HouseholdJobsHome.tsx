@@ -29,7 +29,7 @@ import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionRemind
 import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionCelebrationModal } from "~/components/profile/ProfileCompletionCelebrationModal";
 import { Briefcase, Heart, ChevronDown, Plus, SlidersHorizontal, X } from "lucide-react";
-import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
+import { formatListingPlace, formatPlace, formatPlaceOrFallback } from "~/utils/place";
 import { formatDisplayName } from "~/utils/displayName";
 import { humanizeFeatureName, listingHighlights, readFeatureGroups } from "~/utils/listingFeatures";
 import { useSubscription } from "~/hooks/useSubscription";
@@ -163,6 +163,11 @@ interface HouseholdJobListing {
   status?: string;
   created_at?: string;
   expires_at?: string;
+  ward?: string;
+  subcounty?: string;
+  county?: string;
+  town?: string;
+  location?: unknown;
   [key: string]: any;
 }
 
@@ -2112,58 +2117,91 @@ export default function HouseholdJobsHome() {
                   <h3 className="mt-3 text-sm font-semibold text-gray-900 dark:text-white">No active job listings</h3>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Create or reopen a listing from Hiring when you are ready.</p>
                 </div>
-              ) : activeHouseholdJobs.map((job) => (
-                <div
-                  key={job.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={(event) => {
-                    if (event.target instanceof Element && event.target.closest('button')) return;
-                    setShowActiveJobs(false);
-                    navigate(`/household/hiring?tab=jobs&job=${encodeURIComponent(job.id)}`);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== "Enter" && event.key !== " ") return;
-                    event.preventDefault();
-                    setShowActiveJobs(false);
-                    navigate(`/household/hiring?tab=jobs&job=${encodeURIComponent(job.id)}`);
-                  }}
-                  className="cursor-pointer rounded-2xl border border-purple-200 bg-purple-50/40 p-4 transition hover:-translate-y-0.5 hover:border-purple-400 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-purple-500/25 dark:bg-purple-950/20 sm:p-5"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="truncate text-sm font-bold text-gray-900 dark:text-white">{job.title || "Untitled role"}</h3>
-                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-gray-600 dark:text-gray-300">{job.description || "No description provided."}</p>
+              ) : activeHouseholdJobs.map((job) => {
+                const highlights = listingHighlights(job);
+                const featureGroups = readFeatureGroups(job);
+                const requestedApplicantCount = Number(job.applicant_count ?? job.applicantCount ?? 0);
+                const requestedMaxApplicants = Number(job.max_applicants ?? job.maxApplicants ?? 15);
+                const applicantCount = Number.isFinite(requestedApplicantCount)
+                  ? Math.max(0, requestedApplicantCount)
+                  : 0;
+                const maxApplicants = Number.isFinite(requestedMaxApplicants) && requestedMaxApplicants > 0
+                  ? requestedMaxApplicants
+                  : 15;
+
+                return (
+                  <div
+                    key={job.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={(event) => {
+                      if (event.target instanceof Element && event.target.closest('button')) return;
+                      setShowActiveJobs(false);
+                      navigate(`/household/hiring?tab=jobs&job=${encodeURIComponent(job.id)}`);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      setShowActiveJobs(false);
+                      navigate(`/household/hiring?tab=jobs&job=${encodeURIComponent(job.id)}`);
+                    }}
+                    className="cursor-pointer rounded-2xl border border-purple-200 bg-purple-50/40 p-4 transition hover:-translate-y-0.5 hover:border-purple-400 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-purple-500/25 dark:bg-purple-950/20 sm:p-5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-bold text-gray-900 dark:text-white">{job.title || "Untitled role"}</h3>
+                        <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-gray-600 dark:text-gray-300">{job.description || "No description provided."}</p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">Active</span>
                     </div>
-                    <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">Active</span>
+
+                    <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-purple-600 dark:text-purple-300">What service providers can see</p>
+                    <div className="mt-2 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
+                      <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Salary</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{highlights.salary || formatJobSalary(job)}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Starts</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{highlights.startTiming || "Flexible"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Location</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{formatListingPlace(job)}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Applicants / max applicants</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{applicantCount} of {maxApplicants}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Posted</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{job.created_at ? formatTimeAgo(job.created_at) : "Recently"}</p></div>
+                      <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Expiry</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{describeJobExpiry(job.expires_at)}</p></div>
+                    </div>
+
+                    {featureGroups.length > 0 && (
+                      <div className="mt-4 border-t border-purple-100 pt-4 dark:border-purple-500/20">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">Listing details</p>
+                        <dl className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+                          {featureGroups.map((group) => (
+                            <div key={group.featureId || group.key}>
+                              <dt className="text-[11px] font-semibold text-purple-700 dark:text-purple-300">{group.name}</dt>
+                              <dd className="mt-0.5 text-xs leading-relaxed text-gray-700 dark:text-gray-200">{group.properties.join(", ")}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </div>
+                    )}
+
+                    <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-purple-100 pt-4 dark:border-purple-500/20">
+                      <button type="button" onClick={() => setEditingHouseholdJob(job)} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">Edit</button>
+                      <button type="button" onClick={() => setHouseholdJobToClose(job)} disabled={householdJobActionId === job.id} className="rounded-xl border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white/5">Close</button>
+                      <button type="button" onClick={() => void updateHouseholdJob(job, "renew")} disabled={householdJobActionId === job.id} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 disabled:opacity-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">{householdJobActionId === job.id ? "Updating…" : "Keep open"}</button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // The confirmation dialog belongs to the document
+                          // body and sits below this listings sheet. Close the
+                          // sheet before presenting it so the confirmation is
+                          // visible and there is only one active modal layer.
+                          setShowActiveJobs(false);
+                          setHouseholdJobToDelete(job);
+                        }}
+                        disabled={householdJobActionId === job.id}
+                        className="rounded-xl border border-red-300 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
-                    <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Salary</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{formatJobSalary(job)}</p></div>
-                    <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Posted</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{job.created_at ? formatTimeAgo(job.created_at) : "Recently"}</p></div>
-                    <div><p className="text-[10px] uppercase tracking-wide text-gray-400">Expiry</p><p className="mt-1 font-medium text-gray-800 dark:text-gray-200">{describeJobExpiry(job.expires_at)}</p></div>
-                  </div>
-                  <div className="mt-4 flex flex-wrap justify-end gap-2 border-t border-purple-100 pt-4 dark:border-purple-500/20">
-                    <button type="button" onClick={() => setEditingHouseholdJob(job)} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">Edit</button>
-                    <button type="button" onClick={() => setHouseholdJobToClose(job)} disabled={householdJobActionId === job.id} className="rounded-xl border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-white/5">Close</button>
-                    <button type="button" onClick={() => void updateHouseholdJob(job, "renew")} disabled={householdJobActionId === job.id} className="rounded-xl border border-purple-300 px-3 py-2 text-xs font-semibold text-purple-700 hover:bg-purple-50 disabled:opacity-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10">{householdJobActionId === job.id ? "Updating…" : "Keep open"}</button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // The confirmation dialog belongs to the document
-                        // body and sits below this listings sheet. Close the
-                        // sheet before presenting it so the confirmation is
-                        // visible and there is only one active modal layer.
-                        setShowActiveJobs(false);
-                        setHouseholdJobToDelete(job);
-                      }}
-                      disabled={householdJobActionId === job.id}
-                      className="rounded-xl border border-red-300 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         </div>

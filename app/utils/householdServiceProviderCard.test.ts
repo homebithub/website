@@ -62,6 +62,15 @@ describe('household service-provider cards', () => {
     expect(home).toContain('contactedLabel="Messaged or invited"');
   });
 
+  it('lets a household review every saved job detail visible to service providers', () => {
+    const home = readFileSync('app/components/HouseholdJobsHome.tsx', 'utf8');
+
+    expect(home).toContain('What service providers can see');
+    expect(home).toContain('const featureGroups = readFeatureGroups(job);');
+    expect(home).toContain('applicantCount} of {maxApplicants');
+    expect(home).toContain('formatListingPlace(job)');
+  });
+
   it('stops automatic pagination when the service-provider request fails', () => {
     const home = readFileSync('app/components/HouseholdJobsHome.tsx', 'utf8');
     const fetchListings = home.slice(
