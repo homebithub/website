@@ -240,7 +240,7 @@ export default function ServiceProviderPublicProfile() {
         navigationState.fromShortlist ? 'shortlist' :
         navigationState.fromHireRequests ? 'hiring' :
         querySource) === 'shortlist'
-      ? 'Back to Shortlist'
+      ? 'Back to Saved'
       : (navigationState.fromInbox ? 'inbox' :
         navigationState.fromShortlist ? 'shortlist' :
         navigationState.fromHireRequests ? 'hiring' :

@@ -1,22 +1,21 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Eye, MessageCircle } from "lucide-react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { jobService, shortlistService } from "~/services/grpc/authServices";
-import { formatListingPlace } from "~/utils/place";
-import { listingHighlights } from "~/utils/listingFeatures";
-import { ListingCardFacts } from "~/components/listing/ListingCardFacts";
+import { shortlistService } from "~/services/grpc/authServices";
 import { ListingViewToggle, useListingViewPreference } from "~/components/listing/ListingViewToggle";
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
-import { formatTimeAgo } from "~/utils/timeAgo";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { ShimmerListPlaceholder } from '~/components/ShimmerLoader';
+import { JobListingCard } from '~/components/listing/JobListingCard';
+import { marketplaceJobService, marketplaceListingApplicationService } from '~/services/grpc/marketplace.service';
+import { notificationsService } from '~/services/grpc/notifications.service';
+import { resolveHouseholdProfile } from '~/utils/householdProfiles';
 
 type JobLocation = {
   name?: string;
@@ -34,24 +33,6 @@ type JobLocation = {
 //
 // A second private copy of a formatter is how that happens. There is now one of
 // each, and the board is the thing keeping them honest.
-
-const formatDate = (value?: string) => {
-  if (!value) return "Flexible";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Flexible";
-  return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-};
-
-const isJobOpen = (job: { status?: string }) => {
-  // A listing's status is "active" — the value the service writes and the one
-  // the API returns. This compared against "open" alone, so every open job read
-  // as closed: the service-provider home page showed "0 roles available" beside a
-  // filter chip saying "2 total roles". It went unnoticed because the page had
-  // an All jobs toggle that skipped the check, and removing that toggle turned
-  // a wrong count into an empty page.
-  const status = (job.status || "active").toLowerCase();
-  return ["active", "open", "available"].includes(status);
-};
 
 type ShortlistedJob = {
   id: string;
@@ -79,15 +60,16 @@ type ShortlistedJob = {
 export default function ShortlistPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<ShortlistedJob[]>([]);
+  const [householdProfiles, setHouseholdProfiles] = useState<Record<string, any>>({});
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [contactedIds, setContactedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const limit = 20;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const [compactView, setCompactView] = useState(false);
   const [accessibilityMode, setAccessibilityMode] = useState(false);
-  const loadingProfiles = false;
   const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useListingViewPreference("homebit:saved-view");
@@ -106,11 +88,9 @@ export default function ShortlistPage() {
         const prefs = await fetchPreferences();
         if (cancelled) return;
         const settings = prefs?.settings || {};
-        setCompactView(Boolean(settings.compact_view));
         setAccessibilityMode(Boolean(settings.accessibility_mode));
       } catch {
         if (!cancelled) {
-          setCompactView(false);
           setAccessibilityMode(false);
         }
       }
@@ -151,25 +131,15 @@ export default function ShortlistPage() {
           : Array.isArray(raw?.data)
             ? raw.data
             : [];
-        const jobs = await Promise.all(
-          saved
-            .filter((item: any) => (item?.profile_type ?? 'job') === 'job')
-            .map(async (item: any) => {
-              const listingId = String(item.profile_id ?? item.listing_id ?? '');
-              if (!listingId) return null;
-              try {
-                return await jobService.getJob(listingId);
-              } catch {
-                // A listing deleted since it was saved should drop out of the
-                // list rather than take the whole page down with it.
-                return null;
-              }
-            }),
-        );
-        const data = jobs.filter(Boolean);
+        const bookmarks = saved.filter((item: any) => (item?.profile_type ?? 'job') === 'job');
+        const ids = bookmarks.slice(offset, offset + limit).map((item: any) => String(item.profile_id ?? item.listing_id ?? '')).filter(Boolean);
+        const data = await marketplaceJobService.getSavedCards(ids, currentUserProfileId, 'household');
+        const profileIds = [...new Set(data.map((job: any) => job.household_profile_id || job.user_profile_id || job.owner_profile_id).filter(Boolean))];
+        const profiles = await Promise.all(profileIds.map(async (id) => [id, await resolveHouseholdProfile(String(id), { identifierType: 'profileId' }).catch(() => null)]));
         if (cancelled) return;
+        setHouseholdProfiles((prev) => ({ ...prev, ...Object.fromEntries(profiles) }));
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
-        setHasMore(data.length === limit);
+        setHasMore(offset + limit < bookmarks.length);
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "Failed to load shortlisted jobs");
       } finally {
@@ -179,6 +149,20 @@ export default function ShortlistPage() {
     load();
     return () => { cancelled = true; };
   }, [offset, currentUserProfileId]);
+
+  useEffect(() => {
+    if (!currentUserProfileId || !currentUserId) return;
+    let cancelled = false;
+    const rows = (raw: any): any[] => {
+      const value = raw?.conversations ?? raw?.data?.data ?? raw?.data ?? raw;
+      return Array.isArray(value) ? value : [];
+    };
+    void marketplaceListingApplicationService.listApplications({ applicantProfileId: currentUserProfileId, limit: 200 })
+      .then((raw) => { if (!cancelled) setAppliedIds(new Set(rows(raw).map((row) => String(row.listing_id ?? row.listingId ?? row.job_listing_id ?? row.jobListingId)))); }).catch(() => {});
+    void notificationsService.listConversations(currentUserId, 0, 200)
+      .then((raw) => { if (!cancelled) setContactedIds(new Set(rows(raw).map((row) => String(row.listing_id ?? row.listingId)))); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentUserId, currentUserProfileId]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -225,6 +209,7 @@ export default function ShortlistPage() {
       const payload: StartConversationPayload = {
         household_user_id: householdId,
         service_provider_user_id: serviceProviderId,
+        listing_id: jobId,
       };
       
       if (householdProfileId) {
@@ -266,155 +251,22 @@ export default function ShortlistPage() {
             {error && <ErrorAlert message={error} className="mb-4" />}
 
             <div className={`${initialLoading ? 'hidden' : 'hb-data-panel-enter'} ${isGridView ? "grid gap-4 md:grid-cols-2 lg:grid-cols-3" : "space-y-4"}`}>
-              {(Array.isArray(items) ? items : [])
-                .map((job) => {
-                  const jobId = String(job.id || '');
-                  // owner_user_id is what ListJobs calls the poster. household_id
-                  // is not a field a listing carries, so the old first choice was
-                  // always undefined and this fell through to job.user_id.
-                  const householdUserId = job.household?.user_id || job.owner_user_id || job.user_id;
-                  const householdProfileId = job.household?.profile_id || job.household?.id || job.household_profile_id || job.user_profile_id;
-                  const isOpen = isJobOpen(job || {});
-                  const hasApplied = Boolean(job?.has_applied);
-                  const householdProfileLink = `/household/public-profile?userId=${encodeURIComponent(householdUserId || '')}&jobId=${encodeURIComponent(jobId)}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`;
-                  const openJob = () =>
-                    navigate(householdProfileLink, {
-                      state: { profileId: householdProfileId, backTo: '/shortlist', backLabel: 'Back to shortlist' },
-                    });
-                  return (
-                    // The whole card opens the job, as it does on the board.
-                    // Here only "View more" did, so the obvious thing to do with
-                    // a card — tap it — did nothing at all, on the one page
-                    // whose whole purpose is going back to something.
-                    <div
-                      key={jobId}
-                      role="button"
-                      tabIndex={0}
-                      onClick={openJob}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          openJob();
-                        }
-                      }}
-                      className={`cursor-pointer bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400 ${isGridView ? "flex h-full flex-col" : ""}`}
-                    >
-                      <div className={isGridView ? "flex flex-col gap-3" : "grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 lg:grid-cols-[minmax(260px,0.9fr)_minmax(320px,1.2fr)_auto] lg:gap-8"}>
-                        <div className="min-w-0">
-                          <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
-                            {job ? job.title || "Household Job" : "Loading..."}
-                          </h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatListingPlace(job)}</p>
-                        </div>
-                        {!isGridView && <ListingCardFacts listing={job} />}
-                        <div className={`flex shrink-0 items-start gap-1.5 sm:gap-2 ${isGridView ? "justify-between" : ""}`}>
-                          <span
-                            className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                              isOpen
-                                ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200"
-                                : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300"
-                            }`}
-                          >
-                            {job?.status || "open"}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleChatWithHousehold(householdUserId, householdProfileId, jobId);
-                              }}
-                              disabled={chatLoadingId === jobId}
-                              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition disabled:opacity-60"
-                              aria-label="Chat with household"
-                            >
-                              {chatLoadingId === jobId ? (
-                                <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
-                              ) : (
-                                <MessageCircle className="w-4 h-4" />
-                              )}
-                            </button>
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                handleRemove(jobId);
-                              }}
-                              disabled={removingId === jobId}
-                              className="inline-flex h-9 items-center justify-center rounded-xl border border-pink-400 bg-pink-500 px-3 text-xs font-semibold text-white transition hover:bg-pink-600 disabled:cursor-not-allowed disabled:opacity-60"
-                              aria-label="Unsave job"
-                              title="Click to unsave"
-                            >
-                              {removingId === jobId ? "Removing..." : "Saved"}
-                            </button>
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                openJob();
-                              }}
-                              className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition"
-                              aria-label="View household profile"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {job?.description && (
-                        <p className={`mt-3 text-sm text-gray-600 dark:text-gray-300 ${isGridView ? "line-clamp-2" : "line-clamp-3"}`}>
-                          {job.description}
-                        </p>
-                      )}
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {(job?.job_types || []).length > 0 ? (
-                          job?.job_types?.slice(0, isGridView ? 2 : job.job_types.length).map((type: string) => (
-                            <span
-                              key={type}
-                              className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
-                            >
-                              {type.replace(/_/g, " ")}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                            Flexible role
-                          </span>
-                        )}
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                          Start {formatDate(job?.start_date)}
-                        </span>
-                        {job?.max_applicants ? (
-                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
-                            Max {job.max_applicants} applicants
-                          </span>
-                        ) : null}
-                      </div>
-
-                      <div className="mt-4 text-xs text-gray-600 dark:text-gray-300">
-                        Salary: {listingHighlights(job).salary || "Not specified"}
-                      </div>
-
-                      {hasApplied && (
-                        <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200">
-                          You have already applied to this job.
-                        </div>
-                      )}
-
-                      <div className={`mt-4 flex items-center justify-between ${isGridView ? "mt-auto pt-4" : ""}`}>
-                        <span className="text-xs text-gray-400">Posted {formatTimeAgo(job?.created_at)}</span>
-                        <button
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            openJob();
-                          }}
-                          className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-                        >
-                          View more
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+              {items.map((job) => {
+                const jobId = String(job.id);
+                const profileId = job.household?.profile_id || job.household_profile_id || job.user_profile_id || (job as any).owner_profile_id;
+                const profile = householdProfiles[profileId || ''];
+                const ownerId = job.household?.user_id || job.owner_user_id || job.user_id || profile?.user_id;
+                const openProfile = () => navigate(
+                  '/household/public-profile?' + new URLSearchParams({ userId: ownerId || '', profileId: profileId || '', jobId, from: 'shortlist', backTo: '/shortlist', backLabel: 'Back to Saved' }),
+                  { state: { profileId, backTo: '/shortlist', backLabel: 'Back to Saved' } },
+                );
+                return <JobListingCard key={jobId} job={job} isGridView={isGridView}
+                  householdProfile={profile} householdName={profile?.name}
+                  hasApplied={appliedIds.has(jobId) || Boolean(job.has_applied)} contacted={contactedIds.has(jobId)} shortlisted
+                  chatLoading={chatLoadingId === jobId} saving={removingId === jobId}
+                  onOpen={openProfile} onViewProfile={openProfile}
+                  onChat={() => handleChatWithHousehold(ownerId, profileId, jobId)} onToggleSave={() => handleRemove(jobId)} />;
+              })}
             </div>
 
             <div ref={sentinelRef} className="h-8" />

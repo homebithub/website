@@ -135,6 +135,13 @@ export const marketplaceHireRequestService = {
 };
 
 export const marketplaceJobService = {
+  async getSavedCards(ids: string[], profileId: string, owner: 'household' | 'service_provider'): Promise<any[]> {
+    if (!ids.length) return [];
+    const params = new URLSearchParams({ ids: ids.join(','), owner });
+    if (profileId) params.set(owner === 'household' ? 'match_for' : 'match_candidates_for_profile', profileId);
+    const payload = await jobListingsApi(`?${params}`);
+    return normalizeArray(payload.data ?? payload);
+  },
   async getJob(id: string): Promise<any> {
     const params = new URLSearchParams({ id, hydrate: 'get' });
     const payload = await jobListingsApi(`?${params.toString()}`);

@@ -495,13 +495,30 @@ export async function loader({ request }: { request: Request }) {
     // work" on the service-provider jobs board with an Apply button under it.
     const owner = String(url.searchParams.get('owner') || '');
     const ownerIsServiceProvider = owner === 'service_provider' || owner === 'househelp';
+    // Saved bookmarks use this same enrichment pipeline as discovery. Read
+    // only the requested page, including jobs no longer present in discovery.
+    const savedIds = [...new Set((url.searchParams.get('ids') || '').split(',').filter(Boolean))];
+    if (savedIds.length > 20 || savedIds.some((id) => !/^\d+$/.test(id))) {
+      return Response.json({ message: 'Invalid saved listing IDs' }, { status: 400 });
+    }
 
     // Two endpoints, two response messages. ListOpenForWork answers with
     // JsonResponse, whose data sits at field 1; ListJobs answers with
     // GenericResponse, whose header is at 1 and body at 2. Decoding the former
     // with the latter's reader finds no body and returns nothing — which is
     // why browsing service providers came back empty rather than erroring.
-    const { body: responseBody } = ownerIsServiceProvider
+    const { body: responseBody } = savedIds.length > 0
+      ? { body: { data: await Promise.all(savedIds.map(async (id) => {
+        try {
+          if (!ownerIsServiceProvider) return await getJobListing(baseUrl, Number(id), callUnaryGrpc);
+          const { body } = await callUnaryGrpcJson(baseUrl, '/auth.OpenForWorkService/GetOpenForWork', encodeIdRequest(id), authMetadata(request));
+          return body?.data ?? body;
+        } catch (error: any) {
+          if (error?.grpcCode === 'NOT_FOUND') return null;
+          throw error;
+        }
+      })) } }
+      : ownerIsServiceProvider
       ? await callUnaryGrpcJson(
         baseUrl,
         '/auth.OpenForWorkService/ListOpenForWork',
@@ -594,6 +611,9 @@ export async function loader({ request }: { request: Request }) {
     return Response.json({ data: scored });
   } catch (err: unknown) {
     console.warn('Unable to list job listings:', err);
+    if (new URL(request.url).searchParams.has('ids')) {
+      return Response.json({ message: 'Unable to load saved listings. Please retry.' }, { status: 503 });
+    }
     return Response.json({ data: [] });
   }
 }

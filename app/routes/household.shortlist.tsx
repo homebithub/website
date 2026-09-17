@@ -5,20 +5,27 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { openForWorkService, profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
+import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { OptimizedImage } from '~/components/ui/OptimizedImage';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
-import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { formatTimeAgo } from '~/utils/timeAgo';
 import { normalizeOnboardingAmountFromStorage } from '~/utils/onboardingCompensation';
 import { formatPlaceOrFallback } from '~/utils/place';
 import { ServiceProviderCardDetails } from '~/components/listing/ServiceProviderCardDetails';
 import { ListingViewToggle, useListingViewPreference } from '~/components/listing/ListingViewToggle';
 import { ShimmerListPlaceholder } from '~/components/ShimmerLoader';
+import { marketplaceJobService } from '~/services/grpc/marketplace.service';
+import { notificationsService } from '~/services/grpc/notifications.service';
+import { ListingRating } from '~/components/ui/ListingRating';
+import { VerifiedBadge } from '~/components/VerifiedBadge';
+import { PremiumBadge } from '~/components/PremiumBadge';
+import { matchScoreClasses } from '~/utils/matchScore';
+import { deriveServiceProviderResponsivenessBadge, RESPONSIVENESS_BADGE_STYLES } from '~/utils/listingResponsiveness';
 
 const formatDate = (value?: string) => {
   if (!value) return 'Flexible';
@@ -122,15 +129,19 @@ export default function HouseholdShortlistPage() {
 
   // Map of shortlisted target id -> open-for-work listing data
   const [profilesById, setProfilesById] = useState<Record<string, any>>({});
+  const [contactedIds, setContactedIds] = useState<Set<string>>(new Set());
 
   // Fetch profile photos from documents table
-  const shortlistUserIds = useMemo(() => items.map(s => s.user_id).filter(Boolean), [items]);
+  const shortlistUserIds = useMemo(() => items.map(s => {
+    const listing = profilesById[s.profile_id];
+    return listing?.service_provider?.user_id || listing?.househelp?.user_id || listing?.owner_user_id || listing?.service_provider_user_id || s.user_id;
+  }).filter(Boolean), [items, profilesById]);
   const profilePhotos = useProfilePhotos(shortlistUserIds);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [accessibilityMode, setAccessibilityMode] = useState(false);
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
-  const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
+  const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(() => getStoredUserProfileId() || null);
   const [chatError, setChatError] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useListingViewPreference('homebit:saved-view');
@@ -176,6 +187,7 @@ export default function HouseholdShortlistPage() {
           }
         } catch (err) {
           console.error('Failed to fetch household profile ID:', err);
+          if (!cancelled && !getStoredUserProfileId()) setError('Unable to load your household profile. Please refresh to retry.');
         }
       }
     };
@@ -204,7 +216,8 @@ export default function HouseholdShortlistPage() {
 
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? shortlistArray : [...prev, ...shortlistArray]));
-        setHasMore(shortlistArray.length === limit);
+        // This endpoint returns all bookmarks; there is no server offset.
+        setHasMore(false);
         // Trigger event to update badge count in navigation
         window.dispatchEvent(new CustomEvent('shortlist-updated'));
       } catch (e: any) {
@@ -232,13 +245,15 @@ export default function HouseholdShortlistPage() {
   const visibleSavedServiceProviders = useMemo(
     () => savedServiceProviders.filter((item) => {
       const listing = profilesById[item.profile_id];
-      return !listing || isOpenForWorkListingActive(listing);
+      return listing && isOpenForWorkListingActive(listing);
     }),
     [profilesById, savedServiceProviders],
   );
 
   // Load open-for-work records for shortlisted service-provider listings.
   useEffect(() => {
+    if (!currentHouseholdProfileId) return;
+    const profileId = currentHouseholdProfileId;
     const missingIds = (items || [])
       .filter((s) => s.profile_type === "open_for_work")
       .map((s) => s.profile_id)
@@ -249,26 +264,21 @@ export default function HouseholdShortlistPage() {
     async function loadProfiles() {
       try {
         setLoadingProfiles(true);
-        const profiles = await Promise.all(
-          missingIds.map(async (id) => {
-            try {
-              return await openForWorkService.getOpenForWork(id, '');
-            } catch {
-              return null;
-            }
-          })
-        );
+        const profiles: any[] = [];
+        for (let page = 0; page < missingIds.length; page += 20) {
+          profiles.push(...await marketplaceJobService.getSavedCards(missingIds.slice(page, page + 20), profileId, 'service_provider'));
+        }
         if (cancelled) return;
         const next: Record<string, any> = { ...profilesById };
         // Remember failed lookups as well. Otherwise the same unavailable
         // profile is requested after every render and the Saved page never
         // settles into a stable state.
-        missingIds.forEach((id, index) => {
-          next[id] = profiles[index] || null;
+        missingIds.forEach((id) => {
+          next[id] = profiles.find((listing) => String(listing.id) === String(id)) || null;
         });
         setProfilesById(next);
-      } catch {
-        // noop; show empty
+      } catch (err: any) {
+        if (!cancelled) setError(err?.message || 'Unable to load saved cards. Please refresh to retry.');
       } finally {
         if (!cancelled) setLoadingProfiles(false);
       }
@@ -277,10 +287,20 @@ export default function HouseholdShortlistPage() {
     return () => {
       cancelled = true;
     };
-  }, [items, profilesById]);
+  }, [items, profilesById, currentHouseholdProfileId]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    let cancelled = false;
+    void notificationsService.listConversations(currentUserId, 0, 200).then((raw) => {
+      const rows = raw?.conversations ?? raw?.data ?? raw;
+      if (!cancelled && Array.isArray(rows)) setContactedIds(new Set(rows.map((row: any) => String(row.listing_id ?? row.listingId))));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [currentUserId]);
 
   const waitingForProfiles = savedServiceProviders.some((item) => !(item.profile_id in profilesById));
-  const initialLoading = (loading && items.length === 0) || waitingForProfiles;
+  const initialLoading = !error && ((loading && items.length === 0) || waitingForProfiles);
 
   async function handleRemove(profileId: string) {
     setRemovingId(profileId);
@@ -297,13 +317,14 @@ export default function HouseholdShortlistPage() {
     }
   }
 
-  async function handleChatWithServiceProvider(profileId?: string, serviceProviderUserId?: string) {
+  async function handleChatWithServiceProvider(profileId?: string, serviceProviderUserId?: string, listingId?: string) {
     if (!profileId || !serviceProviderUserId || !currentUserId) return;
     try {
       const payload: StartConversationPayload = {
         household_user_id: currentUserId,
         service_provider_user_id: serviceProviderUserId,
         service_provider_profile_id: profileId,
+        listing_id: listingId,
       };
       
       // Include household_profile_id
@@ -377,6 +398,7 @@ export default function HouseholdShortlistPage() {
                   // Prefer the canonical response shape while an older auth
                   // deployment may still return the legacy nested alias.
                   const serviceProvider = listing?.service_provider || listing?.househelp || {};
+                  const responseBadge = deriveServiceProviderResponsivenessBadge(serviceProvider);
                   const user = serviceProvider?.user || {};
                   const targetProfileId = firstString(
                     serviceProvider?.id,
@@ -393,7 +415,7 @@ export default function HouseholdShortlistPage() {
                     listing?.owner_user_id,
                     s.user_id,
                   );
-                  const name = `${firstString(user.first_name, serviceProvider.first_name, listing?.first_name)} ${firstString(user.last_name, serviceProvider.last_name, listing?.last_name)}`.trim() || 'Service provider';
+                  const name = `${firstString(user.first_name, serviceProvider.first_name, listing?.owner_first_name, listing?.first_name)} ${firstString(user.last_name, serviceProvider.last_name, listing?.owner_last_name, listing?.last_name)}`.trim() || 'Service provider';
                   const initials = name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'SP';
                   const userId = firstString(serviceProvider.user_id, user.id, listing?.service_provider_user_id, listing?.househelp_user_id, s.user_id);
                   const photos = toStringArray(serviceProvider.photos);
@@ -430,8 +452,19 @@ export default function HouseholdShortlistPage() {
                         <div className="min-w-0 flex-1">
                           <div className={isGridView ? 'min-w-0' : 'grid grid-cols-1 items-start gap-2 lg:grid-cols-[minmax(260px,0.85fr)_minmax(360px,1.4fr)] lg:gap-10'}>
                             <div className="min-w-0">
-                              <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{name}</h3>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">{name}</h3>
+                                {(serviceProvider.identity_verified === true || listing.identity_verified === true) && <VerifiedBadge verifiedAt={serviceProvider.identity_verified_at || listing.identity_verified_at} />}
+                                {(serviceProvider.premium === true || listing.premium === true) && <PremiumBadge isTrial={serviceProvider.premium_is_trial || listing.premium_is_trial} />}
+                                {typeof listing.fit_score === 'number' && listing.fit_score >= 0 && <span className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${matchScoreClasses(listing.fit_score)}`}>Match {listing.fit_score}%</span>}
+                                {contactedIds.has(String(listing.id)) && <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200">You two are in contact</span>}
+                              </div>
                               <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
+                              <ListingRating rating={serviceProvider.rating ?? listing.owner_rating} reviewCount={serviceProvider.review_count ?? listing.owner_review_count} className="mt-1" />
+                              {responseBadge && <div className="mt-2 space-y-1">
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>{responseBadge.label}</span>
+                                {responseBadge.detail && <p className="text-[11px] text-gray-500 dark:text-gray-400">{responseBadge.detail}</p>}
+                              </div>}
                             </div>
                             {!isGridView && (
                               <ServiceProviderCardDetails
@@ -506,7 +539,7 @@ export default function HouseholdShortlistPage() {
                           <button
                             onClick={() => {
                               if (!targetProfileId) return;
-                              navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(targetProfileId)}&openForWorkId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
+                              navigate(`/service-provider/public-profile?profileId=${encodeURIComponent(targetProfileId)}&openForWorkId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Saved')}`, {
                                 state: { profileId: targetProfileId, fromShortlist: true },
                               });
                             }}
@@ -515,7 +548,7 @@ export default function HouseholdShortlistPage() {
                             View Profile
                           </button>
                           <button
-                            onClick={() => handleChatWithServiceProvider(targetProfileId, targetUserId)}
+                            onClick={() => handleChatWithServiceProvider(targetProfileId, targetUserId, String(listing.id))}
                             className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                             disabled={!targetProfileId || !targetUserId}
                           >
