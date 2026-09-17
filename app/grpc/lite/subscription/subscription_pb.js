@@ -14,6 +14,9 @@
 var jspb = require('google-protobuf');
 var goog = jspb;
 var global = globalThis;
+// Keep constructors local: other payments bundles publish the same global
+// symbol names and must not invalidate this client's response decoders.
+const proto = { payments: {} };
 
 var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 goog.object.extend(proto, google_protobuf_timestamp_pb);

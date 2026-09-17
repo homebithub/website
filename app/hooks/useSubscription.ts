@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { useSubscriptionSSE } from './useSubscriptionSSE';
-import { extractSubscription, extractSubscriptionAccess } from '~/utils/subscriptionData';
+import { loadSubscriptionSnapshot } from '~/utils/subscriptionSnapshot';
 import { cachedRequest } from '~/utils/requestCache';
 import { SUBSCRIPTION_CHANGED_EVENT } from '~/utils/subscriptionEvents';
 import { getStoredCanonicalProfileType, getStoredUserProfileId } from '~/utils/authStorage';
@@ -72,26 +72,17 @@ export function useSubscription(
       setLoading(true);
       setError(null);
 
-      const [subscriptionResult, accessResult] = await cachedRequest(
+      const { sub, access, status: accessStatus } = await cachedRequest(
         `subscription:${userId}:${resolvedProfileType}:${resolvedProfileId}`,
         async () => {
           const { subscriptionReadService } = await import('~/services/grpc/subscriptionRead.service');
-          return Promise.allSettled([
-            subscriptionReadService.getMySubscription(userId, resolvedProfileId, resolvedProfileType),
-            subscriptionReadService.checkSubscriptionAccess(userId, resolvedProfileId, resolvedProfileType),
-          ]);
+          return loadSubscriptionSnapshot(
+            () => subscriptionReadService.getMySubscription(userId, resolvedProfileId, resolvedProfileType),
+            () => subscriptionReadService.checkSubscriptionAccess(userId, resolvedProfileId, resolvedProfileType),
+          );
         },
         { maxAgeMs: SUBSCRIPTION_STALE_MS, force },
       );
-
-      const sub =
-        subscriptionResult.status === 'fulfilled'
-          ? extractSubscription(subscriptionResult.value)
-          : null;
-      const access =
-        accessResult.status === 'fulfilled'
-          ? extractSubscriptionAccess(accessResult.value)
-          : null;
 
       if (!sub || !sub.id) {
         setSubscription(null);
@@ -125,28 +116,11 @@ export function useSubscription(
       setAccessMessage(access?.message ?? null);
       setIsEarlyAdopter(Boolean(access?.is_early_adopter || sub?.metadata?.early_adopter));
 
-      if (access?.has_access) {
-        setStatus(access.is_trial ? 'trial' : 'active');
-      } else if (sub?.status === 'expired' || access?.status === 'expired') {
-        setStatus('expired');
-      } else if (!sub?.id) {
-        setStatus('none');
-      } else {
-        setStatus((sub.status as SubscriptionStatus) || 'none');
-      }
+      setStatus(accessStatus);
     } catch (err: any) {
-      if (err.code === 'NOT_FOUND' || err.status === 5) {
-        setStatus('none');
-        setSubscription(null);
-        return;
+      if (!shouldSilenceGatewayError(err)) {
+        console.error('[useSubscription] Error fetching subscription:', err);
       }
-      if (shouldSilenceGatewayError(err)) {
-        setStatus('none');
-        setSubscription(null);
-        setError(null);
-        return;
-      }
-      console.error('[useSubscription] Error fetching subscription:', err);
       setError(err?.message || 'Failed to check subscription');
       setStatus('error');
     } finally {

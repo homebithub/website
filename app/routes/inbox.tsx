@@ -256,7 +256,7 @@ export default function InboxPage() {
 
   // Subscription check - gate messaging behind active subscription
   const currentUserId_sub = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
-  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId_sub);
+  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading, refetch: retrySubscription } = useSubscription(currentUserId_sub);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   const selectedConversationId = searchParams.get('conversation');
@@ -562,7 +562,7 @@ export default function InboxPage() {
   
   const currentUserProfileType = normalizeProfileType(currentUser?.profile_type || getStoredProfileType()) || null;
   const isHouseholdUser = currentUserProfileType?.toLowerCase() === 'household';
-  const shouldRestrictMessaging = !subscriptionLoading && !hasActiveSubscription && isHouseholdUser;
+  const shouldRestrictMessaging = !subscriptionLoading && subscriptionStatus !== 'error' && !hasActiveSubscription && isHouseholdUser;
 
   // Deduplicate conversations to prevent showing multiple conversations for the same participant pair
   const deduplicatedItems = useMemo(() => {
@@ -1487,6 +1487,11 @@ export default function InboxPage() {
   const handleSend = useCallback(async (e: React.FormEvent, retry?: Message) => {
     e.preventDefault();
     if (!activeConversationId) return;
+    if (subscriptionLoading || subscriptionStatus === 'error') {
+      pushToast('We could not confirm messaging access yet. Please retry the subscription check.', 'error');
+      retrySubscription();
+      return;
+    }
     // Gate messaging behind active subscription
     if (!hasActiveSubscription && !subscriptionLoading) {
       setShowSubscriptionModal(true);
@@ -1548,7 +1553,7 @@ export default function InboxPage() {
       setMessages((prev) => prev.map((m) => m.id === tempId ? { ...m, _status: 'failed', _error: reason } : m));
       pushToast(reason, 'error');
     }
-  }, [activeConversationId, input, currentUserId, replyTo, scrollToBottom, pushToast, hasActiveSubscription, subscriptionLoading, sendTypingUpdate, notifyInboxUpdated]);
+  }, [activeConversationId, input, currentUserId, replyTo, scrollToBottom, pushToast, hasActiveSubscription, subscriptionLoading, subscriptionStatus, retrySubscription, sendTypingUpdate, notifyInboxUpdated]);
 
   const handleAcceptHireRequest = useCallback(async () => {
     if (!hireRequestId) return;
@@ -2006,6 +2011,11 @@ export default function InboxPage() {
                       if (hireRequestDetails) setShowHireRequestDetails(true);
                     }}
                     onSendHireRequest={async () => {
+                      if (subscriptionLoading || subscriptionStatus === 'error') {
+                        pushToast('Unable to confirm subscription access yet. Please retry.', 'error');
+                        retrySubscription();
+                        return;
+                      }
                       if (!hasActiveSubscription && !subscriptionLoading) {
                         setShowSubscriptionModal(true);
                         return;
@@ -2508,7 +2518,14 @@ export default function InboxPage() {
             </div>
           )}
           
-          {shouldRestrictMessaging ? (
+          {subscriptionLoading ? (
+            <p role="status" className="py-3 text-center text-sm">Checking messaging access…</p>
+          ) : subscriptionStatus === 'error' ? (
+            <div role="alert" className="py-3 text-center text-sm">
+              <p>We couldn’t check your subscription. This does not mean your trial has ended.</p>
+              <button type="button" onClick={retrySubscription} className="mt-2 font-semibold text-purple-500 underline">Retry access check</button>
+            </div>
+          ) : shouldRestrictMessaging ? (
             <div
               className="flex items-center justify-center gap-3 py-3 cursor-pointer group"
               onClick={() => setShowSubscriptionModal(true)}
