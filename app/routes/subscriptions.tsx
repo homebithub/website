@@ -28,11 +28,10 @@ import { CreditBalanceCard } from '~/components/subscriptions/CreditBalanceCard'
 import type { CreditBalanceResponse, CancelReason } from '~/types/payments';
 import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { notifySubscriptionChanged } from '~/utils/subscriptionEvents';
+import { loadSubscriptionSnapshot } from '~/utils/subscriptionSnapshot';
 import {
   extractPayments,
   extractPlans,
-  extractSubscription,
-  extractSubscriptionAccess,
   resolvePaymentReference,
   type NormalizedPayment,
   type NormalizedSubscription,
@@ -56,6 +55,7 @@ export default function SubscriptionsPage() {
   const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId();
 	const currentProfileId = currentUser?.user_profile_id || currentUser?.userProfileId || getStoredUserProfileId();
   const [dataLoading, setDataLoading] = useState(false);
+  const [subscriptionLoadError, setSubscriptionLoadError] = useState('');
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -251,21 +251,19 @@ export default function SubscriptionsPage() {
 
   const fetchSubscriptionData = React.useCallback(async () => {
     setDataLoading(true);
+    setSubscriptionLoadError('');
     try {
       try {
-        const subData = await paymentsService.getMySubscription('', currentProfileId, profileType) as any;
-        setSubscription(extractSubscription(subData));
+        const snapshot = await loadSubscriptionSnapshot(
+          () => paymentsService.getMySubscription('', currentProfileId, profileType),
+          () => paymentsService.checkSubscriptionAccess('', currentProfileId, profileType),
+          { requireDetails: true },
+        );
+        setSubscription(snapshot.sub);
+        setSubscriptionAccess(snapshot.access);
       } catch (err) {
         console.error('[Subscriptions] Failed to fetch subscription:', err);
-        setSubscription(null);
-      }
-
-      try {
-        const accessData = await paymentsService.checkSubscriptionAccess('', currentProfileId, profileType) as any;
-        setSubscriptionAccess(extractSubscriptionAccess(accessData));
-      } catch (err) {
-        console.error('[Subscriptions] Failed to fetch subscription access:', err);
-        setSubscriptionAccess(null);
+        setSubscriptionLoadError('We could not load your subscription details. Your trial or paid plan has not been changed. Please retry before making a payment.');
       }
 
       try {
@@ -655,6 +653,11 @@ export default function SubscriptionsPage() {
             {dataLoading ? (
               <div className="flex items-center justify-center py-12">
                 <div className="hb-shimmer-piece h-8 w-8 rounded-full" />
+              </div>
+            ) : subscriptionLoadError ? (
+              <div role="alert" className="rounded-xl border border-purple-300 p-5 dark:border-purple-500/40">
+                <p>{subscriptionLoadError}</p>
+                <button type="button" onClick={() => void fetchSubscriptionData()} className="mt-3 rounded-lg bg-purple-600 px-4 py-2 font-semibold text-white">Retry subscription lookup</button>
               </div>
             ) : (
               <div className="space-y-8">

@@ -130,7 +130,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   const currentProfileType: string | undefined = normalizeProfileType(
     currentUser?.profile_type || getStoredCanonicalProfileType(),
   ) || undefined;
-  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
+  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading, refetch: retrySubscription } = useSubscription(currentUserId);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const sortBy: HouseholdHomeVariant | "best_match" = 'best_match';
@@ -181,7 +181,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       setError("We couldn't work out who this listing belongs to, so we can't open a conversation.");
       return;
     }
-    if (!hasActiveSubscription && !subscriptionLoading) {
+    if (subscriptionLoading || !hasActiveSubscription) {
       setShowSubscriptionModal(true);
       return;
     }
@@ -1111,7 +1111,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       <SubscriptionRequiredModal
         open={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
-        status={subscriptionStatus}
+        status={subscriptionLoading ? 'loading' : subscriptionStatus}
+        onRetry={retrySubscription}
         actionLabel="message service providers"
         plansHref="/plans"
       />

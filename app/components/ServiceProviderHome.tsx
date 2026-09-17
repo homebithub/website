@@ -141,7 +141,7 @@ export default function ServiceProviderHome() {
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
   const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
-  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
+  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading, refetch: retrySubscription } = useSubscription(currentUserId);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const sortBy = 'best_match';
@@ -240,7 +240,7 @@ export default function ServiceProviderHome() {
     try {
       if (!householdUserId) throw new Error('Missing household user id');
       if (!currentUserId) throw new Error('Missing current user id');
-      if (!hasActiveSubscription && !subscriptionLoading) {
+      if (subscriptionLoading || !hasActiveSubscription) {
         setShowSubscriptionModal(true);
         return;
       }
@@ -876,7 +876,8 @@ export default function ServiceProviderHome() {
       <SubscriptionRequiredModal
         open={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
-        status={subscriptionStatus}
+        status={subscriptionLoading ? 'loading' : subscriptionStatus}
+        onRetry={retrySubscription}
         actionLabel="message households"
         plansHref="/plans"
       />

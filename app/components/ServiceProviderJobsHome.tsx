@@ -294,6 +294,7 @@ export default function ServiceProviderJobsHome() {
     isActive: hasActiveSubscription,
     status: subscriptionStatus,
     loading: subscriptionLoading,
+    refetch: retrySubscription,
   } = useSubscription(currentUserId);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [subscriptionActionLabel, setSubscriptionActionLabel] = useState("continue");
@@ -309,7 +310,7 @@ export default function ServiceProviderJobsHome() {
 
   const requireSubscription = useCallback(
     (actionLabel: string) => {
-      if (hasActiveSubscription || subscriptionLoading) {
+      if (hasActiveSubscription && !subscriptionLoading) {
         return false;
       }
       openSubscriptionGate(actionLabel);
@@ -1665,7 +1666,8 @@ export default function ServiceProviderJobsHome() {
       <SubscriptionRequiredModal
         open={subscriptionModalOpen}
         onClose={() => setSubscriptionModalOpen(false)}
-        status={subscriptionStatus}
+        status={subscriptionLoading ? 'loading' : subscriptionStatus}
+        onRetry={retrySubscription}
         actionLabel={subscriptionActionLabel}
         plansHref={plansHref}
       />

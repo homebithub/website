@@ -7,6 +7,7 @@ type SubscriptionRequiredModalProps = {
   status?: string | null;
   actionLabel?: string;
   plansHref?: string;
+  onRetry?: () => void;
 };
 
 export function SubscriptionRequiredModal({
@@ -15,11 +16,18 @@ export function SubscriptionRequiredModal({
   status,
   actionLabel = 'continue',
   plansHref = '/plans',
+  onRetry,
 }: SubscriptionRequiredModalProps) {
-  if (!open) return null;
+  if (!open || status === 'active' || status === 'trial') return null;
+
+  const checking = status === 'loading';
+  const unavailable = status === 'error';
+  const unresolved = checking || unavailable;
 
   const description =
-    status === 'expired'
+    checking ? 'Please wait while we check access for your current profile.'
+      : unavailable ? 'We could not check your subscription. This does not mean your trial or paid plan has ended. Please retry.'
+      : status === 'expired'
       ? `Your subscription has expired. Renew your plan to ${actionLabel}.`
       : `You need an active subscription or free trial to ${actionLabel}. Choose a plan to get started.`;
 
@@ -45,11 +53,11 @@ export function SubscriptionRequiredModal({
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Subscription Required</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{checking ? 'Checking subscription' : unavailable ? 'Subscription check unavailable' : 'Subscription Required'}</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>
         </div>
 
-        <div className="space-y-3 mb-6">
+        {!unresolved && <div className="space-y-3 mb-6">
           {[
             { title: 'Unlimited messaging', desc: 'Send and receive messages with households and service providers' },
             { title: 'Hiring actions included', desc: 'Send hire requests and express interest when the time is right' },
@@ -63,15 +71,17 @@ export function SubscriptionRequiredModal({
               </div>
             </div>
           ))}
-        </div>
+        </div>}
 
-        <Link
+        {unavailable && onRetry && <button type="button" onClick={onRetry} className="w-full rounded-xl bg-purple-600 px-6 py-3 text-sm font-semibold text-white">Retry access check</button>}
+        {checking && <p role="status" className="text-center text-sm">Checking access…</p>}
+        {!unresolved && <Link
           to={plansHref}
           onClick={onClose}
           className="block w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 text-center text-xs font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all"
         >
           View Plans &amp; Pricing
-        </Link>
+        </Link>}
         <button
           type="button"
           onClick={onClose}

@@ -55,7 +55,7 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
   const navigate = useNavigate();
   const userId = getStoredUserId() || "";
 
-  const { isActive: hasSubscription, daysRemaining, expiresAt } = useSubscription(userId);
+  const { isActive: hasSubscription, daysRemaining, expiresAt, loading: subscriptionLoading, status: subscriptionStatus, refetch: retrySubscription } = useSubscription(userId);
 
   const [listing, setListing] = useState<Record<string, any> | null>(null);
   const [loadingListing, setLoadingListing] = useState(true);
@@ -157,7 +157,9 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
     }
   };
 
-  const expiryText = expiresAt
+  const expiryText = subscriptionLoading ? 'Checking subscription access…'
+    : subscriptionStatus === 'error' ? 'Subscription access could not be checked. This does not mean your trial or plan has ended.'
+    : expiresAt
     ? daysRemaining <= 0
       ? `Your subscription expires today (${new Date(expiresAt).toLocaleDateString("en-KE")}).`
       : `${daysRemaining} ${daysRemaining === 1 ? "day" : "days"} remaining, until ${new Date(expiresAt).toLocaleDateString("en-KE")}.`
@@ -182,8 +184,9 @@ export const OpenForWorkButton = forwardRef<OpenForWorkButtonHandle, {
       <div className={`min-w-0 max-w-full flex flex-col gap-2 ${showStatus ? "items-stretch" : "items-start"} ${className}`}>
         {showStatus ? (
           <div className={`rounded-xl border px-3 py-2 text-xs ${hasApprovedKyc && isLive ? "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100" : "border-purple-200 bg-purple-50 text-purple-800 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-100"}`}>
-            <p className="font-semibold">{!hasApprovedKyc ? "Approved KYC is required" : isLive ? "Households can currently find you" : "You are not currently searchable"}</p>
+            <p className="font-semibold">{!hasApprovedKyc ? "Approved KYC is required" : subscriptionLoading ? "Checking listing visibility" : subscriptionStatus === 'error' ? "Listing visibility could not be confirmed" : isLive && hasSubscription ? "Households can currently find you" : "You are not currently searchable"}</p>
             <p className="mt-0.5 opacity-80">{!hasApprovedKyc ? "Complete identity verification before publishing your availability." : expiryText}</p>
+            {subscriptionStatus === 'error' && !subscriptionLoading && <button type="button" onClick={retrySubscription} className="mt-2 font-semibold underline">Retry access check</button>}
           </div>
         ) : null}
         <div className="flex min-w-0 max-w-full flex-wrap gap-2">

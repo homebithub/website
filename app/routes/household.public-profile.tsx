@@ -79,7 +79,7 @@ export default function HouseholdPublicProfile() {
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionActionLabel, setSubscriptionActionLabel] = useState('unlock full profile information');
-  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
+  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading, refetch: retrySubscription } = useSubscription(currentUserId);
   const profileOwnerUserId = resolveHouseholdOwnerUserId(profile);
 
   useEffect(() => {
@@ -297,7 +297,7 @@ export default function HouseholdPublicProfile() {
 
   const handleStartChat = async () => {
     if (!profileOwnerUserId || !currentUserId) return;
-    if (!hasActiveSubscription && !subscriptionLoading) {
+    if (subscriptionLoading || !hasActiveSubscription) {
       setSubscriptionActionLabel('message households');
       setShowSubscriptionModal(true);
       return;
@@ -471,7 +471,8 @@ export default function HouseholdPublicProfile() {
       <SubscriptionRequiredModal
         open={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
-        status={subscriptionStatus}
+        status={subscriptionLoading ? 'loading' : subscriptionStatus}
+        onRetry={retrySubscription}
         actionLabel={subscriptionActionLabel}
         plansHref="/plans"
       />
