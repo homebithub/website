@@ -569,6 +569,7 @@ export default function HouseholdJobsHome() {
     isActive: hasActiveSubscription,
     status: subscriptionStatus,
     loading: subscriptionLoading,
+    refetch: retrySubscription,
   } = useSubscription(currentUserId);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const profileType = useMemo(() => getStoredCanonicalProfileType(), []);
@@ -1036,10 +1037,8 @@ export default function HouseholdJobsHome() {
       return;
     }
 
-    // Messaging needs a subscription, matching the home screen. Checked only
-    // once the answer is known: while it is still loading, blocking would show
-    // a paywall to somebody who has already paid.
-    if (!hasActiveSubscription && !subscriptionLoading) {
+    // Unknown access shows a waiting/retry state, never a payment prompt.
+    if (subscriptionLoading || !hasActiveSubscription) {
       setShowSubscriptionModal(true);
       return;
     }
@@ -1072,7 +1071,7 @@ export default function HouseholdJobsHome() {
     // a paywall with a hole beside it — and the hole is a button on the same
     // card. Checked when the composer opens rather than on send, so nobody
     // writes a note and is then told they cannot deliver it.
-    if (!hasActiveSubscription && !subscriptionLoading) {
+    if (subscriptionLoading || !hasActiveSubscription) {
       setShowSubscriptionModal(true);
       return;
     }
@@ -2265,7 +2264,8 @@ export default function HouseholdJobsHome() {
       <SubscriptionRequiredModal
         open={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
-        status={subscriptionStatus}
+        status={subscriptionLoading ? 'loading' : subscriptionStatus}
+        onRetry={retrySubscription}
         actionLabel="message service providers"
         plansHref="/plans"
       />

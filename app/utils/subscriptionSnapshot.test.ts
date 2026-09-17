@@ -42,4 +42,22 @@ describe('subscription access decisions', () => {
     expect((await read('household')).status).toBe('trial');
     expect((await read('service_provider')).status).toBe('none');
   });
+
+  it('does not show missing billing details as a missing subscription', async () => {
+    await expect(loadSubscriptionSnapshot(
+      async () => { throw new Error('database offline'); },
+      async () => ({ hasAccess: true, isTrial: true }),
+      { requireDetails: true },
+    )).rejects.toThrow('database offline');
+  });
+
+  it('allows the plans screen only for a confirmed missing subscription', async () => {
+    const readMissing = async () => { throw { code: 5 }; };
+    await expect(loadSubscriptionSnapshot(readMissing,
+      async () => ({ hasAccess: false, status: 'none' }), { requireDetails: true },
+    )).resolves.toMatchObject({ sub: null, status: 'none' });
+    await expect(loadSubscriptionSnapshot(readMissing,
+      async () => ({ hasAccess: true, isTrial: true }), { requireDetails: true },
+    )).rejects.toMatchObject({ code: 5 });
+  });
 });

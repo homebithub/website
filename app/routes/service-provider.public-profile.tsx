@@ -173,7 +173,7 @@ export default function ServiceProviderPublicProfile() {
     viewerUserId: currentUserId,
     enabled: Boolean((viewingProfileId || profile?.id) && isViewingOther),
   });
-  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
+  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading, refetch: retrySubscription } = useSubscription(currentUserId);
   const viewedServiceProviderUserId = profile?.user_id || profile?.user?.user_id || profile?.user?.id || user?.user_id || user?.id || null;
   const viewedSubscription = useSubscription(
     viewedServiceProviderUserId,
@@ -353,7 +353,7 @@ export default function ServiceProviderPublicProfile() {
   const handleChat = async () => {
     const serviceProviderUserId = user?.user_id || user?.id || profile?.user_id;
     if (!targetProfileId || !currentUserId || !serviceProviderUserId) return;
-    if (!hasActiveSubscription && !subscriptionLoading) {
+    if (subscriptionLoading || !hasActiveSubscription) {
       setSubscriptionActionLabel('message service providers');
       setShowSubscriptionModal(true);
       return;
@@ -520,7 +520,7 @@ export default function ServiceProviderPublicProfile() {
                       </button>
                       <button
                         onClick={() => {
-                          if (!hasActiveSubscription && !subscriptionLoading) {
+                          if (subscriptionLoading || !hasActiveSubscription) {
                             setSubscriptionActionLabel('send hire requests');
                             setShowSubscriptionModal(true);
                             return;
@@ -611,7 +611,8 @@ export default function ServiceProviderPublicProfile() {
       <SubscriptionRequiredModal
         open={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
-        status={subscriptionStatus}
+        status={subscriptionLoading ? 'loading' : subscriptionStatus}
+        onRetry={retrySubscription}
         actionLabel={subscriptionActionLabel}
         plansHref="/plans"
       />
