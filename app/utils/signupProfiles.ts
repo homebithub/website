@@ -18,7 +18,7 @@ export const fallbackSignupProfileOptions: SignupProfileOption[] = [
   {
     id: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1',
     value: 'household',
-    label: 'Household',
+    label: 'Find help',
     description: signupProfileDescriptions.household,
     type: 'CLT',
     slug: 'household',
@@ -26,7 +26,7 @@ export const fallbackSignupProfileOptions: SignupProfileOption[] = [
   {
     id: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
     value: SERVICE_PROVIDER_PROFILE_TYPE,
-    label: 'Service provider',
+    label: 'Find work',
     description: signupProfileDescriptions.service_provider,
     type: 'SVC_PVD',
     slug: 'service-provider',
@@ -57,9 +57,7 @@ function normalizeProfileRole(profile: any): 'household' | 'service_provider' | 
 }
 
 function normalizeProfileLabel(profile: any, role: 'household' | 'service_provider') {
-  const label = String(profile?.name || '').trim();
-  if (role === SERVICE_PROVIDER_PROFILE_TYPE) return 'Service provider';
-  return label || 'Household';
+  return role === SERVICE_PROVIDER_PROFILE_TYPE ? 'Find work' : 'Find help';
 }
 
 export function normalizeSignupProfileOptions(rawProfiles: any[]): SignupProfileOption[] {

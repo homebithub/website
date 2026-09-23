@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 export type ListingViewMode = "list" | "grid";
 
 export function useListingViewPreference(storageKey: string) {
-  const [viewMode, setViewModeState] = useState<ListingViewMode>("list");
+  const [viewMode, setViewModeState] = useState<ListingViewMode>("grid");
 
   useEffect(() => {
     try {

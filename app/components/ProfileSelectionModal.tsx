@@ -8,13 +8,13 @@ interface ProfileSelectionModalProps {
   waitlistUrl: string;
 }
 
-export function ProfileSelectionModal({ isOpen, onClose, waitlistUrl }: ProfileSelectionModalProps) {
+export function ProfileSelectionModal({ isOpen, onClose }: ProfileSelectionModalProps) {
   const navigate = useNavigate();
 
   if (!isOpen) return null;
 
   const handleProfileSelect = (profile: "household" | "service_provider") => {
-    const url = `${waitlistUrl}?profile=${profile}`;
+    const url = `/signup?profile_type=${profile === 'household' ? 'household' : 'service_provider'}`;
     navigate(url);
     onClose();
   };
@@ -23,7 +23,7 @@ export function ProfileSelectionModal({ isOpen, onClose, waitlistUrl }: ProfileS
     <div className="hb-mobile-modal-viewport fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#13131a] border border-purple-100 dark:border-purple-900/30 p-6 space-y-4 shadow-2xl">
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Join the Waitlist</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Get started</h3>
           <button
             type="button"
             onClick={onClose}
@@ -43,14 +43,14 @@ export function ProfileSelectionModal({ isOpen, onClose, waitlistUrl }: ProfileS
             onClick={() => handleProfileSelect("household")}
             className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg"
           >
-            I'm looking for help (Household)
+            Find help
           </button>
           <button
             type="button"
             onClick={() => handleProfileSelect("service_provider")}
             className="w-full py-3 rounded-xl border-2 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 text-sm font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
           >
-            I offer services (Service provider)
+            Find work
           </button>
         </div>
 

@@ -35,7 +35,7 @@ const tours: Array<{ match: (path: string) => boolean; id: string; points: TourP
       { title: 'Attention badges', body: 'A badge means that record changed since you last opened it.', selector: '[data-tour="hiring-attention"], [data-tour="hiring-tabs"]' },
       { title: 'Open a card', body: 'A card keeps the job, person, history, and available next actions together.', selector: 'main [role="button"]' },
       { title: 'Chat in context', body: 'Use Chat here so the conversation remains attached to the correct job.', selector: '[data-tour="hiring-chat"]' },
-      { title: 'Contracts and reviews', body: 'After approval, use the contract and history stages here; reviews become available when work ends.', selector: '[data-tour="hiring-tabs"]' },
+      { title: 'Contracts and reviews', body: 'After approval, use the contract and history stages here; both sides can review after an offer is accepted.', selector: '[data-tour="hiring-tabs"]' },
     ],
   },
   {
@@ -66,6 +66,7 @@ export default function GuidedRouteTour() {
   const [target, setTarget] = useState<DOMRect | null>(null);
   const authUser = user as { user_id?: string; id?: string; user?: { user_id?: string; id?: string } } | null;
   const userId = authUser?.user_id || authUser?.id || authUser?.user?.user_id || authUser?.user?.id || getStoredUserId() || '';
+  const skipKey = userId ? `homebit:tour:disabled:${userId}` : '';
   const storageKey = tour && userId ? `homebit:tour:v${TOUR_VERSION}:${userId}:${tour.id}` : '';
   const recordTourEvent = useCallback((eventType: TourEventType, stepIndex: number) => {
     if (!tour || !userId) return Promise.resolve();
@@ -83,6 +84,15 @@ export default function GuidedRouteTour() {
   useEffect(() => {
     if (!tour || !storageKey) { setIndex(-1); return; }
     setIndex(-1);
+    const previouslySkipped = Object.keys(window.localStorage).some((key) => {
+      if (!key.startsWith('homebit:tour:v') || !key.includes(`:${userId}:`)) return false;
+      try { return JSON.parse(window.localStorage.getItem(key) || '{}').status === 'skipped'; } catch { return false; }
+    });
+    if (window.localStorage.getItem(skipKey) || previouslySkipped) {
+      window.localStorage.setItem(skipKey, 'true');
+      void recordTourEvent('skipped', 0);
+      return;
+    }
     const cachedValue = window.localStorage.getItem(storageKey);
     if (cachedValue) {
       // Local storage is the instant UX guard; this best-effort idempotent
@@ -102,6 +112,7 @@ export default function GuidedRouteTour() {
     void tourService.getProgress(userId, tour.id, TOUR_VERSION)
       .then((progress) => {
         if (cancelled) return;
+        if (progress?.status === 'skipped') window.localStorage.setItem(skipKey, 'true');
         if (progress?.seen) {
           window.localStorage.setItem(storageKey, JSON.stringify({
             status: progress.status || 'started',
@@ -123,7 +134,7 @@ export default function GuidedRouteTour() {
         setIndex(0);
       });
     return () => { cancelled = true; };
-  }, [recordTourEvent, storageKey, tour, userId]);
+  }, [recordTourEvent, skipKey, storageKey, tour, userId]);
 
   useEffect(() => {
     const replay = () => {
@@ -163,6 +174,7 @@ export default function GuidedRouteTour() {
   if (!tour || index < 0 || !tour.points[index]) return null;
   const point = tour.points[index];
   const finish = (status: 'completed' | 'skipped') => {
+    if (status === 'skipped' && skipKey) window.localStorage.setItem(skipKey, 'true');
     if (storageKey) window.localStorage.setItem(storageKey, JSON.stringify({ status, lastStep: index }));
     void recordTourEvent(status, index);
     setIndex(-1);

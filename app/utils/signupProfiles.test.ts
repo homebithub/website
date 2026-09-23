@@ -28,13 +28,13 @@ describe('signup profile choices', () => {
       expect.objectContaining({
         id: 'household-id',
         value: 'household',
-        label: 'Household',
+        label: 'Find help',
         description: signupProfileDescriptions.household,
       }),
       expect.objectContaining({
         id: 'provider-id',
         value: 'service_provider',
-        label: 'Service provider',
+        label: 'Find work',
         description: signupProfileDescriptions.service_provider,
       }),
     ]);

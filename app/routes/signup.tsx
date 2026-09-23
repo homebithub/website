@@ -198,6 +198,8 @@ export default function SignupPage() {
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
     const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
     const [showPassword, setShowPassword] = useState(false);
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [confirmationTouched, setConfirmationTouched] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [profileOptions, setProfileOptions] = useState<SignupProfileOption[]>(fallbackSignupProfileOptions);
     const [profilesLoading, setProfilesLoading] = useState(false);
@@ -337,6 +339,12 @@ export default function SignupPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!googleData && (!confirmPassword || confirmPassword !== form.password)) {
+            setConfirmationTouched(true);
+            setError('Passwords must match.');
+            return;
+        }
 
         // Validate entire form
         const validation = validateForm(signupSchema, form);
@@ -878,6 +886,14 @@ export default function SignupPage() {
                                 )}
                             </div>
                         )}
+                        {!googleData && <div>
+                            <label htmlFor="confirm-password" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Confirm password<RequiredMark /></label>
+                            <input id="confirm-password" name="confirm_password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required
+                                value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onBlur={() => setConfirmationTouched(true)}
+                                aria-invalid={confirmationTouched && confirmPassword !== form.password} aria-describedby="confirm-password-error"
+                                className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500" />
+                            {(confirmationTouched || confirmPassword) && confirmPassword !== form.password && <p id="confirm-password-error" className="text-red-600 text-xs mt-1">Passwords must match.</p>}
+                        </div>}
                         <div>
     <label htmlFor="phone" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Phone<RequiredMark /></label>
     <input
@@ -915,7 +931,7 @@ export default function SignupPage() {
         !form.last_name.trim() ||
         // For Google signups, password is handled by Google so we
         // don't require a local password field.
-        (!googleData && !form.password.trim()) ||
+        (!googleData && (!form.password.trim() || !confirmPassword || confirmPassword !== form.password)) ||
         !form.phone.trim()
     }
 >
@@ -925,7 +941,7 @@ export default function SignupPage() {
     !form.profile_type ||
     !form.first_name ||
     !form.last_name ||
-    (!googleData && !form.password) ||
+    (!googleData && (!form.password || !confirmPassword)) ||
     !form.phone
 ) && (
     <p className="text-amber-600 text-xs mt-2 text-center">

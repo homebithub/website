@@ -155,14 +155,15 @@ export default function ProfileReviews({
           return Array.isArray(data) ? data : [];
         });
 
-        // Same statuses the server counts: work that started, however it ended.
-        // A hire still being negotiated is not something to review yet.
+        // Accepted offers have a pending engagement. The server confirms the
+        // accepted application before allowing either party to submit.
         const worked = rows.some((row: any) => {
           const status = String(row?.status ?? '').toLowerCase();
-          if (!['active', 'completed', 'terminated'].includes(status)) return false;
+          if (!['pending', 'active', 'completed', 'terminated'].includes(status)) return false;
           return [
             row?.service_provider_user_id,
             row?.househelp_user_id,
+            row?.household_profile_id,
             row?.household_owner_user_id,
             row?.household_user_id,
           ].some((id) => id && String(id) === String(profileId));
@@ -288,7 +289,8 @@ export default function ProfileReviews({
       setReviewForm({ rating: 5, title: '', content: '' });
       setReviewImages([]);
       setActionSuccess('Your review has been published.');
-      void loadMyPendingReview();
+      setCurrentPage(1);
+      await Promise.all([loadReviews(1), loadReviewStats(), loadMyPendingReview()]);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Could not submit your review.');
     } finally {

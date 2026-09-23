@@ -42,6 +42,7 @@ function asString(value: unknown): string {
 
 function mapToNotification(notification: NotificationApiItem): NotificationItem {
   return {
+    ...notification,
     id: asString(notification.id),
     userId: asString(notification.user_id),
     channel: asString(notification.channel),

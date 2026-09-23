@@ -94,7 +94,7 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
                             <UserGroupIcon className="h-8 w-8 text-white" />
                           </div>
                           <div className="ml-6 flex-1">
-                            <h4 className="text-lg font-bold text-gray-900 mb-1">Service provider</h4>
+                            <h4 className="text-lg font-bold text-gray-900 mb-1">Find work</h4>
                             <p className="text-sm text-gray-600 leading-relaxed">I'm looking for work opportunities and want to offer my services</p>
                           </div>
                           {isSubmitting && userType === 'service_provider' && (
@@ -119,7 +119,7 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
                             <HomeIcon className="h-8 w-8 text-white" />
                           </div>
                           <div className="ml-6 flex-1">
-                            <h4 className="text-lg font-bold text-gray-900 mb-1">Household</h4>
+                            <h4 className="text-lg font-bold text-gray-900 mb-1">Find help</h4>
                             <p className="text-sm text-gray-600 leading-relaxed">I need to hire help for my home and family needs</p>
                           </div>
                           {isSubmitting && userType === 'household' && (

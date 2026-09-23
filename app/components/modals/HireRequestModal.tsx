@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { createPortal } from 'react-dom';
 import { Briefcase, ChevronDown, Loader2, Pencil, Plus, X } from 'lucide-react';
 
 import JobPostModal from '~/components/modals/JobPostModal';
 import { FormError } from '~/components/FormError';
-import { hireRequestService, jobService } from '~/services/grpc/authServices';
+import { hireRequestService, jobService, openForWorkService } from '~/services/grpc/authServices';
 import { getStoredUserProfileId } from '~/utils/authStorage';
 
 type HireRequestModalProps = {
@@ -13,6 +14,7 @@ type HireRequestModalProps = {
   serviceProviderId: string;
   serviceProviderName: string;
   initialListingId?: string | number;
+  sourceListingId?: string | number;
   onSent?: (request: Record<string, any>) => void;
   // Kept optional for callers compiled against the former profile-based form.
   [key: string]: unknown;
@@ -40,8 +42,12 @@ export default function HireRequestModal({
   serviceProviderId,
   serviceProviderName,
   initialListingId,
+  sourceListingId,
   onSent,
 }: HireRequestModalProps) {
+  const navigate = useNavigate();
+  const [sourceListing, setSourceListing] = useState<Record<string, any> | null>(null);
+  const [useDirectHire, setUseDirectHire] = useState(true);
   const [listings, setListings] = useState<Record<string, any>[]>([]);
   const [selectedListingId, setSelectedListingId] = useState(String(initialListingId || ''));
   const [notes, setNotes] = useState('');
@@ -57,7 +63,14 @@ export default function HireRequestModal({
   const loadListings = useCallback(async (preferredId?: string) => {
     setLoadingListings(true);
     try {
-      const response = await jobService.listJobs(100, 0, getStoredUserProfileId(), 'active');
+      const [response, availability] = await Promise.all([
+        jobService.listJobs(100, 0, getStoredUserProfileId(), 'active'),
+        openForWorkService.getOpenForWorkByServiceProvider(serviceProviderId).catch(() => null),
+      ]);
+      const source = availability?.data ?? availability;
+      const advertised = source?.id && (!sourceListingId || String(source.id) === String(sourceListingId)) ? source : null;
+      setSourceListing(advertised);
+      setUseDirectHire(Boolean(advertised));
       const active = rowsFrom(response);
       setListings(active);
       const requested = String(preferredId || initialListingId || '');
@@ -66,16 +79,13 @@ export default function HireRequestModal({
         if (current && active.some((listing) => String(listing.id) === current)) return current;
         return active.length === 1 ? String(active[0].id) : '';
       });
-      if (active.length === 0) {
-        setEditingListing(null);
-        setJobModalOpen(true);
-      }
+
     } catch (loadError: any) {
       setError(loadError?.message || 'We could not load your job listings.');
     } finally {
       setLoadingListings(false);
     }
-  }, [initialListingId]);
+  }, [initialListingId, serviceProviderId, sourceListingId]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -94,13 +104,13 @@ export default function HireRequestModal({
   }, [isOpen]);
 
   const selectedListing = useMemo(
-    () => listings.find((listing) => String(listing.id) === selectedListingId),
-    [listings, selectedListingId],
+    () => useDirectHire ? sourceListing : listings.find((listing) => String(listing.id) === selectedListingId),
+    [listings, selectedListingId, useDirectHire, sourceListing],
   );
-  const details = featureGroups(selectedListing);
+  const details = featureGroups(selectedListing || undefined);
 
   const sendRequest = async () => {
-    if (!selectedListingId) {
+    if (!(useDirectHire ? sourceListing?.id : selectedListingId)) {
       setError('Choose the job listing this request is for.');
       return;
     }
@@ -110,17 +120,14 @@ export default function HireRequestModal({
       const request = await hireRequestService.createHireRequest('', 'household', {
         service_provider_profile_id: serviceProviderId,
         househelp_profile_id: serviceProviderId,
-        listing_id: Number(selectedListingId),
+        ...(useDirectHire ? { source_listing_id: Number(sourceListing?.id) } : { listing_id: Number(selectedListingId) }),
         message: notes.trim(),
-        publish_listing: !createdForRequest,
+        ...(!useDirectHire ? { publish_listing: !createdForRequest } : {}),
       });
       const normalized = (request?.data ?? request ?? {}) as Record<string, any>;
       onSent?.(normalized);
-      if (createdForRequest) {
-        setSentRequest(normalized);
-      } else {
-        onClose();
-      }
+      onClose();
+      navigate('/hiring');
     } catch (sendError: any) {
       setError(sendError?.message || 'We could not send this hire request.');
     } finally {
@@ -150,7 +157,7 @@ export default function HireRequestModal({
           <header className="sticky top-0 z-10 flex items-center justify-between border-b border-purple-200 bg-white px-5 py-4 dark:border-purple-500/20 dark:bg-[#13131a]">
             <div>
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">Send hire request</h2>
-              <p className="mt-0.5 text-xs text-gray-500">Choose the exact job details to send to {serviceProviderName}.</p>
+              <p className="mt-0.5 text-xs text-gray-500">Review the work details to send to {serviceProviderName}.</p>
             </div>
             <button type="button" onClick={onClose} aria-label="Close" className="rounded-full p-2 text-gray-500 hover:bg-purple-500/10"><X className="h-5 w-5" /></button>
           </header>
@@ -169,7 +176,11 @@ export default function HireRequestModal({
             </div>
           ) : (
             <div className="space-y-5 p-5 sm:p-6">
-              <div>
+              {sourceListing && <div className="rounded-xl bg-purple-500/10 p-4 text-sm">
+                <label className="flex items-center gap-2"><input type="checkbox" checked={useDirectHire} onChange={(event) => setUseDirectHire(event.target.checked)} /> Hire directly from their open-to-work details</label>
+                <p className="mt-2 text-xs text-gray-500">These details will be included in your private hire request. No public job listing is required.</p>
+              </div>}
+              {!useDirectHire && <div>
                 <label htmlFor="hire-listing" className="mb-2 block text-xs font-semibold text-gray-800 dark:text-gray-200">Job listing <span className="text-pink-500">*</span></label>
                 {loadingListings ? (
                   <div className="flex items-center gap-2 rounded-xl border border-purple-200 px-4 py-3 text-xs text-gray-500 dark:border-purple-500/30"><Loader2 className="h-4 w-4 animate-spin" /> Loading your listings…</div>
@@ -184,23 +195,23 @@ export default function HireRequestModal({
                 ) : (
                   <p className="rounded-xl bg-purple-500/10 p-4 text-xs leading-5 text-gray-600 dark:text-gray-300">You do not have an active job listing yet. Create the job details first; the request will use exactly what you enter.</p>
                 )}
-              </div>
+              </div>}
 
               {selectedListing && (
                 <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-4 dark:border-purple-500/25 dark:bg-purple-500/5">
                   <div className="flex items-start justify-between gap-4">
                     <div><h3 className="text-sm font-semibold text-gray-900 dark:text-white">{String(selectedListing.title || 'Job listing')}</h3><p className="mt-1 text-xs leading-5 text-gray-600 dark:text-gray-300">{String(selectedListing.description || '')}</p></div>
-                    <button type="button" onClick={() => { setEditingListing(selectedListing); setJobModalOpen(true); }} className="inline-flex shrink-0 items-center gap-1 rounded-full border border-purple-300 px-3 py-1.5 text-[11px] font-semibold text-purple-700 dark:text-purple-200"><Pencil className="h-3 w-3" /> Edit</button>
+                    {!useDirectHire && <button type="button" onClick={() => { setEditingListing(selectedListing); setJobModalOpen(true); }} className="inline-flex shrink-0 items-center gap-1 rounded-full border border-purple-300 px-3 py-1.5 text-[11px] font-semibold text-purple-700 dark:text-purple-200"><Pencil className="h-3 w-3" /> Edit</button>}
                   </div>
                   {details.length > 0 && <div className="mt-3 grid gap-2 sm:grid-cols-2">{details.map((group) => <p key={group.name} className="text-xs"><span className="font-semibold text-gray-700 dark:text-gray-300">{group.name}:</span> <span className="text-gray-500 dark:text-gray-400">{group.values.join(', ')}</span></p>)}</div>}
                 </div>
               )}
 
-              <button type="button" onClick={() => { setEditingListing(null); setJobModalOpen(true); }} className="inline-flex items-center gap-2 text-xs font-semibold text-purple-600 dark:text-purple-300"><Plus className="h-4 w-4" /> Create different job details</button>
+              {!useDirectHire && <button type="button" onClick={() => { setEditingListing(null); setJobModalOpen(true); }} className="inline-flex items-center gap-2 text-xs font-semibold text-purple-600 dark:text-purple-300"><Plus className="h-4 w-4" /> Create different job details</button>}
 
               <div><label htmlFor="hire-notes" className="mb-2 block text-xs font-semibold text-gray-800 dark:text-gray-200">Message <span className="font-normal text-gray-400">(optional)</span></label><textarea id="hire-notes" value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} placeholder="Add anything specific you discussed with them…" className="w-full resize-none rounded-xl border border-purple-300 bg-white px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-purple-500 dark:border-purple-500/40 dark:bg-[#0d0d14] dark:text-white" /></div>
               <FormError message={error} />
-              <div className="grid grid-cols-2 gap-3"><button type="button" onClick={onClose} className="rounded-xl border border-purple-300 px-4 py-2.5 text-xs font-semibold text-purple-700 dark:text-purple-200">Cancel</button><button type="button" onClick={() => void sendRequest()} disabled={sending || !selectedListingId} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50"><Briefcase className="h-4 w-4" /> {sending ? 'Sending…' : 'Send request'}</button></div>
+              <div className="grid grid-cols-2 gap-3"><button type="button" onClick={onClose} className="rounded-xl border border-purple-300 px-4 py-2.5 text-xs font-semibold text-purple-700 dark:text-purple-200">Cancel</button><button type="button" onClick={() => void sendRequest()} disabled={sending || loadingListings || !(useDirectHire ? sourceListing?.id : selectedListingId)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50"><Briefcase className="h-4 w-4" /> {sending ? 'Sending…' : 'Send request'}</button></div>
             </div>
           )}
         </section>

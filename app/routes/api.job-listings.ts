@@ -523,11 +523,13 @@ export async function loader({ request }: { request: Request }) {
         baseUrl,
         '/auth.OpenForWorkService/ListOpenForWork',
         encodeListRequest(url.searchParams),
+        authMetadata(request),
       )
       : await callUnaryGrpc(
         baseUrl,
         '/auth.ListingService/ListJobs',
         encodeListRequest(url.searchParams),
+        authMetadata(request),
       );
 
     // A null body means the response could not be read, which normalizeArray

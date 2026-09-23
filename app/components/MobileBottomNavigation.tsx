@@ -158,8 +158,6 @@ export function MobileBottomNavigation({
                 <>
                   <SheetLink to="/about" icon={UserCircleIcon} label="About" />
                   <SheetLink to="/contact" icon={ChatBubbleLeftRightIcon} label="Contact" />
-                  <SheetLink to="/login" icon={UserCircleIcon} label="Log in" />
-                  <SheetLink to="/signup" icon={ArrowRightOnRectangleIcon} label="Sign up" accent />
                 </>
               )}
             </div>

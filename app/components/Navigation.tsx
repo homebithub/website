@@ -704,7 +704,7 @@ function NavigationContent() {
                     </div>
 
                     {showAuthButtons && (
-                        <div className="hidden items-center gap-2 lg:flex">
+                        <div className="flex items-center gap-2">
                             <Link
                                 to="/login"
                                 className="link rounded-xl border border-purple-300 px-4 py-1.5 text-xs font-semibold text-purple-700 transition-all duration-200 hover:bg-purple-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 dark:border-purple-500/40 dark:text-purple-300 dark:hover:bg-purple-900/30"

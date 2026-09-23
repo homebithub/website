@@ -74,7 +74,7 @@ export function FeatureOptionPicker({
         })}
         {visible.length === 0 ? <p className="px-3 py-5 text-center text-xs text-gray-500">No matching options</p> : null}
       </div>
-      {!multiple ? <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">Choose one option.</p> : null}
+      <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">{multiple ? 'Select all that apply.' : 'Choose one option.'}</p>
     </div>
   );
 }

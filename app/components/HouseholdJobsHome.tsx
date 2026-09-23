@@ -42,6 +42,7 @@ import { ListingViewToggle, useListingViewPreference } from "~/components/listin
 import { matchesInteractionFilters } from "~/utils/interactionFilters";
 import { resolveServiceProviderProfile } from '~/utils/serviceProviderProfiles';
 import { jobService as householdJobService } from '~/services/grpc/authServices';
+import HireRequestModal from '~/components/modals/HireRequestModal';
 import JobPostModal from '~/components/modals/JobPostModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { SidePanel } from '~/components/SidePanel';
@@ -401,6 +402,7 @@ const normalizeServiceProvider = (raw: unknown, listing?: Record<string, any>): 
     return {
       id: ownerProfileId,
       user_id: ownerUserId,
+      location: formatPlace(owner?.location, owner || undefined),
       first_name: ownerFirstName,
       last_name: ownerLastName,
       identity_verified: ownerVerified,
@@ -433,12 +435,7 @@ const normalizeServiceProvider = (raw: unknown, listing?: Record<string, any>): 
     avatar_url: formatTextValue(serviceProvider.avatar_url) || undefined,
     photos: toStringArray(serviceProvider.photos),
     town: formatTextValue(serviceProvider.town) || undefined,
-    // Kept structured rather than flattened. formatTextValue would collapse the
-    // location object to its `name`, which is just the ward, losing the
-    // subcounty that makes a place recognisable.
-    location: (serviceProvider.location && typeof serviceProvider.location === "object")
-      ? serviceProvider.location as Record<string, any>
-      : formatTextValue(serviceProvider.location) || undefined,
+    location: formatPlace(serviceProvider.location, { ...owner, town: serviceProvider.town || owner?.town }) || undefined,
     years_of_experience: toFiniteNumber(serviceProvider.years_of_experience),
     salary_expectation: toFiniteNumber(serviceProvider.salary_expectation),
     salary_frequency: formatTextValue(serviceProvider.salary_frequency) || undefined,
@@ -580,6 +577,7 @@ export default function HouseholdJobsHome() {
   const [listings, setListings] = useState<OpenForWorkListing[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedListing, setSelectedListing] = useState<OpenForWorkListing | null>(null);
+  const [selectedHireListing, setSelectedHireListing] = useState<OpenForWorkListing | null>(null);
   const [selectedInviteListing, setSelectedInviteListing] = useState<OpenForWorkListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1754,6 +1752,12 @@ export default function HouseholdJobsHome() {
                           )}
                           {!isServiceProvider && (
                             <>
+                              <button type="button" onClick={(event) => {
+                                event.stopPropagation();
+                                if (!marketplaceReadiness.interactionAllowed) { setReadinessModalOpen(true); return; }
+                                if (subscriptionLoading || !hasActiveSubscription) { setShowSubscriptionModal(true); return; }
+                                setSelectedHireListing(listing);
+                              }} className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 dark:text-purple-200">Hire</button>
                               {!contacted && (
                                 <button
                                   onClick={(event) => {
@@ -2000,6 +2004,10 @@ export default function HouseholdJobsHome() {
           </div>
         );
       })()}
+      {selectedHireListing && <HireRequestModal isOpen onClose={() => setSelectedHireListing(null)}
+        serviceProviderId={String(selectedHireListing.serviceProvider?.id || '')}
+        serviceProviderName={String(selectedHireListing.serviceProvider?.first_name || 'this service provider')}
+        sourceListingId={selectedHireListing.id} />}
       {selectedInviteListing && (() => {
         const serviceProvider = selectedInviteListing.serviceProvider || {};
         const user = serviceProvider.user || {};

@@ -1,3 +1,4 @@
+import { normalizeProration } from '~/utils/proration';
 import { useNavigate, useLocation } from "react-router";
 import React, { useEffect, useState, Fragment } from "react";
 import { Dialog, Transition } from '@headlessui/react';
@@ -370,7 +371,7 @@ export default function SubscriptionsPage() {
     if (!subscription?.id) return { unused_credit: 0, prorated_charge: 0, net_amount: 0, days_used: 0, days_remaining: 0, total_days: 0, description: '' };
     
     const preview = await paymentsService.previewProration(subscription.id, newPlanId, '');
-    return (preview as any)?.proration || preview;
+    return normalizeProration(preview);
   };
 
   const initiatePayment = async () => {

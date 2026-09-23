@@ -331,3 +331,8 @@ three unrelated keys in the table are untouched.
 **To retest:** open admin Settings — no error banner. Change something on General,
 save, reload, confirm it persisted. Confirm the System page's feature flags are
 unaffected: they are a separate store on purpose.
+
+
+## September 23 production report
+
+The 18-item production report and release evidence are tracked separately in [Production bug tracker](PRODUCTION_BUG_TRACKER_20260923.md). Earlier entries above retain their original status.

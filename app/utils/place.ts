@@ -36,7 +36,7 @@ function joinParts(parts: PlaceParts): string {
   if (joined) return joined;
 
   // Nothing from the hierarchy, so fall back to whatever free text exists.
-  return text(parts.place) || text(parts.name) || text(parts.town) || '';
+  return text(parts.place) || text(parts.name) || text(parts.town) || text(parts.county) || '';
 }
 
 /**

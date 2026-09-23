@@ -422,7 +422,7 @@ export default function HouseholdShortlistPage() {
                   const avatar = firstString(serviceProvider.avatar_url, photos[0], profilePhotos[userId]);
                   const scheduleLabel = summarizeSchedule(listing?.work_schedule);
                   const jobTypes = toStringArray(listing?.job_types);
-                  const location = formatPlaceOrFallback(serviceProvider.location, { town: serviceProvider.town || listing?.town });
+                  const location = formatPlaceOrFallback(serviceProvider.location, { ...listing, town: serviceProvider.town || listing?.town });
                   const experienceYears = toFiniteNumber(serviceProvider.years_of_experience ?? listing?.years_of_experience);
                   const updatedAt = listing?.created_at || s.created_at;
                   const salaryLabel = formatSalary(

@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router';
+import { notificationDestination } from '~/utils/notificationDestination';
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { SidePanel } from '~/components/SidePanel';
@@ -56,6 +58,7 @@ function NotificationBodyPreview({ body, expanded }: { body: string; expanded: b
 }
 
 export default function NotificationsModal({ isOpen, onClose }: Props) {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -92,9 +95,10 @@ export default function NotificationsModal({ isOpen, onClose }: Props) {
 
   const onClickItem = async (n: NotificationItem) => {
     if (!n.clicked && n.id) {
-      await markOneAsRead(n.id);
+      void markOneAsRead(n.id).catch(() => undefined);
     }
-    toggle(n.id);
+    const destination = notificationDestination(n);
+    if (destination) { onClose(); navigate(destination); } else { toggle(n.id); }
   };
 
   const onItemKeyDown = (event: KeyboardEvent<HTMLDivElement>, notification: NotificationItem) => {

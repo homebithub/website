@@ -28,23 +28,18 @@ export function ChangePlanModal({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isOpen) {
-      loadProration();
-    }
-  }, [isOpen, newPlan.id]);
-
-  const loadProration = async () => {
+    if (!isOpen) return;
+    let cancelled = false;
     setLoading(true);
+    setProration(null);
     setError('');
-    try {
-      const prorationData = await onPreview(newPlan.id);
-      setProration(prorationData);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load proration preview');
-    } finally {
-      setLoading(false);
-    }
-  };
+    onPreview(newPlan.id).then((data) => {
+      if (!cancelled) setProration(data);
+    }).catch((err) => {
+      if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load proration preview');
+    }).finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [isOpen, newPlan.id]);
 
   const handleConfirm = async () => {
     setProcessing(true);
