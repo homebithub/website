@@ -2,7 +2,7 @@
 
 Reported and audited: 2026-09-23. Scope: 18 original reports plus three UI follow-ups (HB-19–21). Target: **production, https://homebit.co.ke**, as confirmed by the user.
 
-**Release update — 2026-09-24: 16 confirmed issues implemented, locally verified, and deployed to production. All four affected services are healthy. HB-14 (filters) and HB-18 (chat double ticks) remain under investigation. User acceptance is pending for every item.**
+**Release update — 2026-09-24: 19 confirmed issues implemented, locally verified, and deployed to production (16 original reports plus HB-19–21). All four affected services are healthy. HB-14 (filters) and HB-18 (chat double ticks) remain under investigation. User acceptance is pending for every item.**
 
 Audit baseline: 5 reproduced (4 live UI, 1 executable reproduction), 11 additional code-confirmed gaps, and 2 requiring reproduction.
 
@@ -39,9 +39,9 @@ This is the working record for fixing and verifying each item before the user pe
 | HB-16 | Default desktop Home and Saved to compact view | Code-confirmed: shared view preference defaults to list | Deployed; user retest pending |
 | HB-17 | Label fields that allow multiple selections | Code-confirmed: shared picker labels single-select only | Deployed; user retest pending |
 | HB-18 | Repair chat double ticks / read receipts | Investigating: production branch already includes receipt fixes; two-account verification needed | Needs reproduction |
-| HB-19 | Show phone keypad for phone fields on mobile | Code-confirmed: phone fields lacked explicit inputMode; alternate phone used a text input | Verified locally; deployment pending |
-| HB-20 | Respect dark theme throughout password recovery; remove Safaricom-only banner | User screenshots and source confirm missing dark input classes and obsolete banner | Verified locally; deployment pending |
-| HB-21 | Align hiring dialogs and primary actions with the purple theme for both profiles | User screenshot and source confirm inconsistent panel colors and primary button styles | Verified locally; deployment pending |
+| HB-19 | Show phone keypad for phone fields on mobile | Code-confirmed: phone fields lacked explicit inputMode; alternate phone used a text input | Deployed; user retest pending |
+| HB-20 | Respect dark theme throughout password recovery; remove Safaricom-only banner | User screenshots and source confirm missing dark input classes and obsolete banner | Deployed; user retest pending |
+| HB-21 | Align hiring dialogs and primary actions with the purple theme for both profiles | User screenshot and source confirm inconsistent panel colors and primary button styles | Deployed; user retest pending |
 
 ## Verification and release gate
 
@@ -267,4 +267,4 @@ All changes were pushed to the services' `master` branches. Deployment-tag commi
 
 **Retest:** On a phone, tap the phone field on login, signup and recovery; confirm the telephone keypad. Switch light/dark through recovery and verify readable inputs with no carrier banner. As each profile, visit every Hiring tab, open details and available action dialogs, and check purple primary buttons (especially Chat) and consistent dark surfaces.
 
-**Deployment:** Website only; pending final validation and production rollout. No backend changes are required for this follow-up.
+**Deployment:** Website source `fa29255` pushed to `master`; deployment tag commit `895e490`, image `ghcr.io/homebithub/website:20260924142902`. Rollout verified healthy (1/1 ready and available) on 2026-09-24 at 17:33 EAT. Auth, payments and notifications remain healthy on their previous images; no backend changes were required. Live browser verification confirms the recovery banner is absent, the phone field has `inputmode="tel"`, and recovery/reset inputs use `rgb(19, 19, 26)` dark backgrounds with white text. User acceptance remains pending.
