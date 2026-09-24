@@ -2,7 +2,7 @@
 
 Reported and audited: 2026-09-23. Scope: all 18 items in the user's report. Target: **production, https://homebit.co.ke**, as confirmed by the user.
 
-**Release update — 2026-09-24: 16 confirmed issues implemented and locally verified. Production deployment is pending. HB-14 (filters) and HB-18 (chat double ticks) remain under investigation. User acceptance is pending for every item.**
+**Release update — 2026-09-24: 16 confirmed issues implemented, locally verified, and deployed to production. All four affected services are healthy. HB-14 (filters) and HB-18 (chat double ticks) remain under investigation. User acceptance is pending for every item.**
 
 Audit baseline: 5 reproduced (4 live UI, 1 executable reproduction), 11 additional code-confirmed gaps, and 2 requiring reproduction.
 
@@ -21,23 +21,23 @@ This is the working record for fixing and verifying each item before the user pe
 
 | ID | Report / requested behavior | Finding | Fix status |
 | --- | --- | --- | --- |
-| HB-01 | Remove Join Waitlist links/pages | Reproduced on production waitlist page | Verified locally; deployment pending |
-| HB-02 | Show signed-out Log in / Sign up at the top on mobile | Reproduced on production at 390 × 844 | Verified locally; deployment pending |
-| HB-03 | Add Confirm password during password signup | Reproduced: signup has only one password input | Verified locally; deployment pending |
-| HB-04 | Stop automatic tours after the first Skip | Code-confirmed: dismissal is scoped to individual routes and tour versions | Verified locally; deployment pending |
-| HB-05 | Hide own listings across profile types and prevent self-hiring | Code-confirmed: discovery lacks account-level exclusion; hiring compares profile IDs | Verified locally; deployment pending |
-| HB-06 | Automatically extend the active trial to newly activated profile types | Code-confirmed: access is profile-scoped, but prior trial usage blocks the entire account | Verified locally; deployment pending |
-| HB-07 | Use Find help / Find work in signup profile choices | Reproduced: production labels are Household / Service provider | Verified locally; deployment pending |
-| HB-08 | Show provider location on Home, Saved, and other cards | Code-confirmed: provider cards omit top-level listing place fields | Verified locally; deployment pending |
-| HB-09 | Allow direct hiring from an open-to-work listing without first posting a job | Code-confirmed: hire modal requires an owned job and opens job creation when none exists | Verified locally; deployment pending |
-| HB-10 | Hide providers from other households after contract signing | Code-confirmed: signing activates employment but does not remove provider availability from discovery | Verified locally; deployment pending |
-| HB-11 | Make notifications navigate to the relevant action | Code-confirmed: clicking marks read and expands the body only | Verified locally; deployment pending |
-| HB-12 | Show a submitted rating immediately without refresh | Code-confirmed: submission does not reload the public reviews or rating statistics | Verified locally; deployment pending |
-| HB-13 | Allow reciprocal reviews after an offer is accepted; contract optional | Code-confirmed: UI and backend require an engagement; household profile/user IDs also need alignment | Verified locally; deployment pending |
+| HB-01 | Remove Join Waitlist links/pages | Reproduced on production waitlist page | Deployed; user retest pending |
+| HB-02 | Show signed-out Log in / Sign up at the top on mobile | Reproduced on production at 390 × 844 | Deployed; user retest pending |
+| HB-03 | Add Confirm password during password signup | Reproduced: signup has only one password input | Deployed; user retest pending |
+| HB-04 | Stop automatic tours after the first Skip | Code-confirmed: dismissal is scoped to individual routes and tour versions | Deployed; user retest pending |
+| HB-05 | Hide own listings across profile types and prevent self-hiring | Code-confirmed: discovery lacks account-level exclusion; hiring compares profile IDs | Deployed; user retest pending |
+| HB-06 | Automatically extend the active trial to newly activated profile types | Code-confirmed: access is profile-scoped, but prior trial usage blocks the entire account | Deployed; user retest pending |
+| HB-07 | Use Find help / Find work in signup profile choices | Reproduced: production labels are Household / Service provider | Deployed; user retest pending |
+| HB-08 | Show provider location on Home, Saved, and other cards | Code-confirmed: provider cards omit top-level listing place fields | Deployed; user retest pending |
+| HB-09 | Allow direct hiring from an open-to-work listing without first posting a job | Code-confirmed: hire modal requires an owned job and opens job creation when none exists | Deployed; user retest pending |
+| HB-10 | Hide providers from other households after contract signing | Code-confirmed: signing activates employment but does not remove provider availability from discovery | Deployed; user retest pending |
+| HB-11 | Make notifications navigate to the relevant action | Code-confirmed: clicking marks read and expands the body only | Deployed; user retest pending |
+| HB-12 | Show a submitted rating immediately without refresh | Code-confirmed: submission does not reload the public reviews or rating statistics | Deployed; user retest pending |
+| HB-13 | Allow reciprocal reviews after an offer is accepted; contract optional | Code-confirmed: UI and backend require an engagement; household profile/user IDs also need alignment | Deployed; user retest pending |
 | HB-14 | Repair filters | Investigating: exact page/filter combination requested | Needs reproduction |
-| HB-15 | Prevent crashes when switching subscription packages | Reproduced in executable harness: protobuf response causes Invalid time value | Verified locally; deployment pending |
-| HB-16 | Default desktop Home and Saved to compact view | Code-confirmed: shared view preference defaults to list | Verified locally; deployment pending |
-| HB-17 | Label fields that allow multiple selections | Code-confirmed: shared picker labels single-select only | Verified locally; deployment pending |
+| HB-15 | Prevent crashes when switching subscription packages | Reproduced in executable harness: protobuf response causes Invalid time value | Deployed; user retest pending |
+| HB-16 | Default desktop Home and Saved to compact view | Code-confirmed: shared view preference defaults to list | Deployed; user retest pending |
+| HB-17 | Label fields that allow multiple selections | Code-confirmed: shared picker labels single-select only | Deployed; user retest pending |
 | HB-18 | Repair chat double ticks / read receipts | Investigating: production branch already includes receipt fixes; two-account verification needed | Needs reproduction |
 
 ## Verification and release gate
@@ -236,4 +236,19 @@ The user authorized implementation of confirmed issues and production deployment
 
 ### Deployment record
 
-Pending production push and rollout verification for auth, payments, notifications and website. No changes are required in the gateway, shared package or admin service for this batch.
+Production rollout verified on 2026-09-24 at approximately 09:33 EAT (06:33 UTC).
+
+| Service | Fix commit | Production image | Result |
+| --- | --- | --- | --- |
+| Auth | `192ee2c` | `ghcr.io/homebithub/auth:20260923213222` | 1/1 ready and available; migration 93 clean (`dirty=false`) |
+| Payments | `af391a7` | `ghcr.io/homebithub/payments:20260923213227` | 2/2 ready and available |
+| Notifications | `1e5d33c` | `ghcr.io/homebithub/notifications:20260923213238` | 2/2 ready and available |
+| Website | `ee39e5c` | `ghcr.io/homebithub/website:20260924062811` | 1/1 ready and available |
+
+All changes were pushed to the services' `master` branches. Deployment-tag commits: auth `84d772b`, payments `efee22e`, notifications `d8b6ba3`, website `0644535`. No changes were required in the gateway, shared package or admin service for this batch.
+
+**Deployment recovery:** Auth initially failed to start because the checked-in manifest referenced the removed database `homebit_auth_v20260915`. The previously healthy ReplicaSet used `homebit_auth`. After verifying that database at clean migration 92, the manifest was corrected in `fbdcf64` and the tested image redeployed. It applied migration 93 and became healthy. A temporary diagnostic pod was removed. The singleton website rollout briefly returned HTTP 503 while replacing its pod; it subsequently became healthy.
+
+**Live smoke checks:** `https://homebit.co.ke/waitlist?profile=household` redirects to `/signup?profile_type=household`. The live signup page displays Find help, Confirm password, and top-navigation Log in / Sign up. Local browser verification additionally checked Find work and mismatched-password rejection. Authenticated business flows have automated/database coverage; user end-to-end acceptance remains pending.
+
+**Remaining open reports:** HB-14 filters and HB-18 chat double ticks were not changed because the failing scenarios still need reproduction. This release does not claim that all 18 reports are fixed.
