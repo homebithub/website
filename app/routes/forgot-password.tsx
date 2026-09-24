@@ -6,7 +6,6 @@ import { forgotPasswordSchema, validateForm, validateField, normalizeKenyanPhone
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -130,17 +129,17 @@ export default function ForgotPasswordPage() {
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
         <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
           <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 text-center">Forgot Password? 🔑</h1>
-          <p className="text-gray-600 text-center mb-8 text-sm">
+          <p className="text-gray-600 dark:text-gray-300 text-center mb-8 text-sm">
             Enter your phone number and we'll send you a verification code to reset your password.
           </p>
           
           {error && <ErrorAlert message={error} />}
           
           {success && (
-            <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-5 shadow-md">
+            <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-500/10 dark:to-emerald-500/10 border-2 border-green-200 dark:border-green-500/30 p-5 shadow-md">
               <div className="flex items-center justify-center">
                 <span className="text-xl mr-3">🎉</span>
-                <p className="text-sm font-bold text-green-800">OTP sent successfully! Check your phone 📱</p>
+                <p className="text-sm font-bold text-green-800 dark:text-green-300">OTP sent successfully! Check your phone 📱</p>
               </div>
             </div>
           )}
@@ -148,28 +147,29 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>
-                <label htmlFor="phone" className="block text-xs font-semibold text-purple-700 mb-2">Phone Number</label>
+                <label htmlFor="phone" className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-2">Phone Number</label>
                 <input
                   id="phone"
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   name="phone"
                   value={input}
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
-                  className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
+                  className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                       fieldError 
-                          ? 'border-red-300' 
+                          ? 'border-red-300 dark:border-red-500/50'
                           : isFieldValid()
-                          ? 'border-green-300'
-                          : 'border-purple-200'
+                          ? 'border-green-300 dark:border-green-500/40'
+                          : 'border-purple-200 dark:border-purple-500/30'
                   }`}
                   placeholder="Enter your phone number"
                 />
                 {fieldError && (
-                  <p className="text-red-600 text-xs mt-1">{fieldError}</p>
+                  <p className="text-red-600 dark:text-red-400 text-xs mt-1">{fieldError}</p>
                 )}
-                <SafaricomDisclaimer className="mt-2" />
               </div>
             </div>
             <button
@@ -181,7 +181,7 @@ export default function ForgotPasswordPage() {
             </button>
           </form>
           <div className="flex justify-center mt-8">
-            <Link to="/login" className="text-sm font-semibold text-purple-600 hover:text-purple-700 hover:underline transition-colors">← Back to Login</Link>
+            <Link to="/login" className="text-sm font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-400 hover:underline transition-colors">← Back to Login</Link>
           </div>
         </PurpleCard>
       </main>

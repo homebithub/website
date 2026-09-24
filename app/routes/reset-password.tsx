@@ -122,7 +122,7 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0a0a0f] flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
           <h1 className="text-lg font-bold text-slate-900 dark:text-white">
             Password reset successful
@@ -161,7 +161,7 @@ export default function ResetPassword() {
           <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
             Reset Password 🔐
           </h1>
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 dark:text-gray-300 text-sm">
             Enter your new password below
           </p>
         </div>
@@ -172,7 +172,7 @@ export default function ResetPassword() {
           <div>
             <label
               htmlFor="password"
-              className="block text-xs font-semibold text-purple-700 mb-2"
+              className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-2"
             >
               New password
             </label>
@@ -186,12 +186,12 @@ export default function ResetPassword() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
             {formData.password && (
               <div className="mt-2">
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden">
                   <div
                     className={`h-full ${getStrengthColor(passwordStrength.score)} transition-all duration-300`}
                     style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
@@ -207,7 +207,7 @@ export default function ResetPassword() {
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-xs font-semibold text-purple-700 mb-2"
+              className="block text-xs font-semibold text-purple-700 dark:text-purple-300 mb-2"
             >
               Confirm new password
             </label>
@@ -221,7 +221,7 @@ export default function ResetPassword() {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
             {formData.confirmPassword && formData.password !== formData.confirmPassword && (
@@ -252,7 +252,7 @@ export default function ResetPassword() {
             Remember your password?{" "}
             <Link
               to="/login"
-              className="font-bold text-purple-600 hover:text-purple-700 hover:underline transition-colors"
+              className="font-bold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-400 hover:underline transition-colors"
             >
               Sign in
             </Link>

@@ -453,6 +453,8 @@ export default function PaymentMethodsPage() {
                         </label>
                         <input
                           type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
                           value={addForm.phone_number}
                           onChange={(e) => {
                             setAddForm({ ...addForm, phone_number: e.target.value });

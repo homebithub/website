@@ -636,6 +636,8 @@ export function ServiceWaitlistPage({ config }: ServiceWaitlistPageProps) {
                   />
                   <input
                     type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={form.phone_number}
                     onChange={(e) => setForm((prev) => ({ ...prev, phone_number: e.target.value }))}
                     className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-xs"

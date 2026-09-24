@@ -57,10 +57,11 @@ export function ConfirmDialog({
       />
       
       {/* Dialog */}
-      <div className="relative bg-white dark:bg-[#1a1a2e] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md sm:mx-4 overflow-hidden transform transition-all animate-slide-up">
+      <div className="relative bg-white dark:bg-[#13131a] border border-purple-200 dark:border-purple-500/30 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md sm:mx-4 overflow-hidden transform transition-all animate-slide-up">
           {/* Close button */}
           <button 
             onClick={onClose}
+            aria-label="Close"
             className="absolute top-4 right-4 p-1.5 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
             <X className="w-5 h-5" />

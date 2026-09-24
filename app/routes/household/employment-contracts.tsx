@@ -133,7 +133,7 @@ export default function EmploymentContractsList() {
           </div>
           <button
             onClick={() => navigate('/household/employment-contract')}
-            className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors flex items-center gap-2 text-xs font-medium"
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-colors flex items-center gap-2 text-xs font-medium"
           >
             <Plus className="w-4 h-4" /> New Contract
           </button>
@@ -187,7 +187,7 @@ export default function EmploymentContractsList() {
             </p>
             <button
               onClick={() => navigate('/household/employment-contract')}
-              className="px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-medium transition-colors"
+              className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-medium transition-colors"
             >
               Create Contract
             </button>

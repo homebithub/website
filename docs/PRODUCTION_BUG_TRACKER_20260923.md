@@ -1,6 +1,6 @@
 # Homebit bug and acceptance tracker
 
-Reported and audited: 2026-09-23. Scope: all 18 items in the user's report. Target: **production, https://homebit.co.ke**, as confirmed by the user.
+Reported and audited: 2026-09-23. Scope: 18 original reports plus three UI follow-ups (HB-19–21). Target: **production, https://homebit.co.ke**, as confirmed by the user.
 
 **Release update — 2026-09-24: 16 confirmed issues implemented, locally verified, and deployed to production. All four affected services are healthy. HB-14 (filters) and HB-18 (chat double ticks) remain under investigation. User acceptance is pending for every item.**
 
@@ -39,6 +39,9 @@ This is the working record for fixing and verifying each item before the user pe
 | HB-16 | Default desktop Home and Saved to compact view | Code-confirmed: shared view preference defaults to list | Deployed; user retest pending |
 | HB-17 | Label fields that allow multiple selections | Code-confirmed: shared picker labels single-select only | Deployed; user retest pending |
 | HB-18 | Repair chat double ticks / read receipts | Investigating: production branch already includes receipt fixes; two-account verification needed | Needs reproduction |
+| HB-19 | Show phone keypad for phone fields on mobile | Code-confirmed: phone fields lacked explicit inputMode; alternate phone used a text input | Verified locally; deployment pending |
+| HB-20 | Respect dark theme throughout password recovery; remove Safaricom-only banner | User screenshots and source confirm missing dark input classes and obsolete banner | Verified locally; deployment pending |
+| HB-21 | Align hiring dialogs and primary actions with the purple theme for both profiles | User screenshot and source confirm inconsistent panel colors and primary button styles | Verified locally; deployment pending |
 
 ## Verification and release gate
 
@@ -252,3 +255,16 @@ All changes were pushed to the services' `master` branches. Deployment-tag commi
 **Live smoke checks:** `https://homebit.co.ke/waitlist?profile=household` redirects to `/signup?profile_type=household`. The live signup page displays Find help, Confirm password, and top-navigation Log in / Sign up. Local browser verification additionally checked Find work and mismatched-password rejection. Authenticated business flows have automated/database coverage; user end-to-end acceptance remains pending.
 
 **Remaining open reports:** HB-14 filters and HB-18 chat double ticks were not changed because the failing scenarios still need reproduction. This release does not claim that all 18 reports are fixed.
+
+
+## UI follow-up — 2026-09-24 (HB-19–21)
+
+- **HB-19:** Phone inputs explicitly use `type="tel"`, `inputMode="tel"` and telephone autofill across signup, login, recovery, account/profile editing, references, bureau registration and billing. The OTP target editor switches between telephone and email hints; the OTP code retains its numeric keypad. Phone values remain strings so leading zeros and `+` are preserved.
+- **HB-20:** Recovery phone/password inputs, labels, helper text and success feedback support dark mode. Removed the obsolete Safaricom-only banner from recovery and Add phone. The verification phone editor uses the same dark surface and gradient primary action.
+- **HB-21:** Hiring panels use the shared `#13131a` dark surface, purple borders and purple-to-pink primary actions, including Chat, accepting offers, confirming interest and contract actions. Destructive and status colors retain their meaning. Checked household Jobs, Applicants, Shortlisted, Needs your reply, Contracts and Closed; provider Offers, Applications, Requests, Contracts and Work History. Related job details, confirmation/decline/termination, contract signing/email and chat hire details dialogs were included in the source audit.
+
+**Verification:** 194 existing tests passed. Final TypeScript and production build checks passed. Local browser visually verified recovery phone and both password inputs in dark mode, light reset fields, and the shared hiring modal in light/dark using a temporary fixture route (removed before release). Browser DOM confirms `type="tel"` and `inputmode="tel"`; a desktop browser cannot confirm a physical phone's keyboard. Authenticated hiring tabs were source-reviewed; live two-profile acceptance remains with the user. No OTPs, messages, hires, contracts or payments were submitted.
+
+**Retest:** On a phone, tap the phone field on login, signup and recovery; confirm the telephone keypad. Switch light/dark through recovery and verify readable inputs with no carrier banner. As each profile, visit every Hiring tab, open details and available action dialogs, and check purple primary buttons (especially Chat) and consistent dark surfaces.
+
+**Deployment:** Website only; pending final validation and production rollout. No backend changes are required for this follow-up.

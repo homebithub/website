@@ -1093,7 +1093,7 @@ export default function EmploymentContractPage() {
         {showSigningModal && (
           <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={() => setShowSigningModal(false)} />
-            <div className="relative bg-white dark:bg-[#0d0d15] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
+            <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
               <button
                 type="button"
                 onClick={() => setShowSigningModal(false)}
@@ -1141,7 +1141,7 @@ export default function EmploymentContractPage() {
         {showEmailModal && (
           <div className="hb-mobile-modal-viewport fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={() => setShowEmailModal(false)} />
-            <div className="relative bg-white dark:bg-[#0d0d15] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
+            <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
               <button
                 type="button"
                 onClick={() => setShowEmailModal(false)}

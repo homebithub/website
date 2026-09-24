@@ -65,10 +65,10 @@ export default function ChatHireRequestDetailsModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="chat-hire-request-title"
-        className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-500/40 bg-white shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl"
+        className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-500/40 bg-white shadow-2xl dark:bg-[#13131a] sm:max-w-2xl sm:rounded-3xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-purple-200 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-700/50 dark:bg-[#171122]/95 sm:px-6">
+        <header className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-purple-200 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-500/30 dark:bg-[#13131a]/95 sm:px-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-purple-600 dark:text-purple-300">Hire request details</p>
             <h2 id="chat-hire-request-title" className="mt-1 text-lg font-bold text-gray-950 dark:text-white">
@@ -89,34 +89,34 @@ export default function ChatHireRequestDetailsModal({
               { icon: Calendar, label: 'Start date', value: formatDate(request.start_date) },
               { icon: FileText, label: 'Requested on', value: formatDate(request.created_at) },
             ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="rounded-2xl border border-purple-200 bg-purple-50/70 p-4 dark:border-purple-700/50 dark:bg-purple-950/30">
+              <div key={label} className="rounded-2xl border border-purple-200 bg-purple-50/70 p-4 dark:border-purple-500/30 dark:bg-purple-950/30">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-300"><Icon className="h-4 w-4" />{label}</div>
                 <p className="mt-2 break-words text-sm font-semibold capitalize text-gray-950 dark:text-white">{value}</p>
               </div>
             ))}
           </div>
 
-          <div className="rounded-2xl border border-purple-200 p-4 dark:border-purple-700/50">
+          <div className="rounded-2xl border border-purple-200 p-4 dark:border-purple-500/30">
             <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-300">Status</p>
             <p className="mt-2 text-sm font-semibold capitalize text-gray-950 dark:text-white">{humanize(request.status)}</p>
           </div>
 
           {request.special_requirements && (
-            <div className="rounded-2xl border border-purple-200 p-4 dark:border-purple-700/50">
+            <div className="rounded-2xl border border-purple-200 p-4 dark:border-purple-500/30">
               <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-300">Special requirements</p>
               <p className="mt-2 whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-200">{request.special_requirements}</p>
             </div>
           )}
 
           {schedule && (
-            <div className="rounded-2xl border border-purple-200 p-4 dark:border-purple-700/50">
+            <div className="rounded-2xl border border-purple-200 p-4 dark:border-purple-500/30">
               <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-300">Work schedule</p>
               <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">{schedule}</p>
             </div>
           )}
         </div>
 
-        <footer className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-purple-200 bg-white/95 p-4 backdrop-blur dark:border-purple-700/50 dark:bg-[#171122]/95 sm:flex-row sm:justify-end">
+        <footer className="sticky bottom-0 flex flex-col-reverse gap-2 border-t border-purple-200 bg-white/95 p-4 backdrop-blur dark:border-purple-500/30 dark:bg-[#13131a]/95 sm:flex-row sm:justify-end">
           <button type="button" onClick={onClose} className="rounded-xl border border-purple-300 px-5 py-2 text-sm font-semibold text-purple-700 dark:border-purple-600 dark:text-purple-200">Close</button>
           {onViewJob && (
             <button type="button" onClick={onViewJob} disabled={jobLoading} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-sm font-semibold text-white shadow-md disabled:cursor-wait disabled:opacity-60">

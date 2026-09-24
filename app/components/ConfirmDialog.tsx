@@ -44,9 +44,9 @@ export default function ConfirmDialog({
       confirmBtn: 'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500',
     },
     info: {
-      icon: 'text-blue-600 dark:text-blue-400',
-      iconBg: 'bg-blue-100 dark:bg-blue-900/30',
-      confirmBtn: 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+      icon: 'text-purple-600 dark:text-purple-400',
+      iconBg: 'bg-purple-100 dark:bg-purple-500/10',
+      confirmBtn: 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:ring-purple-500',
     },
   };
 
@@ -58,7 +58,7 @@ export default function ConfirmDialog({
       onClick={handleBackdropClick}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
-      <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md sm:mx-4 p-6 animate-slide-up">
+      <div className="relative bg-white dark:bg-[#13131a] border border-purple-200 dark:border-purple-500/30 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md sm:mx-4 p-6 animate-slide-up">
         {/* Close button */}
         <button
           onClick={onCancel}

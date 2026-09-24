@@ -28,7 +28,15 @@ const PersonalDetailsEditSection: React.FC<PersonalDetailsEditSectionProps> = ({
       </div>
       <div>
         <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Telephone (Alt)</label>
-        <input name="telephone_alt" value={form.telephone_alt || ''} onChange={onChange} className="w-full rounded p-2 bg-slate-800 text-white border border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none" />
+        <input
+          name="telephone_alt"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={form.telephone_alt || ''}
+          onChange={onChange}
+          className="w-full rounded p-2 bg-slate-800 text-white border border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none"
+        />
       </div>
       <div>
         <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Current Location</label>

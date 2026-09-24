@@ -7,7 +7,6 @@ import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
 import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 
 export const meta = () => [
@@ -154,7 +153,6 @@ export default function AddPhone() {
               We need your phone number to verify your account and keep it secure.
             </p>
 
-            <SafaricomDisclaimer className="mb-5" />
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
@@ -163,6 +161,8 @@ export default function AddPhone() {
                 </label>
                 <input
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
                   id="phone"
                   name="phone"
                   required

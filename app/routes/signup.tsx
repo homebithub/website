@@ -899,6 +899,8 @@ export default function SignupPage() {
     <input
         id="phone"
         type="tel"
+        inputMode="tel"
+        autoComplete="tel"
         name="phone"
         value={form.phone}
         onChange={handleChange}

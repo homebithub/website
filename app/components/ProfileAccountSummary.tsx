@@ -467,6 +467,7 @@ export function ProfileAccountSummary({
                 Phone number
                 <input
                   type="tel"
+                  autoComplete="tel"
                   value={form.phone}
                   onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
                   disabled={saving}

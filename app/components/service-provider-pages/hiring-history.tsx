@@ -868,7 +868,7 @@ export default function ServiceProviderHiringHistory() {
   return (
     <div>
       {/* Main Card Container */}
-      <div className="bg-white dark:bg-purple-950/40 rounded-2xl shadow-lg border border-purple-100 dark:border-purple-800/40 overflow-hidden">
+      <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg border border-purple-100 dark:border-purple-800/40 overflow-hidden">
         {/* Header */}
         <div className="px-6 pt-6 pb-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1021,7 +1021,7 @@ export default function ServiceProviderHiringHistory() {
                         </button>
                         {request.status === 'pending' && (
                           <>
-                            <button onClick={() => openAcceptConfirm(request.id)} disabled={actionLoading === request.id} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 sm:w-auto sm:py-1">
+                            <button onClick={() => openAcceptConfirm(request.id)} disabled={actionLoading === request.id} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 sm:w-auto sm:py-1">
                               <CheckCircle className="w-4 h-4" /> Confirm interest
                             </button>
                             <button onClick={() => { setSelectedRequest(request.id); setShowDeclineModal(true); }} disabled={actionLoading === request.id} className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50 sm:w-auto sm:py-1">
@@ -1040,7 +1040,7 @@ export default function ServiceProviderHiringHistory() {
                                 });
                                 navigate(`/household/employment-contract?${params.toString()}`);
                               }}
-                              className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all sm:w-auto sm:py-1"
+                              className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all sm:w-auto sm:py-1"
                             >
                               <FileText className="w-4 h-4" /> View Contract
                             </button>
@@ -1061,7 +1061,7 @@ export default function ServiceProviderHiringHistory() {
                                 });
                                 navigate(`/household/employment-contract?${params.toString()}`);
                               }}
-                              className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all sm:w-auto sm:py-1"
+                              className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all sm:w-auto sm:py-1"
                             >
                               <FileText className="w-4 h-4" /> View Contract
                             </button>
@@ -1141,11 +1141,7 @@ export default function ServiceProviderHiringHistory() {
                               });
                               navigate(`/household/employment-contract?${params.toString()}`);
                             }}
-                            className={`inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium rounded-xl transition-all sm:w-auto sm:py-1 ${
-                              ec.status === 'pending_service_provider'
-                                ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
-                                : 'text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
-                            }`}
+                            className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-medium rounded-xl transition-all sm:w-auto sm:py-1 text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                           >
                             <FileText className="w-4 h-4" />
                             {ec.status === 'pending_service_provider' ? 'Review & Sign' : 'View Contract'}
@@ -1338,7 +1334,7 @@ export default function ServiceProviderHiringHistory() {
                             <button
                               onClick={() => answerInterest(interest, 'accepted')}
                               disabled={actionLoading === interest.id}
-                              className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 sm:w-auto sm:py-1"
+                              className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-colors disabled:opacity-50 sm:w-auto sm:py-1"
                             >
                               <CheckCircle className="w-4 h-4" /> Accept offer
                             </button>
@@ -1434,12 +1430,12 @@ export default function ServiceProviderHiringHistory() {
               { label: 'Closure reason', value: record.closure_reason || record.decline_reason || record.cancel_reason || undefined },
             ]}
             actions={<>
-              <button data-tour="hiring-chat" type="button" onClick={() => void openHouseholdChat(record)} disabled={chatLoadingId === String(record.id)} className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"><MessageCircle className="h-4 w-4" />{chatLoadingId === String(record.id) ? 'Opening…' : 'Chat'}</button>
+              <button data-tour="hiring-chat" type="button" onClick={() => void openHouseholdChat(record)} disabled={chatLoadingId === String(record.id)} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 hover:from-purple-700 hover:to-pink-700"><MessageCircle className="h-4 w-4" />{chatLoadingId === String(record.id) ? 'Opening…' : 'Chat'}</button>
               {record.listing_id && <button type="button" onClick={() => { setSelectedHiringCard(null); void openJobListing(record.listing_id, record.listing); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
               <button type="button" onClick={() => navigate(profileLink, { state: { profileId: record.household?.id || record.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View household</button>
               {isRequest && normalizeStatus(record.status) === 'pending' && <>
                 <button type="button" onClick={() => { setSelectedHiringCard(null); setSelectedRequest(record.id); setShowDeclineModal(true); }} className="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-600">Decline</button>
-                <button type="button" onClick={() => { setSelectedHiringCard(null); openAcceptConfirm(record.id); }} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white">Confirm interest</button>
+                <button type="button" onClick={() => { setSelectedHiringCard(null); openAcceptConfirm(record.id); }} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white hover:from-purple-700 hover:to-pink-700">Confirm interest</button>
               </>}
               {isEmploymentContract && <button type="button" onClick={() => { const params = new URLSearchParams({ id: record.id, backTo: backToPath, backLabel: 'Back to Hiring' }); navigate(`/household/employment-contract?${params.toString()}`); }} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white">{record.status === 'pending_service_provider' ? 'Review & sign' : 'View contract'}</button>}
             </>}
@@ -1467,7 +1463,7 @@ export default function ServiceProviderHiringHistory() {
 
       {viewingListing && (
         <div className="hb-mobile-modal-viewport fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingListing(null)}>
-          <div className="hb-mobile-modal-panel max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
+          <div className="hb-mobile-modal-panel max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#13131a] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between gap-4">
               <h2 className="text-base font-semibold text-gray-900 dark:text-white">{String(viewingListing.title || 'Job listing')}</h2>
               <button type="button" onClick={() => setViewingListing(null)} className="rounded-full border border-purple-300 p-2 text-purple-700 dark:border-purple-600 dark:text-purple-200" aria-label="Close job listing"><X className="h-4 w-4" /></button>
@@ -1482,7 +1478,7 @@ export default function ServiceProviderHiringHistory() {
         <div className="hb-mobile-modal-viewport fixed inset-0 z-[120] overflow-hidden" role="dialog" aria-modal="true" aria-label="Application details">
           <div className="relative flex h-full items-end justify-center p-0 sm:items-center sm:p-5">
             <button type="button" aria-label="Close application details" className="absolute inset-0 bg-black/75 backdrop-blur-sm" onClick={() => { setShowInterestModal(false); setSelectedInterest(null); }} />
-            <div className="hb-mobile-modal-panel relative flex max-h-[94dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#171426] sm:max-h-[90dvh] sm:rounded-3xl">
+            <div className="hb-mobile-modal-panel relative flex max-h-[94dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-3xl border border-purple-500/30 bg-white shadow-2xl dark:bg-[#13131a] sm:max-h-[90dvh] sm:rounded-3xl">
               {/* Header */}
               <div className="relative shrink-0 bg-gradient-to-r from-purple-800 via-fuchsia-800 to-pink-700 px-5 py-5 sm:px-7 sm:py-6">
                 <button 
@@ -1604,7 +1600,7 @@ export default function ServiceProviderHiringHistory() {
                 )}
 
                 {/* Actions */}
-                <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-col gap-3 border-t border-purple-100 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-800/50 dark:bg-[#171426]/95 sm:-mx-7 sm:-mb-7 sm:flex-row sm:justify-end sm:px-7">
+                <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-col gap-3 border-t border-purple-100 bg-white/95 px-5 py-4 backdrop-blur dark:border-purple-500/30 dark:bg-[#13131a]/95 sm:-mx-7 sm:-mb-7 sm:flex-row sm:justify-end sm:px-7">
                   <button 
                     onClick={() => navigate(buildHouseholdProfileLink({ household: selectedInterest.household, fallbackProfileId: selectedInterest.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: selectedInterest.household?.id || selectedInterest.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-xs font-semibold text-white transition-all hover:from-purple-700 hover:to-pink-700"
@@ -1632,7 +1628,7 @@ export default function ServiceProviderHiringHistory() {
                           });
                         }}
                         disabled={actionLoading === selectedInterest.id}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg transition-colors hover:from-purple-700 hover:to-pink-700 disabled:opacity-50"
                       >
                         <CheckCircle className="w-4 h-4" /> Accept offer
                       </button>
@@ -1686,7 +1682,7 @@ export default function ServiceProviderHiringHistory() {
           same thing again. */}
       {answeringInterest && (
         <div className="hb-mobile-modal-viewport fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-          <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
+          <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#13131a] sm:rounded-3xl">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">
               Decline this offer?
             </h3>

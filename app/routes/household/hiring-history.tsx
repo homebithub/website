@@ -1307,7 +1307,7 @@ export default function HiringHistory() {
 
         {/* Tabs */}
         <div className="bg-white rounded-2xl shadow-sm border border-purple-100 mb-6 dark:bg-purple-900/30 dark:shadow-inner dark:shadow-purple-900/40 dark:border-purple-700/50 transition-colors">
-          <div className="border-b border-gray-200 dark:border-purple-800/50">
+          <div className="border-b border-gray-200 dark:border-purple-500/30">
             {/* Scrolls when it has to, but sized so it usually does not have
                 to: at phone widths the old px-6/space-x-6 pushed the last tab
                 past the edge, and no-scrollbar meant nothing showed that there
@@ -1357,7 +1357,7 @@ export default function HiringHistory() {
 
         {/* Empty State for Jobs */}
         {!loading && activeTab === 'jobs' && jobs.length === 0 && (
-          <div key="jobs-empty" className="hb-data-panel-enter bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+          <div key="jobs-empty" className="hb-data-panel-enter bg-white dark:bg-[#13131a] rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <Briefcase className="w-16 h-16 text-purple-400 dark:text-purple-300 mx-auto mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
               No job postings yet
@@ -1499,7 +1499,7 @@ export default function HiringHistory() {
 
         {/* Empty State for Applicants */}
         {!loading && activeTab !== 'jobs' && visibleApplicants.length === 0 && (
-          <div key={`${activeTab}-empty`} className="hb-data-panel-enter bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+          <div key={`${activeTab}-empty`} className="hb-data-panel-enter bg-white dark:bg-[#13131a] rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <HandHeart className="w-16 h-16 text-green-400 dark:text-green-300 mx-auto mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
               {EMPTY_TAB_COPY[activeTab as Exclude<TabType, 'jobs'>]?.title ?? 'Nothing here yet'}
@@ -1611,7 +1611,7 @@ export default function HiringHistory() {
                   onKeyDown={(event) => { if ((event.key === 'Enter' || event.key === ' ') && !isHiringCardAction(event.target)) { event.preventDefault(); markHiringRecordAttended(attentionScope, 'application', interest); setSelectedHiringCard({ kind: 'application', record: interest }); } }}
                   role="button"
                   tabIndex={0}
-                  className={`relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border bg-white p-3 transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 sm:p-7 dark:bg-purple-950/40 ${
+                  className={`relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border bg-white p-3 transition-shadow hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 sm:p-7 dark:bg-[#13131a] ${
                     isNew
                       ? 'border-purple-500 ring-2 ring-purple-200/80 dark:border-fuchsia-500/70 dark:ring-fuchsia-900/40'
                       : 'border-purple-100 dark:border-purple-800/40'
@@ -1764,7 +1764,7 @@ export default function HiringHistory() {
                         data-tour="hiring-chat"
                         onClick={() => handleChatWithApplicant(interest)}
                         disabled={chatLoading}
-                        className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-purple-200/70 bg-purple-50 px-2 py-2 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 sm:w-auto sm:px-3 sm:py-1.5 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
+                        className="inline-flex w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 sm:w-auto sm:px-3 sm:py-1.5"
                       >
                         {chatLoading ? (
                           <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
@@ -1846,7 +1846,7 @@ export default function HiringHistory() {
                                 : handleAcceptInterest(interest)
                             }
                             disabled={contractCreating === interest.id || shortlistLoading}
-                          className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-green-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-green-600 sm:w-auto sm:py-1.5"
+                          className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:from-purple-700 hover:to-pink-700 sm:w-auto sm:py-1.5"
                           >
                             <UserCheck className="h-4 w-4" />
                             {contractCreating === interest.id || shortlistLoading ? 'Working…' : advanceLabel}
@@ -1860,7 +1860,7 @@ export default function HiringHistory() {
                         <button
                           type="button"
                           onClick={() => viewEmploymentContract(existingContract)}
-                          className="col-span-2 inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-2.5 text-xs font-semibold text-white shadow-lg transition hover:from-purple-700 hover:via-pink-700 hover:to-rose-600 sm:col-auto sm:w-auto sm:py-1.5"
+                          className="col-span-2 inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg transition hover:from-purple-700 hover:to-pink-700 sm:col-auto sm:w-auto sm:py-1.5"
                         >
                           <FileText className="h-4 w-4" />
                           View contract
@@ -1881,7 +1881,7 @@ export default function HiringHistory() {
                         className={`inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-semibold transition-colors sm:w-auto sm:px-5 sm:py-1.5 ${
                           existingContract?.id
                             ? 'border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-200 dark:hover:bg-purple-900/30'
-                            : 'bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white shadow-lg hover:from-purple-700 hover:via-pink-700 hover:to-rose-500'
+                            : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:via-pink-700 hover:to-rose-500'
                         }`}
                       >
                         <Eye className="h-4 w-4" />
@@ -1942,22 +1942,22 @@ export default function HiringHistory() {
               <button type="button" onClick={() => handleToggleJobStatus(record)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:from-purple-700 hover:to-pink-700">{record.status === 'closed' ? 'Reopen' : 'Close job'}</button>
             </> : <>
               {employmentContract?.id && (
-                <button type="button" onClick={() => viewEmploymentContract(employmentContract)} className="rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-md">
+                <button type="button" onClick={() => viewEmploymentContract(employmentContract)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow-md">
                   View contract
                 </button>
               )}
               {!isJob && ['accepted', 'initiated'].includes(String(record.status).toLowerCase()) && (record.status !== 'initiated' || record.initiated_by_applicant) && (
-                <button type="button" onClick={() => void handleAcceptInterest(record)} disabled={shortlistLoadingInterestId === record.id} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-50">
+                <button type="button" onClick={() => void handleAcceptInterest(record)} disabled={shortlistLoadingInterestId === record.id} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-50 hover:from-purple-700 hover:to-pink-700">
                   {shortlistLoadingInterestId === record.id ? 'Confirming…' : 'Confirm hire'}
                 </button>
               )}
               {!isJob && !employmentContract?.id && String(record.status).toLowerCase() === 'approved' && (
-                <button type="button" onClick={() => void createContractFromApplication(record)} disabled={contractCreating === record.id} className="rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-50">
+                <button type="button" onClick={() => void createContractFromApplication(record)} disabled={contractCreating === record.id} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow-md disabled:opacity-50">
                   {contractCreating === record.id ? 'Creating…' : 'Create optional contract'}
                 </button>
               )}
               <button type="button" onClick={() => { setSelectedHiringCard(null); setHistoryFor(record.id); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">History</button>
-              <button data-tour="hiring-chat" type="button" onClick={() => handleChatWithApplicant(record)} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">Chat</button>
+              <button data-tour="hiring-chat" type="button" onClick={() => handleChatWithApplicant(record)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white hover:from-purple-700 hover:to-pink-700">Chat</button>
               {listing && <button type="button" onClick={() => { setSelectedHiringCard(null); setViewingJob(listing); }} className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:text-purple-200">View job</button>}
               <button type="button" onClick={() => handleViewInterest(record)} className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white">View profile</button>
             </>}
@@ -1977,7 +1977,7 @@ export default function HiringHistory() {
     {/* Modal */}
     <div className="
       relative w-full max-w-[360px] sm:max-w-3xl mx-auto
-      bg-white dark:bg-[#0d0d15]
+      bg-white dark:bg-[#13131a]
       rounded-2xl sm:rounded-3xl
       border border-purple-200/50 dark:border-purple-600/40
       shadow-2xl shadow-purple-500/20
@@ -2109,13 +2109,13 @@ export default function HiringHistory() {
               px-5 sm:px-6 py-1 sm:py-1.5
               text-xs sm:text-sm
               rounded-xl sm:rounded-2xl
-              bg-gradient-to-r from-blue-600 to-purple-600
+              bg-gradient-to-r from-purple-600 to-pink-600
               text-white font-semibold
-              shadow-lg shadow-blue-500/30
-              hover:from-blue-700 hover:to-purple-700
+              shadow-lg shadow-purple-500/30
+              hover:from-purple-700 hover:to-pink-700
               transition-all
               focus:outline-none focus-visible:ring-2
-              focus-visible:ring-offset-2 focus-visible:ring-blue-500
+              focus-visible:ring-offset-2 focus-visible:ring-purple-500
             "
           >
             <FileText className="w-4 h-4" />
@@ -2135,13 +2135,13 @@ export default function HiringHistory() {
               px-5 sm:px-6 py-1 sm:py-1.5
               text-xs sm:text-sm
               rounded-xl sm:rounded-2xl
-              bg-gradient-to-r from-green-600 to-emerald-600
+              bg-gradient-to-r from-purple-600 to-pink-600
               text-white font-semibold
-              shadow-lg shadow-green-500/30
-              hover:from-green-700 hover:to-emerald-700
+              shadow-lg shadow-purple-500/30
+              hover:from-purple-700 hover:to-pink-700
               transition-all
               focus:outline-none focus-visible:ring-2
-              focus-visible:ring-offset-2 focus-visible:ring-green-500
+              focus-visible:ring-offset-2 focus-visible:ring-purple-500
               disabled:opacity-60 disabled:cursor-not-allowed
             "
           >
@@ -2207,7 +2207,7 @@ export default function HiringHistory() {
     <div
       className="
         relative w-full max-w-[360px] sm:max-w-2xl mx-auto
-        bg-white dark:bg-[#0d0d15]
+        bg-white dark:bg-[#13131a]
         rounded-2xl sm:rounded-3xl
         border border-red-200/50 dark:border-red-500/40
         shadow-2xl shadow-red-500/20
@@ -2361,7 +2361,7 @@ export default function HiringHistory() {
 />
 {viewingJob && (
   <div className="hb-mobile-modal-viewport fixed inset-0 z-[140] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setViewingJob(null)}>
-    <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#171122] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
+    <div className="max-h-[90dvh] w-full overflow-y-auto rounded-t-3xl border border-purple-700/40 bg-white p-5 shadow-2xl dark:bg-[#13131a] sm:max-w-2xl sm:rounded-3xl sm:p-6" onClick={(event) => event.stopPropagation()}>
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white">{viewingJob.title || 'Job listing'}</h2>
         <button type="button" onClick={() => setViewingJob(null)} className="rounded-full border border-purple-300 p-2 text-purple-700 dark:border-purple-600 dark:text-purple-200" aria-label="Close job listing"><XCircle className="h-4 w-4" /></button>
@@ -2391,7 +2391,7 @@ export default function HiringHistory() {
     happened. */}
 {terminating && (
   <div className="hb-mobile-modal-viewport fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-    <div className="w-full max-w-md rounded-t-3xl border border-red-200 bg-white p-6 shadow-2xl dark:border-red-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
+    <div className="w-full max-w-md rounded-t-3xl border border-red-200 bg-white p-6 shadow-2xl dark:border-red-500/30 dark:bg-[#13131a] sm:rounded-3xl">
       <h3 className="text-base font-semibold text-gray-900 dark:text-white">
         End the engagement with {terminating.service_provider?.first_name || 'this person'}?
       </h3>
@@ -2437,7 +2437,7 @@ export default function HiringHistory() {
 
 {rejecting && (
   <div className="hb-mobile-modal-viewport fixed inset-0 z-[95] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-    <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#1b1524] sm:rounded-3xl">
+    <div className="w-full max-w-md rounded-t-3xl border border-purple-200 bg-white p-6 shadow-2xl dark:border-purple-500/30 dark:bg-[#13131a] sm:rounded-3xl">
       <h3 className="text-base font-semibold text-gray-900 dark:text-white">
         Not going ahead with {rejecting.service_provider?.first_name || 'this applicant'}?
       </h3>

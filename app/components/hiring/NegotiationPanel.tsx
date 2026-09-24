@@ -107,7 +107,7 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-[#13131a] rounded-xl shadow-sm border border-purple-200 dark:border-purple-500/30">
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
@@ -190,7 +190,7 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
             placeholder="Type your message..."
             rows={2}
             disabled={sending}
-            className="flex-1 px-4 py-1 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white resize-none disabled:opacity-50"
+            className="flex-1 px-4 py-1 border border-purple-200 dark:border-purple-500/30 rounded-xl focus:ring-2 focus:ring-purple-500 dark:bg-[#0d0d14] dark:text-white resize-none disabled:opacity-50"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();

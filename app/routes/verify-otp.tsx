@@ -699,12 +699,14 @@ export default function VerifyOtpPage() {
               </label>
               <input
                 type={usesPhoneTarget ? 'tel' : 'email'}
+                inputMode={usesPhoneTarget ? 'tel' : 'email'}
+                autoComplete={usesPhoneTarget ? 'tel' : 'email'}
                 name="newPhone"
                 value={newPhone}
                 onChange={handleNewPhoneChange}
                 onBlur={handleNewPhoneBlur}
                 required
-                className={`w-full max-w-xs h-12 text-sm px-4 py-3 rounded-lg border bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition ${
+                className={`w-full max-w-xs h-12 text-sm px-4 py-3 rounded-lg border bg-gray-50 dark:bg-[#13131a] text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition ${
                   newPhoneError 
                     ? 'border-red-300 dark:border-red-600' 
                     : newPhone && !newPhoneError
@@ -718,7 +720,7 @@ export default function VerifyOtpPage() {
               )}
               <button
                 type="submit"
-                className="w-full max-w-xs bg-primary-700 text-white py-1 rounded-xl hover:bg-primary-800 transition-colors duration-200 font-semibold disabled:opacity-60"
+                className="w-full max-w-xs bg-gradient-to-r from-purple-600 to-pink-600 text-white py-1 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-colors duration-200 font-semibold disabled:opacity-60"
                 disabled={
                   changePhoneLoading ||
                   !!newPhoneError ||

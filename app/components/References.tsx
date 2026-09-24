@@ -205,6 +205,8 @@ const References: React.FC = () => {
               </label>
               <input
                 type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 value={reference.phone}
                 onChange={(e) => updateReference(index, 'phone', e.target.value)}
                 placeholder="0712345678 or +254712345678"

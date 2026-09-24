@@ -181,6 +181,8 @@ export default function BureauServiceProviders() {
         <form className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]" onSubmit={handleInitiateLink}>
           <input
             type="tel"
+            inputMode="tel"
+            autoComplete="tel"
             value={linkPhone}
             onChange={(event) => setLinkPhone(event.target.value)}
             placeholder="+2547XXXXXXXX"

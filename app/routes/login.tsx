@@ -329,6 +329,8 @@ export default function LoginPage() {
               <label htmlFor="phone" className="block text-xs font-semibold text-purple-700 mb-2">Phone Number</label>
               <input
                 type="tel"
+                inputMode="tel"
+                autoComplete="tel"
                 id="phone"
                 name="phone"
                 required
