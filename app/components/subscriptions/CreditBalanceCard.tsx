@@ -24,14 +24,14 @@ export function CreditBalanceCard({ creditBalance, formatted, loading }: CreditB
     <div className={`rounded-xl p-6 border ${
       hasCredit
         ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-700'
-        : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+        : 'bg-gray-50 dark:bg-[#13131a] border-gray-200 dark:border-purple-500/30'
     }`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div className={`p-3 rounded-xl ${
             hasCredit
               ? 'bg-green-100 dark:bg-green-900/30'
-              : 'bg-gray-200 dark:bg-gray-700'
+              : 'bg-gray-200 dark:bg-purple-500/10'
           }`}>
             <WalletIcon className={`w-6 h-6 ${
               hasCredit
@@ -55,7 +55,7 @@ export function CreditBalanceCard({ creditBalance, formatted, loading }: CreditB
 
         <div className="group relative">
           <InformationCircleIcon className="w-5 h-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-help" />
-          <div className="absolute right-0 top-6 w-64 p-3 bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+          <div className="absolute right-0 top-6 w-64 p-3 bg-gray-900 dark:bg-purple-500/10 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
             Credits from downgrades and cancellations. Automatically applied to your next payment.
           </div>
         </div>

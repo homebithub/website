@@ -93,7 +93,7 @@ export function CancelSubscriptionFlow({
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
@@ -107,7 +107,7 @@ export function CancelSubscriptionFlow({
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className="w-full sm:max-w-lg transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+              <Dialog.Panel className="w-full sm:max-w-lg transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200 dark:border-purple-500/30 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                 {/* Step 1: Retention Offers */}
                 {step === 1 && (
                   <>
@@ -141,7 +141,7 @@ export function CancelSubscriptionFlow({
                                 handleClose();
                                 onDowngrade(plan.id);
                               }}
-                              className="w-full p-4 text-left bg-gray-50 dark:bg-gray-700 rounded-xl border-2 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 transition-all"
+                              className="w-full p-4 text-left bg-gray-50 dark:bg-purple-500/10 rounded-xl border-2 border-gray-200 dark:border-gray-600 hover:border-purple-300 dark:hover:border-purple-500 transition-all"
                             >
                               <div className="flex items-center justify-between">
                                 <div>
@@ -237,7 +237,7 @@ export function CancelSubscriptionFlow({
                           maxLength={500}
                           rows={4}
                           disabled={processing}
-                          className={`w-full px-4 py-2 border-2 rounded-xl focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 ${
+                          className={`w-full px-4 py-2 border-2 rounded-xl focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 bg-white dark:bg-purple-500/10 text-gray-900 dark:text-white disabled:opacity-50 ${
                             feedbackError
                               ? 'border-red-500 focus:border-red-500'
                               : 'border-gray-300 dark:border-gray-600 focus:border-purple-500'
@@ -292,7 +292,7 @@ export function CancelSubscriptionFlow({
                     </div>
 
                     {/* Summary */}
-                    <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl space-y-2">
+                    <div className="mb-6 p-4 bg-gray-50 dark:bg-purple-500/10 rounded-xl space-y-2">
                       <div className="flex justify-between">
                         <span className="text-xs text-gray-600 dark:text-gray-400">Current Plan</span>
                         <span className="text-xs font-medium text-gray-900 dark:text-white">

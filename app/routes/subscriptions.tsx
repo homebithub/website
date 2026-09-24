@@ -1,4 +1,4 @@
-import { normalizeProration } from '~/utils/proration';
+import { subscriptionStartAfter, subscriptionPeriodEnd } from '~/utils/subscriptionSchedule';
 import { useNavigate, useLocation } from "react-router";
 import React, { useEffect, useState, Fragment } from "react";
 import { Dialog, Transition } from '@headlessui/react';
@@ -32,6 +32,7 @@ import { notifySubscriptionChanged } from '~/utils/subscriptionEvents';
 import { loadSubscriptionSnapshot } from '~/utils/subscriptionSnapshot';
 import {
   extractPayments,
+  extractSubscription,
   extractPlans,
   resolvePaymentReference,
   type NormalizedPayment,
@@ -78,6 +79,8 @@ export default function SubscriptionsPage() {
   
   // Subscription management state
   const [showCancelFlow, setShowCancelFlow] = useState(false);
+  const [queuedSubscriptions, setQueuedSubscriptions] = useState<NormalizedSubscription[]>([]);
+  const [queueLoadError, setQueueLoadError] = useState('');
   const [showChangePlanModal, setShowChangePlanModal] = useState(false);
   const [selectedNewPlan, setSelectedNewPlan] = useState<SubscriptionPlan | null>(null);
   const [creditBalance, setCreditBalance] = useState<CreditBalanceResponse | null>(null);
@@ -127,6 +130,7 @@ export default function SubscriptionsPage() {
   };
 
   const handleSelectCheckoutPlan = async (plan: SubscriptionPlan) => {
+    if (queueLoadError) throw new Error(queueLoadError);
     setSelectedCheckoutPlan(plan);
 
     // 1. Cached auth user is the most up-to-date local source
@@ -161,7 +165,7 @@ export default function SubscriptionsPage() {
 
   const initiateCheckout = async () => {
     if (!selectedCheckoutPlan) return;
-    const expectsTrial = (selectedCheckoutPlan.trial_days ?? 0) > 0;
+    const expectsTrial = !subscription && (selectedCheckoutPlan.trial_days ?? 0) > 0;
     if (!expectsTrial && !checkoutPhone) {
       setCheckoutError('Please enter your phone number');
       return;
@@ -268,10 +272,21 @@ export default function SubscriptionsPage() {
       }
 
       try {
-        const paymentsData = await paymentsService.listMyPayments('', 0, 10) as any;
-        setPayments(extractPayments(paymentsData));
+        const history: NormalizedPayment[] = [];
+        // An upcoming purchase can be older than the latest history page.
+        for (let offset = 0; ; offset += 50) {
+          const page = extractPayments(await paymentsService.listMyPayments('', offset, 50));
+          history.push(...page);
+          if (page.length < 50) break;
+        }
+        setPayments(history.slice(0, 10));
+        const purchasedIds = [...new Set(history.filter(p => p.status === 'completed' && p.profile_type === profileType && p.merchant_transaction_id?.startsWith('PLAN-')).map(p => p.subscription_id).filter((id): id is string => Boolean(id)))];
+        const purchased = await Promise.allSettled(purchasedIds.map(id => paymentsService.getSubscription(id)));
+        setQueueLoadError(purchased.some(result => result.status === 'rejected') ? 'Could not verify all upcoming packages. Refresh before making another payment.' : '');
+        setQueuedSubscriptions(purchased.flatMap(result => result.status === 'fulfilled' ? [extractSubscription(result.value)] : []).filter((sub): sub is NormalizedSubscription => Boolean(sub && sub.status === 'scheduled')).sort((a, b) => Date.parse(a.current_period_start) - Date.parse(b.current_period_start)));
       } catch (err) {
         console.error('[Subscriptions] Failed to fetch payments:', err);
+        setQueueLoadError('Could not verify payment history. Refresh before making another payment.');
       }
 
       try {
@@ -294,6 +309,7 @@ export default function SubscriptionsPage() {
     null;
   const currentExpiresAt = subscriptionAccess?.expires_at || subscription?.trial_end || subscription?.current_period_end || '';
   const isTrialing = subscriptionAccess?.is_trial || subscription?.status === 'trial';
+  const nextPackageStartsAt = subscriptionStartAfter(currentExpiresAt, queuedSubscriptions);
   const daysRemaining = subscriptionAccess?.days_remaining ?? 0;
 
   // Fetch credit balance
@@ -355,23 +371,11 @@ export default function SubscriptionsPage() {
     setTimeout(() => setSuccessMessage(''), 5000);
   };
 
-  // Handle change plan
+  // Opening checkout does not create a payment or mutate the subscription.
   const handleChangePlan = async (newPlanId: string) => {
-    if (!subscription?.id) return;
-    
-    await paymentsService.changePlan(subscription.id, newPlanId, '');
-    setSuccessMessage('Plan changed successfully');
-    await fetchSubscriptionData();
-    await fetchCreditBalance();
-    setTimeout(() => setSuccessMessage(''), 5000);
-  };
-
-  // Handle preview proration
-  const handlePreviewProration = async (newPlanId: string) => {
-    if (!subscription?.id) return { unused_credit: 0, prorated_charge: 0, net_amount: 0, days_used: 0, days_remaining: 0, total_days: 0, description: '' };
-    
-    const preview = await paymentsService.previewProration(subscription.id, newPlanId, '');
-    return normalizeProration(preview);
+    const plan = relevantPlans.find(plan => plan.id === newPlanId);
+    if (!plan) throw new Error('This package is no longer available. Refresh and try again.');
+    await handleSelectCheckoutPlan(plan);
   };
 
   const initiatePayment = async () => {
@@ -658,7 +662,7 @@ export default function SubscriptionsPage() {
             ) : subscriptionLoadError ? (
               <div role="alert" className="rounded-xl border border-purple-300 p-5 dark:border-purple-500/40">
                 <p>{subscriptionLoadError}</p>
-                <button type="button" onClick={() => void fetchSubscriptionData()} className="mt-3 rounded-lg bg-purple-600 px-4 py-2 font-semibold text-white">Retry subscription lookup</button>
+                <button type="button" onClick={() => void fetchSubscriptionData()} className="mt-3 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 px-4 py-2 font-semibold text-white">Retry subscription lookup</button>
               </div>
             ) : (
               <div className="space-y-8">
@@ -733,16 +737,24 @@ export default function SubscriptionsPage() {
                       </div>
 
                       <button
+                        disabled={Boolean(queueLoadError)}
                         onClick={() => {
                           setPaymentAmount(currentPlan?.price_amount || 0);
                           setPhoneNumber(currentUserPhone);
-                          setShowPaymentModal(true);
+                          if (!queueLoadError) setShowPaymentModal(true);
                         }}
                         className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg"
                       >
                         <CreditCardIcon className="w-5 h-5" />
                         Make Payment Now
                       </button>
+
+                      {queueLoadError && <ErrorAlert message={queueLoadError} />}
+                      {queuedSubscriptions.length > 0 && <section className="mt-5 rounded-xl border border-purple-200 p-4 dark:border-purple-500/30">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Paid upcoming packages</h3>
+                        {queuedSubscriptions.map(queued => <p key={queued.id} className="mt-2 text-sm text-gray-600 dark:text-gray-300">{queued.plan?.name}: {formatDate(queued.current_period_start)} – {formatDate(queued.current_period_end)}</p>)}
+                        <p className="mt-2 text-xs text-purple-700 dark:text-purple-300">Your current plan remains active until its expiry.</p>
+                      </section>}
 
                       {/* Subscription Management Actions */}
                       <div className="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-2">
@@ -784,7 +796,7 @@ export default function SubscriptionsPage() {
                           Change Your Plan
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                          Switch to a different billing cycle. Your new plan will take effect after your current subscription expires on <strong>{formatDate(subscription.current_period_end)}</strong>.
+                          Switch to a different billing cycle. After payment succeeds, your new plan starts after your current coverage on <strong>{formatDate(nextPackageStartsAt.toISOString())}</strong>.
                         </p>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -813,7 +825,7 @@ export default function SubscriptionsPage() {
                                   }}
                                   className="w-full px-6 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/25 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 >
-                                  Switch to This Plan
+                                  Choose This Plan
                                 </button>
                               </div>
                             </div>
@@ -973,7 +985,7 @@ export default function SubscriptionsPage() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
           </Transition.Child>
 
           <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
@@ -987,7 +999,7 @@ export default function SubscriptionsPage() {
                 leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border dark:border-[#1e1e2e] p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200 dark:border-purple-500/30 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   {paymentStatus === 'idle' && (
                     <>
                       <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white mb-4">
@@ -1004,6 +1016,7 @@ export default function SubscriptionsPage() {
                           </div>
                         </div>
 
+                        {subscription && <p className="rounded-xl bg-purple-50 p-3 text-xs text-purple-800 dark:bg-purple-500/10 dark:text-purple-200">After successful payment, this package starts on {formatDate(nextPackageStartsAt.toISOString())} and expires on {formatDate(subscriptionPeriodEnd(nextPackageStartsAt, currentPlan?.billing_cycle || 'monthly').toISOString())}. Your current plan stays unchanged until then.</p>}
                         <div>
                           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                             M-Pesa Phone Number
@@ -1015,7 +1028,7 @@ export default function SubscriptionsPage() {
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
                             placeholder="0712345678"
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-[#2a2a3d] rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-[#0d0d14] dark:text-white"
+                            className="w-full px-4 py-2 border border-purple-200 dark:border-purple-500/30 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-[#0d0d14] dark:text-white"
                           />
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             07XXXXXXXX or 01XXXXXXXX
@@ -1028,14 +1041,14 @@ export default function SubscriptionsPage() {
                           <button
                             onClick={handleCloseModal}
                             disabled={processingPayment}
-                            className="flex-1 px-4 py-1 border border-gray-300 dark:border-[#2a2a3d] rounded-xl hover:bg-gray-50 dark:hover:bg-[#1e1e2e] transition-colors disabled:opacity-50"
+                            className="flex-1 px-4 py-1 border border-purple-200 dark:border-purple-500/30 rounded-xl hover:bg-gray-50 dark:hover:bg-[#1e1e2e] transition-colors disabled:opacity-50"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={initiatePayment}
                             disabled={!phoneNumber || processingPayment}
-                            className="flex-1 px-4 py-1 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-4 py-1 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Pay Now
                           </button>
@@ -1082,7 +1095,7 @@ export default function SubscriptionsPage() {
                         Payment Successful!
                       </p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">
-                        Your payment has been processed
+                        Your payment is confirmed. The purchased package starts after your current coverage ends.
                       </p>
                     </div>
                   )}
@@ -1096,7 +1109,7 @@ export default function SubscriptionsPage() {
                       {errorMessage && <ErrorAlert message={errorMessage} title="Reason" className="mb-4" />}
                       <button
                         onClick={handleRetry}
-                        className="w-full px-4 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors"
+                        className="w-full px-4 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl transition-colors"
                       >
                         Try Again
                       </button>
@@ -1114,7 +1127,7 @@ export default function SubscriptionsPage() {
                       </p>
                       <button
                         onClick={handleRetry}
-                        className="w-full px-4 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors"
+                        className="w-full px-4 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl transition-colors"
                       >
                         Try Again
                       </button>
@@ -1139,7 +1152,7 @@ export default function SubscriptionsPage() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
           </Transition.Child>
 
           <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
@@ -1153,7 +1166,7 @@ export default function SubscriptionsPage() {
                 leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="w-full sm:max-w-lg transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border dark:border-[#1e1e2e] p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+                <Dialog.Panel className="w-full sm:max-w-lg transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200 dark:border-purple-500/30 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <div className="flex items-start justify-between mb-4">
                     <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
                       Transaction Details
@@ -1420,7 +1433,7 @@ export default function SubscriptionsPage() {
           }}
           currentSubscription={subscription as any}
           newPlan={selectedNewPlan as any}
-          onPreview={handlePreviewProration}
+          startsAt={nextPackageStartsAt}
           onConfirm={handleChangePlan}
         />
       )}
@@ -1462,16 +1475,17 @@ export default function SubscriptionsPage() {
                               / {getBillingCycleLabel(selectedCheckoutPlan.billing_cycle)}
                             </span>
                           </p>
-                          {(selectedCheckoutPlan.trial_days ?? 0) > 0 && (
+                          {(!subscription && (selectedCheckoutPlan.trial_days ?? 0) > 0) && (
                             <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                               Eligible new subscribers start with a {selectedCheckoutPlan.trial_days}-day trial. No payment is taken today.
                             </p>
                           )}
                         </div>
 
+                        {subscription && <p className="rounded-xl bg-purple-50 p-3 text-xs text-purple-800 dark:bg-purple-500/10 dark:text-purple-200">After successful payment, this package starts on {formatDate(nextPackageStartsAt.toISOString())} and expires on {formatDate(subscriptionPeriodEnd(nextPackageStartsAt, selectedCheckoutPlan?.billing_cycle || currentPlan?.billing_cycle || 'monthly').toISOString())}. Your current plan stays unchanged until then.</p>}
                         <div>
                           <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            M-Pesa Phone Number{(selectedCheckoutPlan.trial_days ?? 0) > 0 ? ' (only needed if your trial was already used)' : ''}
+                            M-Pesa Phone Number{(!subscription && (selectedCheckoutPlan.trial_days ?? 0) > 0) ? ' (only needed if your trial was already used)' : ''}
                           </label>
                           <input
                             type="tel"
@@ -1480,7 +1494,7 @@ export default function SubscriptionsPage() {
                             value={checkoutPhone}
                             onChange={(e) => setCheckoutPhone(e.target.value)}
                             placeholder="0712345678"
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-[#2a2a3d] rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-[#0d0d14] dark:text-white"
+                            className="w-full px-4 py-2 border border-purple-200 dark:border-purple-500/30 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-[#0d0d14] dark:text-white"
                           />
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             07XXXXXXXX or 01XXXXXXXX
@@ -1498,10 +1512,10 @@ export default function SubscriptionsPage() {
                           </button>
                           <button
                             onClick={initiateCheckout}
-                            disabled={checkoutProcessing || ((selectedCheckoutPlan.trial_days ?? 0) <= 0 && !checkoutPhone)}
-                            className="flex-1 px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={checkoutProcessing || ((Boolean(subscription) || (selectedCheckoutPlan.trial_days ?? 0) <= 0) && !checkoutPhone)}
+                            className="flex-1 px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {(selectedCheckoutPlan.trial_days ?? 0) > 0 ? 'Continue' : 'Pay with M-Pesa'}
+                            {(!subscription && (selectedCheckoutPlan.trial_days ?? 0) > 0) ? 'Continue' : 'Pay with M-Pesa'}
                           </button>
                         </div>
                       </div>
@@ -1531,8 +1545,8 @@ export default function SubscriptionsPage() {
                   {checkoutStatus === 'success' && (
                     <div className="text-center py-8">
                       <CheckCircleIcon className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">Subscription Active!</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Your subscription is now active.</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">{subscription ? "Payment confirmed" : "Subscription Active!"}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{subscription ? "Your paid package is queued after your current coverage. Its start and expiry dates appear under Paid upcoming packages." : "Your subscription is now active."}</p>
                     </div>
                   )}
 
@@ -1543,7 +1557,7 @@ export default function SubscriptionsPage() {
                       {checkoutError && <ErrorAlert message={checkoutError} className="mb-4" />}
                       <button
                         onClick={handleCheckoutRetry}
-                        className="w-full px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                        className="w-full px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-colors"
                       >
                         Try Again
                       </button>
@@ -1557,7 +1571,7 @@ export default function SubscriptionsPage() {
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Check payment history for status.</p>
                       <button
                         onClick={handleCheckoutRetry}
-                        className="w-full px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                        className="w-full px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-colors"
                       >
                         Try Again
                       </button>

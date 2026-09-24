@@ -1,268 +1,57 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { Fragment, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { XMarkIcon, ArrowRightIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import type { Subscription, SubscriptionPlan, ProrationDetails } from '~/types/payments';
+import type { Subscription, SubscriptionPlan } from '~/types/payments';
 import { formatCurrency, formatDate } from '~/utils/formatting/currency';
+import { subscriptionPeriodEnd } from '~/utils/subscriptionSchedule';
 
 interface ChangePlanModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentSubscription: Subscription;
   newPlan: SubscriptionPlan;
-  onPreview: (newPlanId: string) => Promise<ProrationDetails>;
+  startsAt: Date;
   onConfirm: (newPlanId: string) => Promise<void>;
 }
 
-export function ChangePlanModal({
-  isOpen,
-  onClose,
-  currentSubscription,
-  newPlan,
-  onPreview,
-  onConfirm,
-}: ChangePlanModalProps) {
-  const [proration, setProration] = useState<ProrationDetails | null>(null);
-  const [loading, setLoading] = useState(true);
+export function ChangePlanModal({ isOpen, onClose, currentSubscription, newPlan, startsAt, onConfirm }: ChangePlanModalProps) {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!isOpen) return;
-    let cancelled = false;
-    setLoading(true);
-    setProration(null);
-    setError('');
-    onPreview(newPlan.id).then((data) => {
-      if (!cancelled) setProration(data);
-    }).catch((err) => {
-      if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load proration preview');
-    }).finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [isOpen, newPlan.id]);
-
-  const handleConfirm = async () => {
+  const continueToPayment = async () => {
     setProcessing(true);
     setError('');
-
-    try {
-      await onConfirm(newPlan.id);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change plan');
-    } finally {
-      setProcessing(false);
-    }
+    try { await onConfirm(newPlan.id); onClose(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'Could not open checkout. Please try again.'); }
+    finally { setProcessing(false); }
   };
-
-  const isUpgrade = proration && proration.net_amount > 0;
-  const isDowngrade = proration && proration.net_amount < 0;
-
-  return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-50" onClose={() => !processing && onClose()}>
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
-        </Transition.Child>
-
-        <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
-            <Transition.Child
-              as={Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-              enterTo="opacity-100 translate-y-0 sm:scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 translate-y-0 sm:scale-100"
-              leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-            >
-              <Dialog.Panel className="w-full sm:max-w-2xl transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
-                <div className="flex items-start justify-between mb-6">
-                  <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
-                    Change Subscription Plan
-                  </Dialog.Title>
-                  <button
-                    onClick={() => !processing && onClose()}
-                    disabled={processing}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
-                  >
-                    <XMarkIcon className="w-6 h-6" />
-                  </button>
-                </div>
-
-                {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <ArrowPathIcon className="w-8 h-8 animate-spin text-purple-500" />
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Plan Comparison */}
-                    <div className="flex items-center gap-4">
-                      {/* Current Plan */}
-                      <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Current Plan</p>
-                        <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                          {currentSubscription.plan?.name}
-                        </h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-300">
-                          {formatCurrency(currentSubscription.plan?.price_amount || 0)}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          /{currentSubscription.plan?.billing_cycle}
-                        </p>
-                      </div>
-
-                      {/* Arrow */}
-                      <ArrowRightIcon className="w-6 h-6 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-
-                      {/* New Plan */}
-                      <div className="flex-1 p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-700">
-                        <p className="text-xs text-purple-600 dark:text-purple-400 mb-1">New Plan</p>
-                        <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                          {newPlan.name}
-                        </h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-300">
-                          {formatCurrency(newPlan.price_amount)}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          /{newPlan.billing_cycle}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Proration Breakdown */}
-                    {proration && (
-                      <>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-xl space-y-3">
-                          <h4 className="font-semibold text-gray-900 dark:text-white">
-                            Proration Breakdown
-                          </h4>
-
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-xs">
-                              <span className="text-gray-600 dark:text-gray-400">
-                                Unused credit from current plan
-                              </span>
-                              <span className="font-medium text-green-600 dark:text-green-400">
-                                +{formatCurrency(proration.unused_credit)}
-                              </span>
-                            </div>
-
-                            <div className="flex justify-between text-xs">
-                              <span className="text-gray-600 dark:text-gray-400">
-                                Prorated charge for new plan
-                              </span>
-                              <span className="font-medium text-gray-900 dark:text-white">
-                                {formatCurrency(proration.prorated_charge)}
-                              </span>
-                            </div>
-
-                            <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                              <div className="flex justify-between">
-                                <span className="font-semibold text-gray-900 dark:text-white">
-                                  Net Amount
-                                </span>
-                                <span className={`text-base font-bold ${
-                                  isUpgrade
-                                    ? 'text-purple-600 dark:text-purple-400'
-                                    : 'text-green-600 dark:text-green-400'
-                                }`}>
-                                  {formatCurrency(Math.abs(proration.net_amount))}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="pt-3 border-t border-gray-200 dark:border-gray-600">
-                            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                              <span>Days used: {proration.days_used}</span>
-                              <span>Days remaining: {proration.days_remaining}</span>
-                              <span>Total: {proration.total_days} days</span>
-                            </div>
-                          </div>
-
-                          <p className="text-xs text-gray-600 dark:text-gray-300 pt-2">
-                            {proration.description}
-                          </p>
-                        </div>
-
-                        {/* Payment Summary */}
-                        <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-700">
-                          <h4 className="font-semibold text-gray-900 dark:text-white mb-3">
-                            Payment Summary
-                          </h4>
-
-                          {isUpgrade && (
-                            <p className="text-xs text-gray-700 dark:text-gray-300 mb-2">
-                              You'll be charged{' '}
-                              <strong className="text-purple-600 dark:text-purple-400">
-                                {formatCurrency(proration.net_amount)}
-                              </strong>{' '}
-                              now
-                            </p>
-                          )}
-
-                          {isDowngrade && (
-                            <p className="text-xs text-gray-700 dark:text-gray-300 mb-2">
-                              <strong className="text-green-600 dark:text-green-400">
-                                {formatCurrency(Math.abs(proration.net_amount))}
-                              </strong>{' '}
-                              will be added to your credit balance
-                            </p>
-                          )}
-
-                          <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                            <p>
-                              Next billing date:{' '}
-                              <strong className="text-gray-900 dark:text-white">
-                                {formatDate(new Date(Date.now() + proration.days_remaining * 24 * 60 * 60 * 1000).toISOString())}
-                              </strong>
-                            </p>
-                            <p>
-                              Next billing amount:{' '}
-                              <strong className="text-gray-900 dark:text-white">
-                                {formatCurrency(newPlan.price_amount)}
-                              </strong>
-                            </p>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    {error && <ErrorAlert message={error} />}
-
-                    {/* Actions */}
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => !processing && onClose()}
-                        disabled={processing}
-                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleConfirm}
-                        disabled={processing || !proration}
-                        className="flex-1 px-6 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/25 hover:scale-[1.02] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                      >
-                        {processing ? 'Processing...' : 'Confirm Plan Change'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </Dialog.Panel>
-            </Transition.Child>
-          </div>
+  return <Transition appear show={isOpen} as={Fragment}>
+    <Dialog as="div" className="relative z-50" onClose={() => !processing && onClose()}>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="hb-mobile-modal-viewport fixed inset-0 overflow-y-auto">
+        <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
+          <Dialog.Panel className="hb-mobile-modal-panel w-full sm:max-w-lg overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-purple-200 bg-white dark:bg-[#13131a] dark:border-purple-500/30 p-6 shadow-xl max-h-[90dvh]">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">Change Subscription Plan</Dialog.Title>
+              <button aria-label="Close" disabled={processing} onClick={onClose} className="rounded-full border border-purple-200 p-2 text-gray-500 dark:border-purple-500/30 dark:text-purple-200"><XMarkIcon className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-5 text-sm text-gray-700 dark:text-gray-300">
+              <p>Your current {currentSubscription.plan?.name || 'subscription'} remains unchanged. After payment succeeds, <strong>{newPlan.name}</strong> will start after your current coverage ends.</p>
+              <dl className="space-y-3 rounded-xl border border-purple-200 bg-purple-50 p-4 dark:border-purple-500/30 dark:bg-purple-500/10">
+                <div className="flex justify-between gap-3"><dt>Pay now</dt><dd className="font-semibold">{formatCurrency(newPlan.price_amount)}</dd></div>
+                <div className="flex justify-between gap-3"><dt>New package starts</dt><dd>{formatDate(startsAt.toISOString())}</dd></div>
+                <div className="flex justify-between gap-3"><dt>New expiry after payment</dt><dd>{formatDate(subscriptionPeriodEnd(startsAt, newPlan.billing_cycle).toISOString())}</dd></div>
+              </dl>
+              <p>Continue to confirm your M-Pesa phone number. If you cancel or do not complete payment, your subscription will not change. No unused time is deducted and no new free trial is added.</p>
+              {error && <ErrorAlert message={error} />}
+              <div className="flex gap-3">
+                <button disabled={processing} onClick={onClose} className="flex-1 rounded-xl border border-purple-200 px-4 py-2 dark:border-purple-500/30">Not now</button>
+                <button disabled={processing} onClick={continueToPayment} className="flex-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 font-semibold text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50">{processing ? 'Opening…' : 'Continue to payment'}</button>
+              </div>
+            </div>
+          </Dialog.Panel>
         </div>
-      </Dialog>
-    </Transition>
-  );
+      </div>
+    </Dialog>
+  </Transition>;
 }

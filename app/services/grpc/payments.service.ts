@@ -194,6 +194,18 @@ export const paymentsService = {
   },
 
   // ── Payment Processing ──────────────────────────────
+  async getSubscription(subscriptionId: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const request = new payments_pb.GetSubscriptionRequest();
+      request.setSubscriptionId(subscriptionId);
+      request.setUserId(resolveUserId(''));
+      retryOnExpiry((cb) => paymentsClient.getSubscription(request, getMetadata(), cb), (err: any, response: any) => {
+        if (err) reject(handleGrpcError(err));
+        else resolve(response);
+      });
+    });
+  },
+
   async createSubscriptionCheckout(userId: string, planId: string, phoneNumber: string, profileId: string, profileType: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.CreateSubscriptionCheckoutRequest();

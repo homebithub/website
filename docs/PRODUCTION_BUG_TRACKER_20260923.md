@@ -1,6 +1,6 @@
 # Homebit bug and acceptance tracker
 
-Reported and audited: 2026-09-23. Scope: 18 original reports plus three UI follow-ups (HB-19–21). Target: **production, https://homebit.co.ke**, as confirmed by the user.
+Reported and audited: 2026-09-23. Scope: 18 original reports plus five follow-ups (HB-19–23). Target: **production, https://homebit.co.ke**, as confirmed by the user.
 
 **Release update — 2026-09-24: 19 confirmed issues implemented, locally verified, and deployed to production (16 original reports plus HB-19–21). All four affected services are healthy. HB-14 (filters) and HB-18 (chat double ticks) remain under investigation. User acceptance is pending for every item.**
 
@@ -42,6 +42,8 @@ This is the working record for fixing and verifying each item before the user pe
 | HB-19 | Show phone keypad for phone fields on mobile | Code-confirmed: phone fields lacked explicit inputMode; alternate phone used a text input | Deployed; user retest pending |
 | HB-20 | Respect dark theme throughout password recovery; remove Safaricom-only banner | User screenshots and source confirm missing dark input classes and obsolete banner | Deployed; user retest pending |
 | HB-21 | Align hiring dialogs and primary actions with the purple theme for both profiles | User screenshot and source confirm inconsistent panel colors and primary button styles | Deployed; user retest pending |
+| HB-22 | Match subscription primary buttons and modals to app theme | Screenshots and code confirm flat purple buttons and inconsistent modal surfaces | Verified locally; deployment pending |
+| HB-23 | Require payment before changing packages; preserve current coverage and queue the paid period | Code and executable PostgreSQL/M-Pesa adapter tests confirm old ChangePlan creates an uncharged payment and reports success without checkout | Verified locally; deployment pending |
 
 ## Verification and release gate
 
@@ -268,3 +270,17 @@ All changes were pushed to the services' `master` branches. Deployment-tag commi
 **Retest:** On a phone, tap the phone field on login, signup and recovery; confirm the telephone keypad. Switch light/dark through recovery and verify readable inputs with no carrier banner. As each profile, visit every Hiring tab, open details and available action dialogs, and check purple primary buttons (especially Chat) and consistent dark surfaces.
 
 **Deployment:** Website source `fa29255` pushed to `master`; deployment tag commit `895e490`, image `ghcr.io/homebithub/website:20260924142902`. Rollout verified healthy (1/1 ready and available) on 2026-09-24 at 17:33 EAT. Auth, payments and notifications remain healthy on their previous images; no backend changes were required. Live browser verification confirms the recovery banner is absent, the phone field has `inputmode="tel"`, and recovery/reset inputs use `rgb(19, 19, 26)` dark backgrounds with white text. User acceptance remains pending.
+
+
+## Subscription follow-up — 2026-09-24 (HB-22–23)
+
+- **HB-22:** Pay, checkout/retry and related subscription primary buttons use the purple-to-pink theme. Subscription change/cancellation/payment/transaction dialogs use the standard dark surface and purple borders; credit balance follows the same theme.
+- **HB-23:** Choosing a package opens a price/date preview and then phone-number checkout. No plan-change write or payment record is made merely by opening/cancelling the preview. The full plan price is charged through the M-Pesa adapter only on explicit payment. After provider confirmation, a separate paid period starts at the end of current coverage (including already paid queued packages), and expires one purchased billing period later. Current plan/trial stays intact until then. Failed or abandoned payment does not migrate the user. Duplicate callbacks are idempotent, failed voluntary checkout is not automatically retried, and old ChangePlan calls reject without mutation.
+- **History and dates:** Paid upcoming packages show their actual start/expiry dates. History and queued coverage are refreshed after payment; success copy distinguishes a queued purchase from immediate activation.
+- **Existing report:** Read-only production audit found one phantom pending UPGRADE payment, with no phone, M-Pesa transaction, receipt or paid timestamp. The account already has its original plan. Migration 36 will mark this uncharged record cancelled while preserving the audit history; it does not change that subscription.
+
+**Validation:** Website: 198 tests across 43 files; TypeScript and production build. Payments: full Go suite with isolated PostgreSQL and fake M-Pesa HTTP provider. Coverage includes active/trial preservation, no-phone rejection with zero payments/prompts, prompt reuse, failed payment, late success, eight simultaneous callbacks, stale processing update, multiple paid periods, activation at expiry and STK provider failure. Migration smoke test cancels a synthetic phantom record while preserving a real-phone pending record. Local browser checks confirmed light/dark preview, full price and dates (16 October + quarterly = 16 January), Not now and Continue to payment. Temporary preview route removed. No real charges or payment messages were sent in testing.
+
+**Retest:** Select a different package, confirm the full price and start/expiry dates, then cancel: plan/history unchanged. Continue: confirm phone and receive the M-Pesa prompt; reject it and confirm current plan/expiry unchanged. Pay successfully: current plan remains until expiry, history says completed, and the new package appears under Paid upcoming packages with the appended expiry. Repeat for both profile types and check subscription dialogs in light/dark mode.
+
+**Deployment:** Payments and website pending; schema migration 36 required before website release. Actual phone/M-Pesa acceptance remains with the user.

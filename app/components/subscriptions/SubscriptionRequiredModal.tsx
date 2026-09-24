@@ -73,7 +73,7 @@ export function SubscriptionRequiredModal({
           ))}
         </div>}
 
-        {unavailable && onRetry && <button type="button" onClick={onRetry} className="w-full rounded-xl bg-purple-600 px-6 py-3 text-sm font-semibold text-white">Retry access check</button>}
+        {unavailable && onRetry && <button type="button" onClick={onRetry} className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 px-6 py-3 text-sm font-semibold text-white">Retry access check</button>}
         {checking && <p role="status" className="text-center text-sm">Checking access…</p>}
         {!unresolved && <Link
           to={plansHref}
