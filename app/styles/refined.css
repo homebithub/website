@@ -1,0 +1,155 @@
+/* Refined is opt-in. All overrides are rooted on <html>, including portal modals.
+   Palette tokens also cover Tailwind hover/focus/responsive variants without
+   changing the Vivid collection or semantic success/error/warning colors. */
+html[data-theme-collection="refined"] {
+  /* Brand accent matches public/shopping.svg, man-trash.svg and mtoi.svg. */
+  --hb-purple-50: 249 249 250;
+  --hb-purple-100: 241 241 243;
+  --hb-purple-200: 220 220 225;
+  --hb-purple-300: 198 194 207;
+  --hb-purple-400: 192 132 252;
+  --hb-purple-500: 147 51 234;
+  --hb-purple-600: 126 34 206;
+  --hb-purple-700: 107 33 168;
+  --hb-purple-800: 88 28 135;
+  --hb-purple-900: 40 37 45;
+  --hb-purple-950: 26 25 29;
+  --hb-page: #f7f7f8;
+  --hb-surface: #fff;
+  --hb-subtle: #f1f1f3;
+  --hb-border: #dddde2;
+  --hb-text: #242329;
+  --hb-accent: #7e22ce;
+  --hb-accent-text: #7e22ce;
+  color-scheme: light;
+}
+html.dark[data-theme-collection="refined"] {
+  --hb-page: #151517;
+  --hb-surface: #202023;
+  --hb-subtle: #2a2a2e;
+  --hb-border: #3c3c42;
+  --hb-text: #f1f1f3;
+  --hb-accent-text: #c084fc;
+  color-scheme: dark;
+}
+html[data-theme-collection="refined"] body {
+  background-color: var(--hb-page);
+  color: var(--hb-text);
+}
+/* Existing gradient surfaces become flat panels; saturated gradient actions
+   retain their white text on a solid purple (or semantic status) background. */
+html[data-theme-collection="refined"] :is([class*="bg-gradient-"], .gradient-bg) {
+  background-image: none !important;
+  background-color: var(--hb-surface);
+}
+html[data-theme-collection="refined"] :is([class*="bg-gradient-"]):is(.from-purple-400, .from-purple-500, .from-purple-600, .from-purple-700, .from-primary-500, .from-primary-600, .from-primary-700, .from-pink-500, .from-pink-600) {
+  background-color: var(--hb-accent);
+}
+html[data-theme-collection="refined"] [class*="bg-gradient-"].text-white { background-color: var(--hb-accent); }
+html[data-theme-collection="refined"] :is(.from-red-500, .from-red-600)[class*="bg-gradient-"] { background-color: #b91c1c; }
+html[data-theme-collection="refined"] :is(.from-green-500, .from-green-600, .from-emerald-500)[class*="bg-gradient-"] { background-color: #15803d; }
+html[data-theme-collection="refined"] :is(.from-blue-500, .from-blue-600, .from-indigo-500, .from-indigo-600)[class*="bg-gradient-"] { background-color: #315c97; }
+html[data-theme-collection="refined"] :is(.bg-clip-text, .gradient-text) {
+  background: none !important;
+  color: var(--hb-accent-text) !important;
+  -webkit-text-fill-color: currentColor;
+}
+html[data-theme-collection="refined"] :is([class*="border-purple-"], [class*="border-primary-"], [class*="border-pink-"], .neon-border) {
+  border-color: var(--hb-border);
+}
+/* Hard-coded dark surfaces predate the shared palette. */
+html.dark[data-theme-collection="refined"] :is(.dark\:bg-\[\#0a0a0f\], .dark\:bg-\[\#0f0f16\], .dark\:bg-\[\#0d0d14\]) { background-color: var(--hb-page); }
+html.dark[data-theme-collection="refined"] :is(.dark\:bg-\[\#13131a\], .dark\:bg-\[\#1a1a24\], .dark\:bg-gray-800, .dark\:bg-gray-900, .dark\:bg-slate-800, .dark\:bg-slate-900) { background-color: var(--hb-surface); }
+html[data-theme-collection="refined"] :is([class*="shadow-glow"], [class*="shadow-light-glow"], [class*="shadow-inner-glow"], [class*="shadow-neon"], .glow-purple, .glow-card, .offer-glow-card, .dark-card, .auth-input) {
+  --tw-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 3px rgb(0 0 0 / 8%);
+}
+html[data-theme-collection="refined"] :is([class*="shadow-purple-"], [class*="shadow-pink-"]) { --tw-shadow-color: rgb(0 0 0 / 8%); }
+html[data-theme-collection="refined"] :is(.glow-card, .offer-glow-card, .glow-button)::before { display: none; }
+html[data-theme-collection="refined"] :is(.glow-card, .offer-glow-card) { background-color: var(--hb-surface); border-color: var(--hb-border); }
+html[data-theme-collection="refined"] :is(.hb-shimmer-surface, .glass-card) { background: var(--hb-surface); }
+html[data-theme-collection="refined"] .hb-shimmer-piece { background: var(--hb-subtle); animation: none; }
+html[data-theme-collection="refined"] :is(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--hb-accent-text); outline-offset: 3px; }
+html[data-theme-collection="refined"] .auth-input { border-width: 1px; }
+html[data-theme-collection="refined"] .peer:checked ~ [class*="peer-checked:bg-gradient"] { background-color: var(--hb-accent); }
+html[data-theme-collection="refined"] .peer:not(:checked) ~ [class*="peer-checked:bg-gradient"] { background-color: var(--hb-border); }
+
+/* Collection chooser swatches deliberately show each collection's true style. */
+.appearance-choice { border: 1px solid #dddde2; border-radius: 16px; padding: 16px; text-align: left; background: white; color: #242329; }
+.dark .appearance-choice { background: #202023; color: #f1f1f3; border-color: #3c3c42; }
+.appearance-choice[aria-checked="true"] { border: 2px solid #7e22ce; padding: 15px; }
+.appearance-choice:focus-visible { outline: 2px solid #7e22ce; outline-offset: 3px; }
+.appearance-swatch { display: flex; gap: 8px; align-items: center; height: 76px; border-radius: 9px; padding: 14px; margin-bottom: 14px; }
+.appearance-swatch span { display: block; width: 32px; height: 32px; border-radius: 8px; }
+.appearance-swatch-vivid { background: linear-gradient(120deg, #f3e8ff, #fce7f3); }
+.appearance-swatch-vivid span:first-child { background: linear-gradient(100deg, #9333ea, #db2777); }
+.appearance-swatch-vivid span:nth-child(2) { background: #e9d5ff; }
+.appearance-swatch-vivid span:last-child { background: #fff; }
+.appearance-swatch-refined { background: #f1f1f3; }
+.appearance-swatch-refined span:first-child { background: #7e22ce; }
+.appearance-swatch-refined span:nth-child(2) { background: #dddde2; }
+.appearance-swatch-refined span:last-child { background: #fff; }
+.dark .appearance-swatch-vivid { background: linear-gradient(120deg, #231332, #30172b); }
+.dark .appearance-swatch-refined { background: #151517; }
+.dark .appearance-swatch-refined span:nth-child(2) { background: #3c3c42; }
+.dark .appearance-swatch-refined span:last-child { background: #202023; }
+html.dark[data-theme-collection="refined"] :is(.dark\:bg-\[\#13131a\]\/95, .dark\:bg-dark-card) { background-color: var(--hb-surface); }
+html.dark[data-theme-collection="refined"] :is(.dark\:bg-purple-500\/10, .dark\:bg-purple-500\/15, .dark\:bg-purple-900\/20, .dark\:bg-purple-900\/40, .dark\:bg-purple-900\/50) { background-color: var(--hb-subtle); }
+html[data-theme-collection="refined"] ::-webkit-scrollbar-track { background: var(--hb-page); }
+html[data-theme-collection="refined"] ::-webkit-scrollbar-thumb { background: #77747c; }
+html[data-theme-collection="refined"] ::-webkit-scrollbar-thumb:hover { background: #918997; }
+html[data-theme-collection="refined"] {
+  --hb-neutral-50: 250 250 250;
+  --hb-neutral-100: 244 244 245;
+  --hb-neutral-200: 228 228 231;
+  --hb-neutral-300: 212 212 216;
+  --hb-neutral-400: 161 161 170;
+  --hb-neutral-500: 113 113 122;
+  --hb-neutral-600: 82 82 91;
+  --hb-neutral-700: 63 63 70;
+  --hb-neutral-800: 39 39 42;
+  --hb-neutral-900: 24 24 27;
+  --hb-neutral-950: 9 9 11;
+}
+html[data-theme-collection="refined"] .hb-theme-page { background-color: var(--hb-page); }
+html[data-theme-collection="refined"] :is(button, a)[class*="bg-gradient-"]:is(.from-purple-500, .from-purple-600, .from-purple-700):hover:not(:disabled) { background-color: #6b21a8; }
+
+/* Signed-in chat, profile editors, billing and hiring include older hard-coded
+   dark surfaces. Cover their opaque/translucent variants at the same root so
+   authentication and portal mounting do not change the selected collection. */
+html.dark[data-theme-collection="refined"] :is(
+  [class*="dark:bg-[#13131a]"], [class*="dark:bg-[#171122]"],
+  [class*="dark:bg-[#111018]"], [class*="dark:bg-[#1a1a2e]"],
+  [class*="dark:bg-[#12121c]"], [class*="dark:bg-[#0f0b1a]"],
+  [class*="dark:bg-[#1b1524]"], [class*="dark:bg-[#111118]"],
+  [class*="dark:bg-[#0d0914]"], [class*="dark:bg-[#161622]"],
+  [class*="dark:bg-[#15101f]"], [class*="dark:bg-[#120b1a]"],
+  [class*="dark:bg-[#11131f]"], [class*="dark:bg-[#17151f]"],
+  [class*="dark:bg-[#171220]"], [class*="dark:bg-[#101017]"],
+  [class*="dark:bg-[#171721]"], [class*="dark:bg-[#151025]"],
+  [class*="dark:bg-[#0d0d15]"], [class*="dark:bg-[#100a1c]"],
+  [class*="dark:bg-[#101019]"]
+) { background-color: var(--hb-surface); }
+html.dark[data-theme-collection="refined"] :is(
+  [class*="dark:bg-[#0f0a16]"], [class*="dark:bg-[#0f0f16]"],
+  [class*="dark:bg-[#0a0a0f]"], [class*="dark:bg-[#020617]"],
+  [class*="dark:bg-[#050510]"]
+) { background-color: var(--hb-page); }
+html[data-theme-collection="refined"] :is(
+  [class*="shadow-[0_0_"], [class*="shadow-[0_-8px_30px_rgba(147,51,234"]
+) {
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 3px rgb(0 0 0 / 8%);
+}
+html[data-theme-collection="refined"] .EmojiPickerReact {
+  --epr-bg-color: var(--hb-surface);
+  --epr-text-color: var(--hb-text);
+  --epr-highlight-color: var(--hb-accent-text);
+  --epr-hover-bg-color: var(--hb-subtle);
+  --epr-emoji-hover-bg-color: var(--hb-subtle);
+  --epr-category-label-bg-color: var(--hb-surface);
+  --epr-search-input-bg-color: var(--hb-page);
+  --epr-search-input-text-color: var(--hb-text);
+  --epr-preview-bg-color: var(--hb-page);
+  --epr-picker-border-color: var(--hb-border);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 12%);
+}

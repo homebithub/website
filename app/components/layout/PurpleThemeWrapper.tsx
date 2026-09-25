@@ -41,7 +41,7 @@ export const PurpleThemeWrapper: React.FC<PurpleThemeWrapperProps> = ({
   // looked right and others did not. Outside a flex column the class is inert,
   // so it is safe everywhere.
   return (
-    <div className={`relative flex flex-1 flex-col ${getBackgroundClass()} transition-colors duration-300 ${className}`}>
+    <div className={`hb-theme-page relative flex flex-1 flex-col ${getBackgroundClass()} transition-colors duration-300 ${className}`}>
       <div className="relative z-10 flex min-h-0 flex-1 flex-col">
         {children}
       </div>

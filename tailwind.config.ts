@@ -1,39 +1,27 @@
 import type { Config } from 'tailwindcss'
+import tailwindColors from 'tailwindcss/colors'
+
+// Keep Vivid's existing palette exactly; Refined substitutes tokens at the root.
+const collectionPalette = (name: string, palette: Record<string, string>) =>
+  Object.fromEntries(Object.entries(palette).map(([shade, hex]) => {
+    const rgb = hex.replace('#', '').match(/.{2}/g)!.map(v => parseInt(v, 16)).join(' ');
+    return [shade, `rgb(var(--hb-${name}-${shade}, ${rgb}) / <alpha-value>)`];
+  }));
 
 const colors = {
-  primary: {
-    50: '#faf5ff',
-    100: '#f3e8ff',
-    200: '#e9d5ff',
-    300: '#d8b4fe',
-    400: '#c084fc',
-    500: '#a855f7',
-    600: '#9333ea',
-    700: '#7e22ce',
-    800: '#6b21a8',
-    900: '#581c87',
-  },
+  primary: collectionPalette('purple', tailwindColors.purple),
+  purple: collectionPalette('purple', tailwindColors.purple),
+  pink: collectionPalette('purple', tailwindColors.pink),
   white: '#ffffff',
-  gray: {
-    50: '#f9fafb',
-    100: '#f3f4f6',
-    200: '#e5e7eb',
-    300: '#d1d5db',
-    400: '#9ca3af',
-    500: '#6b7280',
-    600: '#4b5563',
-    700: '#374151',
-    800: '#1f2937',
-    900: '#111827',
-    950: '#030712', // Extra deep for rich dark mode
-  },
+  gray: collectionPalette('neutral', tailwindColors.gray),
+  slate: collectionPalette('neutral', tailwindColors.slate),
   accent: '#ede9fe',
   text: '#18181b',
   // Enhanced dark mode colors
   dark: {
-    bg: '#0a0a0f',
-    card: '#13131a',
-    border: '#1e1e2e',
+    bg: 'var(--hb-page, #0a0a0f)',
+    card: 'var(--hb-surface, #13131a)',
+    border: 'var(--hb-border, #1e1e2e)',
     text: '#e4e4e7',
     muted: '#71717a',
   }

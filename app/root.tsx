@@ -18,6 +18,8 @@ import { AppLaunchScreen } from "~/components/AppLaunchScreen";
 import { PullToRefresh } from "~/components/PullToRefresh";
 import GuidedRouteTour from '~/components/GuidedRouteTour';
 import { shouldRevalidateRootEnvironment } from '~/utils/routeTransitions';
+import { appearanceBootstrap } from "~/utils/appearance";
+import refinedStylesheet from "./styles/refined.css?url";
 import stylesheet from "./tailwind.css?url";
 
 export const meta: Route.MetaFunction = () => [
@@ -40,6 +42,7 @@ export const meta: Route.MetaFunction = () => [
 
 export const links: Route.LinksFunction = () => [
     { rel: "stylesheet", href: stylesheet },
+    { rel: "stylesheet", href: refinedStylesheet },
     { rel: "canonical", href: "https://homebit.co.ke" },
     { rel: "manifest", href: "/manifest.webmanifest" },
     { rel: "apple-touch-startup-image", href: "/pwa/splash/splash-640x1136.png", media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" },
@@ -215,7 +218,7 @@ export default function App() {
                 {/* Blocking script to prevent theme flash - must be in body, not head (head scripts break React Router CSS injection) */}
                 <script
                     dangerouslySetInnerHTML={{
-                        __html: `(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='dark'){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){document.documentElement.classList.add('dark')}})()`,
+                        __html: appearanceBootstrap,
                     }}
                 />
                 {/* Expose server env to client */}
@@ -224,7 +227,7 @@ export default function App() {
                         __html: `window.ENV=${JSON.stringify(ENV)}`,
                     }}
                 />
-                <ThemeProvider>
+                <ThemeProvider persistToAccount={!import.meta.env.DEV || location.pathname !== "/theme-preview"}>
                     <AuthProvider>
                         <SSEProvider>
                             <WebSocketProvider>

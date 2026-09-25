@@ -9,6 +9,7 @@ import { getStoredUserId } from '~/utils/authStorage';
 
 export interface UserPreferences {
   theme?: 'light' | 'dark' | 'system';
+  theme_collection?: 'vivid' | 'refined';
   language?: string;
   notifications?: boolean;
   email_notifs?: boolean;
@@ -36,6 +37,7 @@ const isBrowser = () => typeof window !== 'undefined';
 
 const defaultPreferences = (): UserPreferences => ({
   theme: 'system',
+  theme_collection: 'vivid',
   email_notifs: false,
   show_onboarding: false,
   compact_view: false,
@@ -78,6 +80,9 @@ export const fetchPreferences = async (): Promise<PreferencesResponse | null> =>
   const remote = await preferencesService.getPreferences(userId);
   const settings = {
     ...cached,
+    // Another account's cached appearance must not override an account default.
+    theme: 'system' as const,
+    theme_collection: 'vivid' as const,
     ...(remote?.preferences || remote?.data || {}),
   };
   writeStoredPreferences(settings);

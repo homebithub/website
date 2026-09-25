@@ -1,3 +1,4 @@
+import { AppearanceSettings } from "~/components/settings/AppearanceSettings";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import {
@@ -323,6 +324,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-5">
+            <AppearanceSettings />
             <Section
               icon={<Bell className="h-4 w-4" />}
               title="Notification preferences"

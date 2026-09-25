@@ -1,186 +1,138 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router';
 import { fetchPreferences, updatePreferences, migratePreferences } from '~/utils/preferencesApi';
-import { getOrCreateUserId, isAuthenticated } from '~/utils/userTracking';
+import { getStoredUserId } from '~/utils/authStorage';
+import { normalizeAppearance, type Appearance, type ThemeCollection, type ThemePreference } from '~/utils/appearance';
 
 type Theme = 'light' | 'dark';
-type ThemePreference = 'system' | 'light' | 'dark';
-
+type SyncStatus = 'local' | 'saving' | 'saved' | 'error';
 interface ThemeContextType {
   theme: Theme;
   themePreference: ThemePreference;
+  themeCollection: ThemeCollection;
+  appearanceSyncStatus: SyncStatus;
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
   setThemePreference: (preference: ThemePreference) => void;
+  setThemeCollection: (collection: ThemeCollection) => void;
+  retryAppearanceSync: () => void;
   migrateUserPreferences: () => Promise<void>;
 }
-
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const resolveTheme = (preference: ThemePreference): Theme => preference === 'system'
+  ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : preference;
 
-interface ThemeProviderProps {
-  children: ReactNode;
-}
-
-// Resolve the actual theme from a preference value
-const getSystemTheme = (): Theme => {
-  if (typeof window === 'undefined') return 'dark';
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-};
-
-const resolveTheme = (preference: ThemePreference): Theme => {
-  if (preference === 'system') return getSystemTheme();
-  return preference;
-};
-
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+export function ThemeProvider({ children, persistToAccount = true }: { children: React.ReactNode; persistToAccount?: boolean }) {
   const location = useLocation();
-  const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
-  // Keep the first server and browser renders identical. The blocking script in
-  // root.tsx applies the stored theme before paint; this context catches up in
-  // the initialization effect below. Resolving the system theme during the
-  // browser's first render makes its tree differ from SSR and breaks hydration.
+  const [appearance, setAppearance] = useState<Appearance>(normalizeAppearance());
   const [theme, setThemeState] = useState<Theme>('dark');
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [appearanceSyncStatus, setSyncStatus] = useState<SyncStatus>('local');
+  const current = useRef(appearance);
+  const revision = useRef(0);
+  const pending = useRef(0);
+  const writes = useRef<Promise<unknown>>(Promise.resolve());
+  const alive = useRef(true);
 
-  // Public routes that don't need backend preferences
-  const isPublicRoute = () => {
-    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email'];
-    return publicPaths.some(path => location.pathname.startsWith(path));
-  };
-
-  const applyTheme = (newTheme: Theme) => {
-    const root = document.documentElement;
-    if (newTheme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  };
-
-  // Listen for system theme changes when preference is 'system'
-  useEffect(() => {
-    if (themePreference !== 'system') return;
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      const resolved = e.matches ? 'dark' : 'light';
-      setThemeState(resolved);
-      applyTheme(resolved);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [themePreference]);
-
-  // Initialize user tracking and load preferences
-  useEffect(() => {
-    const initializeTheme = async () => {
-      // Initialize user tracking (generates fingerprint if needed)
-      await getOrCreateUserId();
-
-      // Skip backend preferences on public routes or if not authenticated
-      if (isPublicRoute() || !isAuthenticated()) {
-        // Use localStorage preference or default to system
-        const savedPref = localStorage.getItem('themePreference') as ThemePreference | null;
-        const preference = savedPref || 'system';
-        const resolved = resolveTheme(preference);
-
-        setThemePreferenceState(preference);
-        setThemeState(resolved);
-        applyTheme(resolved);
-        setIsInitialized(true);
-        return;
-      }
-
-      // Try to load preferences from backend (only for authenticated users)
-      const preferences = await fetchPreferences();
-
-      if (preferences?.settings?.theme) {
-        const backendPref = preferences.settings.theme as ThemePreference;
-        // Treat any value not in our set as 'system'
-        const preference: ThemePreference = ['system', 'light', 'dark'].includes(backendPref) ? backendPref : 'system';
-        const resolved = resolveTheme(preference);
-
-        setThemePreferenceState(preference);
-        setThemeState(resolved);
-        applyTheme(resolved);
-      } else {
-        // Fallback to localStorage or default to system
-        const savedPref = localStorage.getItem('themePreference') as ThemePreference | null;
-        const preference = savedPref || 'system';
-        const resolved = resolveTheme(preference);
-
-        setThemePreferenceState(preference);
-        setThemeState(resolved);
-        applyTheme(resolved);
-        // Sync to backend
-        updatePreferences({ theme: preference }).catch(console.error);
-      }
-
-      setIsInitialized(true);
-    };
-
-    initializeTheme();
-  }, [location.pathname]); // Re-run when route changes
-
-  const setThemePreference = useCallback((preference: ThemePreference) => {
-    const resolved = resolveTheme(preference);
-
-    setThemePreferenceState(preference);
+  const apply = useCallback((next: Appearance) => {
+    current.current = next;
+    setAppearance(next);
+    const resolved = resolveTheme(next.theme);
     setThemeState(resolved);
-    localStorage.setItem('themePreference', preference);
-    applyTheme(resolved);
-
-    // Sync to backend (fire and forget) - only if authenticated
-    if (isInitialized && !isPublicRoute() && isAuthenticated()) {
-      updatePreferences({ theme: preference }).catch(console.error);
-    }
-  }, [isInitialized, location.pathname]);
-
-  const setTheme = useCallback((newTheme: Theme) => {
-    // Setting an explicit theme switches preference away from system
-    setThemePreference(newTheme);
-  }, [setThemePreference]);
-
-  const toggleTheme = useCallback(() => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setThemePreference(newTheme);
-  }, [theme, setThemePreference]);
-
-  const migrateUserPreferences = useCallback(async () => {
+    document.documentElement.classList.toggle('dark', resolved === 'dark');
+    document.documentElement.dataset.themeCollection = next.theme_collection;
     try {
-      const success = await migratePreferences();
-      if (success) {
-        // Reload preferences after migration
-        const preferences = await fetchPreferences();
-        if (preferences?.settings?.theme) {
-          const backendPref = preferences.settings.theme as ThemePreference;
-          const preference: ThemePreference = ['system', 'light', 'dark'].includes(backendPref) ? backendPref : 'system';
-          const resolved = resolveTheme(preference);
-
-          setThemePreferenceState(preference);
-          setThemeState(resolved);
-          applyTheme(resolved);
-          localStorage.setItem('themePreference', preference);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to migrate preferences:', error);
-    }
+      localStorage.setItem('themePreference', next.theme);
+      localStorage.setItem('themeCollection', next.theme_collection);
+    } catch { /* Account preference still works when browser storage is blocked. */ }
   }, []);
 
-  return (
-    <ThemeContext.Provider value={{ theme, themePreference, toggleTheme, setTheme, setThemePreference, migrateUserPreferences }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-};
+  const refresh = useCallback(async () => {
+    if (!persistToAccount || pending.current) return;
+    const userId = getStoredUserId();
+    if (!userId) return;
+    const started = ++revision.current;
+    try {
+      const response = await fetchPreferences();
+      if (!alive.current || started !== revision.current || userId !== getStoredUserId()) return;
+      apply(normalizeAppearance(response?.settings));
+      setSyncStatus('saved');
+    } catch {
+      if (alive.current && started === revision.current) setSyncStatus('error');
+    }
+  }, [apply, persistToAccount]);
 
+  useEffect(() => {
+    alive.current = true;
+    try {
+      apply(normalizeAppearance({
+        theme: localStorage.getItem('themePreference') as ThemePreference,
+        theme_collection: localStorage.getItem('themeCollection') as ThemeCollection,
+      }));
+    } catch { apply(normalizeAppearance()); }
+    return () => { alive.current = false; revision.current++; };
+  }, [apply]);
+
+  // Account settings win on sign-in/navigation and when returning from another device.
+  useEffect(() => { void refresh(); }, [location.pathname, refresh]);
+  useEffect(() => {
+    const onFocus = () => { void refresh(); };
+    const onVisible = () => { if (document.visibilityState === 'visible') void refresh(); };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'themePreference' || event.key === 'themeCollection') {
+        apply(normalizeAppearance({ theme: localStorage.getItem('themePreference') as ThemePreference,
+          theme_collection: localStorage.getItem('themeCollection') as ThemeCollection }));
+      }
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, [apply, refresh]);
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => { if (current.current.theme === 'system') apply(current.current); };
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, [apply]);
+
+  const save = useCallback((patch: Partial<Appearance>) => {
+    const next = normalizeAppearance({ ...current.current, ...patch });
+    apply(next);
+    const userId = getStoredUserId();
+    const started = ++revision.current;
+    if (!persistToAccount || !userId) { setSyncStatus('local'); return; }
+    setSyncStatus('saving');
+    pending.current++;
+    // Serialize writes so rapidly changing collection/mode cannot save out of order.
+    writes.current = writes.current.catch(() => {}).then(async () => {
+      try {
+        if (getStoredUserId() !== userId) return;
+        await updatePreferences(next);
+        if (alive.current && started === revision.current) setSyncStatus('saved');
+      } catch {
+        if (alive.current && started === revision.current) setSyncStatus('error');
+      } finally { pending.current--; }
+    });
+  }, [apply, persistToAccount]);
+  const setThemePreference = useCallback((value: ThemePreference) => save({ theme: value }), [save]);
+  const setThemeCollection = useCallback((value: ThemeCollection) => save({ theme_collection: value }), [save]);
+  const toggleTheme = useCallback(() => setThemePreference(theme === 'dark' ? 'light' : 'dark'), [theme, setThemePreference]);
+  const retryAppearanceSync = useCallback(() => save(current.current), [save]);
+  const migrateUserPreferences = useCallback(async () => { await migratePreferences(); await refresh(); }, [refresh]);
+
+  return <ThemeContext.Provider value={{ theme, themePreference: appearance.theme,
+    themeCollection: appearance.theme_collection, appearanceSyncStatus, setThemeCollection,
+    toggleTheme, setTheme: setThemePreference, setThemePreference, retryAppearanceSync, migrateUserPreferences }}>
+    {children}
+  </ThemeContext.Provider>;
+}
 export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
+  const value = useContext(ThemeContext);
+  if (!value) throw new Error('useTheme must be used within a ThemeProvider');
+  return value;
 };

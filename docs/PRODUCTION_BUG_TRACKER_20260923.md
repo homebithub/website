@@ -286,3 +286,31 @@ All changes were pushed to the services' `master` branches. Deployment-tag commi
 **Deployment:** Verified on 2026-09-25 at 06:45 EAT. Payments source commits `c232100` and `1191d14`, deployment tag commit `4d45209`, image `ghcr.io/homebithub/payments:20260924194436` (2/2 ready and available). Website source `3dcd686`, deployment tag commit `83e4e22`, image `ghcr.io/homebithub/website:20260924194441` (1/1 ready and available). Both pushed to `master`; payments migration 36 completed before website release. Auth (1/1) and notifications (2/2) remain healthy on their previous images; no other services required changes.
 
 **Live checks:** Both deployments successfully rolled out; production homepage HTTP 200. Read-only database audit confirms migration 36 with `dirty=false`, zero uncharged pending UPGRADE records, one cancelled uncharged record, and zero completed checkouts awaiting scheduling. Actual phone/M-Pesa acceptance remains with the user; no production payment was made for testing.
+
+
+## Theme collections — 2026-09-25 (local review only)
+
+Status: user approved production release after local review. Final validation and rollout in progress; default collection is Vivid and default mode follows the device. Existing explicit account choices are preserved.
+
+- **Vivid:** the existing purple/pink gradient and glow collection, still the default.
+- **Refined:** solid homepage-brand purple (`#7E22CE`) actions, neutral white/charcoal surfaces, subtle borders and neutral shadows. Both collections support Light, Dark and Use device setting.
+- Settings now includes an Appearance section. Collection (`theme_collection`) and mode (`theme`) save through the existing authenticated account preferences API; no backend schema change is required. Account preferences reload on navigation and when the app regains focus. Serialized saves protect rapid changes; failed synchronization is shown with an explicit retry.
+- The initial page script restores the local cached collection/mode before paint. Refined overrides apply at the document root, including portal dialogs. Semantic error/success colors remain distinct.
+- A development-only comparison page at `http://127.0.0.1:4181/theme-preview` uses the actual settings control and hiring dialog with sample content. It saves to this browser only and never writes account settings or sends hires/payments. This route returns 404 in production builds.
+- Local service-worker registration is disabled during development to prevent outdated cached components during design review.
+
+Validation: 207 tests in 45 files passed; typecheck and production build passed. New tests cover appearance bootstrap, invalid defaults, blocked storage, account API saving, restoration in a simulated fresh device, account-default isolation, anonymous choices and failure propagation. Browser checks cover Refined light/dark, actual hiring modal surfaces/actions, recovery page, reload persistence and restoring Vivid gradients. A live two-device authenticated account acceptance check remains pending; no production preferences were changed during this preview.
+
+Review: switch collections and Light/Dark, open Preview modal, and follow the real recovery-page link. Approve the appearance before deployment.
+
+### Local theme review revision — SVG brand purple
+
+Refined now uses the exact `#7e22ce` accent found in `public/shopping.svg`, `public/man-trash.svg` and `public/mtoi.svg`. Updated primary actions, palette shades, hover color and collection swatch. Neutral surfaces and no-gradient treatment remain.
+
+Audited signed-in Home/Saved, Settings, Hiring, Inbox and subscriptions styling. Expanded root-scoped compatibility rules for older dark surfaces, Inbox composer, arbitrary glow shadows and emoji picker. The theme provider wraps the authenticated app and portal dialogs, so the collection is not restricted to public pages. Signed-in users choose Refined in Settings → Appearance; their existing saved account choice remains authoritative.
+
+Local preview now includes an Inbox style sample and the actual subscription change dialog using sample data, in addition to the real hiring modal and settings chooser. Browser computed-style checks confirm primary/Chat buttons `rgb(126, 34, 206)` with no background image, neutral chat composer/shadow, white hiring dialog in light mode and neutral subscription portal in dark mode. Typecheck and production build passed after this revision. Actual authenticated account navigation has not been exercised in this browser; it is currently signed out. No push or deployment.
+
+### Theme release approval — 2026-09-25
+
+User authorized production deployment after confirming Vivid + device light/dark as the defaults. Added bootstrap regressions for both device modes with empty and blocked browser storage; existing saved choices remain respected. The account defaults already use `theme_collection=vivid` and `theme=system`. No backend changes or database migrations are required. Release validation passed: 210 tests in 45 files, TypeScript and production build. Production deployment pending.
