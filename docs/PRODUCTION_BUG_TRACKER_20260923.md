@@ -2,7 +2,7 @@
 
 Reported and audited: 2026-09-23. Scope: 18 original reports plus five follow-ups (HB-19–23). Target: **production, https://homebit.co.ke**, as confirmed by the user.
 
-**Release update — 2026-09-24: 19 confirmed issues implemented, locally verified, and deployed to production (16 original reports plus HB-19–21). All four affected services are healthy. HB-14 (filters) and HB-18 (chat double ticks) remain under investigation. User acceptance is pending for every item.**
+**Release update — 2026-09-25: 21 confirmed issues implemented, locally verified, and deployed to production (16 original reports plus HB-19–23). All four affected services are healthy. HB-14 (filters) and HB-18 (chat double ticks) remain under investigation. User acceptance is pending for every item.**
 
 Audit baseline: 5 reproduced (4 live UI, 1 executable reproduction), 11 additional code-confirmed gaps, and 2 requiring reproduction.
 
@@ -42,8 +42,8 @@ This is the working record for fixing and verifying each item before the user pe
 | HB-19 | Show phone keypad for phone fields on mobile | Code-confirmed: phone fields lacked explicit inputMode; alternate phone used a text input | Deployed; user retest pending |
 | HB-20 | Respect dark theme throughout password recovery; remove Safaricom-only banner | User screenshots and source confirm missing dark input classes and obsolete banner | Deployed; user retest pending |
 | HB-21 | Align hiring dialogs and primary actions with the purple theme for both profiles | User screenshot and source confirm inconsistent panel colors and primary button styles | Deployed; user retest pending |
-| HB-22 | Match subscription primary buttons and modals to app theme | Screenshots and code confirm flat purple buttons and inconsistent modal surfaces | Verified locally; deployment pending |
-| HB-23 | Require payment before changing packages; preserve current coverage and queue the paid period | Code and executable PostgreSQL/M-Pesa adapter tests confirm old ChangePlan creates an uncharged payment and reports success without checkout | Verified locally; deployment pending |
+| HB-22 | Match subscription primary buttons and modals to app theme | Screenshots and code confirm flat purple buttons and inconsistent modal surfaces | Deployed; user retest pending |
+| HB-23 | Require payment before changing packages; preserve current coverage and queue the paid period | Code and executable PostgreSQL/M-Pesa adapter tests confirm old ChangePlan creates an uncharged payment and reports success without checkout | Deployed; user retest pending |
 
 ## Verification and release gate
 
@@ -199,7 +199,7 @@ Suggested sequence: **HB-15**, then **HB-01/02/03/04/07/11/12/16/17**; address t
 | --- | --- | --- | --- | --- |
 | 2026-09-23 | Baseline audit and tracker created; no application changes | Four production UI findings; one executable crash reproduction; production source review | None | Pending |
 
-For each subsequent fix, append the issue ID, changed repository/commit, relevant checks and results, remaining limitations, deployed environment/build, and user acceptance result. **The complete batch is not ready for user retest yet.**
+For each subsequent fix, append the issue ID, changed repository/commit, relevant checks and results, remaining limitations, deployed environment/build, and user acceptance result. **The 21 deployed fixes are ready for user retest; HB-14 and HB-18 remain open and require reproduction.**
 
 ## Fix batch — 2026-09-24
 
@@ -277,10 +277,12 @@ All changes were pushed to the services' `master` branches. Deployment-tag commi
 - **HB-22:** Pay, checkout/retry and related subscription primary buttons use the purple-to-pink theme. Subscription change/cancellation/payment/transaction dialogs use the standard dark surface and purple borders; credit balance follows the same theme.
 - **HB-23:** Choosing a package opens a price/date preview and then phone-number checkout. No plan-change write or payment record is made merely by opening/cancelling the preview. The full plan price is charged through the M-Pesa adapter only on explicit payment. After provider confirmation, a separate paid period starts at the end of current coverage (including already paid queued packages), and expires one purchased billing period later. Current plan/trial stays intact until then. Failed or abandoned payment does not migrate the user. Duplicate callbacks are idempotent, failed voluntary checkout is not automatically retried, and old ChangePlan calls reject without mutation.
 - **History and dates:** Paid upcoming packages show their actual start/expiry dates. History and queued coverage are refreshed after payment; success copy distinguishes a queued purchase from immediate activation.
-- **Existing report:** Read-only production audit found one phantom pending UPGRADE payment, with no phone, M-Pesa transaction, receipt or paid timestamp. The account already has its original plan. Migration 36 will mark this uncharged record cancelled while preserving the audit history; it does not change that subscription.
+- **Existing report:** Read-only production audit found one phantom pending UPGRADE payment, with no phone, M-Pesa transaction, receipt or paid timestamp. The account already has its original plan. Migration 36 marked this one uncharged record cancelled while preserving the audit history; it did not change that subscription.
 
-**Validation:** Website: 198 tests across 43 files; TypeScript and production build. Payments: full Go suite with isolated PostgreSQL and fake M-Pesa HTTP provider. Coverage includes active/trial preservation, no-phone rejection with zero payments/prompts, prompt reuse, failed payment, late success, eight simultaneous callbacks, stale processing update, multiple paid periods, activation at expiry and STK provider failure. Migration smoke test cancels a synthetic phantom record while preserving a real-phone pending record. Local browser checks confirmed light/dark preview, full price and dates (16 October + quarterly = 16 January), Not now and Continue to payment. Temporary preview route removed. No real charges or payment messages were sent in testing.
+**Validation:** Website: 198 tests across 43 files; TypeScript and production build. Payments: full Go suite with isolated PostgreSQL and fake M-Pesa HTTP provider. Coverage includes active/trial preservation, no-phone rejection with zero payments/prompts, prompt reuse, failed payment, late success, eight simultaneous callbacks, stale processing update, multiple paid periods, activation at expiry, STK provider failure and recovery of payments confirmed by an older replica during rollout. Migration smoke test cancels a synthetic phantom record while preserving a real-phone pending record. Local browser checks confirmed light/dark preview, full price and dates (16 October + quarterly = 16 January), Not now and Continue to payment. Temporary preview route removed. No real charges or payment messages were sent in testing.
 
 **Retest:** Select a different package, confirm the full price and start/expiry dates, then cancel: plan/history unchanged. Continue: confirm phone and receive the M-Pesa prompt; reject it and confirm current plan/expiry unchanged. Pay successfully: current plan remains until expiry, history says completed, and the new package appears under Paid upcoming packages with the appended expiry. Repeat for both profile types and check subscription dialogs in light/dark mode.
 
-**Deployment:** Payments and website pending; schema migration 36 required before website release. Actual phone/M-Pesa acceptance remains with the user.
+**Deployment:** Verified on 2026-09-25 at 06:45 EAT. Payments source commits `c232100` and `1191d14`, deployment tag commit `4d45209`, image `ghcr.io/homebithub/payments:20260924194436` (2/2 ready and available). Website source `3dcd686`, deployment tag commit `83e4e22`, image `ghcr.io/homebithub/website:20260924194441` (1/1 ready and available). Both pushed to `master`; payments migration 36 completed before website release. Auth (1/1) and notifications (2/2) remain healthy on their previous images; no other services required changes.
+
+**Live checks:** Both deployments successfully rolled out; production homepage HTTP 200. Read-only database audit confirms migration 36 with `dirty=false`, zero uncharged pending UPGRADE records, one cancelled uncharged record, and zero completed checkouts awaiting scheduling. Actual phone/M-Pesa acceptance remains with the user; no production payment was made for testing.
