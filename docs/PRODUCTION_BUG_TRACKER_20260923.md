@@ -320,6 +320,6 @@ User authorized production deployment after confirming Vivid + device light/dark
 
 The user reported the confusing badge on a homepage job card. Source confirmation: it was displayed after 24 hours since last activity, with a profile-update timestamp fallback for households. This is not evidence that a job is closed or that its owner responds slowly.
 
-Removed the stale-activity badge from both the shared household/provider badge helper and the provider discovery helper. Card renderers already omit absent badges, so Home, shared job cards and related details no longer show it. Actual job status and other existing badges are unchanged. TypeScript and production build passed; deployment pending.
+Removed the stale-activity badge from both the shared household/provider badge helper and the provider discovery helper. Card renderers already omit absent badges, so Home, shared job cards and related details no longer show it. Actual job status and other existing badges are unchanged. TypeScript and production build passed. Deployed source `3f27332`, tag commit `c9aec99`, image `ghcr.io/homebithub/website:20260928192209`. Verified on 2026-09-28 at 22:26 EAT: rollout successful, 1/1 ready and available, homepage HTTP 200, and zero occurrences of the removed label across the 207 deployed JavaScript bundles. User acceptance pending.
 
 Theme live smoke check on 2026-09-28: homepage HTTP 200, new Refined stylesheet served, bootstrap contains Vivid/system defaults, development-only preview route HTTP 404.
