@@ -68,7 +68,8 @@ export const deriveHouseholdResponsivenessBadge = (profile?: Record<string, any>
   if (lastActiveMinutes != null) {
     if (lastActiveMinutes <= 180) return { tone: "fast", label: "Active recently", detail: describeActivity(lastActiveMinutes) };
     if (lastActiveMinutes <= 1440) return { tone: "steady", label: "Active this week", detail: describeActivity(lastActiveMinutes) };
-    return { tone: "slow", label: "Quiet lately", detail: describeActivity(lastActiveMinutes) };
+    // An old activity/profile timestamp does not establish poor responsiveness.
+    return null;
   }
 
   const rating = toNumericMetric(anyProfile?.rating);

@@ -290,7 +290,7 @@ All changes were pushed to the services' `master` branches. Deployment-tag commi
 
 ## Theme collections — 2026-09-25 (local review only)
 
-Status: user approved production release after local review. Final validation and rollout in progress; default collection is Vivid and default mode follows the device. Existing explicit account choices are preserved.
+Status: deployed. Default collection is Vivid and default mode follows the device. Existing explicit account choices are preserved.
 
 - **Vivid:** the existing purple/pink gradient and glow collection, still the default.
 - **Refined:** solid homepage-brand purple (`#7E22CE`) actions, neutral white/charcoal surfaces, subtle borders and neutral shadows. Both collections support Light, Dark and Use device setting.
@@ -313,4 +313,13 @@ Local preview now includes an Inbox style sample and the actual subscription cha
 
 ### Theme release approval — 2026-09-25
 
-User authorized production deployment after confirming Vivid + device light/dark as the defaults. Added bootstrap regressions for both device modes with empty and blocked browser storage; existing saved choices remain respected. The account defaults already use `theme_collection=vivid` and `theme=system`. No backend changes or database migrations are required. Release validation passed: 210 tests in 45 files, TypeScript and production build. Production deployment pending.
+User authorized production deployment after confirming Vivid + device light/dark as the defaults. Added bootstrap regressions for both device modes with empty and blocked browser storage; existing saved choices remain respected. The account defaults already use `theme_collection=vivid` and `theme=system`. No backend changes or database migrations are required. Release validation passed: 210 tests in 45 files, TypeScript and production build. Source `502e251`, deployment commit `48c0bee`, production image `ghcr.io/homebithub/website:20260925134339`; verified 1/1 ready and available on 2026-09-28.
+
+
+## Quiet lately badge — 2026-09-28
+
+The user reported the confusing badge on a homepage job card. Source confirmation: it was displayed after 24 hours since last activity, with a profile-update timestamp fallback for households. This is not evidence that a job is closed or that its owner responds slowly.
+
+Removed the stale-activity badge from both the shared household/provider badge helper and the provider discovery helper. Card renderers already omit absent badges, so Home, shared job cards and related details no longer show it. Actual job status and other existing badges are unchanged. TypeScript and production build passed; deployment pending.
+
+Theme live smoke check on 2026-09-28: homepage HTTP 200, new Refined stylesheet served, bootstrap contains Vivid/system defaults, development-only preview route HTTP 404.
