@@ -1,3 +1,4 @@
+import { hasPublishedBlogPosts } from '~/services/blogAvailability.server';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, useLocation, useRevalidator } from "react-router";
 import React from "react";
 import type { Route } from "./+types/root";
@@ -68,7 +69,7 @@ export const headers: Route.HeadersFunction = () => ({
     "Cache-Control": "no-cache, max-age=0, must-revalidate",
 });
 
-export function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request }: Route.LoaderArgs) {
 	const requestUrl = new URL(request.url);
 	const requestHost = requestUrl.hostname.toLowerCase();
 	const isLocalRequest = requestHost === "localhost" || requestHost === "127.0.0.1";
@@ -87,6 +88,7 @@ export function loader({ request }: Route.LoaderArgs) {
 		: process.env.NOTIFICATIONS_API_BASE_URL || NOTIFICATIONS_API_BASE_URL;
 
 	return {
+		hasPublishedBlogPosts: await hasPublishedBlogPosts(notificationsBaseUrl),
 		ENV: {
 			GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY || "",
 			GOOGLE_MAPS_MAP_ID: process.env.GOOGLE_MAPS_MAP_ID || "",

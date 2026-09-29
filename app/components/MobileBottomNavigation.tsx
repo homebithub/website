@@ -1,3 +1,4 @@
+import { useBlogAvailability } from '~/hooks/useBlogAvailability';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import {
@@ -67,6 +68,7 @@ export function MobileBottomNavigation({
   onLogout,
 }: MobileBottomNavigationProps) {
   const location = useLocation();
+  const hasBlogPosts = useBlogAvailability();
   const [moreOpen, setMoreOpen] = useState(false);
   useBodyScrollLock(moreOpen);
 
@@ -109,7 +111,7 @@ export function MobileBottomNavigation({
           icon: authenticatedIcon(item.name),
         })),
       ]
-    : guestItems;
+    : guestItems.filter((item) => item.href !== "/blog" || hasBlogPosts);
 
   const isActive = (href: string) => href === '/'
     ? location.pathname === '/'
@@ -143,7 +145,7 @@ export function MobileBottomNavigation({
                   </button>
                   <SheetLink to="/settings" icon={Cog6ToothIcon} label="Settings" />
                   <SheetLink to="/subscriptions" icon={CreditCardIcon} label="Subscriptions" />
-                  <SheetLink to="/blog" icon={NewspaperIcon} label="Blog" />
+                  {hasBlogPosts && <SheetLink to="/blog" icon={NewspaperIcon} label="Blog" />}
                   <button type="button" onClick={() => { setMoreOpen(false); onOpenNotifications(); }} className="hb-mobile-sheet-link relative">
                     <BellIcon className="h-5 w-5" /> Notifications
                     {unreadNotifications > 0 && <Badge count={unreadNotifications} />}

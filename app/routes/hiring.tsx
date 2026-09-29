@@ -1,123 +1,27 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Navigation } from "~/components/Navigation";
-import { Footer } from "~/components/Footer";
-import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { employmentService } from '~/services/grpc/authServices';
-import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { getStoredProfileType, getStoredUser } from '~/utils/authStorage';
-import { isServiceProviderProfileType } from '~/utils/profileType';
+import { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import { useAuth } from '~/contexts/useAuth';
+import { getStoredCanonicalProfileType } from '~/utils/authStorage';
+import { hiringDestination } from '~/utils/notificationDestination';
 
-type Employment = {
-  id: string;
-  household_id: string;
-  service_provider_id: string;
-  start_date: string | null;
-  end_date: string | null;
-  salary: number;
-  notes: string;
-  status: string;
-  created_at: string;
-};
-
-export default function HiringHistoryPage() {
-  const [items, setItems] = useState<Employment[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const limit = 20;
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  const isServiceProvider = useMemo(() => {
-    const storedUser = getStoredUser();
-    const profileType = storedUser?.profile_type || getStoredProfileType();
-    return isServiceProviderProfileType(profileType);
-  }, []);
-
+// Keep old notification links and installed PWA shortcuts working.
+export default function HiringRedirect() {
+  const { loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        setLoading(true);
-        setError(null);
-        const raw = isServiceProvider
-          ? await employmentService.listByServiceProvider('', limit, offset)
-          : await employmentService.listByHousehold('', limit, offset);
-        if (cancelled) return;
-        const data = Array.isArray(raw?.data || raw) ? (raw?.data || raw) : [];
-        const normalized = data.map((item: any) => ({
-          ...item,
-          service_provider_id:
-            item?.service_provider_id || item?.service_provider_user_id || item?.househelp_id || item?.househelp_user_id || '',
-        }));
-        setItems((prev) => (offset === 0 ? normalized : [...prev, ...normalized]));
-        setHasMore(data.length === limit);
-      } catch (e: any) {
-        if (!cancelled) setError(e?.message || "Failed to load hiring history");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    if (loading) return;
+    const profileType = getStoredCanonicalProfileType();
+    if (!profileType) {
+      navigate(`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`, { replace: true });
+      return;
     }
-    load();
-    return () => { cancelled = true; };
-  }, [isServiceProvider, offset]);
-
-  useEffect(() => {
-    if (!sentinelRef.current) return;
-    const el = sentinelRef.current;
-    const io = new IntersectionObserver((entries) => {
-      const [entry] = entries;
-      if (entry.isIntersecting && !loading && hasMore) {
-        setOffset((o) => o + limit);
-      }
-    });
-    io.observe(el);
-    return () => io.disconnect();
-  }, [loading, hasMore]);
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className="flex-1 py-8">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">Hiring</h1>
-
-            {items.length === 0 && !loading && !error && (
-              <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
-                <p className="text-gray-600 dark:text-gray-300 text-base">No hiring records yet.</p>
-              </div>
-            )}
-
-            {error && <ErrorAlert message={error} className="mb-4" />}
-
-            <ul className="space-y-3">
-              {items.map((e) => (
-                <li key={e.id} className="rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-primary-700 dark:text-purple-300">{e.status}</div>
-                    <div className="text-xs text-gray-500">{new Date(e.created_at).toLocaleDateString()}</div>
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-300 mt-1 text-xs">
-                    Start: {e.start_date ? new Date(e.start_date).toLocaleDateString() : 'N/A'}
-                    {" • "} End: {e.end_date ? new Date(e.end_date).toLocaleDateString() : 'N/A'}
-                  </div>
-                  <div className="text-gray-600 dark:text-gray-300 mt-1 text-xs">Salary: {e.salary ? e.salary.toLocaleString() : 'N/A'}</div>
-                  {e.notes && <div className="text-gray-500 dark:text-gray-400 mt-1 text-xs">Notes: {e.notes}</div>}
-                </li>
-              ))}
-            </ul>
-
-            <div ref={sentinelRef} className="h-8" />
-            {loading && (
-              <div className="mt-4 text-center text-gray-600 dark:text-gray-300">Loading...</div>
-            )}
-          </div>
-        </main>
-      </PurpleThemeWrapper>
-      <Footer />
-    </div>
-  );
+    const params = new URLSearchParams(location.search);
+    navigate(hiringDestination(profileType, location.search, {
+      type: params.get('notification_type') || params.get('action') || params.get('type'),
+    }) + location.hash, { replace: true });
+  }, [loading, location.pathname, location.search, location.hash, navigate]);
+  return <p className="p-8 text-center text-gray-500 dark:text-gray-400">Opening your hiring page…</p>;
 }
 
-export { ErrorBoundary } from "~/components/ErrorBoundary";
+export { ErrorBoundary } from '~/components/ErrorBoundary';

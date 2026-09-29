@@ -1,8 +1,8 @@
 import type { ShouldRevalidateFunctionArgs } from 'react-router';
 
 /**
- * The root loader only publishes deployment configuration. Query-string
- * changes (tabs, filters, and opened cards) cannot change that configuration,
+ * The root loader publishes deployment configuration and blog availability. Query-string
+ * changes (tabs, filters, and opened cards) do not need to refresh these values,
  * so sending them back through the server only leaves the old screen visible
  * while the navigation waits.
  */

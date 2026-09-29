@@ -1,3 +1,4 @@
+import { useBlogAvailability } from '~/hooks/useBlogAvailability';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { FaFacebook, FaInstagram, FaLinkedin, FaTiktok, FaXTwitter } from 'react-icons/fa6';
@@ -35,6 +36,7 @@ function SocialLinks({ compact = false }: { compact?: boolean }) {
 
 const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
   const location = useLocation();
+  const hasBlogPosts = useBlogAvailability();
   const { isInSetupMode } = useAccountChoiceStatus();
   const footerRef = useRef<HTMLElement | null>(null);
   const normalFooterHeightRef = useRef(0);
@@ -136,7 +138,7 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
           <SocialLinks />
         </div>
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs sm:text-sm">
-          <Link to="/blog" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Blog</Link>
+          {hasBlogPosts && <Link to="/blog" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Blog</Link>}
           <Link to="/privacy" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Privacy Policy</Link>
           <Link to="/cookies" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Cookie Policy</Link>
           <Link to="/terms" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Terms of Service</Link>

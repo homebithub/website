@@ -1,3 +1,4 @@
+import { useBlogAvailability } from '~/hooks/useBlogAvailability';
 import { Link, useNavigate, useLocation } from "react-router";
 import React, { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
@@ -46,7 +47,7 @@ function useCoalescedRefresh(callback: () => void, delayMs = 250) {
     }, [delayMs]);
 }
 
-const navigation = [
+const publicNavigation = [
     { name: "Services", href: "/services" },
     { name: "Blog", href: "/blog" },
     { name: "About", href: "/about" },
@@ -64,6 +65,8 @@ function normalizeProfileRole(profileType?: string | null): 'client' | 'service-
 }
 
 function NavigationContent() {
+    const hasBlogPosts = useBlogAvailability();
+    const navigation = publicNavigation.filter((item) => item.href !== "/blog" || hasBlogPosts);
     const { user, logout, loading } = useAuth();
     const { isInSetupMode } = useAccountChoiceStatus();
     const location = useLocation();
@@ -159,9 +162,9 @@ function NavigationContent() {
             { name: 'Saved', href: shortlistHref, count: savedCount },
             { name: 'Inbox', href: '/inbox', count: inboxCount },
             { name: hiringLabel, href: hiringHistoryHref, count: hireRequestCount },
-            { name: 'Blog', href: '/blog', count: 0 },
+            ...(hasBlogPosts ? [{ name: 'Blog', href: '/blog', count: 0 }] : []),
         ];
-    }, [profileType, inboxCount, hireRequestCount, savedCount]);
+    }, [profileType, inboxCount, hireRequestCount, savedCount, hasBlogPosts]);
 
     const profileRole = normalizeProfileRole(profileType);
     const accountProfileHref = profileRole === 'client'

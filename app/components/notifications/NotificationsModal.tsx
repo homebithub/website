@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router';
+import { getStoredCanonicalProfileType } from '~/utils/authStorage';
 import { notificationDestination } from '~/utils/notificationDestination';
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
@@ -97,7 +98,7 @@ export default function NotificationsModal({ isOpen, onClose }: Props) {
     if (!n.clicked && n.id) {
       void markOneAsRead(n.id).catch(() => undefined);
     }
-    const destination = notificationDestination(n);
+    const destination = notificationDestination(n, getStoredCanonicalProfileType());
     if (destination) { onClose(); navigate(destination); } else { toggle(n.id); }
   };
 
