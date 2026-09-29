@@ -323,3 +323,10 @@ The user reported the confusing badge on a homepage job card. Source confirmatio
 Removed the stale-activity badge from both the shared household/provider badge helper and the provider discovery helper. Card renderers already omit absent badges, so Home, shared job cards and related details no longer show it. Actual job status and other existing badges are unchanged. TypeScript and production build passed. Deployed source `3f27332`, tag commit `c9aec99`, image `ghcr.io/homebithub/website:20260928192209`. Verified on 2026-09-28 at 22:26 EAT: rollout successful, 1/1 ready and available, homepage HTTP 200, and zero occurrences of the removed label across the 207 deployed JavaScript bundles. User acceptance pending.
 
 Theme live smoke check on 2026-09-28: homepage HTTP 200, new Refined stylesheet served, bootstrap contains Vivid/system defaults, development-only preview route HTTP 404.
+
+
+## Verification setup-card action — 2026-09-29
+
+Code-confirmed from the reported screenshot: the service-provider setup card followed the backend `verification` step's profile route. Added an optional verification action to the shared readiness banner and required-setup dialog, and wired both service-provider entry points to the existing `identityVerification.openModal` handler. The required-setup dialog closes before the identity modal opens. Listing and other setup actions retain their existing behavior.
+
+Local browser validation used the actual readiness and identity components with sample state: clicking the card opened “Verify your identity” while the URL stayed unchanged; the required-setup dialog opened the same modal and closed itself. No Smile ID session, handoff code, document, or selfie was submitted. Temporary test route removed before release. Existing readiness tests (4), TypeScript and production build passed. Production deployment pending.

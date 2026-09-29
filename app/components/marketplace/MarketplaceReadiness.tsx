@@ -19,12 +19,18 @@ export const shouldHideMarketplaceReadiness = (
 export function MarketplaceReadinessBanner({
   readiness,
   onListingAction,
+  onVerificationAction,
 }: {
   readiness: MarketplaceReadiness;
   onListingAction?: () => void;
+  onVerificationAction?: () => void;
 }) {
   const navigate = useNavigate();
   const runStepAction = (stepId: string, actionPath: string) => {
+    if (stepId === "verification" && onVerificationAction) {
+      onVerificationAction();
+      return;
+    }
     if (stepId === "listing" && onListingAction) {
       onListingAction();
       return;
@@ -65,16 +71,22 @@ export function MarketplaceReadinessRequiredModal({
   open,
   onClose,
   onListingAction,
+  onVerificationAction,
 }: {
   readiness: MarketplaceReadiness;
   open: boolean;
   onClose: () => void;
   onListingAction?: () => void;
+  onVerificationAction?: () => void;
 }) {
   const navigate = useNavigate();
   if (!open || typeof document === "undefined") return null;
   const runStepAction = (stepId: string, actionPath: string) => {
     onClose();
+    if (stepId === "verification" && onVerificationAction) {
+      onVerificationAction();
+      return;
+    }
     if (stepId === "listing" && onListingAction) {
       onListingAction();
       return;

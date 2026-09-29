@@ -1231,6 +1231,7 @@ export default function ServiceProviderJobsHome() {
             <IdentityVerificationPrompt verification={identityVerification} />
             <MarketplaceReadinessBanner
               readiness={marketplaceReadiness}
+              onVerificationAction={identityVerification.openModal}
               onListingAction={() => openForWorkButtonRef.current?.open()}
             />
             {profileCompletionReminder.shouldShowCelebration && (
@@ -1289,6 +1290,7 @@ export default function ServiceProviderJobsHome() {
       </PurpleThemeWrapper>
       <MarketplaceReadinessRequiredModal
         readiness={marketplaceReadiness}
+        onVerificationAction={identityVerification.openModal}
         open={readinessModalOpen}
         onClose={() => setReadinessModalOpen(false)}
         onListingAction={() => openForWorkButtonRef.current?.open()}
