@@ -14,7 +14,10 @@ export async function loadSubscriptionSnapshot(
   if (!access) throw new Error('Unable to check subscription access. Please retry.');
   if (options.requireDetails && subscriptionResult.status === 'rejected') {
     const error = subscriptionResult.reason;
-    const notFound = error?.code === 5 || error?.code === 'NOT_FOUND' || error?.status === 5;
+    // The shared gRPC adapter preserves status as grpcCode on its friendly Error.
+    // Accept raw errors too, but never interpret a network failure as no plan.
+    const code = error?.grpcCode ?? error?.code ?? error?.status;
+    const notFound = code === 5 || code === 'NOT_FOUND';
     if (!notFound || access.has_access) throw error;
   }
   const sub = subscriptionResult.status === 'fulfilled'

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { handleGrpcError } from '~/services/grpc/client';
 import { loadSubscriptionSnapshot } from './subscriptionSnapshot';
 import { cachedRequest, clearRequestCache } from './requestCache';
 
@@ -49,6 +50,28 @@ describe('subscription access decisions', () => {
       async () => ({ hasAccess: true, isTrial: true }),
       { requireDetails: true },
     )).rejects.toThrow('database offline');
+  });
+
+  it.each([
+    { code: 5, message: '{"code":"NOT_FOUND","message":"record not found"}' },
+    { code: 5, message: 'record not found' },
+  ])('recognizes missing subscriptions after the real gRPC error adapter: $message', async (wireError) => {
+    const error = handleGrpcError(wireError);
+    const readMissing = async () => { throw error; };
+    await expect(loadSubscriptionSnapshot(readMissing,
+      async () => ({ hasAccess: false, status: 'none' }), { requireDetails: true },
+    )).resolves.toMatchObject({ sub: null, status: 'none' });
+    // A missing billing record cannot override server-confirmed access.
+    await expect(loadSubscriptionSnapshot(readMissing,
+      async () => ({ hasAccess: true, isTrial: true }), { requireDetails: true },
+    )).rejects.toBe(error);
+  });
+
+  it('keeps actual lookup failures blocked after the gRPC error adapter', async () => {
+    const error = handleGrpcError({ code: 14, message: '{"code":"UNAVAILABLE","message":"unable to load subscription right now"}' });
+    await expect(loadSubscriptionSnapshot(async () => { throw error; },
+      async () => ({ hasAccess: false, status: 'none' }), { requireDetails: true },
+    )).rejects.toBe(error);
   });
 
   it('allows the plans screen only for a confirmed missing subscription', async () => {

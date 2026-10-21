@@ -343,3 +343,12 @@ Blog links in guest/authenticated desktop navigation, mobile navigation/More, an
 Validation: 231 tests across 46 files passed, including both profile aliases, event-to-tab mappings, legacy URLs, invalid/external links, cached blog availability, publishing/deletion, omitted empty protobuf fields, and API failures. Typecheck and production build passed; local browser check confirms no Blog links on the rendered login/navigation/footer. Screenshot: `/tmp/homebit-navigation-blog-hidden.png`. No account data, notifications, posts, or hiring records were modified. Live signed-in click retest remains pending.
 
 Deployment: source `79059a3`, deployment tag commit `c008a05`, image `ghcr.io/homebithub/website:20260929130313`. Verified on 2026-09-29 at 16:07 EAT: successful rollout, 1/1 ready and available, live login HTTP 200, root payload includes published-blog availability and rendered HTML has zero Blog links. Deployed bundles contain the new Blog visibility hook and legacy hiring redirect. Production browser check also confirms zero Blog links. Live screenshot: `/tmp/homebit-navigation-production.png`. Authenticated notification-click user retest pending.
+
+
+## Subscription lookup error for accounts without an active plan — 2026-10-21
+
+Confirmed from production logs: `GetMySubscription` returned gRPC `NOT_FOUND`, while the paired `CheckSubscriptionAccess` succeeded with `has_access=false` and `status=none`. The frontend gRPC adapter converts transport errors into friendly Error objects and stores their status in `grpcCode`. The subscription snapshot loader checked only `code`/`status`, so it treated an expected missing active plan as a failed lookup and hid the available plans behind “Retry subscription lookup.”
+
+Fix: inspect the adapter's `grpcCode` first, retaining raw-error compatibility. A missing subscription is accepted only when the server also successfully confirms no access. Active trial/paid access without billing details, network failures, and failed access checks still block checkout rather than implying there is no plan. No subscription, trial, payment, or account records were modified.
+
+Validation: reproduced two failing cases through the actual `handleGrpcError` adapter (JSON backend NOT_FOUND and numeric transport code 5), then verified both pass. Added coverage preserving real UNAVAILABLE errors and access/detail inconsistencies. All 234 tests across 46 files, TypeScript checking, and production build passed. Production deployment verification pending.
